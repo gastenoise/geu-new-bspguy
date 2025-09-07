@@ -1370,21 +1370,19 @@ void Renderer::renderLoop()
 
 						stbi_write_tga(screenPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
 						print_log("Saved to {} file!\n", screenPath);
+						
+						make_screenshot--;
+						make_screenshot_target++;
+
+						if (make_screenshot <= 0)
+						{
+							is_closing = true;
+						}
 					}
 					else
 					{
 						stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
 						print_log("Saved to {} file!\n", (g_working_dir + "overview.tga"));
-					}
-
-					make_screenshot--;
-					make_screenshot_target++;
-
-
-					if (make_screenshot <= 0)
-					{
-						if (!ortho_save_tga)
-							is_closing = true;
 					}
 				}
 				else
