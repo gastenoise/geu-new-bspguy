@@ -762,6 +762,13 @@ void Renderer::renderLoop()
 				}
 			}
 
+			// Disable smoothing during overview capture to prevent wireframe artifacts
+			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
+			{
+				glDisable(GL_LINE_SMOOTH);
+				glDisable(GL_POLYGON_SMOOTH);
+				glDisable(GL_POINT_SMOOTH);
+			}
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1441,6 +1448,14 @@ void Renderer::renderLoop()
 				glDeleteRenderbuffers(1, &rbo);
 				ortho_save_tga = false;
 				ortho_save_bmp = false;
+				ortho_overview = 0; // Reset overview mode
+				g_render_flags |= RENDER_WIREFRAME; // Re-enable wireframe after BMP save
+				
+				// Disable smoothing settings that were enabled for overview capture
+				glDisable(GL_LINE_SMOOTH);
+				glDisable(GL_POLYGON_SMOOTH);
+				glDisable(GL_POINT_SMOOTH);
+				glDisable(GL_MULTISAMPLE);
 			}
 
 			vec3 forward, right, up;
