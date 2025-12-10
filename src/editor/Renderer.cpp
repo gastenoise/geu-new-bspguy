@@ -762,6 +762,13 @@ void Renderer::renderLoop()
 				}
 			}
 
+			// Disable smoothing during overview capture to prevent wireframe artifacts
+			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
+			{
+				glDisable(GL_LINE_SMOOTH);
+				glDisable(GL_POLYGON_SMOOTH);
+				glDisable(GL_POINT_SMOOTH);
+			}
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1370,21 +1377,19 @@ void Renderer::renderLoop()
 
 						stbi_write_tga(screenPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
 						print_log("Saved to {} file!\n", screenPath);
+						
+						make_screenshot--;
+						make_screenshot_target++;
+
+						if (make_screenshot <= 0)
+						{
+							is_closing = true;
+						}
 					}
 					else
 					{
 						stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
 						print_log("Saved to {} file!\n", (g_working_dir + "overview.tga"));
-					}
-
-					make_screenshot--;
-					make_screenshot_target++;
-
-
-					if (make_screenshot <= 0)
-					{
-						if (!ortho_save_tga)
-							is_closing = true;
 					}
 				}
 				else
@@ -1443,6 +1448,14 @@ void Renderer::renderLoop()
 				glDeleteRenderbuffers(1, &rbo);
 				ortho_save_tga = false;
 				ortho_save_bmp = false;
+				ortho_overview = 0; // Reset overview mode
+				g_render_flags |= RENDER_WIREFRAME; // Re-enable wireframe after BMP save
+				
+				// Disable smoothing settings that were enabled for overview capture
+				glDisable(GL_LINE_SMOOTH);
+				glDisable(GL_POLYGON_SMOOTH);
+				glDisable(GL_POINT_SMOOTH);
+				glDisable(GL_MULTISAMPLE);
 			}
 
 			vec3 forward, right, up;
