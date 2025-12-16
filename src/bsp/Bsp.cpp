@@ -1854,39 +1854,39 @@ unsigned int Bsp::remove_unused_lightmaps(std::vector<bool>& usedFaces)
 {
 	int oldLightdataSize = lightDataLength;
 
-	int* lightmapSizes = new int[faceCount] {};
+	std::vector<int> lighSizes{};
+	lighSizes.resize(faceCount);
 
 	int newLightDataSize = 0;
 
-	for (int i = 0; i < faceCount; i++)
+	for (int i = 0; i < faceCount && i < usedFaces.size(); i++)
 	{
 		if (usedFaces[i] && faces[i].nLightmapOffset >= 0)
 		{
-			lightmapSizes[i] = GetFaceLightmapSizeBytes(i);
-			newLightDataSize += lightmapSizes[i];
+			lighSizes[i] = GetFaceLightmapSizeBytes(i);
+			newLightDataSize += lighSizes[i];
 		}
 		else
 		{
-			lightmapSizes[i] = 0;
+			lighSizes[i] = 0;
 		}
 	}
+	lighSizes.resize(faceCount);
 
-	unsigned char* newColorData = new unsigned char[newLightDataSize];
+	unsigned char* newColorData = new unsigned char[newLightDataSize]; 
 
 	int offset = 0;
-	for (int i = 0; i < faceCount; i++)
+	for (int i = 0; i < faceCount && i < usedFaces.size(); i++)
 	{
 		BSPFACE32& face = faces[i];
 
 		if (usedFaces[i] && face.nLightmapOffset >= 0)
 		{
-			memcpy(newColorData + offset, lightdata + face.nLightmapOffset, lightmapSizes[i]);
+			memcpy(newColorData + offset, lightdata + face.nLightmapOffset, lighSizes[i]);
 			face.nLightmapOffset = offset;
-			offset += lightmapSizes[i];
+			offset += lighSizes[i];
 		}
 	}
-
-	delete[] lightmapSizes;
 
 	replace_lump(LUMP_LIGHTING, newColorData, newLightDataSize);
 	delete[] newColorData;

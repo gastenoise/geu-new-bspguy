@@ -1779,6 +1779,9 @@ static int stbtt__GetGlyphShapeTT(const stbtt_fontinfo *info, int glyph_index, s
                // where we can start, and we need to save some state for when we wraparound.
                scx = x;
                scy = y;
+
+               if (off + i + 1 >= m)
+                  break;
                if (!(vertices[off+i+1].type & 1)) {
                   // next point is also a curve point, so interpolate an on-point curve
                   sx = (x + (stbtt_int32) vertices[off+i+1].x) >> 1;

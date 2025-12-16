@@ -51,6 +51,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -190,7 +191,7 @@
       <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>

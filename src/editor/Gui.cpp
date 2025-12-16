@@ -4045,6 +4045,7 @@ void Gui::drawMenuBar()
 			if (ImGui::MenuItem(get_localized_string(LANG_0552).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
 			{
 				app->reloadMaps();
+				map = NULL;
 			}
 			if (ImGui::MenuItem(get_localized_string(LANG_0553).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
 			{
@@ -4277,7 +4278,7 @@ void Gui::drawMenuBar()
 			if (ImGui::MenuItem(get_localized_string(LANG_0564).c_str(), 0, false, !app->isLoading && map))
 			{
 				print_log(get_localized_string(LANG_0296), map->bsp_name);
-				map->remove_unused_model_structures().print_delete_stats(1);
+				map->remove_unused_model_structures().print_delete_stats(1); // buffer overflow?
 				rend->pushUndoState("Clean " + map->bsp_name, EDIT_MODEL_LUMPS);
 			}
 
