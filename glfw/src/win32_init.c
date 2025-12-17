@@ -689,8 +689,11 @@ int _glfwInitWin32(void)
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     else if (IsWindows8Point1OrGreater())
         SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+
+#if WINVER > 0x0501
     else
         SetProcessDPIAware();
+#endif
 
     if (!createHelperWindow())
         return GLFW_FALSE;

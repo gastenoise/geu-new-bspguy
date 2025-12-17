@@ -559,6 +559,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <Profile>
       </Profile>
+      <MinimumRequiredVersion>6</MinimumRequiredVersion>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>
@@ -643,6 +644,7 @@ del "$(TargetDir)bspguy.ini_bak"</Command>
       <SectionAlignment>
       </SectionAlignment>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <MinimumRequiredVersion>6</MinimumRequiredVersion>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>
@@ -760,8 +762,7 @@ del "$(TargetDir)bspguy.ini_bak"</Command>
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010100;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;_CRT_SECURE_NO_WARNINGS;GLEW_NO_GLU</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <SDLCheck>false</SDLCheck>
       <IntrinsicFunctions>true</IntrinsicFunctions>
