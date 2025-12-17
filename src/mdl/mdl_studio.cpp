@@ -863,6 +863,8 @@ studiohdr_t* StudioModel::LoadModel(const std::string & modelname, bool IsTextur
 		return NULL;
 	}
 
+	if (phdr->textureindex < 0 || phdr->textureindex >= size) { print_log("{} : Bad textureindex {}", modelname, phdr->textureindex); return NULL; }
+
 	if (phdr->textureindex != 0)
 	{
 		mstudiotexture_t* ptexture = (mstudiotexture_t*)(pin + phdr->textureindex);

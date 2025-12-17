@@ -1364,13 +1364,19 @@ void Bsp::resize_all_lightmaps(bool logged)
 			std::vector<COLOR3> newdata;
 			if (newsize[0] == size[0] && newsize[1] == size[1])
 			{
-				if (lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
+				size_t count = size[0] * size[1];
+				size_t byteCount = count * sizeof(COLOR3);
+
+				if (lightdata &&
+					offset >= 0 &&
+					(offset + byteCount) <= lightDataLength &&
+					lightId < undo_lightmaps[faceId].layers)
 				{
-					newdata.insert(newdata.end(), data, data + size[0] * size[1]);
+					newdata.insert(newdata.end(), data, data + count);
 				}
 				else
 				{
-					newdata.resize(size[0] * size[1], COLOR3(255, 255, 255));
+					newdata.resize(count, COLOR3(255, 255, 255));
 				}
 			}
 			else

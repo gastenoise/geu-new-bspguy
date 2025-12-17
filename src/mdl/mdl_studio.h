@@ -32,7 +32,7 @@ STUDIO MODELS
 Studio models are position independent, so the cache manager can move them.
 ==============================================================================
 */
-#pragma pack(push, 1)
+
 #define MAXSTUDIOTRIANGLES	32768	// TODO: tune this
 #define MAXSTUDIOVERTS		16384	// TODO: tune this
 #define MAXSTUDIOBONES		128		
@@ -72,7 +72,7 @@ Studio models are position independent, so the cache manager can move them.
 #define STUDIO_RLOOP	0x8000	// controller that wraps shortest distance
 
 #define MAXEVENTSTRING      64
-
+#pragma pack(push,1)
 typedef struct
 {
 	int					id;
