@@ -284,13 +284,8 @@ void Gui::draw()
 	if (shouldReloadFonts)
 	{
 		shouldReloadFonts = false;
-
-		ImGui_ImplOpenGL3_DestroyFontsTexture();
 		imgui_io->Fonts->Clear();
-
 		loadFonts();
-
-		ImGui_ImplOpenGL3_CreateFontsTexture();
 	}
 }
 
@@ -12993,7 +12988,7 @@ void Gui::drawFaceEditorWidget()
 				ImGui::TextUnformatted("Used in leaves:");
 				style.FrameBorderSize = 1.0f;
 
-				ImGui::BeginChild("##faceleaflist", ImVec2(0, 120), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+				ImGui::BeginChild("##faceleaflist", ImVec2(0, 120), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
 
 				ImGuiListClipper leaf_clipper;
 				leaf_clipper.Begin((int)face_leaf_list.size());
@@ -13212,7 +13207,7 @@ void Gui::drawFaceEditorWidget()
 				pickCount++;
 			}
 
-			ImGui::BeginChild("##leaffacelist", ImVec2(0, 120), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("##leaffacelist", ImVec2(0, 120), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
 
 			ImGuiListClipper face_clipper;
 			face_clipper.Begin((int)leaf_faces.size());
@@ -13256,7 +13251,7 @@ void Gui::drawFaceEditorWidget()
 
 			style.FrameBorderSize = 1.0f;
 
-			ImGui::BeginChild("##leaflist", ImVec2(0, 240), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("##leaflist", ImVec2(0, 240), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
 
 			ImGuiListClipper clipper;
 			clipper.Begin((int)(vis_leafs.size() + invis_leafs.size()));

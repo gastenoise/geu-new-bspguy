@@ -74,12 +74,13 @@ TEST(xchar_test, format_explicitly_convertible_to_wstring_view) {
 TEST(xchar_test, format) {
   EXPECT_EQ(fmt::format(L"{}", 42), L"42");
   EXPECT_EQ(fmt::format(L"{}", 4.2), L"4.2");
+  EXPECT_EQ(fmt::format(L"{}", 1e100), L"1e+100");
   EXPECT_EQ(fmt::format(L"{}", L"abc"), L"abc");
   EXPECT_EQ(fmt::format(L"{}", L'z'), L"z");
   EXPECT_THROW(fmt::format(fmt::runtime(L"{:*\x343E}"), 42), fmt::format_error);
   EXPECT_EQ(fmt::format(L"{}", true), L"true");
   EXPECT_EQ(fmt::format(L"{0}", L'a'), L"a");
-  EXPECT_EQ(fmt::format(L"Letter {}", L'\x40e'), L"Letter \x40e"); // Ў
+  EXPECT_EQ(fmt::format(L"Letter {}", L'\x40e'), L"Letter \x40e");  // Ў
   if (sizeof(wchar_t) == 4)
     EXPECT_EQ(fmt::format(fmt::runtime(L"{:𓀨>3}"), 42), L"𓀨42");
   EXPECT_EQ(fmt::format(L"{}c{}", L"ab", 1), L"abc1");
@@ -171,6 +172,13 @@ TEST(xchar_test, join) {
   EXPECT_EQ(fmt::format(L"({})", fmt::join(t, L", ")), L"(a, 1, 2)");
 }
 
+#ifdef __cpp_lib_byte
+TEST(xchar_test, join_bytes) {
+  auto v = std::vector<std::byte>{std::byte(1), std::byte(2), std::byte(3)};
+  EXPECT_EQ(fmt::format(L"{}", fmt::join(v, L", ")), L"1, 2, 3");
+}
+#endif
+
 enum streamable_enum {};
 
 std::wostream& operator<<(std::wostream& os, streamable_enum) {
@@ -224,106 +232,9 @@ TEST(xchar_test, chrono) {
   EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
   EXPECT_EQ(fmt::format(L"{:%F}", tm), L"2016-04-25");
   EXPECT_EQ(fmt::format(L"{:%T}", tm), L"11:22:33");
-}
 
-std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
-                             std::locale* locptr = nullptr) {
-  auto loc = locptr ? *locptr : std::locale::classic();
-  auto& facet = std::use_facet<std::time_put<wchar_t>>(loc);
-  std::wostringstream os;
-  os.imbue(loc);
-  facet.put(os, os, L' ', timeptr, format.c_str(),
-            format.c_str() + format.size());
-#ifdef _WIN32
-  // Workaround a bug in older versions of Universal CRT.
-  auto str = os.str();
-  if (str == L"-0000") str = L"+0000";
-  return str;
-#else
-  return os.str();
-#endif
-}
-
-TEST(chrono_test_wchar, time_point) {
-  auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(
-      std::chrono::system_clock::now());
-
-  std::vector<std::wstring> spec_list = {
-      L"%%",  L"%n",  L"%t",  L"%Y",  L"%EY", L"%y",  L"%Oy", L"%Ey", L"%C",
-      L"%EC", L"%G",  L"%g",  L"%b",  L"%h",  L"%B",  L"%m",  L"%Om", L"%U",
-      L"%OU", L"%W",  L"%OW", L"%V",  L"%OV", L"%j",  L"%d",  L"%Od", L"%e",
-      L"%Oe", L"%a",  L"%A",  L"%w",  L"%Ow", L"%u",  L"%Ou", L"%H",  L"%OH",
-      L"%I",  L"%OI", L"%M",  L"%OM", L"%S",  L"%OS", L"%x",  L"%Ex", L"%X",
-      L"%EX", L"%D",  L"%F",  L"%R",  L"%T",  L"%p"};
-#ifndef _WIN32
-  // Disabled on Windows, because these formats is not consistent among
-  // platforms.
-  spec_list.insert(spec_list.end(), {L"%c", L"%Ec", L"%r"});
-#elif !FMT_HAS_C99_STRFTIME
-  // Only C89 conversion specifiers when using MSVCRT instead of UCRT
-  spec_list = {L"%%", L"%Y", L"%y", L"%b", L"%B", L"%m", L"%U",
-               L"%W", L"%j", L"%d", L"%a", L"%A", L"%w", L"%H",
-               L"%I", L"%M", L"%S", L"%x", L"%X", L"%p"};
-#endif
-  spec_list.push_back(L"%Y-%m-%d %H:%M:%S");
-
-  for (const auto& spec : spec_list) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::gmtime(&t);
-
-    auto sys_output = system_wcsftime(spec, &tm);
-
-    auto fmt_spec = fmt::format(L"{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t1));
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
-  }
-
-  // Timezone formatters tests makes sense for localtime.
-#if FMT_HAS_C99_STRFTIME
-  spec_list = {L"%z", L"%Z"};
-#else
-  spec_list = {L"%Z"};
-#endif
-  for (const auto& spec : spec_list) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::localtime(&t);
-
-    auto sys_output = system_wcsftime(spec, &tm);
-
-    auto fmt_spec = fmt::format(L"{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
-
-    if (spec == L"%z") {
-      sys_output.insert(sys_output.end() - 2, 1, L':');
-      EXPECT_EQ(sys_output, fmt::format(L"{:%Ez}", tm));
-      EXPECT_EQ(sys_output, fmt::format(L"{:%Oz}", tm));
-    }
-  }
-
-  // Separate tests for UTC, since std::time_put can use local time and ignoring
-  // the timezone in std::tm (if it presents on platform).
-  if (fmt::detail::has_member_data_tm_zone<std::tm>::value) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::gmtime(&t);
-
-    std::vector<std::wstring> tz_names = {L"GMT", L"UTC"};
-    EXPECT_THAT(tz_names, Contains(fmt::format(L"{:%Z}", t1)));
-    EXPECT_THAT(tz_names, Contains(fmt::format(L"{:%Z}", tm)));
-  }
-
-  if (fmt::detail::has_member_data_tm_gmtoff<std::tm>::value) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::gmtime(&t);
-
-    EXPECT_EQ(L"+0000", fmt::format(L"{:%z}", t1));
-    EXPECT_EQ(L"+0000", fmt::format(L"{:%z}", tm));
-
-    EXPECT_EQ(L"+00:00", fmt::format(L"{:%Ez}", t1));
-    EXPECT_EQ(L"+00:00", fmt::format(L"{:%Ez}", tm));
-
-    EXPECT_EQ(L"+00:00", fmt::format(L"{:%Oz}", t1));
-    EXPECT_EQ(L"+00:00", fmt::format(L"{:%Oz}", tm));
-  }
+  auto t = fmt::sys_time<std::chrono::seconds>(std::chrono::seconds(290088000));
+  EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", t), "1979-03-12 12:00:00");
 }
 
 TEST(xchar_test, color) {
@@ -468,7 +379,7 @@ TEST(locale_test, int_formatter) {
   f.parse(parse_ctx);
   auto buf = fmt::memory_buffer();
   fmt::basic_format_context<fmt::appender, char> format_ctx(
-      fmt::appender(buf), {}, fmt::detail::locale_ref(loc));
+      fmt::appender(buf), {}, fmt::locale_ref(loc));
   f.format(12345, format_ctx);
   EXPECT_EQ(fmt::to_string(buf), "12,345");
 }
@@ -491,12 +402,20 @@ TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
 }
 
+TEST(std_test_xchar, format_bitset) {
+  auto bs = std::bitset<6>(42);
+  EXPECT_EQ(fmt::format(L"{}", bs), L"101010");
+  EXPECT_EQ(fmt::format(L"{:0>8}", bs), L"00101010");
+  EXPECT_EQ(fmt::format(L"{:-^12}", bs), L"---101010---");
+}
+
 TEST(std_test_xchar, complex) {
   auto s = fmt::format(L"{}", std::complex<double>(1, 2));
   EXPECT_EQ(s, L"(1+2i)");
   EXPECT_EQ(fmt::format(L"{:.2f}", std::complex<double>(1, 2)),
             L"(1.00+2.00i)");
   EXPECT_EQ(fmt::format(L"{:8}", std::complex<double>(1, 2)), L"(1+2i)  ");
+  EXPECT_EQ(fmt::format(L"{:-<8}", std::complex<double>(1, 2)), L"(1+2i)--");
 }
 
 TEST(std_test_xchar, optional) {

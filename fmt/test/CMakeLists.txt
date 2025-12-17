@@ -1,7 +1,5 @@
 add_subdirectory(gtest)
 
-include(CheckSymbolExists)
-
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_include_directories(test-main PUBLIC
@@ -62,21 +60,10 @@ if (NOT (MSVC AND BUILD_SHARED_LIBS))
 endif ()
 add_fmt_test(ostream-test)
 add_fmt_test(compile-test)
-add_fmt_test(compile-fp-test)
-if (MSVC)
-  # Without this option, MSVC returns 199711L for the __cplusplus macro.
-  target_compile_options(compile-fp-test PRIVATE /Zc:__cplusplus)
-endif()
 add_fmt_test(printf-test)
 add_fmt_test(ranges-test ranges-odr-test.cc)
 add_fmt_test(no-builtin-types-test HEADER_ONLY)
-
 add_fmt_test(scan-test HEADER_ONLY)
-check_symbol_exists(strptime "time.h" HAVE_STRPTIME)
-if (HAVE_STRPTIME)
-  target_compile_definitions(scan-test PRIVATE FMT_HAVE_STRPTIME)
-endif ()
-
 add_fmt_test(std-test)
 try_compile(compile_result_unused
             ${CMAKE_CURRENT_BINARY_DIR}
