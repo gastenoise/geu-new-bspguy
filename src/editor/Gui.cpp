@@ -4046,6 +4046,7 @@ void Gui::drawMenuBar()
 			{
 				app->reloadMaps();
 				map = NULL;
+				rend = NULL;
 			}
 			if (ImGui::MenuItem(get_localized_string(LANG_0553).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
 			{

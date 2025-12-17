@@ -374,6 +374,8 @@ Bsp::Bsp(std::string fpath)
 	}*/
 
 	save_undo_lightmaps();
+
+	validate();
 }
 
 Bsp::~Bsp()
@@ -5971,6 +5973,8 @@ bool Bsp::validate()
 			isValid = false;
 		}
 	}
+
+	bool anyInvalidFaceFixed = false;
 	for (int i = faceCount - 1; i >= 0; i--)
 	{
 		if (faces[i].iPlane < 0 || faces[i].iPlane >= planeCount)
@@ -6004,6 +6008,7 @@ bool Bsp::validate()
 
 		if (isValid && !GetFaceExtents(i, bmins, bmaxs))
 		{
+			anyInvalidFaceFixed = true;
 			print_log(PRINT_RED | PRINT_INTENSITY, "Bad face {} extents\n", i);
 			print_log(PRINT_GREEN | PRINT_INTENSITY, "Removing invalid (invisible) face...\n", i);
 			remove_face(i);
@@ -6031,19 +6036,24 @@ bool Bsp::validate()
 			isValid = false;
 		}
 
-		bool swapped = false;
-		for (int n = 0; n < 3; n++)
-		{
-			if (leaves[i].nMins[n] > leaves[i].nMaxs[n])
-			{
-				swapped = true;
-				isValid = false;
-			}
-		}
-		if (swapped)
+		if (leaves[i].nMins.x > leaves[i].nMaxs.x ||
+			leaves[i].nMins.y > leaves[i].nMaxs.y ||
+			leaves[i].nMins.z > leaves[i].nMaxs.z)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
 				leaves[i].nMaxs[0], leaves[i].nMaxs[1], leaves[i].nMaxs[2]);
+
+
+			if (leaves[i].nMins.x > leaves[i].nMaxs.x)
+				std::swap(leaves[i].nMins.x, leaves[i].nMaxs.x);
+
+			if (leaves[i].nMins.y > leaves[i].nMaxs.y)
+				std::swap(leaves[i].nMins.y, leaves[i].nMaxs.y);
+
+			if (leaves[i].nMins.z > leaves[i].nMaxs.z)
+				std::swap(leaves[i].nMins.z, leaves[i].nMaxs.z);
+
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed backwards mins/maxs in leaf {}\n", i);
 		}
 	}
 	for (int i = 0; i < edgeCount; i++)
@@ -6108,7 +6118,6 @@ bool Bsp::validate()
 		}
 	}
 
-
 	int totalVisLeaves = 1; // solid leaf not included in model leaf counts
 	int totalFaces = 0;
 	for (int i = 0; i < modelCount; i++)
@@ -6140,7 +6149,17 @@ bool Bsp::validate()
 			print_log(PRINT_RED | PRINT_INTENSITY, "Backwards mins/maxs in model {}. Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i,
 				models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
 				models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
-			isValid = false;
+
+			if (models[i].nMins.x > models[i].nMaxs.x)
+				std::swap(models[i].nMins.x, models[i].nMaxs.x);
+
+			if (models[i].nMins.y > models[i].nMaxs.y)
+				std::swap(models[i].nMins.y, models[i].nMaxs.y);
+
+			if (models[i].nMins.z > models[i].nMaxs.z)
+				std::swap(models[i].nMins.z, models[i].nMaxs.z);
+
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed backwards mins/maxs in model {}\n", i);
 		}
 	}
 	if (totalVisLeaves != leafCount)
@@ -6318,7 +6337,13 @@ bool Bsp::validate()
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, "Overflowed entities !!!\n");
 	}
-
+	if (anyInvalidFaceFixed)
+	{
+		if (renderer)
+		{
+			renderer->preRenderFaces();
+		}
+	}
 	if (leaves)
 	{
 		unsigned int newVisRowSize = ((leafCount + 63) & ~63) >> 3;
