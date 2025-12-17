@@ -257,67 +257,73 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 // BEGIN COPIED QVIS CODE
 //
 
-bool DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_length, unsigned int numLeaves, unsigned int src_length)
+bool DecompressVis(unsigned char* src, unsigned char* dest,
+	unsigned int dest_length, unsigned int numLeaves,
+	unsigned int src_length)
 {
 	unsigned char* startsrc = src;
 	unsigned char* startdst = dest;
 
-	int             c;
-	unsigned char* out;
-	int             row;
+	int c;
+	unsigned char* out = dest;
+	int row = (numLeaves + 7) >> 3;
 
-	row = (numLeaves + 7) >> 3; 
-	
-	// same as the length used by VIS program in CompressVis
-	// The wrong size will cause DecompressVis to spend extremely long time once the source pointer runs into the invalid area in g_dvisdata (for example, in BuildFaceLights, some faces could hang for a few seconds), and sometimes to crash.
-
-	out = dest;
-
-	do
+	while (out - dest < row)
 	{
-		if (*src)
+		if (src >= startsrc + src_length)
 		{
-			if (out > startdst + dest_length)
+			print_log(PRINT_RED | PRINT_INTENSITY,
+				get_localized_string(LANG_0999),
+				(int)(src - startsrc), src_length);
+			return false;
+		}
+
+		if (*src) 
+		{
+			if (out >= startdst + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0998), (int)(out - startdst), dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY,
+					get_localized_string(LANG_0998),
+					(int)(out - startdst), dest_length);
 				return false;
 			}
 
-			if (src > startsrc + src_length)
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0999), (int)(src - startsrc), src_length);
-				return false;
-			}
-
-			*out = *src;
-			out++;
-			src++;
+			*out++ = *src++;
 			continue;
+		}
+
+		if (src + 1 >= startsrc + src_length)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY,
+				get_localized_string(LANG_0999),
+				(int)(src - startsrc), src_length);
+			return false;
 		}
 
 		c = src[1];
 		src += 2;
-		while (c)
+
+		while (c--)
 		{
-			if (out > startdst + dest_length)
+			if (out >= startdst + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1142), (int)(out - startdst), dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY,
+					get_localized_string(LANG_1142),
+					(int)(out - startdst), dest_length);
 				return false;
 			}
 
-			*out = 0;
-			out++;
-			c--;
+			*out++ = 0;
 
 			if (out - dest >= row)
-			{
 				return true;
-			}
 		}
-	} while (out - dest < row);
+	}
 
 	return true;
 }
+
+
 
 int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest, unsigned int dest_length)
 {
@@ -464,73 +470,78 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	return (int)(vismap_p - output);
 }
 
-void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* dest, unsigned int dest_length)
+void DecompressLeafVis(unsigned char* src, unsigned int src_len,
+	unsigned char* dest, unsigned int dest_length)
 {
 	unsigned char* out = dest;
 	unsigned char* src_start = src;
 	unsigned int src_count = src_len;
-	int	c = 0;
+	int c = 0;
 
 	if (!src)
 	{
-		// no vis info, so make all visible
 		while (src_count)
 		{
-			if (out > dest + dest_length)
+			if (out >= dest + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1004), (int)(out - dest), dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY,
+					get_localized_string(LANG_1004),
+					(int)(out - dest), dest_length);
 				return;
 			}
 
 			*out++ = 0xff;
-
 			src_count--;
 		}
 		return;
 	}
 
-	do
+	while ((unsigned int)(out - dest) < src_count)
 	{
+		if (src >= src_start + src_len)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY,
+				get_localized_string(LANG_1006),
+				(int)(out - dest), dest_length);
+			return;
+		}
+
 		if (*src)
 		{
-			if (out > dest + dest_length)
+			if (out >= dest + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1005), (int)(out - dest), dest_length);
-				return;
-			}
-
-			if (src > src_start + src_len)
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1006), (int)(out - dest), dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY,
+					get_localized_string(LANG_1005),
+					(int)(out - dest), dest_length);
 				return;
 			}
 
 			*out++ = *src++;
-
 			continue;
+		}
+
+		if (src + 1 >= src_start + src_len)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY,
+				get_localized_string(LANG_1144),
+				(int)(out - dest), dest_length);
+			return;
 		}
 
 		c = src[1];
 		src += 2;
 
-		if (src > src_start + src_len)
+		while (c--)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1144), (int)(out - dest), dest_length);
-			return;
-		}
-
-		while (c)
-		{
-			if (out > dest + dest_length)
+			if (out >= dest + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1007), (int)(out - dest), dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY,
+					get_localized_string(LANG_1007),
+					(int)(out - dest), dest_length);
 				return;
 			}
 
 			*out++ = 0;
-
-			c--;
 		}
-	} while ((unsigned int)(out - dest) < src_count);
-
+	}
 }

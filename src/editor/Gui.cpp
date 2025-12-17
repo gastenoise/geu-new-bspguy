@@ -4724,7 +4724,6 @@ void Gui::drawMenuBar()
 						{
 							map->verts[v] += offset;
 						}
-						map->remove_unused_model_structures();
 					}
 
 					map->remove_unused_model_structures();

@@ -964,16 +964,6 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <ClCompile Include=".\..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include=".\..\vs-project\glfw\src\glfw.vcxproj">
-      <Project>{94C10DCA-6ED7-3AC5-87DF-14B22017E799}</Project>
-      <Name>glfw</Name>
-    </ProjectReference>
-    <ProjectReference Include=".\..\vs-project\ascript\angelscript\projects\msvc2022\angelscript.vcxproj">
-      <Project>{39E6AF97-6BA3-4A72-8C61-BCEBF214EBFD}</Project>
-      <Name>ascript</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\resources\languages\language.ini" />
     <None Include="..\resources\languages\language_ru.ini" />
     <None Include="..\resources\languages\language_zh.ini" />

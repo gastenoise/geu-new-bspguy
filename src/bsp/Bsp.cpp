@@ -1882,10 +1882,25 @@ unsigned int Bsp::remove_unused_lightmaps(std::vector<bool>& usedFaces)
 
 		if (usedFaces[i] && face.nLightmapOffset >= 0)
 		{
-			memcpy(newColorData + offset, lightdata + face.nLightmapOffset, lighSizes[i]);
-			face.nLightmapOffset = offset;
-			offset += lighSizes[i];
+			int size = lighSizes[i];
+			int start = face.nLightmapOffset;
+			int end = start + size;
+
+			// Проверка выхода за пределы lightdata
+			if (end <= lightDataLength)
+			{
+				memcpy(newColorData + offset, lightdata + start, size);
+				face.nLightmapOffset = offset;
+				offset += size;
+			}
+			else
+			{
+				// Лог: битый lightmap, пропускаем
+				face.nLightmapOffset = -1;
+				lighSizes[i] = 0;
+			}
 		}
+
 	}
 
 	replace_lump(LUMP_LIGHTING, newColorData, newLightDataSize);
@@ -14817,7 +14832,7 @@ void Bsp::fix_all_duplicate_vertices()
 		for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
 		{
 			int edgeIdx = surfedges[e];
-			BSPEDGE32& edge = edges[abs(edgeIdx)];
+			BSPEDGE32 edge = edges[abs(edgeIdx)];
 
 			if (edges_usage.count(abs(edgeIdx)))
 			{
@@ -14841,7 +14856,7 @@ void Bsp::fix_all_duplicate_vertices()
 
 				int v2 = create_vert();
 				verts[v2] = verts[edge.iVertex[1]];
-				newedge.iVertex[1] = v1;
+				newedge.iVertex[1] = v2;
 			}
 			else
 			{
