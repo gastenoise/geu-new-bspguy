@@ -4280,6 +4280,7 @@ void Gui::drawMenuBar()
 			{
 				print_log(get_localized_string(LANG_0296), map->bsp_name);
 				map->remove_unused_model_structures().print_delete_stats(1); // buffer overflow?
+				map->validate();
 				rend->pushUndoState("Clean " + map->bsp_name, EDIT_MODEL_LUMPS);
 			}
 
@@ -4300,6 +4301,8 @@ void Gui::drawMenuBar()
 
 				removestats.print_delete_stats(1);
 				g_settings.verboseLogs = oldVerbose;
+
+				map->validate();
 
 				rend->pushUndoState("Optimize " + map->bsp_name, EDIT_MODEL_LUMPS | FL_ENTITIES);
 			}

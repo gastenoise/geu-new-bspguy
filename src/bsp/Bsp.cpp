@@ -6339,8 +6339,12 @@ bool Bsp::validate()
 	}
 	if (anyInvalidFaceFixed)
 	{
+		save_undo_lightmaps();
+		resize_all_lightmaps();
 		if (renderer)
 		{
+			renderer->reuploadTextures();
+			renderer->loadLightmaps();
 			renderer->preRenderFaces();
 		}
 	}
