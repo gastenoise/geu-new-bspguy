@@ -123,7 +123,7 @@ std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 	if (newLump.lumps[LUMP_MODELS].empty())
 		return updateModels;
 
-	if (oldLump.lumps[LUMP_MODELS].empty() && newLump.lumps[LUMP_MODELS].size())
+	if (oldLump.lumps[LUMP_MODELS].empty())
 	{
 		int addModelCount = (int)(newLump.lumps[LUMP_MODELS].size() / sizeof(BSPMODEL));
 		for (int i = 0; i < addModelCount; i++)
@@ -168,7 +168,7 @@ std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump)
 	if (newLump.lumps[LUMP_FACES].empty())
 		return updateFaces;
 
-	if (oldLump.lumps[LUMP_FACES].empty() && newLump.lumps[LUMP_FACES].size())
+	if (oldLump.lumps[LUMP_FACES].empty())
 	{
 		int addModelCount = (int)(newLump.lumps[LUMP_FACES].size() / sizeof(BSPFACE32));
 		for (int i = 0; i < addModelCount; i++)

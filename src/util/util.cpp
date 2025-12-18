@@ -1,4 +1,4 @@
-#include "lang.h"
+﻿#include "lang.h"
 #include "util.h"
 #include "Wad.h"
 #include "Settings.h"
@@ -2098,24 +2098,188 @@ std::string getValueInQuotes(std::string s)
 }
 
 
+struct PairHash {
+	std::size_t operator()(const std::pair<vec3, vec3>& p) const {
+		vec3 p1 = p.first;
+		vec3 p2 = p.second;
+
+		auto less = [](const vec3& a, const vec3& b) {
+			if (a.x != b.x) return a.x < b.x;
+			if (a.y != b.y) return a.y < b.y;
+			return a.z < b.z;
+			};
+
+		if (less(p2, p1)) {
+			std::swap(p1, p2);
+		}
+
+		std::size_t h1 = std::hash<float>{}(p1.x);
+		std::size_t h2 = std::hash<float>{}(p1.y);
+		std::size_t h3 = std::hash<float>{}(p1.z);
+		std::size_t h4 = std::hash<float>{}(p2.x);
+		std::size_t h5 = std::hash<float>{}(p2.y);
+		std::size_t h6 = std::hash<float>{}(p2.z);
+
+		return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4) ^ (h6 << 5);
+	}
+};
+
+bool pointOnSegment(const vec3& A, const vec3& B, const vec3& P, float eps = EPSILON) {
+	if ((P - A).lengthSquared() < eps * eps || (P - B).lengthSquared() < eps * eps) {
+		return true;
+	}
+
+	vec3 AB = B - A;
+	vec3 AP = P - A;
+	vec3 cross = AB.cross(AP);
+
+	if (cross.lengthSquared() > eps * eps * AB.lengthSquared()) {
+		return false;
+	}
+
+	float t = AP.dot(AB) / AB.dot(AB);
+	return t >= -eps && t <= 1.0f + eps;
+}
+
+bool areSegmentsCollinear(const vec3& A1, const vec3& B1, const vec3& A2, const vec3& B2, float eps = EPSILON) {
+	vec3 dir1 = B1 - A1;
+	vec3 dir2 = B2 - A2;
+
+	vec3 cross = dir1.cross(dir2);
+	if (cross.lengthSquared() > eps * eps * dir1.lengthSquared() * dir2.lengthSquared()) {
+		return false;
+	}
+
+	vec3 toA2 = A2 - A1;
+	vec3 toB2 = B2 - A1;
+	vec3 cross1 = dir1.cross(toA2);
+	vec3 cross2 = dir1.cross(toB2);
+
+	return cross1.lengthSquared() < eps * eps && cross2.lengthSquared() < eps * eps;
+}
+
+std::pair<vec3, vec3> mergeCollinearSegments(const vec3& A1, const vec3& B1, const vec3& A2, const vec3& B2) {
+	std::vector<vec3> points = { A1, B1, A2, B2 };
+
+	vec3 dir = B1 - A1;
+	if (dir.lengthSquared() < 1e-12f) {
+		dir = B2 - A2;
+	}
+
+	if (dir.lengthSquared() < 1e-12f) {
+		return { A1, A1 };
+	}
+
+	vec3 base = A1;
+	float minT = 0.0f;
+	float maxT = 1.0f;
+
+	for (const auto& p : points) {
+		vec3 toP = p - base;
+		float t = toP.dot(dir) / dir.dot(dir);
+		minT = std::min(minT, t);
+		maxT = std::max(maxT, t);
+	}
+
+	vec3 newStart = base + dir * minT;
+	vec3 newEnd = base + dir * maxT;
+
+	return { newStart, newEnd };
+}
 
 std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& points) {
-	std::unordered_set<std::pair<vec3, vec3>, pairHash> uniqueLines;
-	std::vector<cVert> result;
+	if (points.size() < 2) return {};
+	std::unordered_set<std::pair<vec3, vec3>, PairHash> uniqueSet;
+	std::vector<std::pair<cVert, cVert>> segments;
 
-	for (size_t i = 0; i < points.size(); i += 2) {
-		cVert start = points[i];
-		cVert end = points[i + 1];
+	for (size_t i = 0; i + 1 < points.size(); i += 2) {
+		vec3 start = points[i].pos;
+		vec3 end = points[i + 1].pos;
 
-		std::pair<vec3, vec3> line1(start.pos, end.pos);
-		std::pair<vec3, vec3> line2(end.pos, start.pos);
-
-		if (uniqueLines.count(line1) == 0 && uniqueLines.count(line2) == 0) {
-			uniqueLines.insert(line1);
-			uniqueLines.insert(line2);
-			result.push_back(start);
-			result.push_back(end);
+		if ((end - start).lengthSquared() < 1e-12f) {
+			continue;
 		}
+		vec3 p1 = start;
+		vec3 p2 = end;
+
+		auto less = [](const vec3& a, const vec3& b) {
+			if (a.x != b.x) return a.x < b.x;
+			if (a.y != b.y) return a.y < b.y;
+			return a.z < b.z;
+			};
+
+		if (less(p2, p1)) {
+			std::swap(p1, p2);
+		}
+
+		std::pair<vec3, vec3> line = { p1, p2 };
+
+		if (uniqueSet.find(line) == uniqueSet.end()) {
+			uniqueSet.insert(line);
+			segments.push_back({ points[i], points[i + 1] });
+		}
+	}
+
+	std::vector<std::pair<cVert, cVert>> mergedSegments;
+	std::vector<bool> processed(segments.size(), false);
+
+	for (size_t i = 0; i < segments.size(); i++) {
+		if (processed[i]) continue;
+
+		cVert currentStart = segments[i].first;
+		cVert currentEnd = segments[i].second;
+		bool mergedAny;
+
+		do {
+			mergedAny = false;
+
+			for (size_t j = 0; j < segments.size(); j++) {
+				if (i == j || processed[j]) continue;
+
+				cVert otherStart = segments[j].first;
+				cVert otherEnd = segments[j].second;
+
+				if (areSegmentsCollinear(currentStart.pos, currentEnd.pos,
+					otherStart.pos, otherEnd.pos, EPSILON)) {
+
+					bool overlaps = pointOnSegment(currentStart.pos, currentEnd.pos,
+						otherStart.pos, EPSILON) ||
+						pointOnSegment(currentStart.pos, currentEnd.pos,
+							otherEnd.pos, EPSILON) ||
+						pointOnSegment(otherStart.pos, otherEnd.pos,
+							currentStart.pos, EPSILON) ||
+						pointOnSegment(otherStart.pos, otherEnd.pos,
+							currentEnd.pos, EPSILON);
+
+					if (overlaps) {
+						auto mergedPos = mergeCollinearSegments(
+							currentStart.pos, currentEnd.pos,
+							otherStart.pos, otherEnd.pos);
+
+						currentStart.pos = mergedPos.first;
+						currentEnd.pos = mergedPos.second;
+
+						processed[j] = true;
+						mergedAny = true;
+					}
+				}
+			}
+		} while (mergedAny);
+
+		mergedSegments.push_back({ currentStart, currentEnd });
+		processed[i] = true;
+	}
+
+	std::vector<cVert> result;
+	result.reserve(mergedSegments.size() * 2);
+
+	for (const auto& seg : mergedSegments) {
+		if ((seg.second.pos - seg.first.pos).lengthSquared() < 1e-12f) {
+			continue;
+		}
+
+		result.push_back(cVert(seg.first.pos, seg.first.c));
+		result.push_back(cVert(seg.second.pos, seg.second.c));
 	}
 
 	return result;
@@ -2184,7 +2348,6 @@ void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
 	}
 }
 
-
 bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2Mins, const vec3& obj2Maxs) {
 	// Check for overlap in x dimension
 	if (obj1Maxs.x < obj2Mins.x || obj1Mins.x > obj2Maxs.x) {
@@ -2220,6 +2383,7 @@ std::string Process::quoteIfNecessary(std::string toQuote)
 
 Process::Process(std::string program) : _program(program), _arguments()
 {
+
 }
 
 Process& Process::arg(const std::string& arg)
@@ -2964,7 +3128,8 @@ std::vector<Entity*> load_ents(const std::string& entLump, const std::string& ma
 				continue;
 			}
 			lastBracket = 0;
-			delete ent;
+			if (ent)
+				delete ent;
 			ent = new Entity();
 
 			if (line.find('}') == std::string::npos &&
@@ -3075,12 +3240,12 @@ int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_
 }
 
 
-void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative) 
+void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative)
 {
 	std::error_code err{};
-	for (const auto& entry : fs::recursive_directory_iterator(rootPath,err)) 
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath, err))
 	{
-		if (entry.is_regular_file() && entry.path().extension() == extension) 
+		if (entry.is_regular_file() && entry.path().extension() == extension)
 		{
 			fileList.push_back(relative ? fs::relative(entry.path(), rootPath).string() : entry.path().string());
 		}
@@ -3090,16 +3255,16 @@ void findFilesWithExtension(const fs::path& rootPath, const std::string& extensi
 void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& dirList, bool relative)
 {
 	std::error_code err{};
-	for (const auto& entry : fs::recursive_directory_iterator(rootPath,err)) 
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath, err))
 	{
-		if (entry.is_directory()) 
+		if (entry.is_directory())
 		{
-			for (const auto& subEntry : fs::directory_iterator(entry,err)) 
+			for (const auto& subEntry : fs::directory_iterator(entry, err))
 			{
 				if (subEntry.is_regular_file() && subEntry.path().extension() == extension)
 				{
 					dirList.push_back(relative ? fs::relative(entry.path(), rootPath).string() : entry.path().string());
-					break; 
+					break;
 				}
 			}
 		}

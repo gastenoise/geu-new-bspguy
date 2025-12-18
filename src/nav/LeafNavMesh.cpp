@@ -33,7 +33,7 @@ bool LeafNode::isInside(vec3 p) {
 bool LeafNode::addLink(int node, Polygon3D linkArea) {	
 	for (size_t i = 0; i < links.size(); i++) {
 		if (links[i].node == node) {
-			return true;
+			return false;
 		}
 	}
 

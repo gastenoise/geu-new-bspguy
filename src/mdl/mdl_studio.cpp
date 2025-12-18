@@ -853,6 +853,11 @@ studiohdr_t* StudioModel::LoadModel(const std::string & modelname, bool IsTextur
 		print_log(get_localized_string(LANG_0986), modelname);
 		return NULL;
 	}
+	if (size < sizeof(studiohdr_t)) {
+		print_log("File too small: {}", modelname);
+		delete[] buffer;
+		return NULL;
+	}
 
 	unsigned char* pin = (unsigned char*)buffer;
 	studiohdr_t* phdr = (studiohdr_t*)buffer;
@@ -870,8 +875,12 @@ studiohdr_t* StudioModel::LoadModel(const std::string & modelname, bool IsTextur
 		mstudiotexture_t* ptexture = (mstudiotexture_t*)(pin + phdr->textureindex);
 		for (int i = 0; i < phdr->numtextures; i++)
 		{
-			// strncpy( name, mod->name );
-			// strncpy( name, ptexture[i].name );
+			if (ptexture[i].index < 0 ||
+				ptexture[i].index + ptexture[i].width * ptexture[i].height > size) {
+				print_log("{} : Bad texture data {}", modelname, i);
+				return NULL;
+			}
+
 			UploadTexture(&ptexture[i], pin + ptexture[i].index, (COLOR3*)(pin + (ptexture[i].width * ptexture[i].height + ptexture[i].index)));
 		}
 	}

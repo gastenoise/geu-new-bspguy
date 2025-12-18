@@ -1244,10 +1244,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 	{
 		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(wireframeVerts_full);
 
-#ifdef _DEBUG
 		if (g_settings.verboseLogs)
 			print_log("Optimize wireframe {} model: {} to {} lines.\n", modelIdx, wireframeVerts_full.size(), cleanupWireframe.size());
-#endif
+
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
 		memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
 
@@ -2194,7 +2193,10 @@ void BspRenderer::refreshEnt(int entIdx, int refreshFlags)
 						if (FindPathInAssets(map, modelpath, newModelPath))
 						{
 							rendEntity.mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
-							rendEntity.mdl->UpdateModelMeshList();
+							if (rendEntity.mdl->m_pstudiohdr)
+								rendEntity.mdl->UpdateModelMeshList();
+							else 
+								rendEntity.mdl = NULL;
 						}
 						else
 						{

@@ -582,7 +582,7 @@ void Settings::loadSettings()
 
 	if (default_is_empty)
 	{
-		if (default_is_empty && conditionalPointEntTriggers.empty())
+		if (conditionalPointEntTriggers.empty())
 		{
 			conditionalPointEntTriggers.clear();
 			conditionalPointEntTriggers.push_back("trigger_once");
@@ -591,7 +591,7 @@ void Settings::loadSettings()
 			conditionalPointEntTriggers.push_back("trigger_gravity");
 			conditionalPointEntTriggers.push_back("trigger_teleport");
 		}
-		if (default_is_empty && entsThatNeverNeedAnyHulls.empty())
+		if (entsThatNeverNeedAnyHulls.empty())
 		{
 			entsThatNeverNeedAnyHulls.clear();
 			entsThatNeverNeedAnyHulls.push_back("env_bubbles");
@@ -601,13 +601,13 @@ void Settings::loadSettings()
 			entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
 			entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
 		}
-		if (default_is_empty && entsThatNeverNeedCollision.empty())
+		if (entsThatNeverNeedCollision.empty())
 		{
 			entsThatNeverNeedCollision.clear();
 			entsThatNeverNeedCollision.push_back("func_illusionary");
 			entsThatNeverNeedCollision.push_back("func_mortar_field");
 		}
-		if (default_is_empty && passableEnts.empty())
+		if (passableEnts.empty())
 		{
 			passableEnts.clear();
 			passableEnts.push_back("func_door");
@@ -618,7 +618,7 @@ void Settings::loadSettings()
 			passableEnts.push_back("func_water");
 			passableEnts.push_back("momentary_door");
 		}
-		if (default_is_empty && playerOnlyTriggers.empty())
+		if (playerOnlyTriggers.empty())
 		{
 			playerOnlyTriggers.clear();
 			playerOnlyTriggers.push_back("func_ladder");
@@ -628,13 +628,13 @@ void Settings::loadSettings()
 			playerOnlyTriggers.push_back("trigger_changelevel");
 			playerOnlyTriggers.push_back("trigger_transition");
 		}
-		if (default_is_empty && monsterOnlyTriggers.empty())
+		if (monsterOnlyTriggers.empty())
 		{
 			monsterOnlyTriggers.clear();
 			monsterOnlyTriggers.push_back("func_monsterclip");
 			monsterOnlyTriggers.push_back("trigger_monsterjump");
 		}
-		if (default_is_empty && entsNegativePitchPrefix.empty())
+		if (entsNegativePitchPrefix.empty())
 		{
 			entsNegativePitchPrefix.clear();
 			entsNegativePitchPrefix.push_back("ammo_");

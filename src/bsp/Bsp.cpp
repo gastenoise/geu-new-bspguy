@@ -2447,7 +2447,7 @@ void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 					{
 						if (wad->hasTexture(tex->szName) && texNames.count(tex->szName) == 0)
 						{
-							unsigned int colorCount = 256;
+							unsigned int colorCount = 0;
 							COLOR3 palette[256];
 							if (!targetMap->is_texture_has_pal)
 							{
@@ -2461,10 +2461,6 @@ void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 									colorCount = 256;
 									memcpy(palette, g_settings.palette_default, 256 * sizeof(COLOR3));
 								}
-							}
-							else
-							{
-								colorCount = 0;
 							}
 
 							WADTEX* wadTex = wad->readTexture(tex->szName);
@@ -7037,6 +7033,9 @@ int Bsp::get_leaf(vec3 pos, int hull) {
 }
 
 bool Bsp::is_leaf_visible(int ileaf, vec3 pos) {
+	if (!lumps[LUMP_VISIBILITY].size())
+		return true;
+
 	int ipvsLeaf = get_leaf(pos, 0);
 	BSPLEAF32& pvsLeaf = leaves[ipvsLeaf];
 
@@ -7045,10 +7044,6 @@ bool Bsp::is_leaf_visible(int ileaf, vec3 pos) {
 
 	bool isVisible = false;
 	int numVisible = 0;
-
-	if (!pvs) {
-		return true;
-	}
 
 	//print_log("leaf {} can see:", ipvsLeaf);
 
@@ -9680,6 +9675,7 @@ bool Bsp::remove_face(int faceIdx, bool fromModels)
 		{
 			models[m].iFirstFace--;
 		}
+
 		if (models[m].nFaces <= 0 || models[m].iFirstFace < 0)
 		{
 			models[m].iFirstFace = 0;
@@ -9707,6 +9703,7 @@ bool Bsp::remove_face(int faceIdx, bool fromModels)
 			{
 				nodes[n].iFirstFace--;
 			}
+
 			if (nodes[n].nFaces <= 0 || nodes[n].iFirstFace < 0)
 			{
 				nodes[n].iFirstFace = 0;
@@ -11674,7 +11671,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 			{
 				if (texOffset >= 0)
 				{
-					int colorCount = 256;
+					int colorCount = 0;
 					COLOR3 palette[256];
 					if (g_settings.pal_id >= 0)
 					{
