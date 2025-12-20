@@ -1495,7 +1495,8 @@ void Bsp::split_shared_model_structures(int modelIdx)
 	memcpy(newClipnodes, clipnodes, clipnodeCount * sizeof(BSPCLIPNODE32));
 
 	BSPTEXTUREINFO* newTexinfos = new BSPTEXTUREINFO[newTexinfoCount];
-	memcpy(newTexinfos, texinfos, newTexinfoCount * sizeof(BSPTEXTUREINFO));
+	memcpy(newTexinfos, texinfos, texinfoCount * sizeof(BSPTEXTUREINFO));
+
 
 	int addIdx = planeCount;
 	for (unsigned int i = 0; i < shouldNotMove.count.planes; i++)

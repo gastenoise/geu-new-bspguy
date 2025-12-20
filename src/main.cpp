@@ -24,7 +24,7 @@
 // Notes: (newbspguy):
 // ...
 
-std::string g_version_string = "NewBSPGuy v4.62";
+std::string g_version_string = "NewBSPGuy v4.63";
 
 
 #ifdef WIN32
