@@ -87,6 +87,7 @@ bool Fgd::parse()
 
 
 	print_log(get_localized_string(LANG_0300), path);
+	FlushConsoleLog(true);
 
 	std::ifstream in(path);
 

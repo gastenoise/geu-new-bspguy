@@ -2097,189 +2097,171 @@ std::string getValueInQuotes(std::string s)
 	return s.substr(find1 + 1, (find2 - find1) - 1);
 }
 
-
-struct PairHash {
-	std::size_t operator()(const std::pair<vec3, vec3>& p) const {
-		vec3 p1 = p.first;
-		vec3 p2 = p.second;
-
-		auto less = [](const vec3& a, const vec3& b) {
-			if (a.x != b.x) return a.x < b.x;
-			if (a.y != b.y) return a.y < b.y;
-			return a.z < b.z;
-			};
-
-		if (less(p2, p1)) {
-			std::swap(p1, p2);
-		}
-
-		std::size_t h1 = std::hash<float>{}(p1.x);
-		std::size_t h2 = std::hash<float>{}(p1.y);
-		std::size_t h3 = std::hash<float>{}(p1.z);
-		std::size_t h4 = std::hash<float>{}(p2.x);
-		std::size_t h5 = std::hash<float>{}(p2.y);
-		std::size_t h6 = std::hash<float>{}(p2.z);
-
-		return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3) ^ (h5 << 4) ^ (h6 << 5);
-	}
-};
-
-bool pointOnSegment(const vec3& A, const vec3& B, const vec3& P, float eps = EPSILON) {
-	if ((P - A).lengthSquared() < eps * eps || (P - B).lengthSquared() < eps * eps) {
-		return true;
-	}
-
-	vec3 AB = B - A;
-	vec3 AP = P - A;
-	vec3 cross = AB.cross(AP);
-
-	if (cross.lengthSquared() > eps * eps * AB.lengthSquared()) {
-		return false;
-	}
-
-	float t = AP.dot(AB) / AB.dot(AB);
-	return t >= -eps && t <= 1.0f + eps;
-}
-
-bool areSegmentsCollinear(const vec3& A1, const vec3& B1, const vec3& A2, const vec3& B2, float eps = EPSILON) {
-	vec3 dir1 = B1 - A1;
-	vec3 dir2 = B2 - A2;
-
-	vec3 cross = dir1.cross(dir2);
-	if (cross.lengthSquared() > eps * eps * dir1.lengthSquared() * dir2.lengthSquared()) {
-		return false;
-	}
-
-	vec3 toA2 = A2 - A1;
-	vec3 toB2 = B2 - A1;
-	vec3 cross1 = dir1.cross(toA2);
-	vec3 cross2 = dir1.cross(toB2);
-
-	return cross1.lengthSquared() < eps * eps && cross2.lengthSquared() < eps * eps;
-}
-
-std::pair<vec3, vec3> mergeCollinearSegments(const vec3& A1, const vec3& B1, const vec3& A2, const vec3& B2) {
-	std::vector<vec3> points = { A1, B1, A2, B2 };
-
-	vec3 dir = B1 - A1;
-	if (dir.lengthSquared() < 1e-12f) {
-		dir = B2 - A2;
-	}
-
-	if (dir.lengthSquared() < 1e-12f) {
-		return { A1, A1 };
-	}
-
-	vec3 base = A1;
-	float minT = 0.0f;
-	float maxT = 1.0f;
-
-	for (const auto& p : points) {
-		vec3 toP = p - base;
-		float t = toP.dot(dir) / dir.dot(dir);
-		minT = std::min(minT, t);
-		maxT = std::max(maxT, t);
-	}
-
-	vec3 newStart = base + dir * minT;
-	vec3 newEnd = base + dir * maxT;
-
-	return { newStart, newEnd };
-}
-
 std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& points) {
 	if (points.size() < 2) return {};
-	std::unordered_set<std::pair<vec3, vec3>, PairHash> uniqueSet;
-	std::vector<std::pair<cVert, cVert>> segments;
+
+	const COLOR4 color = points[0].c;
+	const float EPS_SQ = EPSILON * EPSILON;
+
+	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash> uniqueSet;
+	std::vector<std::pair<vec3, vec3>> segments;
+	uniqueSet.reserve(points.size() / 2);
+	segments.reserve(points.size() / 2);
 
 	for (size_t i = 0; i + 1 < points.size(); i += 2) {
-		vec3 start = points[i].pos;
-		vec3 end = points[i + 1].pos;
+		const vec3& p1 = points[i].pos;
+		const vec3& p2 = points[i + 1].pos;
 
-		if ((end - start).lengthSquared() < 1e-12f) {
+		vec3 diff = p2 - p1;
+		if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < EPS_SQ)
 			continue;
-		}
-		vec3 p1 = start;
-		vec3 p2 = end;
 
-		auto less = [](const vec3& a, const vec3& b) {
-			if (a.x != b.x) return a.x < b.x;
-			if (a.y != b.y) return a.y < b.y;
-			return a.z < b.z;
-			};
+		std::pair<vec3, vec3> segForSet = (p1 < p2)
+			? std::make_pair(p1, p2)
+			: std::make_pair(p2, p1);
 
-		if (less(p2, p1)) {
-			std::swap(p1, p2);
-		}
-
-		std::pair<vec3, vec3> line = { p1, p2 };
-
-		if (uniqueSet.find(line) == uniqueSet.end()) {
-			uniqueSet.insert(line);
-			segments.push_back({ points[i], points[i + 1] });
+		if (uniqueSet.insert(segForSet).second) {
+			segments.push_back({ p1, p2 });
 		}
 	}
 
-	std::vector<std::pair<cVert, cVert>> mergedSegments;
-	std::vector<bool> processed(segments.size(), false);
+	auto getCanonicalDirection = [](const vec3& dir) -> vec3 {
+		float len = dir.length();
+		if (len < 1e-6f) return { 0,0,0 };
 
-	for (size_t i = 0; i < segments.size(); i++) {
-		if (processed[i]) continue;
+		vec3 norm = dir * (1.0f / len);
+		if (std::fabs(norm.x) > 1e-6f) {
+			if (norm.x < 0) norm = norm * -1.0f;
+		}
+		else if (std::fabs(norm.y) > 1e-6f) {
+			if (norm.y < 0) norm = norm * -1.0f;
+		}
+		else if (norm.z < 0) {
+			norm = norm * -1.0f;
+		}
 
-		cVert currentStart = segments[i].first;
-		cVert currentEnd = segments[i].second;
-		bool mergedAny;
+		constexpr float scale = 10000.0f;
+		return {
+			std::round(norm.x * scale) / scale,
+			std::round(norm.y * scale) / scale,
+			std::round(norm.z * scale) / scale
+		};
+		};
 
-		do {
-			mergedAny = false;
+	std::unordered_map<vec3, std::vector<std::pair<vec3, vec3>>, vec3Hash> dirGroups;
 
-			for (size_t j = 0; j < segments.size(); j++) {
-				if (i == j || processed[j]) continue;
+	for (const auto& seg : segments) {
+		vec3 dir = seg.second - seg.first;
+		vec3 canonicalDir = getCanonicalDirection(dir);
 
-				cVert otherStart = segments[j].first;
-				cVert otherEnd = segments[j].second;
+		if (canonicalDir.x == 0 && canonicalDir.y == 0 && canonicalDir.z == 0)
+			continue;
 
-				if (areSegmentsCollinear(currentStart.pos, currentEnd.pos,
-					otherStart.pos, otherEnd.pos, EPSILON)) {
+		dirGroups[canonicalDir].push_back(seg);
+	}
 
-					bool overlaps = pointOnSegment(currentStart.pos, currentEnd.pos,
-						otherStart.pos, EPSILON) ||
-						pointOnSegment(currentStart.pos, currentEnd.pos,
-							otherEnd.pos, EPSILON) ||
-						pointOnSegment(otherStart.pos, otherEnd.pos,
-							currentStart.pos, EPSILON) ||
-						pointOnSegment(otherStart.pos, otherEnd.pos,
-							currentEnd.pos, EPSILON);
+	std::vector<std::pair<vec3, vec3>> mergedSegments;
 
-					if (overlaps) {
-						auto mergedPos = mergeCollinearSegments(
-							currentStart.pos, currentEnd.pos,
-							otherStart.pos, otherEnd.pos);
+	for (auto& [canonicalDir, segs] : dirGroups) {
+		struct LineInfo {
+			vec3 basePoint;
+			vec3 direction;
+			std::vector<std::pair<float, float>> intervals;
+		};
 
-						currentStart.pos = mergedPos.first;
-						currentEnd.pos = mergedPos.second;
+		std::vector<LineInfo> lines;
 
-						processed[j] = true;
-						mergedAny = true;
-					}
+		for (const auto& seg : segs) {
+			vec3 A = seg.first;
+			vec3 B = seg.second;
+			vec3 dir = B - A;
+			float lenSq = dir.lengthSquared();
+
+			if (lenSq < EPS_SQ) continue;
+
+			vec3 dirNorm = dir * (1.0f / std::sqrt(lenSq));
+
+			bool found = false;
+			for (auto& line : lines) {
+				vec3 toA = A - line.basePoint;
+				vec3 toB = B - line.basePoint;
+
+				vec3 crossA = line.direction.cross(toA);
+				vec3 crossB = line.direction.cross(toB);
+
+				if (crossA.lengthSquared() < EPS_SQ && crossB.lengthSquared() < EPS_SQ) {
+					float tA = toA.dot(line.direction);
+					float tB = toB.dot(line.direction);
+
+					line.intervals.emplace_back(std::min(tA, tB), std::max(tA, tB));
+					found = true;
+					break;
 				}
 			}
-		} while (mergedAny);
 
-		mergedSegments.push_back({ currentStart, currentEnd });
-		processed[i] = true;
+			if (!found) {
+				LineInfo newLine;
+				newLine.basePoint = A;
+				newLine.direction = dirNorm;
+				newLine.intervals.emplace_back(0.0f, std::sqrt(lenSq));
+				lines.push_back(newLine);
+			}
+		}
+
+		for (auto& line : lines) {
+			if (line.intervals.empty()) continue;
+			std::sort(line.intervals.begin(), line.intervals.end());
+
+			float curStart = line.intervals[0].first;
+			float curEnd = line.intervals[0].second;
+
+			for (size_t i = 1; i < line.intervals.size(); ++i) {
+				if (line.intervals[i].first <= curEnd + EPSILON) {
+					curEnd = std::max(curEnd, line.intervals[i].second);
+				}
+				else {
+					if (curEnd - curStart > EPSILON) {
+						mergedSegments.emplace_back(
+							line.basePoint + line.direction * curStart,
+							line.basePoint + line.direction * curEnd
+						);
+					}
+					curStart = line.intervals[i].first;
+					curEnd = line.intervals[i].second;
+				}
+			}
+
+			if (curEnd - curStart > EPSILON) {
+				mergedSegments.emplace_back(
+					line.basePoint + line.direction * curStart,
+					line.basePoint + line.direction * curEnd
+				);
+			}
+		}
 	}
 
+	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash> finalCheck;
 	std::vector<cVert> result;
 	result.reserve(mergedSegments.size() * 2);
 
 	for (const auto& seg : mergedSegments) {
-		if ((seg.second.pos - seg.first.pos).lengthSquared() < 1e-12f) {
-			continue;
-		}
+		std::pair<vec3, vec3> normSeg = (seg.first < seg.second)
+			? std::make_pair(seg.first, seg.second)
+			: std::make_pair(seg.second, seg.first);
 
-		result.push_back(cVert(seg.first.pos, seg.first.c));
-		result.push_back(cVert(seg.second.pos, seg.second.c));
+		if (finalCheck.insert(normSeg).second) {
+			vec3 diff = seg.second - seg.first;
+			if (diff.lengthSquared() < EPS_SQ)
+				continue;
+
+			cVert v0, v1;
+			v0.pos = seg.first;
+			v1.pos = seg.second;
+			v0.c = v1.c = color;
+
+			result.push_back(v0);
+			result.push_back(v1);
+		}
 	}
 
 	return result;

@@ -61,10 +61,8 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 
     glGenVertexArrays(1, &vaoId);
     glBindVertexArray(vaoId);
-
     glGenBuffers(1, &vboId);
     glBindBuffer(GL_ARRAY_BUFFER, vboId);
-
     glBufferData(GL_ARRAY_BUFFER, shaderProgram->elementSize * numVerts, data, GL_STATIC_DRAW);
 
     GLuint64 offset = 0;
@@ -102,6 +100,7 @@ void VertexBuffer::deleteBuffer()
     }
     vboId = 0xFFFFFFFF;
     vaoId = 0xFFFFFFFF;
+    uploaded = false;
 }
 
 void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)
@@ -135,7 +134,7 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
             print_log(get_localized_string(LANG_0978), start, end);
         return;
     }
-    glBindBuffer(GL_ARRAY_BUFFER, vboId);
+    //glBindBuffer(GL_ARRAY_BUFFER, vboId);
     glBindVertexArray(vaoId);
     glDrawArrays(_primitive, start, end - start);
 }

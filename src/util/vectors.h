@@ -204,6 +204,9 @@ struct vec3
 		return false;
 	}
 
+	bool operator<(const vec3& b) const {
+		return std::tie(x, y, z) < std::tie(b.x, b.y, b.z);
+	}
 
 	vec3 normalize(float length = 1.0f)  const;
 	vec3 snap(float snapSize);
@@ -247,7 +250,8 @@ struct vec3Hash {
 	}
 };
 
-struct pairHash {
+
+struct vec3PairHash {
 	template <typename T1, typename T2>
 	size_t operator()(const std::pair<T1, T2>& p) const {
 		size_t seed = 2;

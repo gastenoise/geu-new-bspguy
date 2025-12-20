@@ -251,6 +251,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 
 	g_progress.clear();
 	g_progress = ProgressMeter();
+
+	FlushConsoleLog();
 }
 
 //

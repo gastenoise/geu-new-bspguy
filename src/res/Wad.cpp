@@ -529,8 +529,8 @@ COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette)
 
 COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 {
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0259), tex->szName, tex->nWidth, tex->nHeight);
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0259), tex->szName, tex->nWidth, tex->nHeight);*/
 	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 
 	if (palette == NULL)
@@ -545,8 +545,8 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 		imageData[k] = palette[src[k]];
 	}
 
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0260), tex->szName, tex->nWidth, tex->nHeight);
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0260), tex->szName, tex->nWidth, tex->nHeight);*/
 	return imageData;
 }
 
@@ -583,8 +583,8 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette, int colors)
 
 COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
 {
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0263), tex->szName, tex->nWidth, tex->nHeight);
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0263), tex->szName, tex->nWidth, tex->nHeight);*/
 	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 
 	if (palette == NULL)
@@ -606,8 +606,8 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
 		}
 	}
 
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0264), tex->szName, tex->nWidth, tex->nHeight);
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0264), tex->szName, tex->nWidth, tex->nHeight);*/
 	return imageData;
 }
 
