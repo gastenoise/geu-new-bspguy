@@ -198,6 +198,12 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 		}
 	}
 
+	// cache ent targets so first selection doesn't lag
+	for (size_t i = 0; i < map->ents.size(); i++)
+	{
+		map->ents[i]->getTargets();
+	}
+
 	if (g_app->getSelectedMap() == NULL || map == g_app->getSelectedMap())
 	{
 		cameraOrigin = renderCameraOrigin;
@@ -205,8 +211,10 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 	}
 
 	renderEnts.clear();
+
 	for (auto& r : renderModels)
 		delete r;
+
 	renderModels.clear();
 	renderClipnodes.clear();
 
@@ -216,21 +224,15 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 	clipnodesBufferCache.clear();
 	g_mutex_list[2].unlock();
 	clearDrawCache();
-	//loadTextures();
+
+	reuploadTextures();
 	//loadLightmaps();
 	preRenderEnts();
 	preRenderFaces();
 	calcFaceMaths();
 
 	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
-	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
-
-	// cache ent targets so first selection doesn't lag
-	for (size_t i = 0; i < map->ents.size(); i++)
-	{
-		map->ents[i]->getTargets();
-	}
 
 	undoLumpState = map->duplicate_lumps();
 }
@@ -1870,7 +1872,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
 {
-	if (!map || modelIdx < 0)
+	if (!map || modelIdx < 0 || modelIdx >= map->modelCount)
 		return;
 
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
@@ -2521,8 +2523,7 @@ void BspRenderer::reuploadTextures()
 	deleteTextures();
 
 	//loadTextures();
-
-	glTextures = glTexturesSwap;
+	glTextures.swap(glTexturesSwap);
 	glTexturesSwap.clear();
 
 	for (size_t i = 0; i < glTextures.size(); i++)
@@ -2532,7 +2533,6 @@ void BspRenderer::reuploadTextures()
 	}
 
 	texturesLoaded = true;
-
 	needReloadDebugTextures = true;
 }
 
@@ -2547,13 +2547,6 @@ void BspRenderer::delayLoadData()
 		}
 		preRenderFaces();
 		lightmapsUploaded = true;
-	}
-
-	if (!texturesLoaded && texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-	{
-		reuploadTextures();
-		preRenderFaces();
-		texturesLoaded = true;
 	}
 
 	if (!clipnodesLoaded && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
@@ -3678,6 +3671,11 @@ int BspRenderer::getBestClipnodeHull(int modelIdx)
 	if (!clipnodesLoaded)
 	{
 		return -1;
+	}
+
+	if (modelIdx >= renderClipnodes.size())
+	{
+		addClipnodeModel(modelIdx);
 	}
 
 	RenderClipnodes& clip = renderClipnodes[modelIdx];

@@ -1922,86 +1922,63 @@ std::vector<cVert> scaleVerts(const std::vector<cVert>& vertices, float stretch_
 
 BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force)
 {
-	BSPPLANE separationPlane = BSPPLANE();
 
-	// separating plane points toward the other map (b)
-	if (bmin.x >= amax.x)
-	{
-		separationPlane.nType = PLANE_X;
-		separationPlane.vNormal = { 1, 0, 0 };
-		separationPlane.fDist = amax.x + (bmin.x - amax.x) * 0.5f;
-	}
-	else if (bmax.x <= amin.x)
-	{
-		separationPlane.nType = PLANE_X;
-		separationPlane.vNormal = { -1, 0, 0 };
-		separationPlane.fDist = bmax.x + (amin.x - bmax.x) * 0.5f;
-	}
-	else if (bmin.y >= amax.y)
-	{
-		separationPlane.nType = PLANE_Y;
-		separationPlane.vNormal = { 0, 1, 0 };
-		separationPlane.fDist = bmin.y;
-	}
-	else if (bmax.y <= amin.y)
-	{
-		separationPlane.nType = PLANE_Y;
-		separationPlane.vNormal = { 0, -1, 0 };
-		separationPlane.fDist = bmax.y;
-	}
-	else if (bmin.z >= amax.z)
-	{
-		separationPlane.nType = PLANE_Z;
-		separationPlane.vNormal = { 0, 0, 1 };
-		separationPlane.fDist = bmin.z;
-	}
-	else if (bmax.z <= amin.z)
-	{
-		separationPlane.nType = PLANE_Z;
-		separationPlane.vNormal = { 0, 0, -1 };
-		separationPlane.fDist = bmax.z;
-	}
-	else
-	{
-		if (force) // Tried generate valid, but overlapped plane
-		{
-			// Calculate the separation distances for each axis
-			float dx = std::max(amax.x - bmin.x, bmax.x - amin.x);
-			float dy = std::max(amax.y - bmin.y, bmax.y - amin.y);
-			float dz = std::max(amax.z - bmin.z, bmax.z - amin.z);
+	BSPPLANE separationPlane = {};
 
-			// Find the axis with the largest separation
-			if (dx > dy && dx > dz)
-			{
-				separationPlane.nType = PLANE_ANYX;
-				separationPlane.vNormal = { dx > 0 ? 1.0f : -1.0f, 0, 0 };
-				separationPlane.fDist = dx > 0 ? amax.x + (bmin.x - amax.x) * 0.5f : amin.x + (bmax.x - amin.x) * 0.5f;
-			}
-			else if (dy > dx && dy > dz)
-			{
-				separationPlane.nType = PLANE_ANYY;
-				separationPlane.vNormal = { 0, dy > 0 ? 1.0f : -1.0f, 0 };
-				separationPlane.fDist = dy > 0 ? amax.y + (bmin.y - amax.y) * 0.5f : amin.y + (bmax.y - amin.y) * 0.5f;
-			}
-			else
-			{
-				separationPlane.nType = PLANE_ANYZ;
-				separationPlane.vNormal = { 0, 0, dz > 0 ? 1.0f : -1.0f };
-				separationPlane.fDist = dz > 0 ? amax.z + (bmin.z - amax.z) * 0.5f : amin.z + (bmax.z - amin.z) * 0.5f;
-			}
-		}
-		else
-		{
-			separationPlane.nType = -1; // no simple separating axis
+	struct AxisTest {
+		int type;
+		vec3 normal;
+		float gap;
+		float dist;
+	};
 
-			print_log(PRINT_RED, get_localized_string(LANG_0239));
-			print_log(PRINT_RED, "({:6.2f}, {:6.2f}, {:6.2f})", amin.x, amin.y, amin.z);
-			print_log(PRINT_RED, " - ({:6.2f}, {:6.2f}, {:6.2f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
+	std::vector<AxisTest> candidates;
 
-			print_log(PRINT_RED, "({:6.2f}, {:6.2f}, {:6.2f})", bmin.x, bmin.y, bmin.z);
-			print_log(PRINT_RED, " - ({:6.2f}, {:6.2f}, {:6.2f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
-		}
+	// X axis
+	if (bmin.x >= amax.x) {
+		float gap = bmin.x - amax.x;
+		candidates.push_back({ PLANE_X, {1, 0, 0}, gap, amax.x + gap * 0.5f });
 	}
+	else if (bmax.x <= amin.x) {
+		float gap = amin.x - bmax.x;
+		candidates.push_back({ PLANE_X, {-1, 0, 0}, gap, bmax.x + gap * 0.5f });
+	}
+
+	// Y axis
+	if (bmin.y >= amax.y) {
+		float gap = bmin.y - amax.y;
+		candidates.push_back({ PLANE_Y, {0, 1, 0}, gap, amax.y + gap * 0.5f });
+	}
+	else if (bmax.y <= amin.y) {
+		float gap = amin.y - bmax.y;
+		candidates.push_back({ PLANE_Y, {0, -1, 0}, gap, bmax.y + gap * 0.5f });
+	}
+
+	// Z axis
+	if (bmin.z >= amax.z) {
+		float gap = bmin.z - amax.z;
+		candidates.push_back({ PLANE_Z, {0, 0, 1}, gap, amax.z + gap * 0.5f });
+	}
+	else if (bmax.z <= amin.z) {
+		float gap = amin.z - bmax.z;
+		candidates.push_back({ PLANE_Z, {0, 0, -1}, gap, bmax.z + gap * 0.5f });
+	}
+
+	if (candidates.empty()) {
+		separationPlane.nType = -1; // No separating axis
+		return separationPlane;
+	}
+
+	// Choose the axis with the largest gap
+	const AxisTest* best = &candidates[0];
+	for (const AxisTest& test : candidates) {
+		if (test.gap > best->gap)
+			best = &test;
+	}
+
+	separationPlane.nType = best->type;
+	separationPlane.vNormal = best->normal;
+	separationPlane.fDist = best->dist;
 
 	return separationPlane;
 }

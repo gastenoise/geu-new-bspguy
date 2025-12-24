@@ -1572,91 +1572,73 @@ void Gui::drawBspContexMenu()
 					{
 						ImGui::EndDisabled();
 					}
-
 					bool IsValidForMerge = false;
-
+					std::vector<Entity*> toMerge;
 					if (app->pickInfo.selectedEnts.size() > 1)
 					{
 						IsValidForMerge = true;
-						for (auto& tmpentIdx : app->pickInfo.selectedEnts)
+						for (auto tmpentIdx : app->pickInfo.selectedEnts)
 						{
-							if (!map->ents[tmpentIdx]->isBspModel() || map->ents[tmpentIdx]->isWorldSpawn())
+							if (tmpentIdx < 0 || tmpentIdx >= (int)map->ents.size()) 
 							{
+								IsValidForMerge = false; break; 
+							}
+							Entity* e = map->ents[tmpentIdx];
+							if (!e->isBspModel() || e->isWorldSpawn()) {
 								IsValidForMerge = false;
 								break;
 							}
+							toMerge.push_back(e);
 						}
 					}
-
-					if (ImGui::MenuItem("MERGE BSPMODELS (WIP)", 0, false, !app->isLoading &&
-						IsValidForMerge))
+					// fixme
+					if (ImGui::MenuItem("MERGE BSPMODELS (WIP)", 0, false, !app->isLoading && IsValidForMerge))
 					{
-						std::vector<int> toMerge = app->pickInfo.selectedEnts;
-
-						std::vector<int> ents_to_erase;
-
-						app->deselectObject();
-
-						int merge_errors = 0;
+						std::vector<Entity*> toErasePtrs;
 
 						while (toMerge.size() > 1)
 						{
-							int ent1 = toMerge[toMerge.size() - 2];
-							int ent2 = toMerge[toMerge.size() - 1];
+							Entity* e1 = toMerge[toMerge.size() - 1];
+							Entity* e2 = toMerge[toMerge.size() - 2];
 
-							print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-
-							int try_again = false;
-							int newmodelid =
-								map->merge_two_models_ents(ent1, ent2, try_again);
-
-							int mdl1 = map->ents[ent1]->getBspModelIdx();
-							int mdl2 = map->ents[ent2]->getBspModelIdx();
-
-							if (newmodelid < 0)
-							{
-								print_log(PRINT_RED, "Model {} and {} is overlapped\n", mdl1, mdl2);
-								print_log(PRINT_RED, "Impossible to merge it!\n");
+							int newmodelid = map->merge_two_models_ents(e1, e2);
+							if (newmodelid < 0) {
+								print_log(PRINT_RED, "Merge failed for models {} and {}\n", e1->getBspModelIdx(), e2->getBspModelIdx());
 								break;
 							}
-
-							if (map->ents[ent1]->getBspModelIdx() != newmodelid)
-							{
-								ents_to_erase.push_back(ent1);
-								toMerge.erase(std::find(toMerge.begin(), toMerge.end(), ent1));
-							}
-							else
-							{
-								ents_to_erase.push_back(ent2);
-								toMerge.erase(std::find(toMerge.begin(), toMerge.end(), ent2));
-							}
+							e2->setOrAddKeyvalue("model", "*" + std::to_string(newmodelid));
+							e1->removeKeyvalue("model");
 
 							rend->refreshModel(newmodelid);
 							rend->refreshModelClipnodes(newmodelid);
+
+							toErasePtrs.push_back(e1);
+							toMerge.pop_back();
 						}
 
-
-						std::sort(ents_to_erase.begin(), ents_to_erase.end());
-						while (ents_to_erase.size())
-						{
-							map->ents.erase(map->ents.begin() + ents_to_erase[ents_to_erase.size() - 1]);
-							ents_to_erase.pop_back();
+						for (Entity* delent : toErasePtrs) {
+							auto it = std::find(map->ents.begin(), map->ents.end(), delent);
+							if (it != map->ents.end()) 
+							{
+								map->ents.erase(it);
+								delete delent;
+							}
 						}
+
+						map->update_ent_lump();
+						map->update_lump_pointers();
+						map->save_undo_lightmaps();
+
+						// Clean up unused structures
+						map->remove_unused_model_structures();
 
 						g_app->pickInfo.selectedEnts.clear();
-
 						rend->loadLightmaps();
-
-						rend->pushUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
-
+						rend->pushUndoState("MERGE BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
 						rend->preRenderEnts();
-
-						if (merge_errors > 0)
-						{
-							print_log(PRINT_RED, "Found {} errors in models merging! Possible one model overlapped another!\n", merge_errors);
-						}
-
 					}
+
+
 					if (ImGui::IsItemHovered())
 					{
 						ImGui::BeginTooltip();

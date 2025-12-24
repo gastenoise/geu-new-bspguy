@@ -365,7 +365,7 @@ int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, 
 			size_t knext = (k + 1) % dstPoly.topdownVerts.size();
 			Line2D otherEdge(dstPoly.topdownVerts[k], dstPoly.topdownVerts[knext]);
 
-			if (!thisEdge.isAlignedWith(otherEdge)) {
+			if (!thisEdge.isAlignedWith(otherEdge) || k >= srcPoly.verts.size() || knext >= srcPoly.verts.size()) {
 				continue;
 			}
 

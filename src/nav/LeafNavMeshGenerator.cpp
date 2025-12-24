@@ -272,7 +272,7 @@ void LeafNavMeshGenerator::linkNavLeaves(Bsp* map, LeafNavMesh* mesh) {
 				continue;
 			}
 
-			numLinks += tryFaceLinkLeaves(map, mesh, i, k);
+			numLinks += tryFaceLinkLeaves( mesh, i, k);
 		}
 	}
 
@@ -294,11 +294,11 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp* map, LeafNavMesh* mesh) {
 			entNode.maxs.z += NAV_CROUCHJUMP_HEIGHT; // players can stand on top of the ladder for more height
 			entNode.origin = (entNode.mins + entNode.maxs) * 0.5f;
 
-			linkEntityLeaves(map, mesh, entNode, regionLeaves);
+			linkEntityLeaves( mesh, entNode, regionLeaves);
 		}
 		else if (ent->keyvalues["classname"] == "trigger_teleport") {
 			LeafNode& teleNode = addSolidEntityNode(map, mesh, i);
-			linkEntityLeaves(map, mesh, teleNode, regionLeaves);
+			linkEntityLeaves( mesh, teleNode, regionLeaves);
 
 			// link teleport destination(s) to touched nodes
 			int pentTarget = -1;
@@ -332,14 +332,14 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp* map, LeafNavMesh* mesh) {
 				// link all possible targets
 				for (size_t k = 0; k < targets.size(); k++) {
 					LeafNode& entNode = addPointEntityNode(map, mesh, targets[k], pointMins, pointMaxs);
-					linkEntityLeaves(map, mesh, entNode, regionLeaves);
+					linkEntityLeaves( mesh, entNode, regionLeaves);
 
 					teleNode.addLink(entNode.id, teleNode.origin);
 				}
 			}
 			else if (pentTarget != -1) {
 				LeafNode& entNode = addPointEntityNode(map, mesh, pentTarget, pointMins, pointMaxs);
-				linkEntityLeaves(map, mesh, entNode, regionLeaves);
+				linkEntityLeaves( mesh, entNode, regionLeaves);
 
 				teleNode.addLink(entNode.id, teleNode.origin);
 			}			
@@ -347,11 +347,11 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp* map, LeafNavMesh* mesh) {
 	}
 }
 
-void LeafNavMeshGenerator::linkEntityLeaves(Bsp* map, LeafNavMesh* mesh, LeafNode& entNode, std::vector<bool>& regionLeaves) {
+void LeafNavMeshGenerator::linkEntityLeaves(LeafNavMesh* mesh, LeafNode& entNode, std::vector<bool>& regionLeaves) {
 	mesh->octree->getLeavesInRegion(&entNode, regionLeaves);
 
 	// link teleport destinations to touched nodes
-	for (int i = 0; i < (int)mesh->nodes.size(); i++) {
+	for (size_t i = 0; i < mesh->nodes.size() && i < regionLeaves.size(); i++) {
 		if (!regionLeaves[i]) {
 			continue;
 		}
@@ -361,7 +361,7 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp* map, LeafNavMesh* mesh, LeafNod
 			vec3 linkPos = entNode.origin;
 			linkPos.z = node.origin.z;
 
-			entNode.addLink(i, linkPos);
+			entNode.addLink((int)i, linkPos);
 			node.addLink(entNode.id, linkPos);
 		}
 	}
@@ -406,7 +406,7 @@ LeafNode& LeafNavMeshGenerator::addPointEntityNode(Bsp* map, LeafNavMesh* mesh, 
 	return mesh->nodes[mesh->nodes.size() - 1];
 }
 
-int LeafNavMeshGenerator::tryFaceLinkLeaves(Bsp* map, LeafNavMesh* mesh, int srcLeafIdx, int dstLeafIdx) {
+int LeafNavMeshGenerator::tryFaceLinkLeaves(LeafNavMesh* mesh, int srcLeafIdx, int dstLeafIdx) {
 	LeafNode& srcLeaf = mesh->nodes[srcLeafIdx];
 	LeafNode& dstLeaf = mesh->nodes[dstLeafIdx];
 

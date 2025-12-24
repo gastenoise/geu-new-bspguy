@@ -38,7 +38,7 @@ private:
 	// use entities to create cheaper paths between leaves
 	void linkEntityLeaves(Bsp* map, LeafNavMesh* mesh);
 
-	void linkEntityLeaves(Bsp* map, LeafNavMesh* mesh, LeafNode& entNode, std::vector<bool>& regionLeaves);
+	void linkEntityLeaves(LeafNavMesh* mesh, LeafNode& entNode, std::vector<bool>& regionLeaves);
 
 	// returns a combined node for an entity, which is the bounding box of all its model leaves
 	LeafNode& addSolidEntityNode(Bsp* map, LeafNavMesh* mesh, int entidx);
@@ -46,7 +46,7 @@ private:
 	// returns a node for an entity, which is its bounding box
 	LeafNode& addPointEntityNode(Bsp* map, LeafNavMesh* mesh, int entidx, vec3 mins, vec3 maxs);
 
-	int tryFaceLinkLeaves(Bsp* map, LeafNavMesh* mesh, int srcLeafIdx, int dstLeafIdx);
+	int tryFaceLinkLeaves(LeafNavMesh* mesh, int srcLeafIdx, int dstLeafIdx);
 
 	void calcPathCosts(Bsp* bsp, LeafNavMesh* mesh);
 

@@ -24,7 +24,7 @@
 // Notes: (newbspguy):
 // ...
 
-std::string g_version_string = "NewBSPGuy v4.63";
+std::string g_version_string = "NewBSPGuy v4.65";
 
 
 #ifdef WIN32
@@ -764,31 +764,31 @@ void print_help(const std::string& command)
 		print_log(PRINT_RED | PRINT_INTENSITY, "{}\n\n", g_version_string);
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			std::string("This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
-			"Usage: bspguy <command> <mapname> [options]\n"
+				"Usage: bspguy <command> <mapname> [options]\n"
 
-			"\n<Commands>\n"
-			"  info        : Show BSP data summary\n"
-			"  merge       : Merges two or more maps together\n"
-			"  noclip      : Delete some clipnodes/nodes from the BSP\n"
-			"  delete      : Delete BSP models\n"
-			"  simplify    : Simplify BSP models\n"
-			"  transform   : Apply 3D transformations to the BSP\n"
-			"  unembed     : Deletes embedded texture data\n"
-			"  exportobj   : Export bsp geometry to obj [WIP]\n"
-			"  cullfaces   : Remove leaf faces from map.\n"
-			"  exportlit   : Export .lit (Quake) lightdata file.\n"
-			"  importlit   : Import .lit (Quake) lightdata file to map.\n"
-			"  exportrad   : Export RAD.exe .ext & .wa_ files.\n"
-			"  exportwad   : Export all map textures to .wad file.\n"
-			"  importwad   : Import all .wad textures to map.\n"
-			"  screenshot  : Create screenshots and close map.\n"
-			" "
-			" "
-			"  no command  : Open empty bspguy window\n"
+				"\n<Commands>\n"
+				"  info        : Show BSP data summary\n"
+				"  merge       : Merges two or more maps together\n"
+				"  noclip      : Delete some clipnodes/nodes from the BSP\n"
+				"  delete      : Delete BSP models\n"
+				"  simplify    : Simplify BSP models\n"
+				"  transform   : Apply 3D transformations to the BSP\n"
+				"  unembed     : Deletes embedded texture data\n"
+				"  exportobj   : Export bsp geometry to obj [WIP]\n"
+				"  cullfaces   : Remove leaf faces from map.\n"
+				"  exportlit   : Export .lit (Quake) lightdata file.\n"
+				"  importlit   : Import .lit (Quake) lightdata file to map.\n"
+				"  exportrad   : Export RAD.exe .ext & .wa_ files.\n"
+				"  exportwad   : Export all map textures to .wad file.\n"
+				"  importwad   : Import all .wad textures to map.\n"
+				"  screenshot  : Create screenshots and close map.\n"
+				" "
+				" "
+				"  no command  : Open empty bspguy window\n"
 
-			"\nRun 'bspguy <command> help' to read about a specific command.\n"
-			"\nTo launch the 3D editor. Drag and drop a .bsp file onto the executable,\n"
-			"or run 'bspguy <mapname>'")
+				"\nRun 'bspguy <command> help' to read about a specific command.\n"
+				"\nTo launch the 3D editor. Drag and drop a .bsp file onto the executable,\n"
+				"or run 'bspguy <mapname>'")
 		);
 	}
 	FlushConsoleLog(true);
@@ -799,7 +799,7 @@ void print_help(const std::string& command)
 #include <Dbghelp.h>
 
 
-int crashdumps = 3;
+int crashdumps = 2;
 void make_minidump(EXCEPTION_POINTERS* e)
 {
 	if (!e)
@@ -874,7 +874,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 			if (e->ExceptionRecord->ExceptionCode == 0x406D1388)
-				return EXCEPTION_CONTINUE_EXECUTION;
+				return ExceptionContinueExecution;
 			// Ignore custom exception codes.
 			// MSXML likes to raise 0xE0000001 while parsing.
 			// Note the C++ SEH (0xE06D7363) also fails in that range.
@@ -883,17 +883,17 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0031), GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void*)GetModuleHandleA(0));
-
 			if (crashdumps > 0)
 			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void*)GetModuleHandleA(0));
+
 				crashdumps--;
 				make_minidump(e);
 			}
 		}
 	}
 
-	return EXCEPTION_CONTINUE_SEARCH;
+	return ExceptionContinueExecution;
 }
 #endif
 #else 
@@ -949,13 +949,13 @@ int main(int argc, char* argv[])
 		}
 #endif
 		std::error_code err;
-		fs::current_path(bspguy_dir,err);
+		fs::current_path(bspguy_dir, err);
 
 		if (fileExists("./log.txt"))
 		{
 			try
 			{
-				fs::remove("./log.txt",err);
+				fs::remove("./log.txt", err);
 			}
 			catch (...)
 			{
@@ -986,7 +986,7 @@ int main(int argc, char* argv[])
 
 		g_cmdLine = CommandLine(argc, argv);
 
-		if (g_cmdLine.command == "version" || g_cmdLine.command == "--version" || g_cmdLine.command == "-version" )
+		if (g_cmdLine.command == "version" || g_cmdLine.command == "--version" || g_cmdLine.command == "-version")
 		{
 			return 0;
 		}

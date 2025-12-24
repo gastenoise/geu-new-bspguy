@@ -9929,225 +9929,213 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 {
 	vec3 amin, amax, bmin, bmax;
 
+	// Get vertex bounds of both models
+	get_model_vertex_bounds(src_model, amin, amax);
+	get_model_vertex_bounds(dst_model, bmin, bmax);
+
+	// Find separating plane between model bounds
+	BSPPLANE separate_plane = getSeparatePlane(amin, amax, bmin, bmax);
+
+	// Try swapping models if no separating plane found (first attempt)
+	if (separate_plane.nType == -1 && tryanotherway == 0)
+	{
+		tryanotherway++;
+		return merge_two_models_idx(dst_model, src_model, tryanotherway);
+	}
+	// Give up if no separating plane found after second attempt
+	else if (separate_plane.nType == -1 && tryanotherway == 1)
+	{
+		tryanotherway++;
+		return -1;
+	}
+
+	// Store original model bounds
 	amin = models[src_model].nMins;
 	amax = models[src_model].nMaxs;
 	bmin = models[dst_model].nMins;
 	bmax = models[dst_model].nMaxs;
 
-	vec3 ent_offset = vec3();
+	// Update merged model bounds (minimum of mins, maximum of maxs)
+	models[dst_model].nMins = vec3(std::min(amin.x, bmin.x), std::min(amin.y, bmin.y), std::min(amin.z, bmin.z));
+	models[dst_model].nMaxs = vec3(std::max(amax.x, bmax.x), std::max(amax.y, bmax.y), std::max(amax.z, bmax.z));
 
-	vec3 verts_offset = getCenter(amax, amin) - getCenter(bmax, bmin);
+	int newfaces = models[dst_model].nFaces;
 
-	BSPPLANE separate_plane = getSeparatePlane(bmin, bmax, amin, amax);
-
-	if (separate_plane.nType == -1 && tryanotherway == 0)
-	{
-		tryanotherway++;
-		// try to swap
-		swap_two_models(dst_model, src_model);
-		return merge_two_models_idx(src_model, dst_model, tryanotherway);
-	}
-	else if (separate_plane.nType == -1 && tryanotherway == 1)
-	{
-		tryanotherway++;
-		return -1;
-	}
-
-	STRUCTUSAGE shouldBeMoved(this);
-	mark_model_structures(src_model, &shouldBeMoved, true);
-
-	// TODO update planes for headnode[0] ?
-	for (int i = 0; i < planeCount; i++)
-	{
-		if (!shouldBeMoved.planes[i])
-		{
-			continue; // don't move submodels with origins
-		}
-
-		BSPPLANE& plane = planes[i];
-		vec3 newPlaneOri = ent_offset + (plane.vNormal * plane.fDist);
-
-		if (std::fabs(newPlaneOri.x) > g_limits.fltMaxCoord || std::fabs(newPlaneOri.y) > g_limits.fltMaxCoord ||
-			std::fabs(newPlaneOri.z) > g_limits.fltMaxCoord)
-		{
-			print_log(get_localized_string(LANG_0053));
-		}
-
-		// get distance between new plane origin and the origin-aligned plane
-		plane.fDist = dotProduct(plane.vNormal, newPlaneOri) / dotProduct(plane.vNormal, plane.vNormal);
-	}
-
-
-	auto src_verts = getModelVertsIds(src_model);
-	for (auto v : src_verts)
-	{
-		verts[v] += ent_offset;
-	}
-
-	int newfaces = models[src_model].nFaces;
-
-	for (int f = 0; f < newfaces; f++)
+	// Remove faces from source model from all leaves
+	for (int f = 0; f < models[src_model].nFaces; f++)
 	{
 		leaf_del_face(models[src_model].iFirstFace + f, -1);
 	}
 
-	for (int f2 = 0; f2 < models[dst_model].nFaces; f2++)
+	// Remove faces from destination model from all leaves
+	for (int f = 0; f < models[dst_model].nFaces; f++)
 	{
-		leaf_del_face(models[dst_model].iFirstFace + f2, -1);
+		leaf_del_face(models[dst_model].iFirstFace + f, -1);
 	}
 
+	// Rebuild faces array - insert source model faces after destination model faces
 	std::vector<BSPFACE32> all_faces;
 
 	for (int f = 0; f < faceCount; f++)
 	{
 		all_faces.push_back(faces[f]);
-		if (f == models[dst_model].iFirstFace + models[dst_model].nFaces - 1)
+		// Insert source model faces after destination model's last face
+		if (f == models[src_model].iFirstFace + models[src_model].nFaces - 1)
 		{
 			for (int f2 = 0; f2 < newfaces; f2++)
 			{
-				all_faces.push_back(faces[models[src_model].iFirstFace + f2/* + 1*/]);
+				all_faces.push_back(faces[models[dst_model].iFirstFace + f2]);
 			}
 		}
 	}
 
+	// Update face indices for models that come after the insertion point
 	for (int m = 0; m < modelCount; m++)
 	{
-		if (models[m].iFirstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
+		if (models[m].iFirstFace >= models[src_model].iFirstFace + models[src_model].nFaces)
 		{
 			models[m].iFirstFace += newfaces;
 		}
 	}
 
+	// Update face indices in nodes
 	for (int m = 0; m < nodeCount; m++)
 	{
-		if (nodes[m].iFirstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
+		if (nodes[m].iFirstFace >= models[src_model].iFirstFace + models[src_model].nFaces)
 		{
 			nodes[m].iFirstFace += newfaces;
 		}
 	}
 
+	// Update face indices in marksurfs
 	for (int m = 0; m < marksurfCount; m++)
 	{
-		if (marksurfs[m] >= models[dst_model].iFirstFace + models[dst_model].nFaces)
+		if (marksurfs[m] >= models[src_model].iFirstFace + models[src_model].nFaces)
 		{
 			marksurfs[m] += newfaces;
 		}
 	}
 
-	// add faces from first model to second model leafs and back
-
-
+	// Replace faces lump with new faces array
 	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 	delete[] newLump;
 
-	print_log(PRINT_GREEN, "SeparatePlane : {:4f} {:4f} {:4f} -> {:4f}\n", separate_plane.vNormal.x, separate_plane.vNormal.y, separate_plane.vNormal.z, separate_plane.fDist);
-
-	std::vector<vec3> veclist = { amin,amax,bmin,bmax };
-
-	print_log("- vec1 : {} {} {} \n", amin.x, amin.y, amin.z);
-	print_log(" vec2 : {} {} {} \n", amax.x, amax.y, amax.z);
-	print_log(" vec1 : {} {} {} \n", bmin.x, bmin.y, bmin.z);
-	print_log(" vec2 : {} {} {} \n", bmax.x, bmax.y, bmax.z);
-
-	print_log(PRINT_GREEN, "MODEL {} AND {} SUCCESS MERGED TO {}!\n", src_model, dst_model, dst_model);
-
-	vec3 new_min, new_max;
-	getBoundingBox(veclist, new_min, new_max);
-
-
+	// Add separating plane to planes array
 	int separationPlaneIdx = planeCount;
-
 	BSPPLANE* newThisPlanes = new BSPPLANE[planeCount + 1];
 	memcpy(newThisPlanes, planes, planeCount * sizeof(BSPPLANE));
 
+	// Swap children if plane normal has negative components (for VIS/lighting)
 	bool swapNodeChildren = separate_plane.vNormal.x < 0 || separate_plane.vNormal.y < 0 || separate_plane.vNormal.z < 0;
 	if (swapNodeChildren)
+	{
 		separate_plane.vNormal = separate_plane.vNormal.invert();
+	}
 
+	// Debug logging
+	print_log(PRINT_GREEN, "SeparatePlane : {:4f} {:4f} {:4f} -> {:4f} (swap {})\n",
+		separate_plane.vNormal.x, separate_plane.vNormal.y, separate_plane.vNormal.z, separate_plane.fDist, swapNodeChildren);
+
+	// Add new plane and replace lump
 	newThisPlanes[planeCount] = separate_plane;
 	replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
 	delete[] newThisPlanes;
 
+	// Process hulls 3->1 (clipnodes) - in reverse order to handle index shifting correctly
+	for (int h = MAX_MAP_HULLS - 1; h > 0; h--)
 	{
-		if (models[dst_model].iHeadnodes[0] >= 0 || models[src_model].iHeadnodes[0] >= 0)
+		// Check if either model has this hull
+		if (models[dst_model].iHeadnodes[h] >= 0 || models[src_model].iHeadnodes[h] >= 0)
 		{
-			int target_node = models[dst_model].iHeadnodes[0] >= 0 && models[src_model].iHeadnodes[0] >= 0 ?
-				std::min(models[dst_model].iHeadnodes[0], models[src_model].iHeadnodes[0]) : -1;
+			// Find minimum node index to insert new clipnode before it
+			int target_node = models[dst_model].iHeadnodes[h] >= 0 && models[src_model].iHeadnodes[h] >= 0 ?
+				std::min(models[dst_model].iHeadnodes[h], models[src_model].iHeadnodes[h]) : -1;
 			if (target_node == -1)
-				target_node = models[dst_model].iHeadnodes[0] >= 0 ? models[dst_model].iHeadnodes[0] : models[src_model].iHeadnodes[0];
+				target_node = models[dst_model].iHeadnodes[h] >= 0 ? models[dst_model].iHeadnodes[h] : models[src_model].iHeadnodes[h];
 
-			int newnode = create_node(true, target_node);
+			// Create new clipnode at calculated position
+			int newclip = create_clipnode(true, 1);
 
-			BSPNODE32& headNode = nodes[newnode];
+			BSPCLIPNODE32& headNode = clipnodes[newclip];
 
+			// Initialize clipnode with separating plane and children
 			headNode = {
-				separationPlaneIdx,			// plane idx
-				{ models[src_model].iHeadnodes[0],
-				 models[dst_model].iHeadnodes[0] },		// child nodes
-				{ new_min.x, new_min.y, new_min.z },	// mins
-				{ new_max.x, new_max.y, new_max.z },	// maxs
-				0, // first face
-				0  // n faces (none since this plane is in the void)
+				separationPlaneIdx,	// plane index
+				{	// child nodes
+					models[dst_model].iHeadnodes[h],
+					models[src_model].iHeadnodes[h]
+				},
 			};
 
+			// Swap children if needed
 			if (swapNodeChildren)
 			{
 				std::swap(headNode.iChildren[0], headNode.iChildren[1]);
 			}
-			models[dst_model].iHeadnodes[0] = newnode;
+
+			// Update model's headnode for this hull
+			models[dst_model].iHeadnodes[h] = newclip;
+
+
+			// Debug logging
+			print_log(PRINT_GREEN, "HULL {} MODEL {} PLANE IDX {} CHILDS {}/{}\n",
+				h, dst_model, separationPlaneIdx, headNode.iChildren[0], headNode.iChildren[1]);
 		}
 	}
 
+	// Process hull 0 (visible BSP nodes)
+	if (models[dst_model].iHeadnodes[0] >= 0 || models[src_model].iHeadnodes[0] >= 0)
 	{
-		for (int h = 1; h < MAX_MAP_HULLS; h++)
+		// Find minimum node index to insert new node before it
+		int target_node = models[dst_model].iHeadnodes[0] >= 0 && models[src_model].iHeadnodes[0] >= 0 ?
+			std::min(models[dst_model].iHeadnodes[0], models[src_model].iHeadnodes[0]) : -1;
+		if (target_node == -1)
+			target_node = models[dst_model].iHeadnodes[0] >= 0 ? models[dst_model].iHeadnodes[0] : models[src_model].iHeadnodes[0];
+
+		// Create new node at calculated position
+		int newnode = create_node(true, 1);
+
+		BSPNODE32& headNode = nodes[newnode];
+
+		// Initialize node with separating plane, children, and model bounds
+		headNode = {
+			separationPlaneIdx,			// plane index
+			{ models[dst_model].iHeadnodes[0],
+				models[src_model].iHeadnodes[0] },		// child nodes
+			{ models[dst_model].nMins.x, models[dst_model].nMins.y, models[dst_model].nMins.z },	// mins
+			{ models[dst_model].nMaxs.x, models[dst_model].nMaxs.y, models[dst_model].nMaxs.z },	// maxs
+			1, // first face (0 because this is a separator node)
+			0  // face count (0 because this plane is in void space)
+		};
+
+		// Swap children if needed
+		if (swapNodeChildren)
 		{
-			if (models[dst_model].iHeadnodes[h] >= 0 || models[src_model].iHeadnodes[h] >= 0)
-			{
-				int target_node = models[dst_model].iHeadnodes[h] >= 0 && models[src_model].iHeadnodes[h] >= 0 ?
-					std::min(models[dst_model].iHeadnodes[h], models[src_model].iHeadnodes[h]) : -1;
-				if (target_node == -1)
-					target_node = models[dst_model].iHeadnodes[h] >= 0 ? models[dst_model].iHeadnodes[h] : models[src_model].iHeadnodes[h];
-
-				int newclip = create_clipnode(true, target_node);
-
-				BSPCLIPNODE32& headNode = clipnodes[newclip];
-
-				headNode = {
-					separationPlaneIdx,	// plane idx
-					{	// child nodes
-						models[src_model].iHeadnodes[h],
-						models[dst_model].iHeadnodes[h]
-					},
-				};
-
-				if (swapNodeChildren)
-				{
-					std::swap(headNode.iChildren[0], headNode.iChildren[1]);
-				}
-
-				models[dst_model].iHeadnodes[h] = newclip;
-			}
+			std::swap(headNode.iChildren[0], headNode.iChildren[1]);
 		}
+
+		// Update model's headnode for hull 0
+		models[dst_model].iHeadnodes[0] = newnode;
+
+		// Debug logging
+		print_log(PRINT_GREEN, "HULL 0 MODEL {} PLANE IDX {} CHILDS {}/{}\n", dst_model, separationPlaneIdx, headNode.iChildren[0], headNode.iChildren[1]);
 	}
 
+	// Update destination model statistics
 	models[dst_model].nFaces += newfaces;
 	models[dst_model].nVisLeafs += models[src_model].nVisLeafs;
-
-	models[dst_model].nMins = new_min;
-	models[dst_model].nMaxs = new_max;
-
 	models[dst_model].vOrigin = models[src_model].vOrigin;
 
+	// Clear source model (mark as empty)
 	models[src_model].iFirstFace = 0;
 	models[src_model].iHeadnodes[0] = models[src_model].iHeadnodes[1] =
 		models[src_model].iHeadnodes[2] = models[src_model].iHeadnodes[3] = CONTENTS_EMPTY;
 	models[src_model].nFaces = 0;
 	models[src_model].nVisLeafs = 0;
 
-	update_lump_pointers();
-
+	// Add all faces back to destination model's leaves
 	std::vector<int> leafs;
 	modelLeafs(dst_model, leafs);
 
@@ -10162,247 +10150,29 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 	return dst_model;
 }
 
-int Bsp::merge_two_models_ents(int src_ent, int dst_ent, int& tryanotherway)
+int Bsp::merge_two_models_ents(Entity* src_ent, Entity* dst_ent)
 {
-	int src_model = ents[src_ent]->getBspModelIdx();
-	int dst_model = ents[dst_ent]->getBspModelIdx();
-
-	vec3 amin, amax, bmin, bmax;
-
-	get_model_vertex_bounds(src_model, amin, amax);
-	get_model_vertex_bounds(dst_model, bmin, bmax);
-
-	vec3 ent_offset = ents[src_ent]->origin - ents[dst_ent]->origin;
-
-	vec3 verts_offset = getCenter(amax, amin) - getCenter(bmax, bmin);
-
-	amin += ents[src_ent]->origin;
-	amax += ents[src_ent]->origin;
-
-	bmin += ents[dst_ent]->origin;
-	bmax += ents[dst_ent]->origin;
-
-	BSPPLANE separate_plane = getSeparatePlane(bmin, bmax, amin, amax);
-
-	if (separate_plane.nType == -1 && tryanotherway == 0)
-	{
-		tryanotherway++;
-		return merge_two_models_ents(dst_ent, src_ent, tryanotherway);
-	}
-	else if (separate_plane.nType == -1 && tryanotherway == 1)
-	{
-		tryanotherway++;
+	if (!src_ent || !dst_ent) return -1;
+	int src_model = src_ent->getBspModelIdx();
+	int dst_model = dst_ent->getBspModelIdx();
+	if (src_model < 0 || dst_model < 0 || src_model >= modelCount || dst_model >= modelCount) {
+		print_log(PRINT_RED, "Invalid model indexes for merging\n");
 		return -1;
 	}
-
-	STRUCTUSAGE shouldBeMoved(this);
-	mark_model_structures(src_model, &shouldBeMoved, true);
-
-	// TODO update planes for headnode[0] ?
-	for (int i = 0; i < planeCount; i++)
-	{
-		if (!shouldBeMoved.planes[i])
-		{
-			continue; // don't move submodels with origins
-		}
-
-		BSPPLANE& plane = planes[i];
-		vec3 newPlaneOri = ent_offset + (plane.vNormal * plane.fDist);
-
-		if (std::fabs(newPlaneOri.x) > g_limits.fltMaxCoord || std::fabs(newPlaneOri.y) > g_limits.fltMaxCoord ||
-			std::fabs(newPlaneOri.z) > g_limits.fltMaxCoord)
-		{
-			print_log(get_localized_string(LANG_0053));
-		}
-
-		// get distance between new plane origin and the origin-aligned plane
-		plane.fDist = dotProduct(plane.vNormal, newPlaneOri) / dotProduct(plane.vNormal, plane.vNormal);
+	// Move origins first (like working version)
+	vec3 src_origin = src_ent->hasKey("origin") ? src_ent->origin : vec3(0, 0, 0);
+	vec3 dst_origin = dst_ent->hasKey("origin") ? dst_ent->origin : vec3(0, 0, 0);
+	if (src_origin != vec3(0, 0, 0)) {
+		move(src_origin, src_model, true, true);
+		src_ent->removeKeyvalue("origin");
 	}
-
-
-	auto src_verts = getModelVertsIds(src_model);
-	for (auto v : src_verts)
-	{
-		verts[v] += ent_offset;
+	if (dst_origin != vec3(0, 0, 0)) {
+		move(dst_origin, dst_model, true, true);
+		dst_ent->removeKeyvalue("origin");
 	}
-
-	int newfaces = models[src_model].nFaces;
-
-	for (int f = 0; f < newfaces; f++)
-	{
-		leaf_del_face(models[src_model].iFirstFace + f, -1);
-	}
-
-	for (int f2 = 0; f2 < models[dst_model].nFaces; f2++)
-	{
-		leaf_del_face(models[dst_model].iFirstFace + f2, -1);
-	}
-
-	std::vector<BSPFACE32> all_faces;
-
-	for (int f = 0; f < faceCount; f++)
-	{
-		all_faces.push_back(faces[f]);
-		if (f == models[dst_model].iFirstFace + models[dst_model].nFaces - 1)
-		{
-			for (int f2 = 0; f2 < newfaces; f2++)
-			{
-				all_faces.push_back(faces[models[src_model].iFirstFace + f2/* + 1*/]);
-			}
-		}
-	}
-
-	for (int m = 0; m < modelCount; m++)
-	{
-		if (models[m].iFirstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
-		{
-			models[m].iFirstFace += newfaces;
-		}
-	}
-
-	for (int m = 0; m < nodeCount; m++)
-	{
-		if (nodes[m].iFirstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
-		{
-			nodes[m].iFirstFace += newfaces;
-		}
-	}
-
-	for (int m = 0; m < marksurfCount; m++)
-	{
-		if (marksurfs[m] >= models[dst_model].iFirstFace + models[dst_model].nFaces)
-		{
-			marksurfs[m] += newfaces;
-		}
-	}
-
-	// add faces from first model to second model leafs and back
-
-
-	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
-	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
-	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
-	delete[] newLump;
-
-	print_log(PRINT_GREEN, "SeparatePlane : {:4f} {:4f} {:4f} -> {:4f}\n", separate_plane.vNormal.x, separate_plane.vNormal.y, separate_plane.vNormal.z, separate_plane.fDist);
-
-
-	std::vector<vec3> veclist = { amin,amax,bmin,bmax };
-
-	print_log("- vec1 : {} {} {} \n", amin.x, amin.y, amin.z);
-	print_log(" vec2 : {} {} {} \n", amax.x, amax.y, amax.z);
-	print_log(" vec1 : {} {} {} \n", bmin.x, bmin.y, bmin.z);
-	print_log(" vec2 : {} {} {} \n", bmax.x, bmax.y, bmax.z);
-
-	vec3 new_min, new_max;
-	getBoundingBox(veclist, new_min, new_max);
-
-
-	int separationPlaneIdx = planeCount;
-
-	BSPPLANE* newThisPlanes = new BSPPLANE[planeCount + 1];
-	memcpy(newThisPlanes, planes, planeCount * sizeof(BSPPLANE));
-
-	bool swapNodeChildren = separate_plane.vNormal.x < 0 || separate_plane.vNormal.y < 0 || separate_plane.vNormal.z < 0;
-	if (swapNodeChildren)
-		separate_plane.vNormal = separate_plane.vNormal.invert();
-
-	newThisPlanes[planeCount] = separate_plane;
-	replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
-	delete[] newThisPlanes;
-	{
-		if (models[dst_model].iHeadnodes[0] >= 0 || models[src_model].iHeadnodes[0] >= 0)
-		{
-			int target_node = models[dst_model].iHeadnodes[0] >= 0 && models[src_model].iHeadnodes[0] >= 0 ?
-				std::min(models[dst_model].iHeadnodes[0], models[src_model].iHeadnodes[0]) : -1;
-			if (target_node == -1)
-				target_node = models[dst_model].iHeadnodes[0] >= 0 ? models[dst_model].iHeadnodes[0] : models[src_model].iHeadnodes[0];
-
-			int newnode = create_node(true, target_node);
-
-			BSPNODE32& headNode = nodes[newnode];
-
-			headNode = {
-				separationPlaneIdx,			// plane idx
-				{ models[src_model].iHeadnodes[0],
-				 models[dst_model].iHeadnodes[0] },		// child nodes
-				{ new_min.x, new_min.y, new_min.z },	// mins
-				{ new_max.x, new_max.y, new_max.z },	// maxs
-				0, // first face
-				0  // n faces (none since this plane is in the void)
-			};
-
-			if (swapNodeChildren)
-			{
-				std::swap(headNode.iChildren[0], headNode.iChildren[1]);
-			}
-			models[dst_model].iHeadnodes[0] = newnode;
-		}
-	}
-
-	{
-		for (int h = 1; h < MAX_MAP_HULLS; h++)
-		{
-			if (models[dst_model].iHeadnodes[h] >= 0 || models[src_model].iHeadnodes[h] >= 0)
-			{
-				int target_node = models[dst_model].iHeadnodes[h] >= 0 && models[src_model].iHeadnodes[h] >= 0 ?
-					std::min(models[dst_model].iHeadnodes[h], models[src_model].iHeadnodes[h]) : -1;
-				if (target_node == -1)
-					target_node = models[dst_model].iHeadnodes[h] >= 0 ? models[dst_model].iHeadnodes[h] : models[src_model].iHeadnodes[h];
-
-				int newclip = create_clipnode(true, target_node);
-
-				BSPCLIPNODE32& headNode = clipnodes[newclip];
-
-				headNode = {
-					separationPlaneIdx,	// plane idx
-					{	// child nodes
-						models[src_model].iHeadnodes[h],
-						models[dst_model].iHeadnodes[h]
-					},
-				};
-
-				if (swapNodeChildren)
-				{
-					std::swap(headNode.iChildren[0], headNode.iChildren[1]);
-				}
-
-				models[dst_model].iHeadnodes[h] = newclip;
-			}
-		}
-	}
-
-	models[dst_model].nFaces += newfaces;
-	models[dst_model].nVisLeafs += models[src_model].nVisLeafs;
-
-	models[dst_model].nMins = new_min;
-	models[dst_model].nMaxs = new_max;
-
-	models[dst_model].vOrigin = models[src_model].vOrigin;
-
-	models[src_model].iFirstFace = 0;
-	models[src_model].iHeadnodes[0] = models[src_model].iHeadnodes[1] =
-		models[src_model].iHeadnodes[2] = models[src_model].iHeadnodes[3] = CONTENTS_EMPTY;
-	models[src_model].nFaces = 0;
-	models[src_model].nVisLeafs = 0;
-
-	update_lump_pointers();
-
-	std::vector<int> leafs;
-	modelLeafs(dst_model, leafs);
-
-	for (auto& l : leafs)
-	{
-		for (int f2 = 0; f2 < models[dst_model].nFaces; f2++)
-		{
-			leaf_add_face(models[dst_model].iFirstFace + f2, l);
-		}
-	}
-
-	save_undo_lightmaps();
-	return dst_model;
+	int tryanother = 0;
+	return merge_two_models_idx(src_model, dst_model, tryanother);
 }
-
 BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx)
 {
 	BSPFACE32& targetFace = faces[faceIdx];
@@ -14201,6 +13971,9 @@ void Bsp::gen_clipnodes(std::vector<vec3>& all_verts, int newModelIdx)
 		models[i].nVisLeafs = 0;
 	}
 
+
+	update_lump_pointers();
+	save_undo_lightmaps();
 
 	remove_unused_model_structures(CLEAN_LEAVES);
 
