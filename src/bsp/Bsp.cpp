@@ -10056,7 +10056,7 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 				target_node = models[dst_model].iHeadnodes[h] >= 0 ? models[dst_model].iHeadnodes[h] : models[src_model].iHeadnodes[h];
 
 			// Create new clipnode at calculated position
-			int newclip = create_clipnode(true, 1);
+			int newclip = create_clipnode(true, target_node);
 
 			BSPCLIPNODE32& headNode = clipnodes[newclip];
 
@@ -10080,8 +10080,8 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 
 
 			// Debug logging
-			print_log(PRINT_GREEN, "HULL {} MODEL {} PLANE IDX {} CHILDS {}/{}\n",
-				h, dst_model, separationPlaneIdx, headNode.iChildren[0], headNode.iChildren[1]);
+			//print_log(PRINT_GREEN, "HULL {} MODEL {} PLANE IDX {} CHILDS {}/{}\n",
+			//	h, dst_model, separationPlaneIdx, headNode.iChildren[0], headNode.iChildren[1]);
 		}
 	}
 
@@ -10095,7 +10095,7 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 			target_node = models[dst_model].iHeadnodes[0] >= 0 ? models[dst_model].iHeadnodes[0] : models[src_model].iHeadnodes[0];
 
 		// Create new node at calculated position
-		int newnode = create_node(true, 1);
+		int newnode = create_node(true, target_node);
 
 		BSPNODE32& headNode = nodes[newnode];
 
@@ -10120,7 +10120,7 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 		models[dst_model].iHeadnodes[0] = newnode;
 
 		// Debug logging
-		print_log(PRINT_GREEN, "HULL 0 MODEL {} PLANE IDX {} CHILDS {}/{}\n", dst_model, separationPlaneIdx, headNode.iChildren[0], headNode.iChildren[1]);
+		//print_log(PRINT_GREEN, "HULL 0 MODEL {} PLANE IDX {} CHILDS {}/{}\n", dst_model, separationPlaneIdx, headNode.iChildren[0], headNode.iChildren[1]);
 	}
 
 	// Update destination model statistics
