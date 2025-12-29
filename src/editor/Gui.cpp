@@ -2718,6 +2718,15 @@ void Gui::drawMenuBar()
 						rend = NULL;
 						map = NULL;
 						app->selectMapId(0);
+
+						if (mapRenderers.empty())
+						{
+							for (auto& s : mdl_models)
+							{
+								delete s.second;
+							}
+							mdl_models.clear();
+						}
 					}
 				}
 			}
@@ -2739,6 +2748,12 @@ void Gui::drawMenuBar()
 						map = NULL;
 						app->selectMapId(0);
 						print_log(get_localized_string(LANG_0907));
+
+						for (auto& s : mdl_models)
+						{
+							delete s.second;
+						}
+						mdl_models.clear();
 					}
 				}
 			}
@@ -3868,13 +3883,14 @@ void Gui::drawMenuBar()
 							entFilePath = g_working_dir + (map->bsp_name + ".ent");
 						}
 
-						print_log(get_localized_string(LANG_1052), entFilePath);
 						if (fileExists(entFilePath))
 						{
-							int len;
-							char* newlump = loadFile(entFilePath, len);
-							map->replace_lump(LUMP_ENTITIES, newlump, len);
-							delete[] newlump;
+							std::vector<unsigned char> entDat;
+							if (readFile(entFilePath, entDat))
+							{
+								map->replace_lump(LUMP_ENTITIES, entDat.data(), entDat.size());
+								print_log(get_localized_string(LANG_1052), entFilePath);
+							}
 							map->reload_ents();
 							g_app->updateEnts();
 							app->reloading = true;
@@ -12435,7 +12451,6 @@ void Gui::drawFaceEditorWidget()
 		if (app->pickInfo.selectedFaces.size() == 1)
 		{
 			ImGui::Separator();
-			ImGui::Text(get_localized_string(LANG_0884).c_str());
 			if (ImGui::DragInt("# 1:", &tmpStyles[0], 1, 0, 255)) stylesChanged = true;
 			ImGui::SameLine();
 			if (ImGui::DragInt("# 2:", &tmpStyles[1], 1, 0, 255)) stylesChanged = true;
@@ -12484,6 +12499,9 @@ void Gui::drawFaceEditorWidget()
 				}
 				ImGui::SetClipboardText(outstr.c_str());
 			}
+
+
+			ImGui::Text("Lightmap offs: %X", map->faces[app->pickInfo.selectedFaces[0]].nLightmapOffset);
 		}
 
 		ImGui::PopItemWidth();

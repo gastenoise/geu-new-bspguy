@@ -7,30 +7,21 @@
 Wad::Wad(void)
 {
 	dirEntries.clear();
-	delete[] filedata;
-	filedata = NULL;
+	fileData.clear();
 }
 
 Wad::Wad(std::string file) : filename(std::move(file))
 {
 	this->wadname = basename(filename);
 	dirEntries.clear();
-	if (filedata)
-		delete[] filedata;
-	filedata = NULL;/*
-
-	if (fileExists(file))
-	{
-		readInfo();
-	}*/
+	if (fileData.size())
+		fileData.clear();
 }
 
 Wad::~Wad(void)
 {
 	dirEntries.clear();
-	if (filedata)
-		delete[] filedata;
-	filedata = NULL;
+	fileData.clear();
 }
 
 void W_CleanupName(const char* in, char* out)
@@ -63,39 +54,33 @@ bool Wad::readInfo()
 		return false;
 	}
 
-	filedata = (unsigned char*)loadFile(file, fileLen);
-
-	if (!filedata)
+	if (!readFile(file, fileData))
 	{
 		print_log(get_localized_string(LANG_1043), filename);
-		filedata = NULL;
 		return false;
 	}
 
-	if (fileLen < sizeof(WADHEADER))
+	if (fileData.size() < sizeof(WADHEADER))
 	{
-		delete[] filedata;
-		filedata = NULL;
+		fileData.clear();
 		print_log(get_localized_string(LANG_0248), filename);
 		return false;
 	}
 
 	int offset = 0;
 
-	memcpy((char*)&header, &filedata[offset], sizeof(WADHEADER));
+	memcpy((char*)&header, &fileData[offset] , sizeof(WADHEADER));
 
 	if (std::string(header.szMagic).find("WAD3") != 0)
 	{
-		delete[] filedata;
-		filedata = NULL;
+		fileData.clear();
 		print_log(get_localized_string(LANG_0249), filename);
 		return false;
 	}
 
-	if (header.nDirOffset >= (int)fileLen)
+	if (header.nDirOffset >= (int)fileData.size())
 	{
-		delete[] filedata;
-		filedata = NULL;
+		fileData.clear();
 		print_log(get_localized_string(LANG_0250), filename);
 		return false;
 	}
@@ -115,13 +100,13 @@ bool Wad::readInfo()
 	{
 		WADDIRENTRY tmpWadEntry = WADDIRENTRY();
 
-		if (offset + (int)sizeof(WADDIRENTRY) > fileLen)
+		if (offset + (int)sizeof(WADDIRENTRY) > fileData.size())
 		{
 			print_log(get_localized_string(LANG_0251));
 			break;
 		}
 
-		memcpy((char*)&tmpWadEntry, &filedata[offset], sizeof(WADDIRENTRY));
+		memcpy((char*)&tmpWadEntry, &fileData[offset], sizeof(WADDIRENTRY));
 		offset += sizeof(WADDIRENTRY);
 
 		W_CleanupName(tmpWadEntry.szName, tmpWadEntry.szName);
@@ -137,8 +122,7 @@ bool Wad::readInfo()
 		print_log(get_localized_string(LANG_0252), basename(filename));
 		if (!dirEntries.size())
 		{
-			delete[] filedata;
-			filedata = NULL;
+			fileData.clear();
 			return false;
 		}
 	}
@@ -207,7 +191,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	}
 
 	BSPMIPTEX mtex = BSPMIPTEX();
-	memcpy((char*)&mtex, &filedata[offset], sizeof(BSPMIPTEX));
+	memcpy((char*)&mtex, &fileData[offset], sizeof(BSPMIPTEX));
 	offset += sizeof(BSPMIPTEX);
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0255), mtex.szName, mtex.nWidth, mtex.nHeight);
@@ -220,7 +204,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 
 	memset(data, 0, szAll);
 
-	memcpy(data, &filedata[offset], szAll);
+	memcpy(data, &fileData[offset], szAll);
 
 	WADTEX* tex = new WADTEX();
 	memcpy(tex->szName, mtex.szName, MAXTEXTURENAME);

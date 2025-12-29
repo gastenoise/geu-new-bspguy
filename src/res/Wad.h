@@ -111,8 +111,7 @@ public:
 	std::string filename = std::string();
 	std::string wadname = std::string();
 
-	unsigned char* filedata = NULL;
-	int fileLen = 0;
+	std::vector<unsigned char> fileData;
 	bool usableTextures = false;
 
 	WADHEADER header = WADHEADER();

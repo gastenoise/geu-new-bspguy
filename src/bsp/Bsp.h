@@ -145,7 +145,7 @@ public:
 	int pointContents(int iNode, const vec3& p, int hull);
 	bool recursiveHullCheck(int hull, int num, float p1f, float p2f, vec3 p1, vec3 p2, TraceResult* trace);
 	void traceHull(vec3 start, vec3 end, int hull, TraceResult* ptr);
-	int pointLeaf(int iNode, const vec3& p, int hull, int& leafIdx, int & planeIdx);
+	int pointLeaf(int iNode, const vec3& p, int hull, int& leafIdx, int& planeIdx);
 	std::vector<int> getLeafsFromPos(const vec3& p, float radius);
 	const char* getLeafContentsName(int contents);
 	// returns true if leaf is in the PVS from the given position
@@ -233,13 +233,13 @@ public:
 	// conditionally deletes hulls for entities that aren't using them
 	STRUCTCOUNT delete_unused_hulls(bool noProgress = false);
 
-	
+
 	// deletes data outside the map bounds
 	void delete_oob_data(int clipFlags);
 
-	void delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder, 
+	void delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
 		int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
-	
+
 	void delete_oob_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
 		int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
 
@@ -258,7 +258,7 @@ public:
 	// then updates the entities to share a single model reference
 	// this reduces the precached model count even though the models are still present in the bsp
 	void deduplicate_models();
-	
+
 	// scales up texture axes for any face with bad surface extents
 	// connected planar faces which use the same texture will also be scaled up to prevent seams
 	// showing between faces with different texture scales
@@ -362,7 +362,7 @@ public:
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUCTUSAGE& usage, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 		std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32> & newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
+		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
@@ -374,7 +374,7 @@ public:
 	std::vector<int> getFaceContents(int faceIdx);
 	int clone_world_leaf(int oldleafIdx);
 	int merge_two_models_ents(Entity* src_ent, Entity* dst_ent);
-	int merge_two_models_idx(int src_model, int dst_model, int &try_again);
+	int merge_two_models_idx(int src_model, int dst_model, int& try_again);
 	int merge_two_models_idx_internal(int src_model, int dst_model, int& try_again);
 	void swap_two_models(int mdl1, int mdl2);
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
@@ -429,7 +429,7 @@ public:
 	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces, bool use_one_back_vert, bool create_worldbox);
 
 	void import_mdl_to_bsp(int ent, int generateClipnodes, bool splitMeshes = false);
-	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes,mat4x4 angles, bool & valid_nodes);
+	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, bool& valid_nodes);
 
 	int merge_all_planes();
 
@@ -457,7 +457,7 @@ public:
 	int getEmbeddedTexCount();
 
 	int getWorlspawnEntId();
-	Entity * getWorldspawnEnt();
+	Entity* getWorldspawnEnt();
 
 	void save_undo_lightmaps(bool logged = false);
 	void resize_all_lightmaps(bool logged = false);
@@ -482,14 +482,14 @@ public:
 	int AddTriggerTexture();
 	void gen_clipnodes(std::vector<vec3>& all_verts, int newModelIdx);
 
-	unsigned int remove_unused_lightmaps(std::vector<bool> & usedFaces);
+	unsigned int remove_unused_lightmaps(std::vector<bool>& usedFaces);
 	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
 	unsigned int remove_unused_textures(std::vector<bool>& usedTextures, std::vector<int>& remappedIndexes, int* removeddata = NULL);
 	unsigned int remove_unused_structs(int lumpIdx, std::vector<bool>& usedStructs, std::vector<int>& remappedIndexes);
 
 	void recurse_node_leafs(int nodeIdx, std::vector<int>& outLeafs);
 
-	bool load_lumps(const std::string & fname);
+	bool load_lumps(const std::string& fname);
 
 	void print_model_bsp(int modelIdx);
 	void print_leaf(const BSPLEAF32& leaf);

@@ -481,8 +481,6 @@ public:
 			mdl_cube = NULL;
 		}
 
-		delete[] m_pstudiohdr;
-
 		for (auto& tex : mdl_textures)
 		{
 			delete tex;
@@ -490,10 +488,6 @@ public:
 
 		mdl_textures.clear();
 
-		for (int i = 0; i < 32; i++)
-		{
-			delete[] m_panimhdr[i];
-		}
 		for (auto& body : mdl_mesh_groups)
 		{
 			for (auto& submesh : body)
@@ -504,6 +498,7 @@ public:
 				}
 			}
 		}
+
 		mdl_mesh_groups.clear();
 	}
 
@@ -529,8 +524,8 @@ public:
 	int GetBodyCount();
 	int GetSequence(void);
 	int GetSequenceCount();
-	studiohdr_t* LoadModel(const std::string& modelname, bool IsTexture = false);
-	studioseqhdr_t* LoadDemandSequences(const std::string& modelname, int seqid);
+	bool LoadModel(const std::string& modelname, bool IsTexture = false);
+	bool LoadDemandSequences(const std::string& modelname, int seqid);
 	void CalcBoneAdj(void);
 	void CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q);
 	void CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec3& pos);
@@ -556,6 +551,10 @@ private:
 	float static_bonematrix[3][4];
 	float vertexData[MAX_VERTS_PER_CALL * 3];
 	float texCoordData[MAX_VERTS_PER_CALL * 2];
+
+	std::vector<unsigned char> mdlData;
+	std::vector<unsigned char> mdlTexData;
+	std::vector<unsigned char> mdlSeq[32];
 	//enable light support?
 	//float colorData[MAX_VERTS_PER_CALL * 4];
 };

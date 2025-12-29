@@ -2231,8 +2231,11 @@ void Renderer::cameraRotationControls()
 	}
 	else
 	{
-		cameraIsRotating = false;
-		totalMouseDrag = vec2();
+		if (cameraIsRotating)
+		{
+			cameraIsRotating = false;
+			totalMouseDrag = vec2();
+		}
 	}
 }
 
@@ -2914,11 +2917,6 @@ bool Renderer::transformAxisControls()
 
 vec3 Renderer::getMoveDir()
 {
-	mat4x4 rotMat;
-	rotMat.loadIdentity();
-	rotMat.rotateX(HL_PI * cameraAngles.x / 180.0f);
-	rotMat.rotateZ(HL_PI * cameraAngles.z / 180.0f);
-
 	vec3 forward, right, up;
 	makeVectors(cameraAngles, forward, right, up);
 

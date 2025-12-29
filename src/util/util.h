@@ -49,8 +49,8 @@ bool fileExists(const std::string& fileName);
 
 bool copyFile(const std::string& from, const std::string& to);
 
-char* loadFile(const std::string& fileName, int& length);
-
+bool writeFile(const std::string& path, const std::vector<unsigned char>& buffer);
+bool readFile(const std::string& path, std::vector<unsigned char>& outBuffer);
 bool writeFile(const std::string& fileName, const char* data, int len);
 bool writeFile(const std::string& fileName, const std::string& data);
 
@@ -291,6 +291,7 @@ unsigned char FixBounds(int i);
 unsigned char FixBounds(unsigned int i);
 unsigned char FixBounds(float i);
 unsigned char FixBounds(double i);
+
 
 std::vector<Entity*> load_ents(const std::string& entLump, const std::string& mapName);
 int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_name);

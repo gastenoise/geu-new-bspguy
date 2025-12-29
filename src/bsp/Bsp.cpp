@@ -20,6 +20,7 @@
 
 #include <deque>
 #include <execution>
+#include <stack>
 
 vec3 default_hull_extents[MAX_MAP_HULLS] = {
 	vec3(0.0f,  0.0f,  0.0f),	// hull 0
@@ -265,13 +266,14 @@ Bsp::Bsp(std::string fpath)
 		entFilePath = g_working_dir + (bsp_name + ".ent");
 	}
 
-	if (g_settings.auto_import_ent && fileExists(entFilePath)) {
-		print_log(get_localized_string(LANG_0039), entFilePath);
-
-		int len;
-		char* newlump = loadFile(entFilePath, len);
-		replace_lump(LUMP_ENTITIES, newlump, len);
-		delete[] newlump;
+	if (g_settings.auto_import_ent && fileExists(entFilePath)) 
+	{
+		std::vector<unsigned char> entDat;
+		if (readFile(entFilePath, entDat))
+		{
+			replace_lump(LUMP_ENTITIES, entDat.data(), entDat.size());
+			print_log(get_localized_string(LANG_1052), entFilePath);
+		}
 	}
 
 	reload_ents();
@@ -1882,7 +1884,7 @@ unsigned int Bsp::remove_unused_lightmaps(std::vector<bool>& usedFaces)
 	}
 	lighSizes.resize(faceCount);
 
-	unsigned char* newColorData = new unsigned char[newLightDataSize]; 
+	unsigned char* newColorData = new unsigned char[newLightDataSize];
 
 	int offset = 0;
 	for (int i = 0; i < faceCount && i < usedFaces.size(); i++)
@@ -4584,20 +4586,14 @@ int Bsp::lightmap_count(int faceIdx)
 void Bsp::write(const std::string& path)
 {
 	// Make single backup
-	if (g_settings.savebackup && fileExists(path) && !fileExists(path + ".bak"))
+	if (g_settings.savebackup)
 	{
-		int len;
-		char* oldfile = loadFile(path, len);
-		std::ofstream file(path + ".bak", std::ios::trunc | std::ios::binary);
-		if (!file.is_open())
+		std::vector<unsigned char> oldData;
+		if (!fileExists(path + ".bak") && readFile(path, oldData))
 		{
-			print_log(get_localized_string(LANG_0073), path);
-			return;
+			writeFile(path + ".bak", oldData);
+			print_log(get_localized_string(LANG_0074), path + ".bak");
 		}
-		print_log(get_localized_string(LANG_0074), path + ".bak");
-
-		file.write(oldfile, len);
-		delete[] oldfile;
 	}
 
 	auto backupLumps = duplicate_lumps();
@@ -5021,10 +5017,10 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 	// Read all BSP Data
 	std::ifstream fin(fpath, std::ios::binary | std::ios::ate);
-	auto size = fin.tellg();
+	auto bspsize = fin.tellg();
 	fin.seekg(0, std::ios::beg);
 
-	if (size < sizeof(BSPHEADER) + sizeof(BSPLUMP) * HEADER_LUMPS)
+	if (bspsize < sizeof(BSPHEADER) + sizeof(BSPLUMP) * HEADER_LUMPS)
 		return false;
 
 	fin.read((char*)&bsp_header.nVersion, sizeof(int));
@@ -5093,14 +5089,14 @@ bool Bsp::load_lumps(const std::string& fpath)
 				continue;
 			}
 
-			if (extra_clipnodes_lumps[i].nOffset >= size || extra_clipnodes_lumps[i].nOffset < 0 || extra_clipnodes_lumps[i].nLength < 0)
+			if (extra_clipnodes_lumps[i].nOffset >= bspsize || extra_clipnodes_lumps[i].nOffset < 0 || extra_clipnodes_lumps[i].nLength < 0)
 			{
 				print_log(get_localized_string(LANG_0090), i);
 				break;
 			}
 
 			fin.seekg(extra_clipnodes_lumps[i].nOffset);
-			if (fin.eof() || extra_clipnodes_lumps[i].nOffset + extra_clipnodes_lumps[i].nLength > size)
+			if (fin.eof() || extra_clipnodes_lumps[i].nOffset + extra_clipnodes_lumps[i].nLength > bspsize)
 			{
 				print_log(get_localized_string(LANG_1020), i);
 				break;
@@ -5147,7 +5143,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 				continue;
 			}
 
-			if (bsp_header_ex.lump[i].nOffset >= size || bsp_header_ex.lump[i].nOffset < 0 || bsp_header_ex.lump[i].nLength < 0)
+			if (bsp_header_ex.lump[i].nOffset >= bspsize || bsp_header_ex.lump[i].nOffset < 0 || bsp_header_ex.lump[i].nLength < 0)
 			{
 				print_log(get_localized_string(LANG_0090), i);
 				is_bsp30ext = false;
@@ -5155,7 +5151,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 			}
 
 			fin.seekg(bsp_header_ex.lump[i].nOffset);
-			if (fin.eof() || bsp_header_ex.lump[i].nOffset + bsp_header_ex.lump[i].nLength > size)
+			if (fin.eof() || bsp_header_ex.lump[i].nOffset + bsp_header_ex.lump[i].nLength > bspsize)
 			{
 				print_log(get_localized_string(LANG_1020), i);
 				is_bsp30ext = false;
@@ -5535,43 +5531,94 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 	update_lump_pointers();
 
-	std::set<int> tmp_offsets;
-	int lightmap3_bytes = 0;
-	for (int i = 0; i < faceCount; i++)
-	{
-		int light_offset = faces[i].nLightmapOffset;
-
-		if (light_offset >= 0 && !tmp_offsets.count(light_offset))
-		{
-			tmp_offsets.insert(light_offset);
-			lightmap3_bytes += GetFaceLightmapSizeBytes(i);
-		}
-	}
-
-	int lightmap1_bytes = lightmap3_bytes / sizeof(COLOR3);
-	int lightmap4_bytes = lightmap1_bytes * sizeof(COLOR4);
-
-	is_colored_lightmap = lightdata == NULL || abs(lightmap1_bytes - lightDataLength) > abs(lightmap3_bytes - lightDataLength);
 
 	bool is_fuck_rgba_lightmap = false;
-
-	if (is_colored_lightmap && lightdata != NULL)
+	if (lightdata && faceCount > 10)
 	{
-		if (abs(lightmap3_bytes - lightDataLength) > abs(lightmap4_bytes - lightDataLength))
-		{
-			is_fuck_rgba_lightmap = true;
-			if (g_settings.verboseLogs)
+		std::vector<std::pair<int, int>> faceOffsets; // offset, faceIndex
+
+		for (int i = 0; i < faceCount; i++) {
+			BSPFACE32& face = faces[i];
+			if (face.nLightmapOffset > 0 && face.nLightmapOffset < lightDataLength) {
+				faceOffsets.push_back({ face.nLightmapOffset, i });
+			}
+		}
+
+		std::sort(faceOffsets.begin(), faceOffsets.end());
+
+
+		int rgbCount = 0;
+		int rgbaCount = 0;
+		int monoCount = 0;
+		int totalComparisons = 0;
+
+		for (size_t i = 0; i < faceOffsets.size() - 1; i++) {
+			int currentOffset = faceOffsets[i].first;
+			int nextOffset = faceOffsets[i + 1].first;
+			int faceIndex = faceOffsets[i].second;
+
+			BSPFACE32& face = faces[faceIndex];
+
+			if (totalComparisons > 100 || i > 10000)
+				break;
+
+			int size[2];
+			if (GetFaceLightmapSize(faceIndex, size)) 
 			{
-				print_log("fuck rgba lightmaps detected\n");
+				if (face.nLightmapOffset <= 0)
+					continue;
+
+				int diff = abs(nextOffset - currentOffset);
+
+				if (diff % 4 == 0 && diff % 3 == 0)
+				{
+					continue;
+				}
+				else if (diff % 4 == 0) {
+					rgbaCount++;
+					totalComparisons++;
+				}
+				else if (diff % 3 == 0) {
+					rgbCount++;
+					totalComparisons++;
+				}
+				else
+				{
+					monoCount++;
+					totalComparisons++;
+				}
+			}
+		}
+
+		if (totalComparisons > 0) {
+			if (rgbaCount > rgbCount && rgbaCount > monoCount) {
+				is_colored_lightmap = is_fuck_rgba_lightmap = true;
+				print_log("Detected RGBA lightmap format (4 bytes per pixel). Statistics: RGBA={}, RGB={}, MONO={}\n",
+					rgbaCount, rgbCount, monoCount);
+			}
+			else if (rgbCount > rgbaCount && rgbCount > monoCount) {
+				is_colored_lightmap = true;
+				print_log("Detected RGB lightmap format (3 bytes per pixel). Statistics: RGBA={}, RGB={}, MONO={}\n",
+					rgbaCount, rgbCount, monoCount);
+			}
+			else if (monoCount > rgbaCount && monoCount > rgbCount) {
+				is_colored_lightmap = false;
+				print_log("Detected grayscale lightmap format (1 byte per pixel). Statistics: RGBA={}, RGB={}, MONO={}\n",
+					rgbaCount, rgbCount, monoCount);
+			}
+			else {
+				is_colored_lightmap = true;
+				print_log("Ambiguous lightmap format, defaulting to RGB. Statistics: RGBA={}, RGB={}, MONO={}\n",
+					rgbaCount, rgbCount, monoCount);
 			}
 		}
 	}
-
-	if (g_settings.verboseLogs)
+	else
 	{
-		//print_log(get_localized_string(LANG_0102), !is_colored_lightmap ? "monochrome" : "colored");
-		print_log("Light: {} [mono {}, color {}, map has {}]\n", !is_colored_lightmap ? "monochrome" : "colored", lightmap1_bytes, lightmap3_bytes, lightDataLength);
+		print_log("Ambiguous lightmap format, defaulting to RGB.\n");
+		is_colored_lightmap = true;
 	}
+
 
 	int textures_bytes = sizeof(int) + textureCount * sizeof(int);
 	int textures_no_pal_bytes = sizeof(int) + textureCount * sizeof(int);
@@ -7997,7 +8044,7 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 
 		std::error_code err{};
 
-		for (auto& dir_entry : std::filesystem::directory_iterator(texpath,err))
+		for (auto& dir_entry : std::filesystem::directory_iterator(texpath, err))
 		{
 			if (!dir_entry.is_directory() && ends_with(toLowerCase(dir_entry.path().string()), ".png"))
 			{
@@ -14849,7 +14896,8 @@ int Bsp::GetFaceSingleLightmapSizeBytes(int facenum)
 	int size[2];
 	GetFaceLightmapSize(facenum, size);
 	BSPFACE32& face = faces[facenum];
-	if (face.nStyles[0] == 255)
+	if (face.nStyles[0] == 255 && face.nStyles[1] == 255 &&
+		face.nStyles[2] == 255 && face.nStyles[3] == 255)
 		return 0;
 	return size[0] * size[1] * sizeof(COLOR3);
 }
@@ -14871,10 +14919,16 @@ bool Bsp::GetFaceLightmapSize(int facenum, int size[2])
 
 int Bsp::GetFaceLightmapSizeBytes(int facenum)
 {
+	BSPFACE32& face = faces[facenum];
+	BSPTEXTUREINFO tex = texinfos[face.iTextureInfo];
+
+	if (tex.nFlags & TEX_SPECIAL)
+	{
+		return 0;
+	}
+
 	int size[2];
 	GetFaceLightmapSize(facenum, size);
-	BSPFACE32& face = faces[facenum];
-
 	int lightmapCount = 0;
 	for (int k = 0; k < MAX_LIGHTMAPS; k++)
 	{
@@ -14975,3 +15029,4 @@ vec3 Bsp::getEntOffset(Entity* ent)
 	}
 	return vec3();
 }
+

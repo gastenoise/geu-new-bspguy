@@ -541,7 +541,7 @@ void BspRenderer::reload()
 
 void BspRenderer::reloadTextures()
 {
-	if (texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	if (!texturesFuture.valid() || texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		texturesLoaded = false;
 		texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
@@ -550,7 +550,7 @@ void BspRenderer::reloadTextures()
 
 void BspRenderer::reloadLightmaps()
 {
-	if (lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	if (!lightmapFuture.valid() || lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		lightmapsGenerated = false;
 		lightmapsUploaded = false;
@@ -566,7 +566,7 @@ void BspRenderer::reloadLightmaps()
 
 void BspRenderer::reloadClipnodes()
 {
-	if (clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	if (!clipnodesFuture.valid() || clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		clipnodesLoaded = false;
 		clipnodeLeafCount = 0;
@@ -2538,6 +2538,14 @@ void BspRenderer::reuploadTextures()
 
 void BspRenderer::delayLoadData()
 {
+	if (!texturesLoaded && texturesFuture.valid() && texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	{
+		reuploadTextures();
+		preRenderFaces();
+		texturesLoaded = true;
+	}
+
+
 	if (!lightmapsUploaded && lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		for (int i = 0; i < glLightmapTextures.size(); i++)
@@ -2695,9 +2703,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 	g_app->matmodel.loadIdentity();
 	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	g_app->colorShader->updateMatrixes();
-
-	g_app->matmodel.loadIdentity();
-	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	g_app->bspShader->updateMatrixes();
 
 	static double leafUpdTime = 0.0;

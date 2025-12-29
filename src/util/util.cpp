@@ -45,20 +45,37 @@ bool fileExists(const std::string& fileName)
 	}
 }
 
-char* loadFile(const std::string& fileName, int& length)
+bool readFile(const std::string& path, std::vector<unsigned char>& outBuffer)
 {
-	if (!fileExists(fileName))
-		return NULL;
-	std::ifstream fin(fileName.c_str(), std::ios::binary);
-	long long begin = fin.tellg();
-	fin.seekg(0, std::ios::end);
-	unsigned int size = (unsigned int)((int)fin.tellg() - begin);
-	char* buffer = new char[size];
-	fin.seekg(0, std::ios::beg);
-	fin.read(buffer, size);
-	fin.close();
-	length = (int)size; // surely models will never exceed 2 GB
-	return buffer;
+	std::ifstream file(path, std::ios::binary | std::ios::ate);
+	if (!file.is_open())
+		return false;
+
+	std::streamsize size = file.tellg();
+	if (size <= 0 || size > INT_MAX)
+		return false;
+
+	outBuffer.resize(static_cast<size_t>(size));
+	file.seekg(0, std::ios::beg);
+
+	if (!file.read((char*)outBuffer.data(), size))
+	{
+		outBuffer.clear();
+		return false;
+	}
+
+	return true;
+}
+
+bool writeFile(const std::string& path, const std::vector<unsigned char>& buffer)
+{
+	std::ofstream file(path, std::ios::binary | std::ios::trunc);
+	if (!file.is_open() || buffer.empty())
+		return false;
+
+	file.write((char*)buffer.data(), buffer.size());
+	file.flush();
+	return true;
 }
 
 bool writeFile(const std::string& fileName, const char* data, int len)

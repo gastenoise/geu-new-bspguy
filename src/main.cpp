@@ -966,16 +966,11 @@ int main(int argc, char* argv[])
 		if (!fileExists(g_settings_path) && fileExists("./bspguy.cfg"))
 		{
 			print_log(PRINT_GREEN, "Migrating from CFG file to INI...\n");
-			int length;
-			char* bspguy_cfg = loadFile("./bspguy.cfg", length);
-			if (bspguy_cfg && length > 0)
+			std::vector<unsigned char> oldCFG;
+			if (readFile("./bspguy.cfg", oldCFG))
 			{
-				if (bspguy_cfg[0] != '[')
-				{
-					std::string bspgu_cfgToIni = ConvertFromCFGtoINI(bspguy_cfg);
-					writeFile(g_settings_path, bspgu_cfgToIni);
-					delete[] bspguy_cfg;
-				}
+				std::string bspgu_cfgToIni = ConvertFromCFGtoINI((char*)oldCFG.data());
+				writeFile(g_settings_path, bspgu_cfgToIni);
 			}
 			removeFile("./bspguy.cfg");
 		}

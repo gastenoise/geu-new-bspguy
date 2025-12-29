@@ -79,8 +79,6 @@ struct vec3
 		Copy(other);
 	}
 
-	~vec3() = default;
-
 	vec3(vec3&& other) noexcept : x(other.x), y(other.y), z(other.z) {
 		other.x = 0;
 		other.y = 0;
@@ -272,13 +270,8 @@ bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices);
 struct vec2
 {
 	float x, y;
-	vec2() : x(0), y(0)
-	{
-		if (std::fabs(x) < EPSILON)
-			x = +0.0f;
-		if (std::fabs(y) < EPSILON)
-			y = +0.0f;
-	}
+	vec2() : x(0), y(0) {};
+
 	vec2(float x, float y) : x(x), y(y)
 	{
 		if (std::fabs(x) < EPSILON)
@@ -323,7 +316,7 @@ struct vec4
 {
 	float x, y, z, w;
 
-	vec4() : x(+0.0f), y(+0.0f), z(+0.0f), w(+0.0f)
+	vec4() : x(0), y(0), z(0), w(0)
 	{
 	}
 	vec4(float x, float y, float z) : x(x), y(y), z(z), w(1)

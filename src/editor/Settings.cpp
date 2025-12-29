@@ -238,20 +238,18 @@ void Settings::fillPalettes(const std::string& folderPath)
 			std::string filename = entry.path().filename().string();
 			if (ends_with(filename, ".pal"))
 			{
-				int len;
-				char* data = loadFile(entry.path().string(), len);
-				if (data)
+				std::vector<unsigned char> palData;
+				if (readFile(entry.path().string(), palData))
 				{
-					if (len > 256 * sizeof(COLOR3))
+					if (palData.size() > 256 * sizeof(COLOR3))
 					{
-						print_log(PRINT_RED, "Bad palette \"{}\" size : {} bytes!", entry.path().string(), len);
+						print_log(PRINT_RED, "Bad palette \"{}\" size : {} bytes!", entry.path().string(), palData.size());
 					}
 					else
 					{
 						filename.pop_back(); filename.pop_back(); filename.pop_back(); filename.pop_back();
-						palettes.push_back({ toUpperCase(filename), (unsigned int)(len / sizeof(COLOR3)), NULL });
-						memcpy(palettes[palettes.size() - 1].data, data, len);
-						delete[] data;
+						palettes.push_back({ toUpperCase(filename), (unsigned int)(palData.size() / sizeof(COLOR3)), NULL });
+						memcpy(palettes[palettes.size() - 1].data, palData.data(), palData.size());
 					}
 				}
 			}
