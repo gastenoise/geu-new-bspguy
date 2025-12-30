@@ -3246,3 +3246,315 @@ void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& e
 		}
 	}
 }
+
+
+
+void W_CleanupName(const char* in, char* out)
+{
+	int	i;
+
+	for (i = 0; i < MAXTEXTURENAME; i++) {
+		char		c;
+		c = in[i];
+		if (!c)
+			break;
+
+		if (c >= 'A' && c <= 'Z')
+			c += ('a' - 'A');
+		out[i] = c;
+	}
+
+	for (; i < MAXTEXTURENAME; i++)
+		out[i] = 0;
+}
+
+WADTEX create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
+{
+	if (!name)
+		return NULL;
+	COLOR3 palette[256];
+	memset(&palette, 0, sizeof(COLOR3) * 256);
+	unsigned char* mip[MIPLEVELS] = { NULL };
+
+	COLOR3* src = rgbdata;
+	int colorCount = 0;
+
+	// create pallete and full-rez mipmap
+	mip[0] = new unsigned char[width * height];
+
+	bool do_magic = false;
+	if (name[0] == '{')
+	{
+		int sz = width * height;
+		for (int i = 0; i < sz; i++)
+		{
+			if (rgbdata[i] == COLOR3(0, 0, 255))
+			{
+				do_magic = true;
+				break;
+			}
+		}
+		if (do_magic)
+		{
+			colorCount++;
+			palette[0] = COLOR3(0, 0, 255);
+		}
+	}
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int paletteIdx = -1;
+			for (int k = 0; k < colorCount; k++)
+			{
+				if (*src == palette[k])
+				{
+					paletteIdx = k;
+					break;
+				}
+			}
+			if (paletteIdx == -1)
+			{
+				if (colorCount >= 256)
+				{
+					print_log(get_localized_string(LANG_1044));
+					delete[] mip[0];
+					return NULL;
+				}
+				palette[colorCount] = *src;
+				paletteIdx = colorCount;
+				colorCount++;
+			}
+
+			if (do_magic)
+			{
+				if (paletteIdx == 0)
+				{
+					mip[0][y * width + x] = (unsigned char)255;
+				}
+				else if (paletteIdx == 255)
+				{
+					mip[0][y * width + x] = (unsigned char)0;
+				}
+				else
+				{
+					mip[0][y * width + x] = (unsigned char)paletteIdx;
+				}
+			}
+			else
+			{
+				mip[0][y * width + x] = (unsigned char)paletteIdx;
+			}
+			src++;
+		}
+	}
+
+	if (do_magic)
+	{
+		std::swap(palette[0], palette[255]);
+	}
+
+	int texDataSize = width * height + sizeof(short) /* pal num*/ + sizeof(COLOR3) * 256;
+
+	// generate mipmaps
+	for (int i = 1; i < MIPLEVELS; i++)
+	{
+		int div = 1 << i;
+		int mipWidth = width / div;
+		int mipHeight = height / div;
+		texDataSize += mipWidth * mipHeight;
+		mip[i] = new unsigned char[texDataSize];
+
+		src = rgbdata;
+		for (int y = 0; y < mipHeight; y++)
+		{
+			for (int x = 0; x < mipWidth; x++)
+			{
+				int paletteIdx = -1;
+				for (int k = 0; k < colorCount; k++)
+				{
+					if (*src == palette[k])
+					{
+						paletteIdx = k;
+						break;
+					}
+				}
+
+				mip[i][y * mipWidth + x] = (unsigned char)paletteIdx;
+				src += div;
+			}
+		}
+	}
+
+	int newTexLumpSize = sizeof(BSPMIPTEX) + texDataSize;
+
+	newTexLumpSize = ((newTexLumpSize + 3) & ~3);
+
+	WADTEX newMipTex;
+	newMipTex.data.resize(newTexLumpSize);
+	unsigned char* newTexData = newMipTex.data.data();
+
+	newMipTex.nWidth = width;
+	newMipTex.nHeight = height;
+
+	memcpy(newMipTex.szName, name, MAXTEXTURENAME);
+
+	newMipTex.nOffsets[0] = 0;
+	newMipTex.nOffsets[1] = newMipTex.nOffsets[0] + width * height;
+	newMipTex.nOffsets[2] = newMipTex.nOffsets[1] + (width >> 1) * (height >> 1);
+	newMipTex.nOffsets[3] = newMipTex.nOffsets[2] + (width >> 2) * (height >> 2);
+
+	unsigned char* palleteOffset = newTexData + newMipTex.nOffsets[3] + (width >> 3) * (height >> 3);
+	memcpy(newTexData + newMipTex.nOffsets[0], mip[0], width * height);
+	memcpy(newTexData + newMipTex.nOffsets[1], mip[1], (width >> 1) * (height >> 1));
+	memcpy(newTexData + newMipTex.nOffsets[2], mip[2], (width >> 2) * (height >> 2));
+	memcpy(newTexData + newMipTex.nOffsets[3], mip[3], (width >> 3) * (height >> 3));
+	memcpy(palleteOffset, palette, sizeof(COLOR3) * 256);
+
+	*(unsigned short*)palleteOffset = 256;
+	memcpy(palleteOffset + 2, palette, sizeof(COLOR3) * 256);
+
+	return newMipTex;
+}
+
+COLOR3* ConvertWadTexToRGB(const WADTEX& wadTex, COLOR3* palette)
+{
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0257), wadTex.szName, wadTex.nWidth, wadTex.nHeight);
+	int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
+	const unsigned char* src = wadTex.data.data();
+
+	if (palette == NULL)
+		palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+	
+
+	int sz = wadTex.nWidth * wadTex.nHeight;
+	COLOR3* imageData = new COLOR3[sz];
+
+
+	for (int k = 0; k < sz; k++)
+	{
+		imageData[k] = palette[src[k]];
+	}
+
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0258), wadTex.szName, wadTex.nWidth, wadTex.nHeight);
+	return imageData;
+}
+
+COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
+{
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0259), tex->szName, tex->nWidth, tex->nHeight);*/
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
+
+	if (palette == NULL)
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
+
+	int sz = tex->nWidth * tex->nHeight;
+	COLOR3* imageData = new COLOR3[sz];
+
+	for (int k = 0; k < sz; k++)
+	{
+		imageData[k] = palette[src[k]];
+	}
+
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0260), tex->szName, tex->nWidth, tex->nHeight);*/
+	return imageData;
+}
+
+
+COLOR4* ConvertWadTexToRGBA(const WADTEX& wadTex, COLOR3* palette, int colors)
+{
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0261), wadTex.szName, wadTex.nWidth, wadTex.nHeight);
+	int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
+	const unsigned char* src = wadTex.data.data();
+
+	if (palette == NULL)
+		palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+
+
+	int sz = wadTex.nWidth * wadTex.nHeight;
+	COLOR4* imageData = new COLOR4[sz];
+
+	for (int k = 0; k < sz; k++)
+	{
+		if (wadTex.szName[0] == '{' && (colors - 1 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
+		{
+			imageData[k] = COLOR4(255, 255, 255, 0);
+		}
+		else
+		{
+			imageData[k] = palette[src[k]];
+		}
+	}
+
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0262), wadTex.szName, wadTex.nWidth, wadTex.nHeight);
+	return imageData;
+}
+
+COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
+{
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0263), tex->szName, tex->nWidth, tex->nHeight);*/
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
+
+	if (palette == NULL)
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
+
+	int sz = tex->nWidth * tex->nHeight;
+	COLOR4* imageData = new COLOR4[sz];
+
+	for (int k = 0; k < sz; k++)
+	{
+		if (tex->szName[0] == '{' && (colors - 1 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
+		{
+			imageData[k] = COLOR4(0, 0, 0, 0);
+		}
+		else
+		{
+			imageData[k] = palette[src[k]];
+		}
+	}
+
+	/*if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0264), tex->szName, tex->nWidth, tex->nHeight);*/
+	return imageData;
+}
+
+COLOR3 GetMipTexAplhaColor(BSPMIPTEX* tex, COLOR3* palette, int max_colors)
+{
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
+	if (palette == NULL)
+	{
+		max_colors = *(unsigned short*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize);
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+	}
+	if (max_colors > 256 || max_colors < 0)
+	{
+		max_colors = 256;
+	}
+	return palette[max_colors - 1];
+}
+
+COLOR3 GetWadTexAplhaColor(const WADTEX& wadTex, COLOR3* palette, int max_colors)
+{
+	const unsigned char* src = wadTex.data.data();
+	int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
+	if (palette == NULL)
+	{
+		max_colors = *(unsigned short*)(src + wadTex.nOffsets[3] + lastMipSize - sizeof(BSPMIPTEX));
+		palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+	}
+	if (max_colors > 256 || max_colors < 0)
+	{
+		max_colors = 256;
+	}
+	return palette[max_colors - 1];
+}

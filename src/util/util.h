@@ -300,3 +300,14 @@ int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_
 
 void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& dirList, bool relative = false);
 void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative = false);
+
+void W_CleanupName(const char* in, char* out);
+int calcMipsSize(int w, int h);
+WADTEX create_wadtex(const char* name, COLOR3* data, int width, int height);
+COLOR3* ConvertWadTexToRGB(const WADTEX & wadTex, COLOR3* palette = NULL);
+COLOR3* ConvertMipTexToRGB(BSPMIPTEX* wadTex, COLOR3* palette = NULL);
+COLOR4* ConvertWadTexToRGBA(const WADTEX& wadTex, COLOR3* palette = NULL, int colors = 256);
+COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette = NULL, int colors = 256);
+
+COLOR3 GetMipTexAplhaColor(BSPMIPTEX* wadTex, COLOR3* palette = NULL, int colors = 256);
+COLOR3 GetWadTexAplhaColor(const WADTEX& wadTex, COLOR3* palette = NULL, int colors = 256);

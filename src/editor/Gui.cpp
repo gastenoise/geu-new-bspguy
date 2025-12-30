@@ -121,7 +121,8 @@ void Gui::init()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return (void*)(size_t)tex;
@@ -403,7 +404,7 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	std::vector<COLOR3> newLightmaps;
 	std::vector<BSPNODE32> newNodes;
 	std::vector<BSPCLIPNODE32> newClipnodes;
-	std::vector<WADTEX*> newTextures;
+	std::vector<WADTEX> newTextures;
 	std::vector<BSPLEAF32> newLeaves;
 	std::vector<int> newMarkSurfaces;
 
@@ -450,17 +451,16 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 		while (newTextures.size())
 		{
 			auto& tex = newTextures[newTextures.size() - 1];
-			if (tex->data)
+			if (tex.data.size())
 			{
 				auto data = ConvertWadTexToRGB(tex);
-				map->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+				map->add_texture(tex.szName, (unsigned char*)data, tex.nWidth, tex.nHeight);
 				delete[]data;
 			}
 			else
 			{
-				map->add_texture(tex->szName, NULL, tex->nWidth, tex->nHeight);
+				map->add_texture(tex.szName, NULL, tex.nWidth, tex.nHeight);
 			}
-			delete tex;
 			newTextures.pop_back();
 		}
 	}
@@ -505,12 +505,11 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 				{
 					if (s->hasTexture(tex.szName))
 					{
-						WADTEX* wadTex = s->readTexture(tex.szName);
+						WADTEX wadTex = s->readTexture(tex.szName);
 						COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
-						newMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+						newMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
 
-						delete wadTex;
 						delete[] imageData;
 						break;
 					}
@@ -643,7 +642,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	std::vector<COLOR3> newLightmaps;
 	std::vector<BSPNODE32> newNodes;
 	std::vector<BSPCLIPNODE32> newClipnodes;
-	std::vector<WADTEX*> newTextures;
+	std::vector<WADTEX> newTextures;
 	std::vector<BSPLEAF32> newLeaves;
 	std::vector<int> newMarkSurfaces;
 
@@ -694,19 +693,18 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 		while (newTextures.size())
 		{
 			auto& tex = newTextures[newTextures.size() - 1];
-			if (tex->data && ExportType != 0)
+			if (tex.data.size() && ExportType != 0)
 			{
 				auto data = ConvertWadTexToRGB(tex);
-				int mip = bspModel->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+				int mip = bspModel->add_texture(tex.szName, (unsigned char*)data, tex.nWidth, tex.nHeight);
 				delete[]data;
-				data = ConvertMipTexToRGB(bspModel->find_embedded_texture(tex->szName, mip));
+				data = ConvertMipTexToRGB(bspModel->find_embedded_texture(tex.szName, mip));
 				delete[]data;
 			}
 			else
 			{
-				bspModel->add_texture(tex->szName, NULL, tex->nWidth, tex->nHeight);
+				bspModel->add_texture(tex.szName, NULL, tex.nWidth, tex.nHeight);
 			}
-			delete tex;
 			newTextures.pop_back();
 		}
 	}
@@ -751,19 +749,18 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 				{
 					if (s->hasTexture(tex.szName))
 					{
-						WADTEX* wadTex = s->readTexture(tex.szName);
+						WADTEX wadTex = s->readTexture(tex.szName);
 						if (ExportType != 0)
 						{
 							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-							newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+							newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
 							delete[] imageData;
 						}
 						else
 						{
-							newMiptex = src_map->add_texture(tex.szName, NULL, wadTex->nWidth, wadTex->nHeight);
+							newMiptex = src_map->add_texture(tex.szName, NULL, wadTex.nWidth, wadTex.nHeight);
 						}
 
-						delete wadTex;
 						break;
 					}
 				}
@@ -12551,16 +12548,15 @@ void Gui::drawFaceEditorWidget()
 					{
 						if (s->hasTexture(textureName))
 						{
-							WADTEX* wadTex = s->readTexture(textureName);
+							WADTEX wadTex = s->readTexture(textureName);
 							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 							validTexture = true;
-							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
 							mapRenderer->reuploadTextures();
 							mapRenderer->preRenderFaces();
 
 							delete[] imageData;
-							delete wadTex;
 						}
 					}
 				}

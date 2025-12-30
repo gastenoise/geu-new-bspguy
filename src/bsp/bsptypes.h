@@ -188,7 +188,7 @@ struct BSPPLANE
 	bool update_plane(bool flip);
 	bool update_plane(vec3 newNormal, float fdist, bool flip = true);
 
-	BSPPLANE() :vNormal(vec3())
+	BSPPLANE() :vNormal(vec3()) 
 	{
 		fDist = +0.0f;
 		nType = 0;
@@ -198,6 +198,10 @@ struct BSPPLANE
 	{
 		fDist = dist;
 		nType = type;
+	}
+	
+	BSPPLANE operator-() const {
+		return BSPPLANE(-vNormal, -fDist, nType);
 	}
 };
 

@@ -572,6 +572,10 @@ void Renderer::renderLoop()
 
 				glGenTextures(1, &texture);
 				glBindTexture(GL_TEXTURE_2D, texture);
+				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#ifdef GL_UNPACK_ROW_LENGTH 
+				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ortho_tga_w, ortho_tga_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -5120,20 +5124,15 @@ Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& 
 		{
 			if (wad->hasTexture(texname))
 			{
-				WADTEX* wadTex = wad->readTexture(texname);
-				if (wadTex)
+				WADTEX wadTex = wad->readTexture(texname);
+				COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+				if (imageData)
 				{
-					COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-					if (imageData)
-					{
-						Texture* tmpTex = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, texname);
-						glExteralTextures_names.emplace_back(texname);
-						glExteralTextures_wads.emplace_back(toLowerCase(wad->wadname));
-						glExteralTextures_textures.emplace_back(tmpTex);
-						delete wadTex;
-						return tmpTex;
-					}
-					delete wadTex;
+					Texture* tmpTex = new Texture(wadTex.nWidth, wadTex.nHeight, (unsigned char*)imageData, texname);
+					glExteralTextures_names.emplace_back(texname);
+					glExteralTextures_wads.emplace_back(toLowerCase(wad->wadname));
+					glExteralTextures_textures.emplace_back(tmpTex);
+					return tmpTex;
 				}
 			}
 		}

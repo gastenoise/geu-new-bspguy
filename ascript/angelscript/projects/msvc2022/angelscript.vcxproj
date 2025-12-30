@@ -149,7 +149,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
     <PlatformToolset>v145</PlatformToolset>
-    <EnableASAN>false</EnableASAN>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='clang_debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -401,10 +401,12 @@
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+      <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)$(ProjectName)64d.lib</OutputFile>

@@ -51,7 +51,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v145</PlatformToolset>
-    <EnableASAN>false</EnableASAN>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -169,9 +169,11 @@
       <OmitFramePointers>false</OmitFramePointers>
       <OpenMPSupport>true</OpenMPSupport>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;NDEBUG;"</PreprocessorDefinitions>

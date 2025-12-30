@@ -423,14 +423,15 @@ void BspRenderer::loadTextures()
 		}
 
 
+		WADTEX wadTex;
+		bool foundInWad = false;
 		for (auto& tex_name : texNames)
 		{
 			COLOR3* imageData = NULL;
-			WADTEX* wadTex = NULL;
 			std::string wadName = "unknown.wad";
 			if (tex->nOffsets[0] <= 0)
 			{
-				bool foundInWad = false;
+				foundInWad = false;
 				for (size_t k = 0; k < wads.size(); k++)
 				{
 					if (wads[k]->hasTexture(tex_name))
@@ -489,9 +490,9 @@ void BspRenderer::loadTextures()
 
 			if (imageData)
 			{
-				if (wadTex)
+				if (foundInWad)
 				{
-					Texture* tmpTex = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, tex_name);
+					Texture* tmpTex = new Texture(wadTex.nWidth, wadTex.nHeight, (unsigned char*)imageData, tex_name);
 					tmpTex->setWadName(wadName);
 					glTexturesSwap[i].push_back(tmpTex);
 				}
@@ -510,8 +511,6 @@ void BspRenderer::loadTextures()
 					missingCount++;
 				}
 			}
-
-			delete wadTex;
 		}
 
 		if (glTexturesSwap[i].empty())

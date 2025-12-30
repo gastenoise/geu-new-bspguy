@@ -51,7 +51,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v145</PlatformToolset>
-    <EnableASAN>false</EnableASAN>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -198,15 +198,16 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
-      <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;OEMRESOURCE</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <OmitFramePointers>false</OmitFramePointers>
       <OpenMPSupport>true</OpenMPSupport>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;</PreprocessorDefinitions>

@@ -2466,7 +2466,7 @@ void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 								}
 							}
 
-							WADTEX* wadTex = wad->readTexture(tex->szName);
+							WADTEX wadTex = wad->readTexture(tex->szName);
 							texNames.insert(tex->szName);
 
 							if (tex_type == 1)
@@ -2475,17 +2475,15 @@ void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 								Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 								if (colorCount != 0)
 									tmpCQuantizer->SetColorTable(palette, 256);
-								tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, wadTex->nWidth * wadTex->nHeight);
+								tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, wadTex.nWidth * wadTex.nHeight);
 								delete tmpCQuantizer;
-								targetMap->add_texture(tex->szName, (unsigned char*)newTex, wadTex->nWidth, wadTex->nHeight, true);
+								targetMap->add_texture(tex->szName, (unsigned char*)newTex, wadTex.nWidth, wadTex.nHeight, true);
 								delete[] newTex;
 							}
 							else
 							{
 								targetMap->add_texture(wadTex);
 							}
-
-							delete wadTex;
 						}
 					}
 				}
@@ -7912,18 +7910,17 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	return textureCount - 1;
 }
 
-int Bsp::add_texture(WADTEX* tex, bool embedded)
+int Bsp::add_texture(const WADTEX& tex, bool embedded)
 {
-	//print_log(get_localized_string(LANG_0168),tex->szName,tex->nWidth,tex->nHeight,tex->nOffsets[0],tex->nOffsets[1],tex->nOffsets[2],tex->nOffsets[3]);
-	print_log(get_localized_string(LANG_0169), tex->szName, tex->nWidth, tex->nHeight);
+	print_log(get_localized_string(LANG_0169), tex.szName, tex.nWidth, tex.nHeight);
 
-	if (tex->nWidth % 16 != 0 || tex->nHeight % 16 != 0)
+	if (tex.nWidth % 16 != 0 || tex.nHeight % 16 != 0)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1030));
 		return -1;
 	}
 
-	if (tex->nWidth > (int)g_limits.maxTextureDimension || tex->nHeight > (int)g_limits.maxTextureDimension)
+	if (tex.nWidth > (int)g_limits.maxTextureDimension || tex.nHeight > (int)g_limits.maxTextureDimension)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1031));
 		return -1;
@@ -7931,7 +7928,7 @@ int Bsp::add_texture(WADTEX* tex, bool embedded)
 
 	if (embedded)
 	{
-		return add_texture(tex->szName, NULL, tex->nWidth, tex->needclean);
+		return add_texture(tex.szName, NULL, tex.nWidth, tex.nHeight);
 	}
 	else
 	{
@@ -7955,14 +7952,14 @@ int Bsp::add_texture(WADTEX* tex, bool embedded)
 			Quantizer* tmpCQuantizer = new Quantizer(colorCount, 8);
 			if (colorCount != 0)
 				tmpCQuantizer->SetColorTable(palette, colorCount);
-			tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, tex->nWidth * tex->nHeight);
+			tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, tex.nWidth * tex.nHeight);
 			delete tmpCQuantizer;
-			int rettex = add_texture(tex->szName, (unsigned char*)newTex, tex->nWidth, tex->nHeight);
+			int rettex = add_texture(tex.szName, (unsigned char*)newTex, tex.nWidth, tex.nHeight);
 			delete[] newTex;
 			return rettex;
 		}
 
-		int rettex = add_texture(tex->szName, (unsigned char*)newTex, tex->nWidth, tex->nHeight);
+		int rettex = add_texture(tex.szName, (unsigned char*)newTex, tex.nWidth, tex.nHeight);
 		delete[] newTex;
 		return rettex;
 	}
@@ -7991,18 +7988,17 @@ bool Bsp::export_wad_to_pngs(const std::string& wadpath, const std::string& targ
 
 		std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](int file)
 			{
-				WADTEX* texture = wad->readTexture(file);
+				WADTEX texture = wad->readTexture(file);
 
-				if (texture->szName[0] != '\0')
+				if (texture.szName[0] != '\0')
 				{
-					print_log(get_localized_string(LANG_0346), texture->szName, basename(wad->filename));
+					print_log(get_localized_string(LANG_0346), texture.szName, basename(wad->filename));
 					COLOR4* texturedata = ConvertWadTexToRGBA(texture);
 
-					lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
-						, (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
+					lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture.szName) + ".png").c_str()
+						, (unsigned char*)texturedata, texture.nWidth, texture.nHeight);
 					delete texturedata;
 				}
-				delete texture;
 			});
 		delete wad;
 		return true;
@@ -8022,7 +8018,7 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 		if (!fileExists(wadpath))
 		{
 			Wad* resetWad = new Wad(wadpath);
-			resetWad->write(NULL, 0);
+			resetWad->write({});
 			delete resetWad;
 
 			if (!fileExists(wadpath))
@@ -8038,7 +8034,7 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 
 		Wad* tmpWad = new Wad(wadpath);
 
-		std::vector<WADTEX*> textureList{};
+		std::vector<WADTEX> textureList{};
 
 		std::vector<std::string> files{};
 
@@ -8093,7 +8089,7 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 
 					std::string tmpTexName = stripExt(basename(file));
 
-					WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
+					WADTEX tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
 					g_mutex_list[1].lock();
 					textureList.push_back(tmpWadTex);
 					g_mutex_list[1].unlock();
@@ -8106,8 +8102,6 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 		{
 			tmpWad->write(textureList);
 		}
-		for (auto& tex : textureList)
-			delete tex;
 
 		delete tmpWad;
 		if (renderer && textureList.size())
@@ -9048,7 +9042,7 @@ int Bsp::create_texinfo()
 void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUCTUSAGE& usage, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 	std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 	std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-	std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport)
+	std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport)
 {
 	if (forExport && leafCount > 0)
 		usage.leaves[0] = true;
@@ -9122,19 +9116,19 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 					{
 						if (g_settings.pal_id >= 0)
 						{
-							WADTEX* newTex = new WADTEX(tex, g_settings.palettes[g_settings.pal_id].data,
+							WADTEX newTex = WADTEX(tex, g_settings.palettes[g_settings.pal_id].data,
 								(unsigned short)g_settings.palettes[g_settings.pal_id].colors);
 							newTextures.push_back(newTex);
 						}
 						else
 						{
-							WADTEX* newTex = new WADTEX(tex, g_settings.palette_default);
+							WADTEX newTex = WADTEX(tex, g_settings.palette_default);
 							newTextures.push_back(newTex);
 						}
 					}
 					else
 					{
-						WADTEX* newTex = new WADTEX(tex);
+						WADTEX newTex = WADTEX(tex);
 						newTextures.push_back(newTex);
 					}
 				}
@@ -9301,7 +9295,7 @@ void Bsp::duplicate_model_structures(int modelIdx)
 	std::vector<COLOR3> newLightmaps;
 	std::vector<BSPNODE32> newNodes;
 	std::vector<BSPCLIPNODE32> newClipnodes;
-	std::vector<WADTEX*> newTextures;
+	std::vector<WADTEX> newTextures;
 	std::vector<BSPLEAF32> newLeaves;
 	std::vector<int> newMarkSurfaces;
 
@@ -9309,11 +9303,6 @@ void Bsp::duplicate_model_structures(int modelIdx)
 	STRUCTUSAGE usage(this);
 	copy_bsp_model(modelIdx, this, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
-
-	for (auto& s : newTextures)
-	{
-		delete s;
-	}
 
 	if (newClipnodes.size())
 	{
@@ -9396,7 +9385,7 @@ int Bsp::duplicate_model(int modelIdx)
 	std::vector<COLOR3> newLightmaps;
 	std::vector<BSPNODE32> newNodes;
 	std::vector<BSPCLIPNODE32> newClipnodes;
-	std::vector<WADTEX*> newTextures;
+	std::vector<WADTEX> newTextures;
 	std::vector<BSPLEAF32> newLeaves;
 	std::vector<int> newMarkSurfaces;
 
@@ -9404,11 +9393,6 @@ int Bsp::duplicate_model(int modelIdx)
 	STRUCTUSAGE usage(this);
 	copy_bsp_model(modelIdx, this, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
-
-	for (auto& s : newTextures)
-	{
-		delete s;
-	}
 
 	if (newClipnodes.size())
 	{
@@ -10898,6 +10882,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 
 	std::map<int, int> bonemap;
 	int lastboneid = 0;
+	WADTEX wadTex;
 
 	for (int i = 0; i < faceCount; i++)
 	{
@@ -10938,30 +10923,28 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 			{
 				if (texOffset >= 0)
 				{
-					WADTEX* wadTex = NULL;
 					if (!is_texture_has_pal)
 					{
 						if (g_settings.pal_id >= 0)
 						{
-							wadTex = new WADTEX(tex, g_settings.palettes[g_settings.pal_id].data,
+							wadTex = WADTEX(tex, g_settings.palettes[g_settings.pal_id].data,
 								(unsigned short)g_settings.palettes[g_settings.pal_id].colors);
 						}
 						else
 						{
-							wadTex = new WADTEX(tex, g_settings.palette_default);
+							wadTex = WADTEX(tex, g_settings.palette_default);
 						}
 					}
 					else
 					{
-						wadTex = new WADTEX(tex);
+						wadTex = WADTEX(tex);
 					}
-					int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
-					COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-					unsigned char* src = wadTex->data;
+					int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
+					unsigned char* src = wadTex.data.data();
+					COLOR3* palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 
 					WriteBMP_PAL(path + bsp_name + std::string(".smd/tex_8bit/") + tex->szName + std::string(".bmp"), (unsigned char*)src, tex->nWidth, tex->nHeight, palette);
 
-					delete wadTex;
 				}
 			}
 			else
@@ -10975,14 +10958,14 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 						{
 							foundInWad = true;
 
-							WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex->szName);
-							int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
-							COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-							unsigned char* src = wadTex->data;
+							wadTex = mapRenderers[r]->wads[k]->readTexture(tex->szName);
+							int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
+							unsigned char* src = wadTex.data.data();
+							COLOR3* palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+							
 
-							WriteBMP_PAL(path + bsp_name + std::string(".smd/tex_8bit/") + tex->szName + std::string(".bmp"), (unsigned char*)src, wadTex->nWidth, wadTex->nHeight, palette);
-
-							delete wadTex;
+							WriteBMP_PAL(path + bsp_name + std::string(".smd/tex_8bit/") + tex->szName + std::string(".bmp"),
+								(unsigned char*)src, wadTex.nWidth, wadTex.nHeight, palette);
 							break;
 						}
 					}
@@ -11526,13 +11509,13 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 						{
 							foundInWad = true;
 
-							WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex.szName);
-							int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
-							COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-							unsigned char* src = wadTex->data;
-							COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
+							WADTEX wadTex = mapRenderers[r]->wads[k]->readTexture(tex.szName);
+							int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
+							unsigned char* src = wadTex.data.data();
+							COLOR3* palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+							COLOR3* imageData = new COLOR3[wadTex.nWidth * wadTex.nHeight];
 
-							int sz = wadTex->nWidth * wadTex->nHeight;
+							int sz = wadTex.nWidth * wadTex.nHeight;
 
 							for (int m = 0; m < sz; m++)
 							{
@@ -11540,10 +11523,9 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 								std::swap(imageData[m].b, imageData[m].r);
 							}
 
-							WriteBMP_RGB(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+							WriteBMP_RGB(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
 
 							delete[] imageData;
-							delete wadTex;
 							break;
 						}
 					}
@@ -13526,7 +13508,7 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 
 
 	std::vector<std::string> addedTextures;
-	std::vector<WADTEX*> outTextures;
+	std::vector<WADTEX> outTextures;
 
 	if (tmpWad->readInfo())
 	{
@@ -13534,14 +13516,14 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 		{
 			for (int i = 0; i < (int)tmpWad->dirEntries.size(); i++)
 			{
-				WADTEX* tex = tmpWad->readTexture(i);
+				WADTEX tex = tmpWad->readTexture(i);
 
-				if (tex->szName[0] == '\0' || std::find(addedTextures.begin(), addedTextures.end(), tex->szName) != addedTextures.end())
+				if (tex.szName[0] == '\0' || std::find(addedTextures.begin(), addedTextures.end(), tex.szName) != addedTextures.end())
 				{
 					continue;
 				}
 
-				addedTextures.push_back(tex->szName);
+				addedTextures.push_back(tex.szName);
 				outTextures.push_back(tex);
 			}
 		}
@@ -13561,18 +13543,20 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 				{
 					continue;
 				}
-				WADTEX* texture = NULL;
+				WADTEX texture;
+				bool foundTex = false;
 				for (auto& wad : renderer->wads)
 				{
 					if (wad->hasTexture(tex.szName))
 					{
+						foundTex = true;
 						addedTextures.push_back(tex.szName);
 						texture = wad->readTexture(tex.szName);
 						outTextures.push_back(texture);
 						break;
 					}
 				}
-				if (!texture)
+				if (!foundTex)
 				{
 					COLOR3* tmpColor = new COLOR3[tex.nWidth * tex.nHeight];
 					memset(tmpColor, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
@@ -13597,11 +13581,6 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 	print_log(get_localized_string(LANG_0216), addedTextures.size() - missingTexures, missingTexures);
 
 	tmpWad->write(targetMapFileName + "_nolight.wa_", outTextures);
-
-	for (auto& tex : outTextures)
-	{
-		delete tex;
-	}
 
 	delete tmpWad;
 	delete tmpBsp;
@@ -13636,7 +13615,7 @@ bool Bsp::ExportEmbeddedWad(const std::string& path)
 		if (fileExists(path))
 			removeFile(path);
 		Wad* tmpWad = new Wad(path);
-		std::vector<WADTEX*> tmpWadTex;
+		std::vector<WADTEX> tmpWadTex;
 		for (int i = 0; i < textureCount; i++)
 		{
 			int oldOffset = ((int*)textures)[i + 1];
@@ -13649,19 +13628,19 @@ bool Bsp::ExportEmbeddedWad(const std::string& path)
 				{
 					if (g_settings.pal_id >= 0)
 					{
-						WADTEX* newTex = new WADTEX(bspTex, g_settings.palettes[g_settings.pal_id].data,
+						WADTEX newTex = WADTEX(bspTex, g_settings.palettes[g_settings.pal_id].data,
 							(unsigned short)g_settings.palettes[g_settings.pal_id].colors);
 						tmpWadTex.push_back(newTex);
 					}
 					else
 					{
-						WADTEX* newTex = new WADTEX(bspTex, g_settings.palette_default);
+						WADTEX newTex = WADTEX(bspTex, g_settings.palette_default);
 						tmpWadTex.push_back(newTex);
 					}
 				}
 				else
 				{
-					WADTEX* newTex = new WADTEX(bspTex);
+					WADTEX newTex = WADTEX(bspTex);
 					tmpWadTex.push_back(newTex);
 				}
 			}
@@ -13700,18 +13679,17 @@ bool Bsp::ImportWad(const std::string& path)
 	{
 		for (int i = 0; i < (int)tmpWad->dirEntries.size(); i++)
 		{
-			WADTEX* wadTex = tmpWad->readTexture(i);
+			WADTEX wadTex = tmpWad->readTexture(i);
 			COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 			if (is_bsp2 || is_bsp29)
 			{
-				add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+				add_texture(wadTex.szName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
 			}
 			else
 			{
 				add_texture(wadTex);
 			}
 			delete[] imageData;
-			delete wadTex;
 		}
 		for (size_t i = 0; i < mapRenderers.size(); i++)
 		{
@@ -14771,7 +14749,7 @@ void Bsp::face_fix_duplicate_edges_index(int faceIdx)
 
 			int v2 = create_vert();
 			verts[v2] = verts[edge.iVertex[1]];
-			newedge.iVertex[1] = v1;
+			newedge.iVertex[1] = v2;
 
 			continue;
 		}

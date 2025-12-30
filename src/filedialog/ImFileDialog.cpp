@@ -162,7 +162,7 @@ namespace ifd
 				ImGui::PushID(static_cast<int>(i));
 				if (!isFirstElement)
 				{
-					ImGui::ArrowButtonEx(get_localized_string(LANG_0930).c_str(),ImGuiDir_Right,ImVec2(GUI_ELEMENT_SIZE,GUI_ELEMENT_SIZE));
+					ImGui::ArrowButtonEx(get_localized_string(LANG_0930).c_str(), ImGuiDir_Right, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE));
 					anyOtherHC = ImGui::IsItemHovered() || ImGui::IsItemClicked();
 					ImGui::SameLine();
 				}
@@ -229,7 +229,7 @@ namespace ifd
 				if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 					*state |= 0b100;
 			}
-			if (ImGui::InputTextEx(get_localized_string(LANG_0931).c_str(),"",pathBuffer,1024,size_arg,ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputTextEx(get_localized_string(LANG_0931).c_str(), "", pathBuffer, 1024, size_arg, ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				std::string tempStr(pathBuffer);
 				if (std::filesystem::exists(tempStr))
@@ -406,27 +406,51 @@ namespace ifd
 			drivename = std::getenv("SystemDrive");
 		}
 		std::string userPath = drivename + "\\Users\\" + std::filesystem::path(username).string() + "\\";
+		if (!fs::exists(userPath))
+			userPath = drivename + "\\Documents and Settings\\" + std::filesystem::path(username).string() + "\\";
 
 		// Quick Access / Bookmarks
-		quickAccess->Children.push_back(new FileTreeNode(userPath + "Desktop"));
-		quickAccess->Children.push_back(new FileTreeNode(userPath + "Documents"));
-		quickAccess->Children.push_back(new FileTreeNode(userPath + "Downloads"));
-		quickAccess->Children.push_back(new FileTreeNode(userPath + "Pictures"));
+		if (fs::exists(userPath + "Desktop"))
+		{
+			quickAccess->Children.push_back(new FileTreeNode(userPath + "Desktop"));
+		}
+		if (fs::exists(userPath + "Documents"))
+		{
+			quickAccess->Children.push_back(new FileTreeNode(userPath + "Documents"));
+		}
+		if (fs::exists(userPath + "Downloads"))
+		{
+			quickAccess->Children.push_back(new FileTreeNode(userPath + "Downloads"));
+		}
+		if (fs::exists(userPath + "Pictures"))
+		{
+			quickAccess->Children.push_back(new FileTreeNode(userPath + "Pictures"));
+		}
+
 		// OneDrive
-		FileTreeNode* oneDrive = new FileTreeNode(userPath + "OneDrive");
-		m_treeCache.push_back(oneDrive);
+		if (fs::exists(userPath + "OneDrive"))
+		{
+			FileTreeNode* oneDrive = new FileTreeNode(userPath + "OneDrive");
+			m_treeCache.push_back(oneDrive);
+		}
 
 		// This PC
 		FileTreeNode* thisPC = new FileTreeNode("This PC");
 		thisPC->Read = true;
 		if (std::filesystem::exists(userPath + "3D Objects"))
 			thisPC->Children.push_back(new FileTreeNode(userPath + "3D Objects"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + "Desktop"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + "Documents"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + "Downloads"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + "Music"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + "Pictures"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + "Videos"));
+		if (std::filesystem::exists(userPath + "Desktop"))
+			thisPC->Children.push_back(new FileTreeNode(userPath + "Desktop"));
+		if (std::filesystem::exists(userPath + "Documents"))
+			thisPC->Children.push_back(new FileTreeNode(userPath + "Documents"));
+		if (std::filesystem::exists(userPath + "Downloads"))
+			thisPC->Children.push_back(new FileTreeNode(userPath + "Downloads"));
+		if (std::filesystem::exists(userPath + "Music"))
+			thisPC->Children.push_back(new FileTreeNode(userPath + "Music"));
+		if (std::filesystem::exists(userPath + "Pictures"))
+			thisPC->Children.push_back(new FileTreeNode(userPath + "Pictures"));
+		if (std::filesystem::exists(userPath + "Videos"))
+			thisPC->Children.push_back(new FileTreeNode(userPath + "Videos"));
 		DWORD d = GetLogicalDrives();
 		for (int i = 0; i < 26; i++)
 			if (d & (1 << i))
@@ -1001,13 +1025,6 @@ namespace ifd
 		if (addHistory && !isSameDir)
 			m_backHistory.push(m_currentDirectory);
 
-		m_currentDirectory = p;
-#ifdef _WIN32
-		// drives don't work well without the backslash symbol
-		if (p.string().size() == 2 && p.string()[1] == ':')
-			m_currentDirectory = std::filesystem::path(p.string() + "\\");
-#endif
-
 		m_clearIconPreview();
 		m_content.clear(); // p == "" after this line, due to reference
 		m_selectedFileItem = -1;
@@ -1042,6 +1059,16 @@ namespace ifd
 		}
 		else
 		{
+
+			m_currentDirectory = p;
+#ifdef _WIN32
+			// drives don't work well without the backslash symbol
+			if (p.string().size() == 2 && p.string()[1] == ':')
+				m_currentDirectory = std::filesystem::path(p.string() + "\\");
+#endif
+
+
+
 			std::error_code ec;
 			if (std::filesystem::exists(m_currentDirectory, ec))
 				for (const auto& entry : std::filesystem::directory_iterator(m_currentDirectory, ec))
@@ -1139,7 +1166,7 @@ namespace ifd
 				}
 
 				return false;
-			};
+				};
 
 			// sort the directories
 			std::sort(m_content.begin(), m_content.begin() + fileIndex, compareFn);
@@ -1190,12 +1217,12 @@ namespace ifd
 		// table view
 		if (m_zoom == 1.0f)
 		{
-			if (ImGui::BeginTable(get_localized_string(LANG_0932).c_str(),3, ImGuiTableFlags_Sortable,ImVec2(0,-FLT_MIN)))
+			if (ImGui::BeginTable(get_localized_string(LANG_0932).c_str(), 3, ImGuiTableFlags_Sortable, ImVec2(0, -FLT_MIN)))
 			{
 				// header
-				ImGui::TableSetupColumn(get_localized_string(LANG_0933).c_str(), ImGuiTableColumnFlags_WidthFixed,-1.0f,0);
-				ImGui::TableSetupColumn(get_localized_string(LANG_0934).c_str(),ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize,0.0f,1);
-				ImGui::TableSetupColumn(get_localized_string(LANG_0935).c_str(),ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize,0.0f,2);
+				ImGui::TableSetupColumn(get_localized_string(LANG_0933).c_str(), ImGuiTableColumnFlags_WidthFixed, -1.0f, 0);
+				ImGui::TableSetupColumn(get_localized_string(LANG_0934).c_str(), ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f, 1);
+				ImGui::TableSetupColumn(get_localized_string(LANG_0935).c_str(), ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f, 2);
 				ImGui::TableSetupScrollFreeze(0, 1);
 				ImGui::TableHeadersRow();
 
@@ -1211,11 +1238,9 @@ namespace ifd
 
 				// content
 				int fileId = 0;
-				for (auto& entry : m_content)
+				for (const auto& entry : m_content)
 				{
-					std::string filename = entry.Path.filename().string();
-					if (filename.empty())
-						filename = entry.Path.string(); // drive
+					const std::string filename = entry.Path.filename().string().empty() ? entry.Path.string() : entry.Path.filename().string();
 
 					bool isSelected = std::count(m_selections.begin(), m_selections.end(), entry.Path);
 
@@ -1234,7 +1259,7 @@ namespace ifd
 						{
 							if (isDir)
 							{
-								m_setDirectory(entry.Path);
+								m_setDirectory(fs::path(entry.Path));
 								break;
 							}
 							else
@@ -1259,7 +1284,7 @@ namespace ifd
 
 					// size
 					ImGui::TableSetColumnIndex(2);
-					ImGui::Text(get_localized_string(LANG_0936).c_str(),entry.Size / 1024.0f);
+					ImGui::Text(get_localized_string(LANG_0936).c_str(), entry.Size / 1024.0f);
 				}
 
 				ImGui::EndTable();
@@ -1338,7 +1363,7 @@ namespace ifd
 			else
 			{
 				const FileData& data = m_content[m_selectedFileItem];
-				ImGui::TextWrapped(fmt::format(fmt::runtime(get_localized_string(LANG_0929)),data.Path.filename().string().c_str()).c_str());
+				ImGui::TextWrapped(fmt::format(fmt::runtime(get_localized_string(LANG_0929)), data.Path.filename().string().c_str()).c_str());
 				if (ImGui::Button(get_localized_string(LANG_0943).c_str()))
 				{
 					std::error_code ec;
@@ -1355,7 +1380,7 @@ namespace ifd
 		if (ImGui::BeginPopupModal(get_localized_string(LANG_1133).c_str()))
 		{
 			ImGui::PushItemWidth(250.0f);
-			ImGui::InputText(get_localized_string(LANG_0944).c_str(),m_newEntryBuffer,1024); // TODO: remove hardcoded literals
+			ImGui::InputText(get_localized_string(LANG_0944).c_str(), m_newEntryBuffer, 1024); // TODO: remove hardcoded literals
 			ImGui::PopItemWidth();
 
 			if (ImGui::Button("OK"))
@@ -1380,7 +1405,7 @@ namespace ifd
 		if (ImGui::BeginPopupModal(get_localized_string(LANG_1134).c_str()))
 		{
 			ImGui::PushItemWidth(250.0f);
-			ImGui::InputText(get_localized_string(LANG_1135).c_str(),m_newEntryBuffer,1024); // TODO: remove hardcoded literals
+			ImGui::InputText(get_localized_string(LANG_1135).c_str(), m_newEntryBuffer, 1024); // TODO: remove hardcoded literals
 			ImGui::PopItemWidth();
 
 			if (ImGui::Button("OK"))
@@ -1407,7 +1432,7 @@ namespace ifd
 
 		ImGui::PushStyleColor(ImGuiCol_Button, 0);
 		if (noBackHistory) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-		if (ImGui::ArrowButtonEx(get_localized_string(LANG_0946).c_str(),ImGuiDir_Left,ImVec2(GUI_ELEMENT_SIZE,GUI_ELEMENT_SIZE),m_backHistory.empty() * ImGuiItemFlags_Disabled))
+		if (ImGui::ArrowButtonEx(get_localized_string(LANG_0946).c_str(), ImGuiDir_Left, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE), m_backHistory.empty() * ImGuiItemFlags_Disabled))
 		{
 			std::filesystem::path newPath = m_backHistory.top();
 			m_backHistory.pop();
@@ -1419,7 +1444,7 @@ namespace ifd
 		ImGui::SameLine();
 
 		if (noForwardHistory) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-		if (ImGui::ArrowButtonEx(get_localized_string(LANG_0947).c_str(),ImGuiDir_Right,ImVec2(GUI_ELEMENT_SIZE,GUI_ELEMENT_SIZE),m_forwardHistory.empty() * ImGuiItemFlags_Disabled))
+		if (ImGui::ArrowButtonEx(get_localized_string(LANG_0947).c_str(), ImGuiDir_Right, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE), m_forwardHistory.empty() * ImGuiItemFlags_Disabled))
 		{
 			std::filesystem::path newPath = m_forwardHistory.top();
 			m_forwardHistory.pop();
@@ -1451,29 +1476,29 @@ namespace ifd
 		ImGui::SameLine();
 		ImGui::PopStyleColor();
 
-		if (ImGui::InputTextEx(get_localized_string(LANG_0948).c_str(),get_localized_string(LANG_0949).c_str(),m_searchBuffer,128,ImVec2(-FLT_MIN,GUI_ELEMENT_SIZE),0)) // TODO: no hardcoded literals
+		if (ImGui::InputTextEx(get_localized_string(LANG_0948).c_str(), get_localized_string(LANG_0949).c_str(), m_searchBuffer, 128, ImVec2(-FLT_MIN, GUI_ELEMENT_SIZE), 0)) // TODO: no hardcoded literals
 			m_setDirectory(m_currentDirectory, false); // refresh
 
 
 
 		/***** CONTENT *****/
 		float bottomBarHeight = (GImGui->FontSize + ImGui::GetStyle().FramePadding.y + ImGui::GetStyle().ItemSpacing.y * 2.0f) * 2;
-		if (ImGui::BeginTable(get_localized_string(LANG_0950).c_str(),2,ImGuiTableFlags_Resizable ,ImVec2(0,-bottomBarHeight)))
+		if (ImGui::BeginTable(get_localized_string(LANG_0950).c_str(), 2, ImGuiTableFlags_Resizable, ImVec2(0, -bottomBarHeight)))
 		{
-			ImGui::TableSetupColumn(get_localized_string(LANG_0951).c_str(),ImGuiTableColumnFlags_WidthFixed,125.0f);
-			ImGui::TableSetupColumn(get_localized_string(LANG_0952).c_str(),ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableSetupColumn(get_localized_string(LANG_0951).c_str(), ImGuiTableColumnFlags_WidthFixed, 125.0f);
+			ImGui::TableSetupColumn(get_localized_string(LANG_0952).c_str(), ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableNextRow();
 
 			// the tree on the left side
 			ImGui::TableSetColumnIndex(0);
-			ImGui::BeginChild(get_localized_string(LANG_0953).c_str(),ImVec2(0,-bottomBarHeight));
+			ImGui::BeginChild(get_localized_string(LANG_0953).c_str(), ImVec2(0, -bottomBarHeight));
 			for (auto node : m_treeCache)
 				m_renderTree(node);
 			ImGui::EndChild();
 
 			// content on the right side
 			ImGui::TableSetColumnIndex(1);
-			ImGui::BeginChild(get_localized_string(LANG_0954).c_str(),ImVec2(0,-bottomBarHeight), 0, ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+			ImGui::BeginChild(get_localized_string(LANG_0954).c_str(), ImVec2(0, -bottomBarHeight), 0, ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
 			m_renderContent();
 			ImGui::EndChild();
 			if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl && ImGui::GetIO().MouseWheel != 0.0f)
@@ -1493,7 +1518,7 @@ namespace ifd
 		/***** BOTTOM BAR *****/
 		ImGui::Text(get_localized_string(LANG_0955).c_str());
 		ImGui::SameLine();
-		if (ImGui::InputTextEx(get_localized_string(LANG_0956).c_str(),get_localized_string(LANG_0957).c_str(),m_inputTextbox,1024,ImVec2((m_type != IFD_DIALOG_DIRECTORY) ? -250.0f : -FLT_MIN, 0), ImGuiInputTextFlags_EnterReturnsTrue))
+		if (ImGui::InputTextEx(get_localized_string(LANG_0956).c_str(), get_localized_string(LANG_0957).c_str(), m_inputTextbox, 1024, ImVec2((m_type != IFD_DIALOG_DIRECTORY) ? -250.0f : -FLT_MIN, 0), ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			bool success = m_finalize(std::string(m_inputTextbox));
 #ifdef _WIN32
@@ -1508,7 +1533,7 @@ namespace ifd
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(-FLT_MIN);
 			int sel = static_cast<int>(m_filterSelection);
-			if (ImGui::Combo(get_localized_string(LANG_0958).c_str(),&sel,m_filter.c_str()))
+			if (ImGui::Combo(get_localized_string(LANG_0958).c_str(), &sel, m_filter.c_str()))
 			{
 				m_filterSelection = static_cast<size_t>(sel);
 				m_setDirectory(m_currentDirectory, false); // refresh
@@ -1532,7 +1557,7 @@ namespace ifd
 #endif
 		}
 		ImGui::SameLine();
-		if (ImGui::Button(get_localized_string(LANG_1172).c_str(),ImVec2(-FLT_MIN,0.0f)))
+		if (ImGui::Button(get_localized_string(LANG_1172).c_str(), ImVec2(-FLT_MIN, 0.0f)))
 		{
 			if (m_type == IFD_DIALOG_DIRECTORY)
 				m_isOpen = false;

@@ -79,7 +79,9 @@ unsigned char* Texture::get_data()
             memset(binded_tex, 0, sizeof(binded_tex));
             glBindTexture(GL_TEXTURE_2D, id);
             glPixelStorei(GL_PACK_ALIGNMENT, 1);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#ifdef GL_PACK_ROW_LENGTH 
+            glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+#endif
             glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, data);
         }
         else
@@ -93,7 +95,6 @@ unsigned char* Texture::get_data()
 void Texture::upload(int _type)
 {
     this->type = _type;
-    g_mutex_list[3].lock();
     get_data();
 
     if (id != 0xFFFFFFFF)
@@ -160,8 +161,10 @@ void Texture::upload(int _type)
         dataLen = (unsigned int)(width * height * sizeof(COLOR4));
     }
 
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
+#ifdef GL_UNPACK_ROW_LENGTH 
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     //glGenerateMipmap(GL_TEXTURE_2D);
     if (g_settings.verboseLogs)
@@ -172,7 +175,6 @@ void Texture::upload(int _type)
         delete[] data;
         data = NULL;
     }
-    g_mutex_list[3].unlock();
 }
 
 Texture* binded_tex[64];

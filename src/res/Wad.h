@@ -1,9 +1,7 @@
 #pragma once
-#include <cstring>
+#include <unordered_map>
 #include <string>
 #include "bsptypes.h"
-
-int calcMipsSize(int w, int h);
 
 #pragma pack(push, 1)
 
@@ -33,73 +31,10 @@ struct WADTEX
 	char szName[MAXTEXTURENAME];
 	int nWidth, nHeight;
 	int nOffsets[MIPLEVELS];
-	unsigned char* data; // all mip-maps and pallete
-	int dataLen;
-	bool needclean;
-	WADTEX()
-	{
-		dataLen = 0;
-		needclean = false;
-		szName[0] = '\0';
-		data = NULL;
-		nWidth = nHeight = 0;
-		nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
-	}
-
-	WADTEX(BSPMIPTEX* tex, unsigned char* palette = NULL, unsigned short colors = 256)
-	{
-		if (!tex || tex->nWidth == 0 || tex->nHeight == 0)
-		{
-			dataLen = 0;
-			needclean = false;
-			szName[0] = '\0';
-			data = NULL;
-			nWidth = nHeight = 0;
-			nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
-			return;
-		}
-		memcpy(szName, tex->szName, MAXTEXTURENAME);
-
-		nWidth = tex->nWidth;
-		nHeight = tex->nHeight;
-		for (int i = 0; i < MIPLEVELS; i++)
-			nOffsets[i] = tex->nOffsets[i]/* - sizeof(BSPMIPTEX)*/;
-
-		if (nOffsets[0] <= 0)
-		{
-			dataLen = 0;
-			needclean = false;
-			data = NULL;
-			return;
-		}
-
-		int sz = calcMipsSize(tex->nWidth,tex->nHeight);
-
-		dataLen = sz + sizeof(short) + sizeof(COLOR3) * 256;
-		data = new unsigned char[dataLen];
-		memset(data, 0, dataLen);
-
-		unsigned char* texdata = ((unsigned char*)tex) + tex->nOffsets[0];
-
-		memcpy(data, texdata, palette ? sz : dataLen);
-		if (palette)
-		{
-			*(unsigned short*)(data + sz) = colors;
-			memcpy(data + sz + sizeof(short), palette, sizeof(COLOR3) * colors);
-		}
-
-		needclean = true;
-	}
-	~WADTEX()
-	{
-		if (needclean && data)
-			delete[] data;
-		needclean = false;
-		szName[0] = '\0';
-		data = NULL;
-		nWidth = nHeight = 0;
-		nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
-	}
+	std::vector<unsigned char> data;
+	WADTEX();
+	WADTEX(BSPMIPTEX* tex, unsigned char* palette = NULL, unsigned short colors = 256);
+	~WADTEX() = default;
 };
 
 #pragma pack(pop)
@@ -108,39 +43,53 @@ struct WADTEX
 class Wad
 {
 public:
+	enum CacheMode {
+		CACHE_NONE = 0,
+		CACHE_ALL = 1,
+		CACHE_LAZY = 2 
+	};
+
 	std::string filename = std::string();
 	std::string wadname = std::string();
 
-	std::vector<unsigned char> fileData;
 	bool usableTextures = false;
+	bool fileLoadedInMemory = false;
 
 	WADHEADER header = WADHEADER();
-
 	std::vector<WADDIRENTRY> dirEntries = std::vector<WADDIRENTRY>();
 
-	Wad(std::string file);
-	Wad(void);
+	std::unordered_map<std::string, WADTEX> textureCache;
+	CacheMode cacheMode = CACHE_LAZY;
 
-	~Wad(void);
+	std::vector<unsigned char> fileData;
+
+	Wad(std::string file, CacheMode mode = CACHE_LAZY);
+	Wad();
+
+	~Wad() = default;
 
 	bool readInfo();
+	bool loadFullFile();
+	void unloadFile();
+
+	void clearCache();
+	void precacheAllTextures(); 
 
 	bool hasTexture(int dirIndex);
 	bool hasTexture(const std::string& name);
 
-	bool write(const std::string& filename, std::vector<WADTEX*> textures);
-	bool write(WADTEX** textures, int numTex);
-	bool write(std::vector<WADTEX*> textures);
+	bool write(const std::string& filename, const std::vector<WADTEX>& textures);
+	bool write(const std::vector<WADTEX>& textures);
 
-	WADTEX* readTexture(int dirIndex, int* texturetype = NULL);
-	WADTEX* readTexture(const std::string& texname, int* texturetype = NULL);
+	WADTEX readTexture(int dirIndex, int* texturetype = NULL);
+	WADTEX readTexture(const std::string& texname, int* texturetype = NULL);
+
+	WADTEX readTextureFromFile(int dirIndex);
+	WADTEX readTextureFromFile(const std::string& texname);
+
+private:
+	WADTEX readTextureFromMemory(int dirIndex);
+	WADTEX readTextureFromMemory(const std::string& texname);
+
+	int findTextureIndex(const std::string& texname);
 };
-
-WADTEX* create_wadtex(const char* name, COLOR3* data, int width, int height);
-COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette = NULL);
-COLOR3* ConvertMipTexToRGB(BSPMIPTEX* wadTex, COLOR3* palette = NULL);
-COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette = NULL, int colors = 256);
-COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette = NULL, int colors = 256);
-
-COLOR3 GetMipTexAplhaColor(BSPMIPTEX* wadTex, COLOR3* palette = NULL, int colors = 256);
-COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette = NULL, int colors = 256);

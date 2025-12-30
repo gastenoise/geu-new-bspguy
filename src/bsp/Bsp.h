@@ -330,7 +330,7 @@ public:
 	// create a new texture from raw RGB data, and embeds into the bsp. 
 	// Returns -1 on failure, else the new texture index
 	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
-	int add_texture(WADTEX* tex, bool embedded = false);
+	int add_texture(const WADTEX& tex, bool embedded = false);
 
 	bool export_wad_to_pngs(const std::string& wadpath, const std::string& targetdir);
 	bool import_textures_to_wad(const std::string& wadpath, const std::string& texpath, bool dithering);
@@ -362,7 +362,7 @@ public:
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUCTUSAGE& usage, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 		std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
+		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);

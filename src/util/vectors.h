@@ -85,6 +85,10 @@ struct vec3
 		other.z = 0;
 	}
 
+	vec3 operator-() const {
+		return *this * -1;
+	}
+
 	vec3& operator=(const vec3& other) {
 		Copy(other);
 		return *this;

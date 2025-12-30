@@ -8,41 +8,26 @@ Wad::Wad(void)
 {
 	dirEntries.clear();
 	fileData.clear();
+	textureCache.clear();
+	fileLoadedInMemory = false;
 }
 
-Wad::Wad(std::string file) : filename(std::move(file))
+Wad::Wad(std::string file, CacheMode mode) : filename(std::move(file)), cacheMode(mode)
 {
 	this->wadname = basename(filename);
 	dirEntries.clear();
-	if (fileData.size())
-		fileData.clear();
-}
+	textureCache.clear();
+	fileLoadedInMemory = false;
 
-Wad::~Wad(void)
-{
-	dirEntries.clear();
-	fileData.clear();
-}
-
-void W_CleanupName(const char* in, char* out)
-{
-	int	i;
-
-	for (i = 0; i < MAXTEXTURENAME; i++) {
-		char		c;
-		c = in[i];
-		if (!c)
-			break;
-
-		if (c >= 'A' && c <= 'Z')
-			c += ('a' - 'A');
-		out[i] = c;
+	if (cacheMode == CACHE_ALL) 
+	{
+		if (!loadFullFile())
+		{	
+			fileData.clear();
+			fileLoadedInMemory = false;
+		}
 	}
-
-	for (; i < MAXTEXTURENAME; i++)
-		out[i] = 0;
 }
-
 
 bool Wad::readInfo()
 {
@@ -54,7 +39,75 @@ bool Wad::readInfo()
 		return false;
 	}
 
-	if (!readFile(file, fileData))
+	std::ifstream wadFile(file, std::ios::binary);
+	if (!wadFile.is_open())
+	{
+		print_log(get_localized_string(LANG_1043), filename);
+		return false;
+	}
+
+	wadFile.read((char*)&header, sizeof(WADHEADER));
+
+	if (std::string(header.szMagic).find("WAD3") != 0)
+	{
+		print_log(get_localized_string(LANG_0249), filename);
+		wadFile.close();
+		return false;
+	}
+
+	wadFile.seekg(0, std::ios::end);
+	size_t fileSize = wadFile.tellg();
+	if (header.nDirOffset >= (int)fileSize)
+	{
+		print_log(get_localized_string(LANG_0250), filename);
+		wadFile.close();
+		return false;
+	}
+
+	wadFile.seekg(header.nDirOffset, std::ios::beg);
+	dirEntries.clear();
+	usableTextures = false;
+
+	for (int i = 0; i < header.nDir; i++)
+	{
+		WADDIRENTRY tmpWadEntry = WADDIRENTRY();
+
+		wadFile.read((char*)&tmpWadEntry, sizeof(WADDIRENTRY));
+
+		W_CleanupName(tmpWadEntry.szName, tmpWadEntry.szName);
+		dirEntries.push_back(tmpWadEntry);
+
+		if (dirEntries[i].nType == 0x43) usableTextures = true;
+	}
+
+	wadFile.close();
+
+	if (!usableTextures)
+	{
+		print_log(get_localized_string(LANG_0252), basename(filename));
+		if (!dirEntries.size())
+		{
+			return false;
+		}
+	}
+
+	if (cacheMode == CACHE_ALL && !fileLoadedInMemory)
+	{
+		if (!loadFullFile())
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Wad::loadFullFile()
+{
+	if (fileLoadedInMemory && fileData.size() > 0)
+		return true;
+
+	if (!readFile(filename, fileData))
 	{
 		print_log(get_localized_string(LANG_1043), filename);
 		return false;
@@ -67,71 +120,238 @@ bool Wad::readInfo()
 		return false;
 	}
 
-	int offset = 0;
-
-	memcpy((char*)&header, &fileData[offset] , sizeof(WADHEADER));
-
-	if (std::string(header.szMagic).find("WAD3") != 0)
-	{
-		fileData.clear();
-		print_log(get_localized_string(LANG_0249), filename);
-		return false;
-	}
-
-	if (header.nDirOffset >= (int)fileData.size())
-	{
-		fileData.clear();
-		print_log(get_localized_string(LANG_0250), filename);
-		return false;
-	}
-
-	//
-	// WAD DIRECTORY ENTRIES
-	//
-	offset = header.nDirOffset;
-
-	dirEntries.clear();
-
-	usableTextures = false;
-
-	//print_log("D {} {}\n", header.nDirOffset, header.nDir);
-
-	for (int i = 0; i < header.nDir; i++)
-	{
-		WADDIRENTRY tmpWadEntry = WADDIRENTRY();
-
-		if (offset + (int)sizeof(WADDIRENTRY) > fileData.size())
-		{
-			print_log(get_localized_string(LANG_0251));
-			break;
-		}
-
-		memcpy((char*)&tmpWadEntry, &fileData[offset], sizeof(WADDIRENTRY));
-		offset += sizeof(WADDIRENTRY);
-
-		W_CleanupName(tmpWadEntry.szName, tmpWadEntry.szName);
-
-		dirEntries.push_back(tmpWadEntry);
-
-		if (dirEntries[i].nType == 0x43) usableTextures = true;
-	}
-
-
-	if (!usableTextures)
-	{
-		print_log(get_localized_string(LANG_0252), basename(filename));
-		if (!dirEntries.size())
-		{
-			fileData.clear();
-			return false;
-		}
-	}
-
+	fileLoadedInMemory = true;
 	return true;
+}
+
+void Wad::unloadFile()
+{
+	fileData.clear();
+	fileLoadedInMemory = false;
+}
+
+void Wad::clearCache()
+{
+	textureCache.clear();
+}
+
+void Wad::precacheAllTextures()
+{
+	if (cacheMode == CACHE_NONE)
+		return;
+
+	if (!fileLoadedInMemory && !loadFullFile())
+		return;
+
+	textureCache.clear();
+
+	for (int i = 0; i < (int)dirEntries.size(); i++)
+	{
+		if (dirEntries[i].nType == 0x43)
+		{
+			std::string texName = dirEntries[i].szName;
+			if (textureCache.find(texName) == textureCache.end())
+			{
+				WADTEX tex = readTextureFromMemory(i);
+				textureCache[texName] = tex;
+			}
+		}
+	}
+}
+
+int Wad::findTextureIndex(const std::string& texname)
+{
+	for (int d = 0; d < header.nDir; d++)
+	{
+		if (strcasecmp(texname.c_str(), dirEntries[d].szName) == 0)
+		{
+			return d;
+		}
+	}
+	return -1;
+}
+
+WADTEX Wad::readTexture(int dirIndex, int* texturetype)
+{
+	if (dirIndex >= (int)dirEntries.size())
+	{
+		print_log(get_localized_string(LANG_0253));
+		return {};
+	}
+
+	std::string name = std::string(dirEntries[dirIndex].szName);
+	return readTexture(name, texturetype);
+}
+
+WADTEX Wad::readTexture(const std::string& texname, int* texturetype)
+{
+	auto it = textureCache.find(texname);
+	if (it != textureCache.end())
+	{
+		if (texturetype)
+		{
+			int idx = findTextureIndex(texname);
+			if (idx >= 0)
+			{
+				*texturetype = dirEntries[idx].nType;
+			}
+		}
+		return it->second;
+	}
+
+	WADTEX tex{};
+
+	if (cacheMode == CACHE_ALL || (cacheMode == CACHE_LAZY && fileLoadedInMemory))
+	{
+		tex = readTextureFromMemory(texname);
+	}
+	else
+	{
+		tex = readTextureFromFile(texname);
+	}
+
+	if (cacheMode != CACHE_NONE)
+	{
+		textureCache[texname] = tex;
+	}
+
+	if (texturetype)
+	{
+		int idx = findTextureIndex(texname);
+		if (idx >= 0)
+		{
+			*texturetype = dirEntries[idx].nType;
+		}
+	}
+
+	return tex;
+}
+
+WADTEX Wad::readTextureFromMemory(int dirIndex)
+{
+	if (dirIndex >= (int)dirEntries.size())
+		return {};
+
+	if (!fileLoadedInMemory && !loadFullFile())
+		return {};
+
+	WADDIRENTRY& entry = dirEntries[dirIndex];
+
+	if (entry.bCompression)
+	{
+		print_log(get_localized_string(LANG_0254));
+		return {};
+	}
+
+	int offset = entry.nFilePos;
+
+	if (offset + sizeof(BSPMIPTEX) > (int)fileData.size())
+		return {};
+
+	BSPMIPTEX mtex = BSPMIPTEX();
+	memcpy((char*)&mtex, &fileData[offset], sizeof(BSPMIPTEX));
+	offset += sizeof(BSPMIPTEX);
+
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0255), mtex.szName, mtex.nWidth, mtex.nHeight);
+
+	int w = mtex.nWidth;
+	int h = mtex.nHeight;
+
+	int szAll = calcMipsSize(w, h) + sizeof(short) + /*pal size*/ sizeof(COLOR3) * 256;
+
+	if (offset + szAll > (int)fileData.size())
+		return {};
+
+	WADTEX tex;
+	tex.data.resize(szAll);
+	memcpy(tex.data.data(), &fileData[offset], szAll);
+
+	memcpy(tex.szName, mtex.szName, MAXTEXTURENAME);
+
+	for (int i = 0; i < MIPLEVELS; i++)
+		tex.nOffsets[i] = mtex.nOffsets[i];
+	tex.nWidth = w;
+	tex.nHeight = h;
+
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0256), tex.szName, tex.nWidth, tex.nHeight);
+
+	return tex;
+}
+
+WADTEX Wad::readTextureFromMemory(const std::string& texname)
+{
+	int idx = findTextureIndex(texname);
+	if (idx < 0)
+		return {};
+
+	return readTextureFromMemory(idx);
+}
+
+WADTEX Wad::readTextureFromFile(int dirIndex)
+{
+	if (dirIndex >= (int)dirEntries.size())
+		return {};
+
+	WADDIRENTRY& entry = dirEntries[dirIndex];
+
+	if (entry.bCompression)
+	{
+		print_log(get_localized_string(LANG_0254));
+		return {};
+	}
+
+	std::ifstream wadFile(filename, std::ios::binary);
+	if (!wadFile.is_open())
+		return {};
+
+	wadFile.seekg(entry.nFilePos, std::ios::beg);
+
+	BSPMIPTEX mtex = BSPMIPTEX();
+	wadFile.read((char*)&mtex, sizeof(BSPMIPTEX));
+
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0255), mtex.szName, mtex.nWidth, mtex.nHeight);
+
+	int w = mtex.nWidth;
+	int h = mtex.nHeight;
+
+	int szAll = calcMipsSize(w, h) + sizeof(short) + sizeof(COLOR3) * 256;
+
+	WADTEX tex;
+	tex.data.resize(szAll);
+	wadFile.read((char*)tex.data.data(), szAll);
+	wadFile.close();
+
+	memcpy(tex.szName, mtex.szName, MAXTEXTURENAME);
+
+	for (int i = 0; i < MIPLEVELS; i++)
+		tex.nOffsets[i] = mtex.nOffsets[i];
+
+	tex.nWidth = w;
+	tex.nHeight = h;
+
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0256), tex.szName, tex.nWidth, tex.nHeight);
+
+	return tex;
+}
+
+WADTEX Wad::readTextureFromFile(const std::string& texname)
+{
+	int idx = findTextureIndex(texname);
+	if (idx < 0)
+		return {};
+
+	return readTextureFromFile(idx);
 }
 
 bool Wad::hasTexture(const std::string& texname)
 {
+	if (textureCache.find(texname) != textureCache.end())
+		return true;
+
 	for (int d = 0; d < header.nDir; d++)
 		if (strcasecmp(texname.c_str(), dirEntries[d].szName) == 0)
 			return true;
@@ -147,92 +367,12 @@ bool Wad::hasTexture(int dirIndex)
 	return true;
 }
 
-WADTEX* Wad::readTexture(int dirIndex, int* texturetype)
-{
-	if (dirIndex >= (int)dirEntries.size())
-	{
-		print_log(get_localized_string(LANG_0253));
-		return NULL;
-	}
-	//if (cache != NULL)
-		//return cache[dirIndex];
-	std::string name = std::string(dirEntries[dirIndex].szName);
-	return readTexture(name, texturetype);
-}
-
-WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
-{
-	int idx = -1;
-	for (int d = 0; d < header.nDir; d++)
-	{
-		if (strcasecmp(texname.c_str(), dirEntries[d].szName) == 0)
-		{
-			idx = d;
-			break;
-		}
-	}
-
-	if (idx < 0)
-	{
-		return NULL;
-	}
-
-	if (dirEntries[idx].bCompression)
-	{
-		print_log(get_localized_string(LANG_0254));
-		return NULL;
-	}
-
-	int offset = dirEntries[idx].nFilePos;
-
-	if (texturetype)
-	{
-		*texturetype = dirEntries[idx].nType;
-	}
-
-	BSPMIPTEX mtex = BSPMIPTEX();
-	memcpy((char*)&mtex, &fileData[offset], sizeof(BSPMIPTEX));
-	offset += sizeof(BSPMIPTEX);
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0255), mtex.szName, mtex.nWidth, mtex.nHeight);
-	int w = mtex.nWidth;
-	int h = mtex.nHeight;
-
-	int szAll = calcMipsSize(w, h) + sizeof(short) + /*pal size*/ sizeof(COLOR3) * 256;
-
-	unsigned char* data = new unsigned char[szAll];/* 4 bytes padding */
-
-	memset(data, 0, szAll);
-
-	memcpy(data, &fileData[offset], szAll);
-
-	WADTEX* tex = new WADTEX();
-	memcpy(tex->szName, mtex.szName, MAXTEXTURENAME);
-
-	for (int i = 0; i < MIPLEVELS; i++)
-		tex->nOffsets[i] = mtex.nOffsets[i];
-	tex->nWidth = w;
-	tex->nHeight = h;
-	tex->data = data;
-	tex->dataLen = szAll;
-	tex->needclean = true;
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0256), tex->szName, tex->nWidth, tex->nHeight);
-	return tex;
-}
-
-bool Wad::write(WADTEX** textures, int numTex)
-{
-	std::vector<WADTEX*> textList = std::vector<WADTEX*>(&textures[0], &textures[numTex]);
-	return write(filename, textList);
-}
-
-bool Wad::write(std::vector<WADTEX*> textures)
+bool Wad::write(const std::vector<WADTEX>& textures)
 {
 	return write(filename, textures);
 }
 
-bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
+bool Wad::write(const std::string& _filename, const std::vector<WADTEX>& textures)
 {
 	this->filename = _filename;
 
@@ -247,8 +387,8 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 	int tSize = (int)(sizeof(BSPMIPTEX) * textures.size());
 	for (size_t i = 0; i < textures.size(); i++)
 	{
-		int w = textures[i]->nWidth;
-		int h = textures[i]->nHeight;
+		int w = textures[i].nWidth;
+		int h = textures[i].nHeight;
 
 		int szAll = calcMipsSize(w, h) + sizeof(short) + /* pal num */ sizeof(COLOR3) * 256;
 
@@ -265,10 +405,10 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 		for (size_t i = 0; i < textures.size(); i++)
 		{
 			BSPMIPTEX miptex = BSPMIPTEX();
-			memcpy(miptex.szName, textures[i]->szName, MAXTEXTURENAME);
+			memcpy(miptex.szName, textures[i].szName, MAXTEXTURENAME);
 
-			int w = textures[i]->nWidth;
-			int h = textures[i]->nHeight;
+			int w = textures[i].nWidth;
+			int h = textures[i].nHeight;
 			int sz = w * h;	   // miptex 0
 			int sz2 = sz / 4;  // miptex 1
 			int sz3 = sz2 / 4; // miptex 2
@@ -287,10 +427,10 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			myFile.write((char*)&miptex, sizeof(BSPMIPTEX));
 
 			// 256 palette
-			((unsigned char*)textures[i]->data)[sz + sz2 + sz3 + sz4] = 0x00;
-			((unsigned char*)textures[i]->data)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
+			((unsigned char*)textures[i].data.data())[sz + sz2 + sz3 + sz4] = 0x00;
+			((unsigned char*)textures[i].data.data())[sz + sz2 + sz3 + sz4 + 1] = 0x01;
 
-			myFile.write((char*)textures[i]->data, szAll);
+			myFile.write((char*)textures[i].data.data(), szAll);
 			if (padding > 0)
 			{
 				unsigned char* zeropad = new unsigned char[padding];
@@ -306,7 +446,7 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			WADDIRENTRY entry = WADDIRENTRY();
 			entry.nFilePos = offset;
 
-			int szAll = calcMipsSize(textures[i]->nWidth, textures[i]->nHeight) + sizeof(short) + /* pal num */ sizeof(COLOR3) * 256;
+			int szAll = calcMipsSize(textures[i].nWidth, textures[i].nHeight) + sizeof(short) + /* pal num */ sizeof(COLOR3) * 256;
 
 			szAll = (szAll + 3) & ~3; // 4 bytes padding
 
@@ -317,7 +457,7 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			entry.nDummy = 0;
 
 			for (int k = 0; k < MAXTEXTURENAME; k++)
-				memcpy(entry.szName, textures[i]->szName, MAXTEXTURENAME);
+				memcpy(entry.szName, textures[i].szName, MAXTEXTURENAME);
 
 			offset += szAll + sizeof(BSPMIPTEX);
 
@@ -335,292 +475,47 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 	return true;
 }
 
-WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
+WADTEX::WADTEX()
 {
-	if (!name)
-		return NULL;
-	COLOR3 palette[256];
-	memset(&palette, 0, sizeof(COLOR3) * 256);
-	unsigned char* mip[MIPLEVELS] = { NULL };
-
-	COLOR3* src = rgbdata;
-	int colorCount = 0;
-
-	// create pallete and full-rez mipmap
-	mip[0] = new unsigned char[width * height];
-
-	bool do_magic = false;
-	if (name[0] == '{')
-	{
-		int sz = width * height;
-		for (int i = 0; i < sz; i++)
-		{
-			if (rgbdata[i] == COLOR3(0, 0, 255))
-			{
-				do_magic = true;
-				break;
-			}
-		}
-		if (do_magic)
-		{
-			colorCount++;
-			palette[0] = COLOR3(0, 0, 255);
-		}
-	}
-
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			int paletteIdx = -1;
-			for (int k = 0; k < colorCount; k++)
-			{
-				if (*src == palette[k])
-				{
-					paletteIdx = k;
-					break;
-				}
-			}
-			if (paletteIdx == -1)
-			{
-				if (colorCount >= 256)
-				{
-					print_log(get_localized_string(LANG_1044));
-					delete[] mip[0];
-					return NULL;
-				}
-				palette[colorCount] = *src;
-				paletteIdx = colorCount;
-				colorCount++;
-			}
-
-			if (do_magic)
-			{
-				if (paletteIdx == 0)
-				{
-					mip[0][y * width + x] = (unsigned char)255;
-				}
-				else if (paletteIdx == 255)
-				{
-					mip[0][y * width + x] = (unsigned char)0;
-				}
-				else
-				{
-					mip[0][y * width + x] = (unsigned char)paletteIdx;
-				}
-			}
-			else
-			{
-				mip[0][y * width + x] = (unsigned char)paletteIdx;
-			}
-			src++;
-		}
-	}
-
-	if (do_magic)
-	{
-		std::swap(palette[0], palette[255]);
-	}
-
-	int texDataSize = width * height + sizeof(short) /* pal num*/ + sizeof(COLOR3) * 256;
-
-	// generate mipmaps
-	for (int i = 1; i < MIPLEVELS; i++)
-	{
-		int div = 1 << i;
-		int mipWidth = width / div;
-		int mipHeight = height / div;
-		texDataSize += mipWidth * mipHeight;
-		mip[i] = new unsigned char[texDataSize];
-
-		src = rgbdata;
-		for (int y = 0; y < mipHeight; y++)
-		{
-			for (int x = 0; x < mipWidth; x++)
-			{
-				int paletteIdx = -1;
-				for (int k = 0; k < colorCount; k++)
-				{
-					if (*src == palette[k])
-					{
-						paletteIdx = k;
-						break;
-					}
-				}
-
-				mip[i][y * mipWidth + x] = (unsigned char)paletteIdx;
-				src += div;
-			}
-		}
-	}
-
-	int newTexLumpSize = sizeof(BSPMIPTEX) + texDataSize;
-
-	newTexLumpSize = ((newTexLumpSize + 3) & ~3);
-
-	unsigned char* newTexData = new unsigned char[newTexLumpSize];
-	memset(newTexData, 0, newTexLumpSize);
-
-	WADTEX* newMipTex = new WADTEX();
-	newMipTex->nWidth = width;
-	newMipTex->nHeight = height;
-
-	memcpy(newMipTex->szName, name, MAXTEXTURENAME);
-
-	newMipTex->nOffsets[0] = 0;
-	newMipTex->nOffsets[1] = newMipTex->nOffsets[0] + width * height;
-	newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
-	newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
-
-	unsigned char* palleteOffset = newTexData + newMipTex->nOffsets[3] + (width >> 3) * (height >> 3);
-	memcpy(newTexData + newMipTex->nOffsets[0], mip[0], width * height);
-	memcpy(newTexData + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
-	memcpy(newTexData + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
-	memcpy(newTexData + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
-	memcpy(palleteOffset, palette, sizeof(COLOR3) * 256);
-
-	*(unsigned short*)palleteOffset = 256;
-	memcpy(palleteOffset + 2, palette, sizeof(COLOR3) * 256);
-
-	newMipTex->data = newTexData;
-	newMipTex->needclean = true;
-
-	return newMipTex;
+	data.clear();
+	szName[0] = '\0';
+	nWidth = nHeight = 0;
+	nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
 }
 
-COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette)
+WADTEX::WADTEX(BSPMIPTEX* tex, unsigned char* palette, unsigned short colors)
 {
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0257), wadTex->szName, wadTex->nWidth, wadTex->nHeight);
-	int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
-	if (palette == NULL)
-		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-	unsigned char* src = wadTex->data;
-
-	int sz = wadTex->nWidth * wadTex->nHeight;
-	COLOR3* imageData = new COLOR3[sz];
-
-
-	for (int k = 0; k < sz; k++)
+	if (!tex || tex->nWidth == 0 || tex->nHeight == 0)
 	{
-		imageData[k] = palette[src[k]];
+		szName[0] = '\0';
+		nWidth = nHeight = 0;
+		nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
+		return;
+	}
+	memcpy(szName, tex->szName, MAXTEXTURENAME);
+
+	nWidth = tex->nWidth;
+	nHeight = tex->nHeight;
+	for (int i = 0; i < MIPLEVELS; i++)
+		nOffsets[i] = tex->nOffsets[i]/* - sizeof(BSPMIPTEX)*/;
+
+	if (nOffsets[0] <= 0)
+	{
+		return;
 	}
 
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0258), wadTex->szName, wadTex->nWidth, wadTex->nHeight);
-	return imageData;
-}
+	int sz = calcMipsSize(tex->nWidth, tex->nHeight);
 
-COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
-{
-	/*if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0259), tex->szName, tex->nWidth, tex->nHeight);*/
-	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
-
-	if (palette == NULL)
-		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
-	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
-
-	int sz = tex->nWidth * tex->nHeight;
-	COLOR3* imageData = new COLOR3[sz];
-
-	for (int k = 0; k < sz; k++)
+	unsigned char* texdata = ((unsigned char*)tex) + tex->nOffsets[0];
+	if (palette)
 	{
-		imageData[k] = palette[src[k]];
+		data = std::vector<unsigned char>(texdata, texdata + sz);
+		data.push_back(0); data.push_back(0);
+		*(unsigned short*)(data.data() + sz) = colors;
+		data.insert_range(data.end(), std::vector<unsigned char>(palette, palette + sizeof(COLOR3) * colors));
 	}
-
-	/*if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0260), tex->szName, tex->nWidth, tex->nHeight);*/
-	return imageData;
-}
-
-
-COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette, int colors)
-{
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0261), wadTex->szName, wadTex->nWidth, wadTex->nHeight);
-	int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
-
-	if (palette == NULL)
-		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-	unsigned char* src = wadTex->data;
-
-	int sz = wadTex->nWidth * wadTex->nHeight;
-	COLOR4* imageData = new COLOR4[sz];
-
-	for (int k = 0; k < sz; k++)
+	else
 	{
-		if (wadTex->szName[0] == '{' && (colors - 1 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
-		{
-			imageData[k] = COLOR4(255, 255, 255, 0);
-		}
-		else
-		{
-			imageData[k] = palette[src[k]];
-		}
+		data = std::vector<unsigned char>(texdata, texdata + (sz + sizeof(short) + sizeof(COLOR3) * 256));
 	}
-
-	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0262), wadTex->szName, wadTex->nWidth, wadTex->nHeight);
-	return imageData;
-}
-
-COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
-{
-	/*if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0263), tex->szName, tex->nWidth, tex->nHeight);*/
-	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
-
-	if (palette == NULL)
-		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
-	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
-
-	int sz = tex->nWidth * tex->nHeight;
-	COLOR4* imageData = new COLOR4[sz];
-
-	for (int k = 0; k < sz; k++)
-	{
-		if (tex->szName[0] == '{' && (colors - 1 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
-		{
-			imageData[k] = COLOR4(0, 0, 0, 0);
-		}
-		else
-		{
-			imageData[k] = palette[src[k]];
-		}
-	}
-
-	/*if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0264), tex->szName, tex->nWidth, tex->nHeight);*/
-	return imageData;
-}
-
-COLOR3 GetMipTexAplhaColor(BSPMIPTEX* tex, COLOR3* palette, int max_colors)
-{
-	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
-	if (palette == NULL)
-	{
-		max_colors = *(unsigned short*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize);
-		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
-	}
-	if (max_colors > 256 || max_colors < 0)
-	{
-		max_colors = 256;
-	}
-	return palette[max_colors - 1];
-}
-
-COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette, int max_colors)
-{
-	int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
-	if (palette == NULL)
-	{
-		max_colors = *(unsigned short*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize - sizeof(BSPMIPTEX));
-		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-	}
-	if (max_colors > 256 || max_colors < 0)
-	{
-		max_colors = 256;
-	}
-	return palette[max_colors - 1];
 }
