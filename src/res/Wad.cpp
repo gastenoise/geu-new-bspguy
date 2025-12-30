@@ -512,7 +512,7 @@ WADTEX::WADTEX(BSPMIPTEX* tex, unsigned char* palette, unsigned short colors)
 		data = std::vector<unsigned char>(texdata, texdata + sz);
 		data.push_back(0); data.push_back(0);
 		*(unsigned short*)(data.data() + sz) = colors;
-		data.insert_range(data.end(), std::vector<unsigned char>(palette, palette + sizeof(COLOR3) * colors));
+		data.insert(data.end(), palette, palette + sizeof(COLOR3) * colors);
 	}
 	else
 	{
