@@ -30,7 +30,7 @@ public:
 	void upload(int type = TYPE_TEXTURE);
 
 	// get data (if deleted, then fill it from texture)
-	unsigned char* get_data();
+	unsigned char* getData();
 
 	void setWadName(const std::string& s) {
 		wad_name = s;
@@ -40,9 +40,9 @@ public:
 	void bind(GLuint texnum);
 
 	int dataLen;
+private:
 
 	bool uploaded;
-private:
 	unsigned char* data; // RGB(A) data
 	bool tex_owndata;
 };

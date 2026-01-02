@@ -8,327 +8,403 @@ static unsigned int g_active_shader_program = 0xFFFFFFFF;
 
 VertexAttr commonAttr[VBUF_FLAGBITS] =
 {
-	VertexAttr(2, GL_BYTE,          -1, GL_FALSE, ""), // TEX_2B
-	VertexAttr(2, GL_SHORT,         -1, GL_FALSE, ""), // TEX_2S
-	VertexAttr(2, GL_FLOAT,         -1, GL_FALSE, ""), // TEX_2F
-	VertexAttr(3, GL_UNSIGNED_BYTE, -1, GL_TRUE, ""),  // COLOR_3B
-	VertexAttr(3, GL_FLOAT,         -1, GL_TRUE, ""),  // COLOR_3F
-	VertexAttr(4, GL_UNSIGNED_BYTE, -1, GL_TRUE, ""),  // COLOR_4B
-	VertexAttr(4, GL_FLOAT,         -1, GL_TRUE, ""),  // COLOR_4F
-	VertexAttr(3, GL_BYTE,          -1, GL_TRUE, ""),  // NORM_3B
-	VertexAttr(3, GL_FLOAT,         -1, GL_TRUE, ""),  // NORM_3F
-	VertexAttr(2, GL_BYTE,          -1, GL_FALSE, ""), // POS_2B
-	VertexAttr(2, GL_SHORT,         -1, GL_FALSE, ""), // POS_2S
-	VertexAttr(2, GL_INT,           -1, GL_FALSE, ""), // POS_2I
-	VertexAttr(2, GL_FLOAT,         -1, GL_FALSE, ""), // POS_2F
-	VertexAttr(3, GL_SHORT,         -1, GL_FALSE, ""), // POS_3S
-	VertexAttr(3, GL_FLOAT,         -1, GL_FALSE, ""), // POS_3F
+    VertexAttr(2, GL_BYTE,          -1, GL_FALSE, ""), // TEX_2B
+    VertexAttr(2, GL_SHORT,         -1, GL_FALSE, ""), // TEX_2S
+    VertexAttr(2, GL_FLOAT,         -1, GL_FALSE, ""), // TEX_2F
+    VertexAttr(3, GL_UNSIGNED_BYTE, -1, GL_TRUE, ""),  // COLOR_3B
+    VertexAttr(3, GL_FLOAT,         -1, GL_TRUE, ""),  // COLOR_3F
+    VertexAttr(4, GL_UNSIGNED_BYTE, -1, GL_TRUE, ""),  // COLOR_4B
+    VertexAttr(4, GL_FLOAT,         -1, GL_TRUE, ""),  // COLOR_4F
+    VertexAttr(3, GL_BYTE,          -1, GL_TRUE, ""),  // NORM_3B
+    VertexAttr(3, GL_FLOAT,         -1, GL_TRUE, ""),  // NORM_3F
+    VertexAttr(2, GL_BYTE,          -1, GL_FALSE, ""), // POS_2B
+    VertexAttr(2, GL_SHORT,         -1, GL_FALSE, ""), // POS_2S
+    VertexAttr(2, GL_INT,           -1, GL_FALSE, ""), // POS_2I
+    VertexAttr(2, GL_FLOAT,         -1, GL_FALSE, ""), // POS_2F
+    VertexAttr(3, GL_SHORT,         -1, GL_FALSE, ""), // POS_3S
+    VertexAttr(3, GL_FLOAT,         -1, GL_FALSE, ""), // POS_3F
 };
 
 VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName)
-	: numValues(numValues), valueType(valueType), handle(handle), normalized(normalized), varName(varName), size(0)
+    : numValues(numValues), valueType(valueType), handle(handle), normalized(normalized), varName(varName), size(0)
 {
-	switch (valueType)
-	{
-	case(GL_BYTE):
-	case(GL_UNSIGNED_BYTE):
-		size = numValues;
-		break;
-	case(GL_SHORT):
-	case(GL_UNSIGNED_SHORT):
-		size = numValues * 2;
-		break;
-	case(GL_FLOAT):
-	case(GL_INT):
-	case(GL_UNSIGNED_INT):
-		size = numValues * 4;
-		break;
-	default:
-		print_log(get_localized_string(LANG_0972), valueType);
-		handle = -1;
-	}
+    switch (valueType)
+    {
+    case(GL_BYTE):
+    case(GL_UNSIGNED_BYTE):
+        size = numValues;
+        break;
+    case(GL_SHORT):
+    case(GL_UNSIGNED_SHORT):
+        size = numValues * 2;
+        break;
+    case(GL_FLOAT):
+    case(GL_INT):
+    case(GL_UNSIGNED_INT):
+        size = numValues * 4;
+        break;
+    default:
+        print_log(get_localized_string(LANG_0972), valueType);
+        // ensure we modify the member, not the parameter
+        this->handle = -1;
+    }
 }
 
 ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSource)
-	: elementSize(0), modelViewID(-1), modelViewProjID(-1), ID(0xFFFFFFFF),
-	vposID(0), vcolorID(0), vtexID(0), modelViewMat(NULL), modelViewProjMat(NULL), attributesBound(false)
+    : elementSize(0), modelViewID(-1), modelViewProjID(-1), ID(0xFFFFFFFF),
+    vposID(0), vcolorID(0), vtexID(0), modelViewMat(NULL), modelViewProjMat(NULL), attributesBound(false), updMatGlobalId(9999999)
 {
-	vShader = new Shader(vshaderSource, GL_VERTEX_SHADER);
-	fShader = new Shader(fshaderSource, GL_FRAGMENT_SHADER);
-	link();
+    vShader = new Shader(vshaderSource, GL_VERTEX_SHADER);
+    fShader = new Shader(fshaderSource, GL_FRAGMENT_SHADER);
+    link();
 
-	modelStackIdx = projStackIdx = viewStackIdx = 0;
+    modelStackIdx = projStackIdx = viewStackIdx = 0;
 }
 
 void ShaderProgram::link()
 {
-	ID = glCreateProgram();
-	glAttachShader(ID, vShader->ID);
-	glAttachShader(ID, fShader->ID);
+    ID = glCreateProgram();
+    glAttachShader(ID, vShader->ID);
+    glAttachShader(ID, fShader->ID);
 
-	glLinkProgram(ID);
+    glLinkProgram(ID);
 
-	int success;
-	glGetProgramiv(ID, GL_LINK_STATUS, &success);
-	if (success != GL_TRUE)
-	{
-		char log[1024];
-		int len;
-		glGetProgramInfoLog(ID, 1024, &len, log);
-		print_log(get_localized_string(LANG_0961));
-		print_log(log);
-		if (len > 1024)
-			print_log(get_localized_string(LANG_0962));
-	}
+    int success;
+    glGetProgramiv(ID, GL_LINK_STATUS, &success);
+    if (success != GL_TRUE)
+    {
+        char log[1024];
+        int len = 0;
+        glGetProgramInfoLog(ID, sizeof(log), &len, log);
+        print_log(get_localized_string(LANG_0961));
+        print_log(log);
+        if (len > (int)sizeof(log))
+            print_log(get_localized_string(LANG_0962));
+    }
 }
 
 ShaderProgram::~ShaderProgram()
 {
-	glDeleteProgram(ID);
-	delete vShader;
-	delete fShader;
+    // detach shaders if still attached
+    if (vShader && vShader->ID)
+        glDetachShader(ID, vShader->ID);
+    if (fShader && fShader->ID)
+        glDetachShader(ID, fShader->ID);
+
+    glDeleteProgram(ID);
+    delete vShader;
+    delete fShader;
 }
 
 void ShaderProgram::bind()
 {
-	if (g_active_shader_program != ID)
-	{
-		g_active_shader_program = ID;
-		glUseProgram(ID);
-		updateMatrixes();
-	}
+    if (g_active_shader_program != ID)
+    {
+        g_active_shader_program = ID;
+        glUseProgram(ID);
+    }
+    updateMatrixes();
+}
+
+void ShaderProgram::removeShader(int shaderID)
+{
+    // Safely detach and delete a shader if it belongs to this program
+    if (vShader && (int)vShader->ID == shaderID)
+    {
+        glDetachShader(ID, shaderID);
+        delete vShader;
+        vShader = nullptr;
+    }
+    else if (fShader && (int)fShader->ID == shaderID)
+    {
+        glDetachShader(ID, shaderID);
+        delete fShader;
+        fShader = nullptr;
+    }
+    // Note: we do not call glDeleteShader here because Shader destructor should handle it.
 }
 
 void ShaderProgram::setMatrixes(mat4x4* modelView, mat4x4* modelViewProj)
 {
-	modelViewMat = modelView;
-	modelViewProjMat = modelViewProj;
+    modelViewMat = modelView;
+    modelViewProjMat = modelViewProj;
 }
 
 void ShaderProgram::updateMatrixes()
 {
-	if (g_active_shader_program != ID)
-	{
-		g_active_shader_program = ID;
-		glUseProgram(ID);
-	}
+    if (g_active_shader_program != ID)
+    {
+        g_active_shader_program = ID;
+        glUseProgram(ID);
+    }
 
-	*modelViewMat = g_app->matview * g_app->matmodel;
-	*modelViewProjMat = g_app->projection * *modelViewMat;
+    // ensure matrices are set
+    if (!modelViewMat || !modelViewProjMat)
+        return;
 
-	*modelViewMat = modelViewMat->transpose();
-	*modelViewProjMat = modelViewProjMat->transpose();
+    if (updMatGlobalId != g_app->matupdate_Num)
+    {
+        updMatGlobalId = g_app->matupdate_Num;
+        *modelViewMat = g_app->matview * g_app->matmodel;
+        *modelViewProjMat = g_app->projection * *modelViewMat;
 
-	if (modelViewID != -1)
-		glUniformMatrix4fv(modelViewID, 1, GL_FALSE, &modelViewMat->m[0]);
-	if (modelViewProjID != -1)
-		glUniformMatrix4fv(modelViewProjID, 1, GL_FALSE, &modelViewProjMat->m[0]);
+        // keep consistent with other overload: transpose before uploading
+        *modelViewMat = modelViewMat->transpose();
+        *modelViewProjMat = modelViewProjMat->transpose();
+
+        if (modelViewID != -1)
+            glUniformMatrix4fv(modelViewID, 1, GL_FALSE, &modelViewMat->m[0]);
+        if (modelViewProjID != -1)
+            glUniformMatrix4fv(modelViewProjID, 1, GL_FALSE, &modelViewProjMat->m[0]);
+    }
 }
 
 void ShaderProgram::updateMatrixes(const mat4x4& viewMat, const mat4x4& viewProjMat)
 {
-	if (g_active_shader_program != ID)
-	{
-		g_active_shader_program = ID;
-		glUseProgram(ID);
-	}
-	*modelViewMat = viewMat;
-	*modelViewProjMat = viewProjMat;
+    if (g_active_shader_program != ID)
+    {
+        g_active_shader_program = ID;
+        glUseProgram(ID);
+    }
 
-	if (modelViewID != -1)
-		glUniformMatrix4fv(modelViewID, 1, GL_FALSE, &modelViewMat->m[0]);
-	if (modelViewProjID != -1)
-		glUniformMatrix4fv(modelViewProjID, 1, GL_FALSE, &modelViewProjMat->m[0]);
+    // ensure matrices are set
+    if (!modelViewMat || !modelViewProjMat)
+        return;
+
+    *modelViewMat = viewMat;
+    *modelViewProjMat = viewProjMat;
+
+    // keep consistent: transpose before uploading
+    *modelViewMat = modelViewMat->transpose();
+    *modelViewProjMat = modelViewProjMat->transpose();
+
+    if (modelViewID != -1)
+        glUniformMatrix4fv(modelViewID, 1, GL_FALSE, &modelViewMat->m[0]);
+    if (modelViewProjID != -1)
+        glUniformMatrix4fv(modelViewProjID, 1, GL_FALSE, &modelViewProjMat->m[0]);
 }
 
 void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _modelViewProjMat)
 {
-	if (_modelViewMat)
-	{
-		modelViewID = glGetUniformLocation(ID, _modelViewMat);
-		if (modelViewID == -1)
-			print_log(get_localized_string(LANG_0963), _modelViewMat);
-	}
-	if (_modelViewProjMat)
-	{
-		modelViewProjID = glGetUniformLocation(ID, _modelViewProjMat);
-		if (modelViewProjID == -1)
-			print_log(get_localized_string(LANG_0964), _modelViewProjMat);
-	}
+    if (_modelViewMat)
+    {
+        modelViewID = glGetUniformLocation(ID, _modelViewMat);
+        if (modelViewID == -1)
+            print_log(get_localized_string(LANG_0963), _modelViewMat);
+    }
+    if (_modelViewProjMat)
+    {
+        modelViewProjID = glGetUniformLocation(ID, _modelViewProjMat);
+        if (modelViewProjID == -1)
+            print_log(get_localized_string(LANG_0964), _modelViewProjMat);
+    }
 }
 
 void ShaderProgram::setVertexAttributeNames(const char* posAtt, const char* colorAtt, const char* texAtt, int attFlags)
 {
-	if (posAtt)
-	{
-		vposID = glGetAttribLocation(ID, posAtt);
-		if (vposID == -1) print_log(get_localized_string(LANG_0965), posAtt);
-	}
-	if (colorAtt)
-	{
-		vcolorID = glGetAttribLocation(ID, colorAtt);
-		if (vcolorID == -1) print_log(get_localized_string(LANG_0966), colorAtt);
-	}
-	if (texAtt)
-	{
-		vtexID = glGetAttribLocation(ID, texAtt);
-		if (vtexID == -1) print_log(get_localized_string(LANG_0967), texAtt);
-	}
+    if (posAtt)
+    {
+        vposID = glGetAttribLocation(ID, posAtt);
+        if (vposID == -1) print_log(get_localized_string(LANG_0965), posAtt);
+    }
+    if (colorAtt)
+    {
+        vcolorID = glGetAttribLocation(ID, colorAtt);
+        if (vcolorID == -1) print_log(get_localized_string(LANG_0966), colorAtt);
+    }
+    if (texAtt)
+    {
+        vtexID = glGetAttribLocation(ID, texAtt);
+        if (vtexID == -1) print_log(get_localized_string(LANG_0967), texAtt);
+    }
 
-	addAttributes(attFlags);
+    addAttributes(attFlags);
 }
 
 void ShaderProgram::pushMatrix(int matType)
 {
-	if (matType & MAT_MODEL)
-	{
-		if (modelStackIdx >= modelStack.size())
-		{
-			modelStack.push_back(g_app->matmodel);
+    if (matType & MAT_MODEL)
+    {
+        if (modelStackIdx >= modelStack.size())
+        {
+            modelStack.push_back(g_app->matmodel);
 
-			if (modelStackIdx > 50)
-			{
-				print_log(PRINT_RED, "pushMatrix({}) call overrun!\n", matType);
-			}
-		}
-		else
-		{
-			modelStack[modelStackIdx] = g_app->matmodel;
-		}
-		modelStackIdx++;
+            if (modelStackIdx > 50)
+            {
+                print_log(PRINT_RED, "pushMatrix({}) call overrun!\n", matType);
+            }
+        }
+        else
+        {
+            modelStack[modelStackIdx] = g_app->matmodel;
+        }
+        modelStackIdx++;
 
-	}
-	else if (matType & MAT_VIEW)
-	{
-		if (viewStackIdx >= viewStack.size())
-		{
-			viewStack.push_back(g_app->matview);
-			if (viewStackIdx > 50)
-			{
-				print_log(PRINT_RED, "pushMatrix({}) call overrun!\n", matType);
-			}
-		}
-		else
-		{
-			viewStack[viewStackIdx] = g_app->matview;
-		}
-		viewStackIdx++;
-	}
-	else if (matType & MAT_PROJECTION)
-	{
-		if (projStackIdx >= projStack.size())
-		{
-			projStack.push_back(g_app->projection);
-			if (projStackIdx > 50)
-			{
-				print_log(PRINT_RED, "pushMatrix({}) call overrun!\n", matType);
-			}
-		}
-		else
-		{
-			projStack[projStackIdx] = g_app->projection;
-		}
-		projStackIdx++;
-	}
+    }
+    else if (matType & MAT_VIEW)
+    {
+        if (viewStackIdx >= viewStack.size())
+        {
+            viewStack.push_back(g_app->matview);
+            if (viewStackIdx > 50)
+            {
+                print_log(PRINT_RED, "pushMatrix({}) call overrun!\n", matType);
+            }
+        }
+        else
+        {
+            viewStack[viewStackIdx] = g_app->matview;
+        }
+        viewStackIdx++;
+    }
+    else if (matType & MAT_PROJECTION)
+    {
+        if (projStackIdx >= projStack.size())
+        {
+            projStack.push_back(g_app->projection);
+            if (projStackIdx > 50)
+            {
+                print_log(PRINT_RED, "pushMatrix({}) call overrun!\n", matType);
+            }
+        }
+        else
+        {
+            projStack[projStackIdx] = g_app->projection;
+        }
+        projStackIdx++;
+    }
+    else
+    {
+        print_log(PRINT_RED, "Invalid matrix type {}!\n", matType);
+    }
 }
 
 void ShaderProgram::popMatrix(int matType)
 {
-	if (matType & MAT_MODEL)
-	{
-		if (modelStackIdx > 0)
-			g_app->matmodel = modelStack[--modelStackIdx];
-		else
-			print_log(PRINT_RED, "No pushMatrix call before popMatrix({})!\n", matType);
-	}
-	else if (matType & MAT_VIEW)
-	{
-		if (viewStackIdx > 0)
-			g_app->matview = viewStack[--viewStackIdx];
-		else
-			print_log(PRINT_RED, "No pushMatrix call before popMatrix({})!\n", matType);
-	}
-	else if (matType & MAT_PROJECTION)
-	{
-		if (projStackIdx > 0)
-			g_app->projection = projStack[--projStackIdx];
-		else
-			print_log(PRINT_RED, "No pushMatrix call before popMatrix({})!\n", matType);
-	}
+    g_app->matupdate_Num++; 
+    if (matType & MAT_MODEL)
+    {
+        if (modelStackIdx > 0)
+        {
+            g_app->matmodel = modelStack[--modelStackIdx];
+        }
+        else
+        {
+            print_log(PRINT_RED, "No pushMatrix call before popMatrix({})!\n", matType);
+        }
+    }
+    else if (matType & MAT_VIEW)
+    {
+        if (viewStackIdx > 0)
+        {
+            g_app->matview = viewStack[--viewStackIdx];
+        }
+        else
+        {
+            print_log(PRINT_RED, "No pushMatrix call before popMatrix({})!\n", matType);
+        }
+    }
+    else if (matType & MAT_PROJECTION)
+    {
+        if (projStackIdx > 0)
+        {
+            g_app->projection = projStack[--projStackIdx];
+        }
+        else
+        {
+            print_log(PRINT_RED, "No pushMatrix call before popMatrix({})!\n", matType);
+        }
+    }
+    else
+    {
+        print_log(PRINT_RED, "Invalid matrix type {}!\n", matType);
+    }
 }
 
 void ShaderProgram::addAttributes(int attFlags)
 {
-	elementSize = 0;
-	for (int i = 0; i < VBUF_FLAGBITS; i++)
-	{
-		if (attFlags & (1 << i))
-		{
-			if (i >= VBUF_POS_START)
-				commonAttr[i].handle = vposID;
-			else if (i >= VBUF_COLOR_START)
-				commonAttr[i].handle = vcolorID;
-			else if (i >= VBUF_TEX_START)
-				commonAttr[i].handle = vtexID;
-			else
-				print_log(get_localized_string(LANG_0973), i);
+    elementSize = 0;
+    for (int i = 0; i < VBUF_FLAGBITS; i++)
+    {
+        if (attFlags & (1 << i))
+        {
+            // copy the global template and set the handle on the copy to avoid mutating global state
+            VertexAttr attr = commonAttr[i];
 
-			attribs.emplace_back(commonAttr[i]);
-			elementSize += commonAttr[i].size;
-		}
-	}
+            if (i >= VBUF_POS_START)
+                attr.handle = vposID;
+            else if (i >= VBUF_COLOR_START)
+                attr.handle = vcolorID;
+            else if (i >= VBUF_TEX_START)
+                attr.handle = vtexID;
+            else
+                print_log(get_localized_string(LANG_0973), i);
+
+            attribs.emplace_back(attr);
+            elementSize += attr.size;
+        }
+    }
 }
 
 void ShaderProgram::addAttribute(int numValues, int valueType, int normalized, const char* varName)
 {
-	VertexAttr attribute(numValues, valueType, -1, normalized, varName);
+    VertexAttr attribute(numValues, valueType, -1, normalized, varName);
 
-	attribs.emplace_back(attribute);
-	elementSize += attribute.size;
+    attribs.emplace_back(attribute);
+    elementSize += attribute.size;
 }
 
 void ShaderProgram::addAttribute(int type, const char* varName)
 {
-	if (!varName || varName[0] == '\0')
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, "VertexBuffer::addAttribute -> varName is null");
-		return;
-	}
-	int idx = 0;
-	while (type >>= 1) // unroll for more speed...
-	{
-		idx++;
-	}
+    if (!varName || varName[0] == '\0')
+    {
+        print_log(PRINT_RED | PRINT_INTENSITY, "VertexBuffer::addAttribute -> varName is null");
+        return;
+    }
+    int idx = 0;
+    int tmp = type;
+    while (tmp >>= 1) // unroll for more speed...
+    {
+        idx++;
+    }
 
-	if (idx >= VBUF_FLAGBITS)
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0974));
-		return;
-	}
+    if (idx >= VBUF_FLAGBITS)
+    {
+        print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0974));
+        return;
+    }
 
-	VertexAttr attribute = commonAttr[idx];
-	attribute.handle = -1;
-	attribute.varName = varName;
+    VertexAttr attribute = commonAttr[idx];
+    attribute.handle = -1;
+    attribute.varName = varName;
 
-	attribs.emplace_back(attribute);
-	elementSize += attribute.size;
+    attribs.emplace_back(attribute);
+    elementSize += attribute.size;
 }
 
 void ShaderProgram::bindAttributes(bool hideErrors)
 {
-	if (attributesBound)
-		return;
+    if (attributesBound)
+        return;
 
-	for (size_t i = 0; i < attribs.size(); i++)
-	{
-		if (attribs[i].handle != -1)
-			continue;
+    for (size_t i = 0; i < attribs.size(); i++)
+    {
+        if (attribs[i].handle != -1)
+            continue;
 
-		attribs[i].handle = glGetAttribLocation(ID, attribs[i].varName);
+        // skip attributes without a variable name
+        if (!attribs[i].varName || attribs[i].varName[0] == '\0')
+        {
+            if (!hideErrors || g_settings.verboseLogs)
+                print_log(get_localized_string(LANG_0975), "(null)");
+            continue;
+        }
 
-		if ((!hideErrors || g_settings.verboseLogs) && attribs[i].handle == -1)
-			print_log(get_localized_string(LANG_0975), attribs[i].varName);
-	}
+        attribs[i].handle = glGetAttribLocation(ID, attribs[i].varName);
 
-	attributesBound = true;
+        if ((!hideErrors || g_settings.verboseLogs) && attribs[i].handle == -1)
+            print_log(get_localized_string(LANG_0975), attribs[i].varName);
+    }
+
+    attributesBound = true;
 }

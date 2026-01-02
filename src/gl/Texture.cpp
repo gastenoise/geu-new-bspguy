@@ -68,7 +68,7 @@ Texture::~Texture()
     }
 }
 
-unsigned char* Texture::get_data()
+unsigned char* Texture::getData()
 {
     if (data == NULL)
     {
@@ -95,7 +95,7 @@ unsigned char* Texture::get_data()
 void Texture::upload(int _type)
 {
     this->type = _type;
-    get_data();
+    getData();
 
     if (id != 0xFFFFFFFF)
     {

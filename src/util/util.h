@@ -149,6 +149,8 @@ enum class FIXUPPATH_SLASH
 };
 void fixupPath(char* path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash);
 void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash);
+bool ReadBMP_RGB(const std::string& fileName, unsigned char** pixels_rgb, int& width, int& height);
+bool ReadBMP_PAL(const std::string& fileName, unsigned char** pixels_indexes, int& width, int& height, COLOR3 palette[256]);
 void WriteBMP_RGB(const std::string& fileName, unsigned char* pixels_rgb, int width, int height);
 void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, int width, int height, COLOR3* pal);
 

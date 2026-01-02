@@ -266,7 +266,7 @@ Bsp::Bsp(std::string fpath)
 		entFilePath = g_working_dir + (bsp_name + ".ent");
 	}
 
-	if (g_settings.auto_import_ent && fileExists(entFilePath)) 
+	if (g_settings.auto_import_ent && fileExists(entFilePath))
 	{
 		std::vector<unsigned char> entDat;
 		if (readFile(entFilePath, entDat))
@@ -5533,82 +5533,93 @@ bool Bsp::load_lumps(const std::string& fpath)
 	bool is_fuck_rgba_lightmap = false;
 	if (lightdata && faceCount > 10)
 	{
-		std::vector<std::pair<int, int>> faceOffsets; // offset, faceIndex
+		std::set<int> tmp_offsets;
+		int lightmap3_bytes = 0;
+		for (int i = 0; i < faceCount; i++)
+		{
+			int light_offset = faces[i].nLightmapOffset;
 
-		for (int i = 0; i < faceCount; i++) {
-			BSPFACE32& face = faces[i];
-			if (face.nLightmapOffset > 0 && face.nLightmapOffset < lightDataLength) {
-				faceOffsets.push_back({ face.nLightmapOffset, i });
+			if (light_offset >= 0 && !tmp_offsets.count(light_offset))
+			{
+				tmp_offsets.insert(light_offset);
+				lightmap3_bytes += GetFaceLightmapSizeBytes(i);
 			}
 		}
 
-		std::sort(faceOffsets.begin(), faceOffsets.end());
+		int lightmap1_bytes = lightmap3_bytes / sizeof(COLOR3);
+
+		is_colored_lightmap = abs(lightmap1_bytes - lightDataLength) > abs(lightmap3_bytes - lightDataLength);
+
+		if (is_colored_lightmap)
+		{
+			std::vector<std::pair<int, int>> faceOffsets; // offset, faceIndex
+
+			for (int i = 0; i < faceCount; i++) {
+				BSPFACE32& face = faces[i];
+				if (face.nLightmapOffset > 0 && face.nLightmapOffset < lightDataLength) {
+					faceOffsets.push_back({ face.nLightmapOffset, i });
+				}
+			}
+
+			std::sort(faceOffsets.begin(), faceOffsets.end());
 
 
-		int rgbCount = 0;
-		int rgbaCount = 0;
-		int monoCount = 0;
-		int totalComparisons = 0;
+			int rgbCount = 0;
+			int rgbaCount = 0;
+			int totalComparisons = 0;
 
-		for (size_t i = 0; i < faceOffsets.size() - 1; i++) {
-			int currentOffset = faceOffsets[i].first;
-			int nextOffset = faceOffsets[i + 1].first;
-			int faceIndex = faceOffsets[i].second;
+			for (size_t i = 0; i < faceOffsets.size() - 1; i++) {
+				int currentOffset = faceOffsets[i].first;
+				int nextOffset = faceOffsets[i + 1].first;
+				int faceIndex = faceOffsets[i].second;
 
-			BSPFACE32& face = faces[faceIndex];
+				BSPFACE32& face = faces[faceIndex];
 
-			if (totalComparisons > 100 || i > 10000)
-				break;
+				if (totalComparisons > 100 || i > 10000)
+					break;
 
-			int size[2];
-			if (GetFaceLightmapSize(faceIndex, size)) 
-			{
-				if (face.nLightmapOffset <= 0)
-					continue;
-
-				int diff = abs(nextOffset - currentOffset);
-
-				if (diff % 4 == 0 && diff % 3 == 0)
+				int size[2];
+				if (GetFaceLightmapSize(faceIndex, size))
 				{
-					continue;
+					if (face.nLightmapOffset <= 0)
+						continue;
+
+					int diff = abs(nextOffset - currentOffset);
+
+					if (diff % 4 == 0 && diff % 3 == 0)
+					{
+						continue;
+					}
+					else if (diff % 4 == 0) {
+						rgbaCount++;
+						totalComparisons++;
+					}
+					else if (diff % 3 == 0) {
+						rgbCount++;
+						totalComparisons++;
+					}
 				}
-				else if (diff % 4 == 0) {
-					rgbaCount++;
-					totalComparisons++;
-				}
-				else if (diff % 3 == 0) {
-					rgbCount++;
-					totalComparisons++;
+			}
+
+			if (totalComparisons > 0)
+			{
+				if (rgbaCount > rgbCount)
+				{
+					is_colored_lightmap = is_fuck_rgba_lightmap = true;
+					print_log("Detected RGBA lightmap format (4 bytes per pixel). Statistics: RGBA={}, RGB={}\n",
+						rgbaCount, rgbCount);
 				}
 				else
 				{
-					monoCount++;
-					totalComparisons++;
+					is_colored_lightmap = true;
+					print_log("Detected RGB lightmap format (3 bytes per pixel). Statistics: RGBA={}, RGB={}\n",
+						rgbaCount, rgbCount);
 				}
 			}
 		}
-
-		if (totalComparisons > 0) {
-			if (rgbaCount > rgbCount && rgbaCount > monoCount) {
-				is_colored_lightmap = is_fuck_rgba_lightmap = true;
-				print_log("Detected RGBA lightmap format (4 bytes per pixel). Statistics: RGBA={}, RGB={}, MONO={}\n",
-					rgbaCount, rgbCount, monoCount);
-			}
-			else if (rgbCount > rgbaCount && rgbCount > monoCount) {
-				is_colored_lightmap = true;
-				print_log("Detected RGB lightmap format (3 bytes per pixel). Statistics: RGBA={}, RGB={}, MONO={}\n",
-					rgbaCount, rgbCount, monoCount);
-			}
-			else if (monoCount > rgbaCount && monoCount > rgbCount) {
-				is_colored_lightmap = false;
-				print_log("Detected grayscale lightmap format (1 byte per pixel). Statistics: RGBA={}, RGB={}, MONO={}\n",
-					rgbaCount, rgbCount, monoCount);
-			}
-			else {
-				is_colored_lightmap = true;
-				print_log("Ambiguous lightmap format, defaulting to RGB. Statistics: RGBA={}, RGB={}, MONO={}\n",
-					rgbaCount, rgbCount, monoCount);
-			}
+		else
+		{
+			print_log("Detected grayscale lightmap format (1 byte per pixel).\n");
 		}
 	}
 	else
@@ -10962,7 +10973,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 							int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
 							unsigned char* src = wadTex.data.data();
 							COLOR3* palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-							
+
 
 							WriteBMP_PAL(path + bsp_name + std::string(".smd/tex_8bit/") + tex->szName + std::string(".bmp"),
 								(unsigned char*)src, wadTex.nWidth, wadTex.nHeight, palette);
@@ -10997,7 +11008,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 					tmpTriangle.boneid = bonemap[tmpentid];
 					for (int n = 0; n < 3; n++)
 					{
-						lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + (3 - (n + 1)) + v];
+						lightmapVert& vert = ((lightmapVert*)rgroup->buffer->getData())[rface->vertOffset + (3 - (n + 1)) + v];
 
 						vec3 org_pos = vert.pos.unflip() + origin_offset;
 						vec3 pos = vert.pos.unflip();
@@ -11371,7 +11382,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	std::vector<std::string> group_list;
 
 	CSMFile* csm_export = new CSMFile();
-
+	strcpy(csm_export->header.pathes, "textures/");
 	csm_face tmpFace;
 
 	int csm_groups = 0;
@@ -11584,7 +11595,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 			{
 				for (int n = rface->vertCount - 1; n >= 0; n--)
 				{
-					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
+					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->getData())[rface->vertOffset + n];
 
 					vec3 org_pos = vert.pos;
 
@@ -11604,12 +11615,15 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 				normoffset++;
 			}
+			bool color_initialized = false;
 
-			int uv_idx = 0;
+			std::vector<vec3> temp_positions;
+			std::vector<vec2> temp_uvs;
+			std::vector<vec3> temp_normals;
 
-			for (int n = rface->vertCount - 1; n >= 0; n--)
+			for (int n = 0; n < rface->vertCount; n++)
 			{
-				lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
+				lightmapVert& vert = ((lightmapVert*)rgroup->buffer->getData())[rface->vertOffset + n];
 
 				vec3 org_pos = vert.pos;
 
@@ -11618,10 +11632,10 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
 				}
 
-				org_pos = org_pos.flipUV();
+				vec3 pos_for_uv = org_pos.flipUV();
 
-				float fU = dotProduct(texinfo.vS, org_pos) + texinfo.shiftS;
-				float fV = dotProduct(texinfo.vT, org_pos) + texinfo.shiftT;
+				float fU = dotProduct(texinfo.vS, pos_for_uv) + texinfo.shiftS;
+				float fV = dotProduct(texinfo.vT, pos_for_uv) + texinfo.shiftT;
 
 				fU /= (float)tex.nWidth;
 				fV /= -(float)tex.nHeight;
@@ -11631,54 +11645,93 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					group_textures[groupname] << "vt " << flt_to_str(fU) << " " << flt_to_str(fV) << "\n";
 				}
 
-				if (export_csm)
+				temp_positions.push_back(org_pos);
+				temp_uvs.push_back(vec2(fU, fV));
+				temp_normals.push_back(org_norm);
+
+			}
+
+			if (export_csm && temp_positions.size() >= 3)
+			{
+				for (int tri = 0; tri < rface->vertCount; tri += 3)
 				{
-					if (uv_idx == 0)
+					csm_face newFace;
+					newFace.flags = 0;
+					newFace.lmGroup = csm_groups;
+					newFace.dtGroup = -1;
+					newFace.material = (unsigned short)(materialid);
+					unsigned int startvert = (unsigned int)csm_export->vertices.size();
+					newFace.index[0] = startvert;
+					newFace.index[1] = startvert + 1;
+					newFace.index[2] = startvert + 2;
+					for (int b = 0; b < 2; b++) {
+						for (int j = 0; j < 3; j++) {
+							newFace.tc[b].uv[j] = vec2(0.0f, 0.0f);
+						}
+					}
+					for (int v = 0; v < 3; v++)
 					{
-						unsigned int startvert = (unsigned int)csm_export->vertices.size();
+						int vert_idx = tri + v;
 
-						tmpFace.edgeFlags = 0;
-						tmpFace.lmGroup = csm_groups;
-						tmpFace.matIdx = (unsigned short)(materialid);
-						tmpFace.vertIdx[2] = startvert;
-						tmpFace.vertIdx[1] = startvert + 1;
-						tmpFace.vertIdx[0] = startvert + 2;
+						vec3 org_pos = temp_positions[vert_idx];
+						org_pos += origin_offset;
+						org_pos *= scale;
 
-						csm_export->faces.push_back(tmpFace);
+						csm_vertex newVertex;
+						newVertex.point = org_pos;
+						newVertex.normal = temp_normals[vert_idx];
 
-						csm_export->header.lmGroups = csm_groups;
+						static COLOR4 face_color;
+						if (!color_initialized)
+						{
+							srand(csm_groups);
+							face_color.r = 50 + rand() % 206;
+							face_color.g = 50 + rand() % 206;
+							face_color.b = 50 + rand() % 206;
+							face_color.a = 255;
+							color_initialized = true;
+						}
+						newVertex.color = face_color;
+
+						csm_export->vertices.push_back(newVertex);
+
+						vec2 uv = temp_uvs[vert_idx];
+						newFace.tc[0].uv[v] = vec2(uv.x, 1.0f - uv.y);
 					}
 
-
-					org_pos.unflipUV();
-
-					org_pos += origin_offset;
-					org_pos *= scale;
-
-					COLOR4 rndColor;
-					srand(csm_groups);
-					rndColor.r = 50 + rand() % 206;
-					rndColor.g = 50 + rand() % 206;
-					rndColor.b = 50 + rand() % 206;
-					rndColor.a = 255;
-
-					csm_export->vertices.emplace_back(org_pos, org_norm, rndColor);
-
-					int cur_faceIdx = (int)(csm_export->faces.size()) - 1;
-					if (cur_faceIdx >= 0)
+					for (int j = 0; j < 3; j++)
 					{
-						csm_export->faces[cur_faceIdx].uvs[0].uv[uv_idx].x = fU;
-						csm_export->faces[cur_faceIdx].uvs[0].uv[uv_idx].y = fU;
-
-						csm_export->faces[cur_faceIdx].uvs[1].uv[uv_idx].x = fU;
-						csm_export->faces[cur_faceIdx].uvs[1].uv[uv_idx].y = fU;
+						newFace.tc[1].uv[j] = newFace.tc[0].uv[j];
 					}
-					uv_idx++;
 
-					if (uv_idx == 3)
-						uv_idx = 0;
+					csm_export->faces.push_back(newFace);
+					csm_export->header.lmGroups = std::max(csm_export->header.lmGroups, (unsigned int)(csm_groups + 1));
+
+					color_initialized = false;
+
+					for (int v = 0; v < 3; v++)
+					{
+						vec3& pos = csm_export->vertices[csm_export->vertices.size() - 3 + v].point;
+
+						if (csm_export->header.faces_count == 0 && v == 0)
+						{
+							csm_export->header.model_mins = pos;
+							csm_export->header.model_maxs = pos;
+						}
+						else
+						{
+							csm_export->header.model_mins.x = std::min(csm_export->header.model_mins.x, pos.x);
+							csm_export->header.model_mins.y = std::min(csm_export->header.model_mins.y, pos.y);
+							csm_export->header.model_mins.z = std::min(csm_export->header.model_mins.z, pos.z);
+
+							csm_export->header.model_maxs.x = std::max(csm_export->header.model_maxs.x, pos.x);
+							csm_export->header.model_maxs.y = std::max(csm_export->header.model_maxs.y, pos.y);
+							csm_export->header.model_maxs.z = std::max(csm_export->header.model_maxs.z, pos.z);
+						}
+					}
 				}
 			}
+
 
 			if (lastmaterialid != materialid)
 			{
@@ -14154,7 +14207,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 
 			if (!added_textures.count(mesh_texture))
 			{
-				COLOR4* tmpDataTex = (COLOR4*)mesh_texture->get_data();
+				COLOR4* tmpDataTex = (COLOR4*)mesh_texture->getData();
 
 				int newWidth = mesh_texture->width;
 				int newHeight = mesh_texture->height;
@@ -14986,7 +15039,7 @@ int Bsp::GetTriggerTexture()
 int Bsp::AddTriggerTexture()
 {
 	//print_log(get_localized_string(LANG_0295));
-	return add_texture("aaatrigger", aaatriggerTex->get_data(), aaatriggerTex->width, aaatriggerTex->height);
+	return add_texture("aaatrigger", aaatriggerTex->getData(), aaatriggerTex->width, aaatriggerTex->height);
 }
 
 vec3 Bsp::getEntOrigin(Entity* ent)

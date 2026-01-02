@@ -198,7 +198,10 @@ public:
 	float rotationSpeed = 5.0f;
 	int windowWidth;
 	int windowHeight;
-	mat4x4 matmodel = mat4x4(), matview = mat4x4(), projection = mat4x4(), modelView = mat4x4(), modelViewProjection = mat4x4();
+
+	mat4x4 matmodel, matview, projection, modelView, modelViewProjection;
+	int matupdate_Num;
+	void mat_upload() { matupdate_Num++; }
 
 	vec2 lastMousePos;
 	vec2 totalMouseDrag;
@@ -243,7 +246,7 @@ public:
 	std::vector<TransformVert> modelFaceVerts; // control points for visible face verts
 	std::vector<HullEdge> modelEdges;
 	cCube* modelVertCubes = NULL;
-	cCube modelOriginCube = cCube();
+	cCube* modelOriginCube = NULL;
 	VertexBuffer* modelVertBuff = NULL;
 	VertexBuffer* modelOriginBuff = NULL;
 	bool originSelected = false;

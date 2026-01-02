@@ -461,7 +461,7 @@ void LeafNavMeshGenerator::calcPathCosts(Bsp* bsp, LeafNavMesh* mesh) {
 		}
 	}
 
-	print_log("Calculated path costs in {}\n", (float)(glfwGetTime() - markStart));
+	//print_log("Calculated path costs in {}\n", (float)(glfwGetTime() - markStart));
 }
 
 void LeafNavMeshGenerator::addPathCost(LeafLink& link, Bsp* bsp, vec3 start, vec3 end, bool isDrop) {

@@ -5,12 +5,10 @@
 
 enum mat_types
 {
-	MAT_MODEL = 1,
-	MAT_VIEW = 2,
-	MAT_PROJECTION = 4,
+    MAT_MODEL = 1,
+    MAT_VIEW = 2,
+    MAT_PROJECTION = 4,
 };
-
-
 
 // Combinable flags for setting common vertex attributes
 #define TEX_2B   (1 << 0)   // 2D byte texture coordinates
@@ -41,28 +39,28 @@ enum mat_types
 
 struct VertexAttr
 {
-	int numValues;
-	int valueType;  // Ex: GL_FLOAT
-	int handle;     // location in shader program (-1 indicates invalid attribute)
-	int size;       // size of the attribute in bytes
-	int normalized; // GL_TRUE/GL_FALSE Ex: byte color values are normalized (0-255 = 0.0-1.0)
-	const char* varName;
+    int numValues;
+    int valueType;  // Ex: GL_FLOAT
+    int handle;     // location in shader program (-1 indicates invalid attribute)
+    int size;       // size of the attribute in bytes
+    int normalized; // GL_TRUE/GL_FALSE Ex: byte color values are normalized (0-255 = 0.0-1.0)
+    const char* varName;
 
-	VertexAttr()
-	{
-		handle = -1;
-		numValues = valueType = size = normalized = 0;
-		varName = NULL;
-	}
+    VertexAttr()
+    {
+        handle = -1;
+        numValues = valueType = size = normalized = 0;
+        varName = NULL;
+    }
 
-	~VertexAttr()
-	{
-		handle = -1;
-		numValues = valueType = size = normalized = 0;
-		varName = NULL;
-	}
+    ~VertexAttr()
+    {
+        handle = -1;
+        numValues = valueType = size = normalized = 0;
+        varName = NULL;
+    }
 
-	VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName);
+    VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName);
 };
 
 
@@ -71,74 +69,76 @@ extern VertexAttr commonAttr[VBUF_FLAGBITS];
 class ShaderProgram
 {
 public:
-	unsigned int ID; // OpenGL program ID
+    unsigned int ID; // OpenGL program ID
 
-	Shader* vShader; // vertex shader
-	Shader* fShader; // fragment shader
+    Shader* vShader; // vertex shader
+    Shader* fShader; // fragment shader
 
-	// commonly used vertex attributes
-	unsigned int vposID;
-	unsigned int vcolorID;
-	unsigned int vtexID;
+    // commonly used vertex attributes
+    unsigned int vposID;
+    unsigned int vcolorID;
+    unsigned int vtexID;
 
-	// Creates a shader program to replace the fixed-function pipeline
-	ShaderProgram(const char* vshaderSource, const char* fshaderSource);
-	~ShaderProgram(void);
+    // Creates a shader program to replace the fixed-function pipeline
+    ShaderProgram(const char* vshaderSource, const char* fshaderSource);
+    ~ShaderProgram(void);
 
-	// use this shader program instead of the fixed function pipeline.
-	// to go back to normal opengl rendering, use this:
-	// glUseProgramObject(0);
-	void bind();
+    // use this shader program instead of the fixed function pipeline.
+    // to go back to normal opengl rendering, use this:
+    // glUseProgramObject(0);
+    void bind();
 
-	void removeShader(int shaderID);
+    // detach and remove a shader by its GL shader ID if it belongs to this program
+    void removeShader(int shaderID);
 
-	void setMatrixes(mat4x4* modelView, mat4x4* modelViewProj);
+    void setMatrixes(mat4x4* modelView, mat4x4* modelViewProj);
 
-	// Find the the modelView and modelViewProjection matrices
-	// used in the shader code, so that we can update them.
-	void setMatrixNames(const char* modelViewMat, const char* modelViewProjMat);
+    // Find the the modelView and modelViewProjection matrices
+    // used in the shader code, so that we can update them.
+    void setMatrixNames(const char* modelViewMat, const char* modelViewProjMat);
 
-	// Find the IDs for the common vertex attributes (position, color, texture coords, normals)
-	void setVertexAttributeNames(const char* posAtt, const char* colorAtt, const char* texAtt, int attFlags);
+    // Find the IDs for the common vertex attributes (position, color, texture coords, normals)
+    void setVertexAttributeNames(const char* posAtt, const char* colorAtt, const char* texAtt, int attFlags);
 
-	// upload the model, view, and projection matrices to the shader (or fixed-funcion pipe)
-	void updateMatrixes();
+    // upload the model, view, and projection matrices to the shader (or fixed-funcion pipe)
+    void updateMatrixes(const mat4x4& viewMat, const mat4x4& viewProjMat);
 
-	void updateMatrixes(const mat4x4& viewMat, const mat4x4& viewProjMat);
+    // save/restore matrices
+    void pushMatrix(int matType = MAT_MODEL);
+    void popMatrix(int matType = MAT_MODEL);
 
-	// save/restore matrices
-	void pushMatrix(int matType = MAT_MODEL);
-	void popMatrix(int matType = MAT_MODEL);
+    void addAttributes(int attFlags);
 
-	void addAttributes(int attFlags);
+    void addAttribute(int numValues, int valueType, int normalized, const char* varName);
+    void addAttribute(int type, const char* varName);
+    void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
 
-	void addAttribute(int numValues, int valueType, int normalized, const char* varName);
-	void addAttribute(int type, const char* varName);
-	void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
-
-	std::vector<VertexAttr> attribs;
-	int elementSize;
+    std::vector<VertexAttr> attribs;
+    int elementSize;
 private:
+    void updateMatrixes();
 
-	bool attributesBound = false;
+    bool attributesBound = false;
 
-	// uniforms
-	int modelViewID;
-	int modelViewProjID;
+    // uniforms
+    int modelViewID;
+    int modelViewProjID;
 
-	// computed from model, view, and projection matrices
-	mat4x4 * modelViewProjMat; // for transforming vertices onto the screen
-	mat4x4 * modelViewMat;
+    // computed from model, view, and projection matrices
+    mat4x4* modelViewProjMat; // for transforming vertices onto the screen
+    mat4x4* modelViewMat;
 
-	// stores previous states of matrices
-	std::vector<mat4x4> modelStack;
-	std::vector<mat4x4> viewStack;
-	std::vector<mat4x4> projStack;
-	size_t modelStackIdx;
-	size_t viewStackIdx;
-	size_t projStackIdx;
+    // stores previous states of matrices
+    std::vector<mat4x4> modelStack;
+    std::vector<mat4x4> viewStack;
+    std::vector<mat4x4> projStack;
+    size_t modelStackIdx;
+    size_t viewStackIdx;
+    size_t projStackIdx;
 
-	void link();
+    int updMatGlobalId;
+
+    void link();
 };
 
 void calcMatrixes(mat4x4& outViewMat, mat4x4& outViewProjMat);

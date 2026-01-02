@@ -1115,6 +1115,192 @@ void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, in
 	fclose(outputFile);
 }
 
+bool ReadBMP_RGB(const std::string& fileName, unsigned char** pixels_rgb, int& width, int& height)
+{
+	FILE* inputFile = NULL;
+	fopen_s(&inputFile, fileName.c_str(), "rb");
+	if (!inputFile)
+	{
+		print_log(PRINT_RED, "Failed to open BMP file: {}\n", fileName);
+		return false;
+	}
+
+	unsigned char header[54];
+	if (fread(header, 1, 54, inputFile) != 54)
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Invalid BMP header: {}\n", fileName);
+		return false;
+	}
+
+	if (header[0] != 'B' || header[1] != 'M')
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Not a BMP file: {}\n", fileName);
+		return false;
+	}
+
+	int dataOffset = *(int*)&(header[DATA_OFFSET_OFFSET]);
+	width = *(int*)&(header[WIDTH_OFFSET]);
+	height = *(int*)&(header[HEIGHT_OFFSET]);
+	short bitsPerPixel = *(short*)&(header[BITS_PER_PIXEL_OFFSET]);
+
+	if (bitsPerPixel != 24 && bitsPerPixel != 32)
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Unsupported BMP format ({} bpp): {}\n", bitsPerPixel, fileName);
+		return false;
+	}
+
+	int bytesPerPixel = bitsPerPixel / 8;
+	int rowSize = ((width * bytesPerPixel + 3) / 4) * 4;
+	int imageSize = rowSize * height;
+
+	std::vector<unsigned char> data(imageSize);
+
+	fseek(inputFile, dataOffset, SEEK_SET);
+
+	if (fread(data.data(), 1, imageSize, inputFile) != (size_t)imageSize)
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Failed to read BMP data: {}\n", fileName);
+		return false;
+	}
+
+	fclose(inputFile);
+
+	*pixels_rgb = new unsigned char[width * height * 3];
+
+	if (bitsPerPixel == 24)
+	{
+		// 24-bit BMP: BGR -> RGB
+		for (int y = 0; y < height; y++)
+		{
+			int srcRow = (height - 1 - y) * rowSize;
+			int dstRow = y * width * 3;
+
+			for (int x = 0; x < width; x++)
+			{
+				int srcPos = srcRow + x * 3;
+				int dstPos = dstRow + x * 3;
+
+				// BGR -> RGB
+				(*pixels_rgb)[dstPos] = data[srcPos + 2];     // R
+				(*pixels_rgb)[dstPos + 1] = data[srcPos + 1]; // G
+				(*pixels_rgb)[dstPos + 2] = data[srcPos];     // B
+			}
+		}
+	}
+	else if (bitsPerPixel == 32)
+	{
+		// 32-bit BMP: BGRA -> RGB
+		for (int y = 0; y < height; y++)
+		{
+			int srcRow = (height - 1 - y) * rowSize;
+			int dstRow = y * width * 3;
+
+			for (int x = 0; x < width; x++)
+			{
+				int srcPos = srcRow + x * 4;
+				int dstPos = dstRow + x * 3;
+
+				// BGRA -> RGB
+				(*pixels_rgb)[dstPos] = data[srcPos + 2];     // R
+				(*pixels_rgb)[dstPos + 1] = data[srcPos + 1]; // G
+				(*pixels_rgb)[dstPos + 2] = data[srcPos];     // B
+			}
+		}
+	}
+	else return false;
+
+	return true;
+}
+
+bool ReadBMP_PAL(const std::string& fileName, unsigned char** pixels_indexes, int& width, int& height, COLOR3 palette[256])
+{
+	FILE* inputFile = NULL;
+	fopen_s(&inputFile, fileName.c_str(), "rb");
+	if (!inputFile)
+	{
+		print_log(PRINT_RED, "Failed to open BMP file: {}\n", fileName);
+		return false;
+	}
+
+	unsigned char header[54];
+	if (fread(header, 1, 54, inputFile) != 54)
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Invalid BMP header: {}\n", fileName);
+		return false;
+	}
+
+	if (header[0] != 'B' || header[1] != 'M')
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Not a BMP file: {}\n", fileName);
+		return false;
+	}
+
+	int dataOffset = *(int*)&(header[DATA_OFFSET_OFFSET]);
+	width = *(int*)&(header[WIDTH_OFFSET]);
+	height = *(int*)&(header[HEIGHT_OFFSET]);
+	short bitsPerPixel = *(short*)&(header[BITS_PER_PIXEL_OFFSET]);
+
+	if (bitsPerPixel != 8)
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Not an 8-bit BMP ({} bpp): {}\n", bitsPerPixel, fileName);
+		return false;
+	}
+
+	int rowSize = ((width + 3) / 4) * 4; 
+	int imageSize = rowSize * height;
+
+	COLOR4 palette4[256];
+	fseek(inputFile, 54, SEEK_SET);
+	if (fread(palette4, sizeof(COLOR4), 256, inputFile) != 256)
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Failed to read BMP palette: {}\n", fileName);
+		return false;
+	}
+
+	for (int i = 0; i < 256; i++)
+	{
+		palette[i].r = palette4[i].r;
+		palette[i].g = palette4[i].g;
+		palette[i].b = palette4[i].b;
+	}
+
+	std::vector<unsigned char> data(imageSize);
+
+	fseek(inputFile, dataOffset, SEEK_SET);
+
+	if (fread(data.data(), 1, imageSize, inputFile) != (size_t)imageSize)
+	{
+		fclose(inputFile);
+		print_log(PRINT_RED, "Failed to read BMP data: {}\n", fileName);
+		return false;
+	}
+
+	fclose(inputFile);
+
+	*pixels_indexes = new unsigned char[width * height]; 
+
+	for (int y = 0; y < height; y++)
+	{
+		int srcRow = (height - 1 - y) * rowSize;
+		int dstRow = y * width;
+
+		for (int x = 0; x < width; x++)
+		{
+			(*pixels_indexes)[dstRow + x] = data[srcRow + x];
+		}
+	}
+
+	return true;
+}
+
 
 int ArrayXYtoId(int w, int x, int y)
 {

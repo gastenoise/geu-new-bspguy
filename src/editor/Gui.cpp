@@ -3310,16 +3310,11 @@ void Gui::drawMenuBar()
 									model_maxs += entity->origin;
 								}
 
-								auto faceIndices =
-#ifndef WIN_XP_86
-									std::views::iota(model.iFirstFace, model.iFirstFace + model.nFaces);
-#else 
-									std::vector<int>();
+								auto faceIndices = std::vector<int>();
 								for (int i = 0; i < model.nFaces; i++)
 								{
 									faceIndices.push_back(model.iFirstFace + i);
 								}
-#endif
 
 								std::vector<std::vector<vec3>> faceVecs(faceIndices.size());
 								for (size_t i = 0; i < faceIndices.size(); i++)
@@ -3808,9 +3803,9 @@ void Gui::drawMenuBar()
 							if (tex != missingTex)
 							{
 								if (tex->format == GL_RGBA)
-									lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->get_data(), tex->width, tex->height);
+									lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
 								else
-									lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->get_data(), tex->width, tex->height);
+									lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
 							}
 						}
 					}
@@ -6333,11 +6328,12 @@ void Gui::drawMenuBar()
 					int face = g_app->pickInfo.selectedFaces[0];
 					RenderFace* rface;
 					RenderGroup* rgroup;
-					rend->getRenderPointers(face, &rface, &rgroup);
-
-					if (rface && rgroup)
+					if (rend->getRenderPointers(face, &rface, &rgroup))
 					{
-						ImGui::TextUnformatted(fmt::format("Rend group [{}]", rface->group).c_str());
+						if (rface && rgroup)
+						{
+							ImGui::TextUnformatted(fmt::format("Rend group [{}]", rface->group).c_str());
+						}
 					}
 				}
 			}
@@ -11866,9 +11862,9 @@ void Gui::drawLightMapTool()
 					int offset = face->nLightmapOffset + i * lightmapSz;
 					light_offsets[i] = offset;
 					if (!map->lightdata || offset + lightmapSz > map->lightDataLength)
-						memset(currentlightMap[i]->get_data(), 255, lightmapSz);
+						memset(currentlightMap[i]->getData(), 255, lightmapSz);
 					else
-						memcpy(currentlightMap[i]->get_data(), map->lightdata + offset, lightmapSz);
+						memcpy(currentlightMap[i]->getData(), map->lightdata + offset, lightmapSz);
 					currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
 					lightmap_count++;
 					//print_log(get_localized_string(LANG_0418),i,offset);
@@ -11958,7 +11954,7 @@ void Gui::drawLightMapTool()
 					if (offset < 0)
 						offset = 0;
 
-					COLOR3* lighdata = (COLOR3*)currentlightMap[i]->get_data();
+					COLOR3* lighdata = (COLOR3*)currentlightMap[i]->getData();
 
 					if (needPickColor)
 					{
@@ -12009,7 +12005,7 @@ void Gui::drawLightMapTool()
 							continue;
 						int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 						int offset = face->nLightmapOffset + i * lightmapSz;
-						memcpy(map->lightdata + offset, currentlightMap[i]->get_data(), lightmapSz);
+						memcpy(map->lightdata + offset, currentlightMap[i]->getData(), lightmapSz);
 					}
 					map->resize_all_lightmaps(true);
 					renderer->pushUndoState(get_localized_string(LANG_0599), FL_LIGHTING);

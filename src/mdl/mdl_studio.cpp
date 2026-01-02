@@ -602,7 +602,7 @@ void StudioModel::RefreshMeshList(int body)
 
 		for (int j = 0; j < m_pmodel->nummesh; j++)
 		{
-			mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->modelShader, NULL, 0, GL_TRIANGLES);
+			mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->modelShader, GL_TRIANGLES);
 		}
 	}
 
@@ -760,7 +760,7 @@ void StudioModel::RefreshMeshList(int body)
 		if ((int)mdl_mesh_groups[body][j].verts.size() < totalElements)
 		{
 			mdl_mesh_groups[body][j].verts.resize(totalElements);
-			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)(mdl_mesh_groups[body][j].verts.size()));
+			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)(mdl_mesh_groups[body][j].verts.size()),false);
 		}
 		for (int z = 0; z < (int)mdl_mesh_groups[body][j].verts.size(); z++)
 		{
@@ -953,7 +953,7 @@ void StudioModel::DrawMDL(int meshnum)
 					{
 						if (submesh.buffer)
 						{
-							submesh.buffer->uploaded = false;
+							submesh.buffer->reupload();
 						}
 					}
 				}
