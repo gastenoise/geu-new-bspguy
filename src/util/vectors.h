@@ -185,11 +185,11 @@ struct vec3
 	bool operator==(const vec3& other) const
 	{
 		vec3 v = *this - other;
-		if (std::fabs(v.x) >= EPSILON)
+		if (std::fabs(v.x) >= EPSILON2)
 			return false;
-		if (std::fabs(v.y) >= EPSILON)
+		if (std::fabs(v.y) >= EPSILON2)
 			return false;
-		if (std::fabs(v.z) >= EPSILON)
+		if (std::fabs(v.z) >= EPSILON2)
 			return false;
 		return true;
 	}
@@ -197,11 +197,11 @@ struct vec3
 	bool operator!=(const vec3& other) const
 	{
 		vec3 v = *this - other;
-		if (std::fabs(v.x) >= EPSILON)
+		if (std::fabs(v.x) >= EPSILON2)
 			return true;
-		if (std::fabs(v.y) >= EPSILON)
+		if (std::fabs(v.y) >= EPSILON2)
 			return true;
-		if (std::fabs(v.z) >= EPSILON)
+		if (std::fabs(v.z) >= EPSILON2)
 			return true;
 		return false;
 	}

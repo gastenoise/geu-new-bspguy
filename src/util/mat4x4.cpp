@@ -413,7 +413,7 @@ mat4x4 mat4x4::invert(bool* result)
 
 	float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
 
-	if (std::fabs(det) < EPSILON)
+	if (std::fabs(det) < EPSILON2)
 	{
 		if (result)
 			*result = false;
@@ -440,7 +440,8 @@ mat4x4 mat4x4::invert(bool* result)
 	out.m[14] = inv[14] * det;
 	out.m[15] = inv[15] * det;
 
-
+	if (result)
+		*result = true;
 	return out;
 }
 

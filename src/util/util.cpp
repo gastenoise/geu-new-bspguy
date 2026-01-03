@@ -2671,10 +2671,10 @@ int Process::executeAndWait(int sin, int sout, int serr)
 
 
 
-std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& matrix, const std::vector<float>& vector)
+std::vector<double> solve_uv_matrix_svd(const std::vector<std::vector<double>>& matrix, const std::vector<double>& vector)
 {
 	// Construct the augmented matrix
-	std::vector<std::vector<float>> augmentedMatrix(3, std::vector<float>(5));
+	std::vector<std::vector<double>> augmentedMatrix(3, std::vector<double>(5));
 	for (int i = 0; i < 3; ++i) {
 		for (int j = 0; j < 4; ++j) {
 			augmentedMatrix[i][j] = matrix[i][j];
@@ -2686,7 +2686,7 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 	for (int i = 0; i < 3; ++i) {
 		// Find the row with the largest pivot element
 		int maxRow = i;
-		float maxPivot = std::fabs(augmentedMatrix[i][i]);
+		double maxPivot = std::fabs(augmentedMatrix[i][i]);
 		for (int j = i + 1; j < 3; ++j) {
 			if (std::fabs(augmentedMatrix[j][i]) > maxPivot) {
 				maxRow = j;
@@ -2701,7 +2701,7 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 
 		// Perform row operations to eliminate the lower triangular elements
 		for (int j = i + 1; j < 3; ++j) {
-			float factor = augmentedMatrix[j][i] / augmentedMatrix[i][i];
+			double factor = augmentedMatrix[j][i] / augmentedMatrix[i][i];
 			for (int k = i; k < 5; ++k) {
 				augmentedMatrix[j][k] -= factor * augmentedMatrix[i][k];
 			}
@@ -2709,9 +2709,9 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 	}
 
 	// Perform back substitution to solve for the solution vector
-	std::vector<float> solution(4);
+	std::vector<double> solution(4);
 	for (int i = 2; i >= 0; --i) {
-		float sum = augmentedMatrix[i][4];
+		double sum = augmentedMatrix[i][4];
 		for (int j = i + 1; j < 3; ++j) {
 			sum -= augmentedMatrix[i][j] * solution[j];
 		}
@@ -2721,42 +2721,43 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 	return solution;
 }
 
-void calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vertices, const std::vector<vec2>& uvs)
+bool calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vertices, const std::vector<vec2>& uvs)
 {
 	// Check if the number of vertices and UVs is valid
 	if (vertices.size() != 3 || uvs.size() != 3) {
-		throw std::invalid_argument("Exactly 3 vertices and 3 UVs are required");
+		return false;
 	}
 
 	// Construct the vertices matrix with 3 rows, 4 columns
-	std::vector<std::vector<float>> verticesMat(3, std::vector<float>(4));
+	std::vector<std::vector<double>> verticesMat(3, std::vector<double>(4));
 	for (int i = 0; i < 3; ++i) {
 		verticesMat[i][0] = vertices[i].x;
 		verticesMat[i][1] = vertices[i].y;
 		verticesMat[i][2] = vertices[i].z;
-		verticesMat[i][3] = 1.0f;
+		verticesMat[i][3] = 1.0;
 	}
 
 	// Split the UV coordinates
-	std::vector<float> uvsU(3);
-	std::vector<float> uvsV(3);
+	std::vector<double> uvsU(3);
+	std::vector<double> uvsV(3);
 	for (int i = 0; i < 3; ++i) {
 		uvsU[i] = uvs[i].x;
 		uvsV[i] = uvs[i].y;
 	}
 
-	std::vector<float> solU = solve_uv_matrix_svd(verticesMat, uvsU);
+	std::vector<double> solU = solve_uv_matrix_svd(verticesMat, uvsU);
 	vec3 vS(solU[0], solU[1], solU[2]); // Extract vS vector
-	float shiftS = solU[3]; // Extract shiftS value
+	double shiftS = solU[3]; // Extract shiftS value
 
-	std::vector<float> solV = solve_uv_matrix_svd(verticesMat, uvsV);
+	std::vector<double> solV = solve_uv_matrix_svd(verticesMat, uvsV);
 	vec3 vT(solV[0], solV[1], solV[2]); // Extract vT vector
-	float shiftT = solV[3]; // Extract shiftT value
+	double shiftT = solV[3]; // Extract shiftT value
 
 	texinfo.vS = vS;
 	texinfo.vT = vT;
-	texinfo.shiftS = shiftS;
-	texinfo.shiftT = shiftT;
+	texinfo.shiftS = (float)shiftS;
+	texinfo.shiftT = (float)shiftT;
+	return true;
 }
 
 void getTrueTexSize(int& width, int& height, int maxsize)
