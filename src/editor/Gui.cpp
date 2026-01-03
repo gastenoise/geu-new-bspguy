@@ -10266,7 +10266,7 @@ void Gui::drawAbout()
 			ImGui::EndTooltip();
 		}
 
-		static char help1[] = "https://t.me/ninjac0w\nhttps://github.com/Qwertyus3D\nhttps://hlfx.ru/forum/member.php?action=getinfo&userid=3\ntwhl community\netc";
+		static char help1[] = "https://github.com/Qwertyus3D\nhttps://t.me/AKG6669\nhttps://hlfx.ru/forum/member.php?action=getinfo&userid=3\ntwhl community\netc";
 		ImGui::InputTextMultiline("Special thanks to:", help1, strlen(help1), ImVec2(0, 45), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
 		{
