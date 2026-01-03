@@ -267,9 +267,9 @@ void Settings::AddRecentFile(const std::string& file)
 
 void Settings::loadSettings()
 {
+	loadDefaultSettings();
 	set_localize_lang("EN");
 	fillLanguages("./languages/");
-	loadDefaultSettings();
 
 	if (fileExists(g_settings_path))
 	{
