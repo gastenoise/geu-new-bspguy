@@ -7308,66 +7308,371 @@ void Gui::drawTextureBrowser()
 {
 	Bsp* map = app->getSelectedMap();
 	BspRenderer* mapRender = map ? map->getBspRender() : NULL;
-	ImGui::SetNextWindowSize(ImVec2(610.f, 610.f), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
-	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
-	if (ImGui::Begin(fmt::format("{}###TEXTURE_BROWSER", get_localized_string(LANG_0651)).c_str(), &showTextureBrowser, 0))
+
+	ImGui::SetNextWindowSize(ImVec2(720.f, 640.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(320.f, 120.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
+
+	if (!ImGui::Begin(fmt::format("{}###TEXTURE_BROWSER", get_localized_string(LANG_0651)).c_str(), &showTextureBrowser, 0))
 	{
-		if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyScroll |
-			ImGuiTabBarFlags_::ImGuiTabBarFlags_NoCloseWithMiddleMouseButton |
-			ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable))
+		ImGui::End();
+		return;
+	}
+
+	static char textureFilterBuf[256] = "";
+	ImGui::PushItemWidth(300.0f);
+	ImGui::InputText("Filter", textureFilterBuf, sizeof(textureFilterBuf));
+	ImGui::PopItemWidth();
+	ImGui::SameLine();
+	if (ImGui::Button("Clear")) textureFilterBuf[0] = '\0';
+	std::string filter = toLowerCase(std::string(textureFilterBuf));
+	static std::string lastCopiedTextureName;
+
+	// Build fast lookup name -> Texture*
+	std::unordered_map<std::string, Texture*> nameToTexture;
+	nameToTexture.reserve(g_all_Textures.size() * 2 + 1);
+	for (auto t : g_all_Textures) {
+		if (!t) continue;
+		nameToTexture[toLowerCase(t->texName)] = t;
+	}
+
+	// pending load queue for heavy WAD->Texture conversions
+	static std::vector<std::tuple<Wad*, int, std::string>> pendingWadLoads;
+	const int MAX_LOADS_PER_FRAME = 1;
+	auto enqueueWadLoad = [&](Wad* wad, int dirIndex, const std::string& texName) {
+		for (auto& p : pendingWadLoads) {
+			if (std::get<0>(p) == wad && std::get<1>(p) == dirIndex) return;
+		}
+		pendingWadLoads.emplace_back(wad, dirIndex, texName);
+		};
+
+	// process a small number of pending loads per frame
+	for (int l = 0; l < MAX_LOADS_PER_FRAME && !pendingWadLoads.empty(); ++l) {
+		auto task = pendingWadLoads.front();
+		pendingWadLoads.erase(pendingWadLoads.begin());
+		Wad* wad = std::get<0>(task);
+		int dirIndex = std::get<1>(task);
+		std::string texName = std::get<2>(task);
+		if (!wad) continue;
+		if (!wad->hasTexture(dirIndex)) continue;
+		WADTEX wtex = wad->readTexture(dirIndex);
+		if (wtex.nWidth <= 0 || wtex.nHeight <= 0) continue;
+		COLOR4* rgba = ConvertWadTexToRGBA(wtex, NULL, 256);
+		if (!rgba) continue;
+		Texture* t = new Texture((GLsizei)wtex.nWidth, (GLsizei)wtex.nHeight, (unsigned char*)rgba, texName, true, true);
+		t->upload(Texture::TYPE_TEXTURE);
+		t->setWadName(basename(wad->filename));
+		g_all_Textures.push_back(t);
+		nameToTexture[toLowerCase(texName)] = t;
+	}
+
+	if (ImGui::BeginTabBar("##texture_browser_tabs", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_Reorderable))
+	{
+		// --- Internal map textures tab
+		if (ImGui::BeginTabItem(get_localized_string(LANG_0652).c_str()))
 		{
-			ImGui::Dummy(ImVec2(0, 10));
-			if (ImGui::BeginTabItem(get_localized_string(LANG_0652).c_str()))
+			if (map)
 			{
-				ImGui::Dummy(ImVec2(0, 10));
+				std::vector<std::pair<std::string, int>> internalTextures;
+				internalTextures.reserve(std::max(0, map->textureCount));
+				for (int i = 0; i < map->textureCount; ++i)
+				{
+					int texOffset = ((int*)map->textures)[i + 1];
+					if (texOffset < 0) continue;
+					BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
+					if (!tex) continue;
+					std::string texName = tex->szName;
+					if (!filter.empty() && toLowerCase(texName).find(filter) == std::string::npos) continue;
+					internalTextures.emplace_back(texName, i);
+				}
+
+				float availW = ImGui::GetContentRegionAvail().x;
+				const float thumb = 96.0f;
+				const float padding = 10.0f;
+				const float cellW = thumb + padding;
+				int columns = std::max(1, (int)floor((availW + padding) / cellW));
+				int total = (int)internalTextures.size();
+				int rows = (total + columns - 1) / columns;
+				float rowHeight = thumb + 24.0f;
+
+				ImVec2 originScreen = ImGui::GetCursorScreenPos();
 				ImGuiListClipper clipper;
-				clipper.Begin(1, 30.0f);
+				clipper.Begin(rows, rowHeight);
 				while (clipper.Step())
 				{
-
-				}
-				clipper.End();
-				ImGui::EndTabItem();
-			}
-
-			if (ImGui::BeginTabItem(get_localized_string(LANG_0653).c_str()))
-			{
-				ImGui::Dummy(ImVec2(0, 10));
-				ImGuiListClipper clipper;
-				clipper.Begin(1, 30.0f);
-				while (clipper.Step())
-				{
-
-				}
-				clipper.End();
-				ImGui::EndTabItem();
-			}
-
-			if (mapRender)
-			{
-				for (auto& wad : mapRender->wads)
-				{
-					if (ImGui::BeginTabItem(basename(wad->filename).c_str()))
+					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row)
 					{
-						ImGui::Dummy(ImVec2(0, 10));
-						ImGuiListClipper clipper;
-						clipper.Begin(1, 30.0f);
-						while (clipper.Step())
+						float y = originScreen.y + row * rowHeight;
+						for (int col = 0; col < columns; ++col)
 						{
+							int idx = row * columns + col;
+							if (idx >= total) break;
 
+							const auto& entry = internalTextures[idx];
+							const std::string texName = entry.first;
+							int texIdx = entry.second;
+
+							float x = originScreen.x + col * cellW;
+							ImGui::SetCursorScreenPos(ImVec2(x, y));
+							ImGui::PushID(1000000 + idx);
+							ImGui::BeginGroup();
+
+							Texture* previewTex = nullptr;
+							auto it = nameToTexture.find(toLowerCase(texName));
+							if (it != nameToTexture.end()) previewTex = it->second;
+
+							GLuint texId = missingTex ? missingTex->id : 0;
+							if (previewTex && previewTex->id != 0xFFFFFFFF && previewTex->id != 0) texId = previewTex->id;
+
+							ImTextureRef texRef = ImTextureRef((ImTextureID)(intptr_t)texId);
+							std::string btnId = std::string("internal_texbtn_") + std::to_string(idx);
+							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumb, thumb), ImVec2(0, 0), ImVec2(1, 1)))
+							{
+								copiedMiptex = texIdx;
+								lastCopiedTextureName = texName;
+							}
+
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::BeginTooltip();
+								ImGui::Text("Index: %d", texIdx);
+								ImGui::Text("Name: %s", texName.c_str());
+								ImGui::EndTooltip();
+							}
+
+							std::string displayName = texName;
+							if (displayName.length() > 20) displayName = displayName.substr(0, 17) + "...";
+							ImVec2 cur = ImGui::GetCursorPos();
+							float textW = ImGui::CalcTextSize(displayName.c_str()).x;
+							float offsetX = (thumb - textW) * 0.5f;
+							if (offsetX > 0.0f) ImGui::SetCursorPosX(cur.x + offsetX);
+							ImGui::TextWrapped("%s", displayName.c_str());
+
+							ImGui::EndGroup();
+							ImGui::PopID();
 						}
-						clipper.End();
-						ImGui::EndTabItem();
 					}
 				}
+				// move cursor after the clipped rows to keep scrolling consistent
+				ImGui::SetCursorScreenPos(ImVec2(originScreen.x, originScreen.y + rows * rowHeight));
+				clipper.End();
+			}
+			ImGui::EndTabItem();
+		}
+
+		// --- Aggregated WAD textures tab
+		if (ImGui::BeginTabItem(get_localized_string(LANG_0653).c_str()))
+		{
+			if (mapRender)
+			{
+				struct WadEntry { std::string name; int wadIdx; int texIdx; };
+				std::vector<WadEntry> wadTextures;
+				for (int wadIdx = 0; wadIdx < (int)mapRender->wads.size(); ++wadIdx)
+				{
+					Wad* wad = mapRender->wads[wadIdx];
+					if (!wad) continue;
+					for (int texIdx = 0; texIdx < (int)wad->dirEntries.size(); ++texIdx)
+					{
+						std::string texName = wad->dirEntries[texIdx].szName;
+						if (!filter.empty() && toLowerCase(texName).find(filter) == std::string::npos) continue;
+						wadTextures.push_back({ texName, wadIdx, texIdx });
+					}
+				}
+
+				float availW = ImGui::GetContentRegionAvail().x;
+				const float thumb = 96.0f;
+				const float padding = 10.0f;
+				const float cellW = thumb + padding;
+				int columns = std::max(1, (int)floor((availW + padding) / cellW));
+				int total = (int)wadTextures.size();
+				int rows = (total + columns - 1) / columns;
+				float rowHeight = thumb + 24.0f;
+
+				ImVec2 originScreen = ImGui::GetCursorScreenPos();
+				ImGuiListClipper clipper;
+				clipper.Begin(rows, rowHeight);
+				while (clipper.Step())
+				{
+					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row)
+					{
+						float y = originScreen.y + row * rowHeight;
+						for (int col = 0; col < columns; ++col)
+						{
+							int idx = row * columns + col;
+							if (idx >= total) break;
+
+							const auto& e = wadTextures[idx];
+							const std::string texName = e.name;
+
+							float x = originScreen.x + col * cellW;
+							ImGui::SetCursorScreenPos(ImVec2(x, y));
+							ImGui::PushID(2000000 + idx);
+							ImGui::BeginGroup();
+
+							Texture* previewTex = nullptr;
+							auto it = nameToTexture.find(toLowerCase(texName));
+							if (it != nameToTexture.end()) previewTex = it->second;
+
+							if (!previewTex)
+							{
+								Wad* wad = mapRender->wads[e.wadIdx];
+								if (wad && wad->hasTexture(e.texIdx)) enqueueWadLoad(wad, e.texIdx, texName);
+							}
+
+							GLuint texId = missingTex ? missingTex->id : 0;
+							if (previewTex && previewTex->id != 0xFFFFFFFF && previewTex->id != 0) texId = previewTex->id;
+
+							ImTextureRef texRef = ImTextureRef((ImTextureID)(intptr_t)texId);
+							std::string btnId = std::string("wad_texbtn_") + std::to_string(idx);
+							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumb, thumb), ImVec2(0, 0), ImVec2(1, 1)))
+							{
+								if (previewTex) lastCopiedTextureName = previewTex->texName;
+								else lastCopiedTextureName = texName;
+								copiedMiptex = -1;
+								print_log("Selected WAD texture: %s from %s\n", texName.c_str(), mapRender->wads[e.wadIdx]->filename.c_str());
+							}
+
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::BeginTooltip();
+								ImGui::Text("WAD: %s", basename(mapRender->wads[e.wadIdx]->filename).c_str());
+								ImGui::Text("Name: %s", texName.c_str());
+								ImGui::EndTooltip();
+							}
+
+							std::string displayName = texName;
+							if (displayName.length() > 20) displayName = displayName.substr(0, 17) + "...";
+							ImVec2 cur = ImGui::GetCursorPos();
+							float textW = ImGui::CalcTextSize(displayName.c_str()).x;
+							float offsetX = (thumb - textW) * 0.5f;
+							if (offsetX > 0.0f) ImGui::SetCursorPosX(cur.x + offsetX);
+							ImGui::TextWrapped("%s", displayName.c_str());
+
+							ImGui::EndGroup();
+							ImGui::PopID();
+						}
+					}
+				}
+				ImGui::SetCursorScreenPos(ImVec2(originScreen.x, originScreen.y + rows * rowHeight));
+				clipper.End();
+			}
+			ImGui::EndTabItem();
+		}
+
+		// --- Per-WAD tabs
+		if (mapRender)
+		{
+			for (size_t wadIdx = 0; wadIdx < mapRender->wads.size(); ++wadIdx)
+			{
+				Wad* wad = mapRender->wads[wadIdx];
+				if (!wad) continue;
+				std::string tabName = basename(wad->filename);
+				if (!ImGui::BeginTabItem(tabName.c_str())) continue;
+
+				float availW = ImGui::GetContentRegionAvail().x;
+				const float thumb = 96.0f;
+				const float padding = 10.0f;
+				const float cellW = thumb + padding;
+				int columns = std::max(1, (int)floor((availW + padding) / cellW));
+				std::vector<std::string> names;
+				names.reserve(wad->dirEntries.size());
+				for (int texIdx = 0; texIdx < (int)wad->dirEntries.size(); ++texIdx) names.push_back(wad->dirEntries[texIdx].szName);
+
+				int total = (int)names.size();
+				int rows = (total + columns - 1) / columns;
+				float rowHeight = thumb + 24.0f;
+
+				ImVec2 originScreen = ImGui::GetCursorScreenPos();
+				ImGuiListClipper clipper;
+				clipper.Begin(rows, rowHeight);
+				while (clipper.Step())
+				{
+					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row)
+					{
+						float y = originScreen.y + row * rowHeight;
+						for (int col = 0; col < columns; ++col)
+						{
+							int ii = row * columns + col;
+							if (ii >= total) break;
+
+							const std::string texName = names[ii];
+
+							float x = originScreen.x + col * cellW;
+							ImGui::SetCursorScreenPos(ImVec2(x, y));
+							ImGui::PushID((int)(3000000 + wadIdx * 100000 + ii));
+							ImGui::BeginGroup();
+
+							Texture* previewTex = nullptr;
+							auto it = nameToTexture.find(toLowerCase(texName));
+							if (it != nameToTexture.end()) previewTex = it->second;
+
+							if (!previewTex && wad->hasTexture(ii)) enqueueWadLoad(wad, ii, texName);
+
+							GLuint texId = missingTex ? missingTex->id : 0;
+							if (previewTex && previewTex->id != 0xFFFFFFFF && previewTex->id != 0) texId = previewTex->id;
+
+							ImTextureRef texRef = ImTextureRef((ImTextureID)(intptr_t)texId);
+							std::string btnId = std::string("wad_single_texbtn_") + std::to_string(wadIdx) + "_" + std::to_string(ii);
+							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumb, thumb), ImVec2(0, 0), ImVec2(1, 1)))
+							{
+								if (previewTex) lastCopiedTextureName = previewTex->texName;
+								else lastCopiedTextureName = texName;
+								copiedMiptex = -1;
+								print_log("Selected texture: %s from %s\n", texName.c_str(), basename(wad->filename).c_str());
+							}
+
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::BeginTooltip();
+								ImGui::Text("File: %s", basename(wad->filename).c_str());
+								ImGui::Text("Name: %s", texName.c_str());
+								ImGui::EndTooltip();
+							}
+
+							std::string displayName = texName;
+							if (displayName.length() > 20) displayName = displayName.substr(0, 17) + "...";
+							ImVec2 cur = ImGui::GetCursorPos();
+							float textW = ImGui::CalcTextSize(displayName.c_str()).x;
+							float offsetX = (thumb - textW) * 0.5f;
+							if (offsetX > 0.0f) ImGui::SetCursorPosX(cur.x + offsetX);
+							ImGui::TextWrapped("%s", displayName.c_str());
+
+							ImGui::EndGroup();
+							ImGui::PopID();
+						}
+					}
+				}
+				ImGui::SetCursorScreenPos(ImVec2(originScreen.x, originScreen.y + rows * rowHeight));
+				clipper.End();
+
+				ImGui::EndTabItem();
 			}
 		}
-		ImGui::EndTabBar();
 
+		ImGui::EndTabBar();
 	}
+
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	if (ImGui::Button("Apply Selected Texture", ImVec2(-1, 30)))
+	{
+		if (copiedMiptex >= 0 && map) pasteTexture();
+		else if (!lastCopiedTextureName.empty()) {
+			print_log("Texture preserved for future use: %s\n", lastCopiedTextureName.c_str());
+		}
+		else print_log(PRINT_RED | PRINT_INTENSITY, "No texture selected");
+	}
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Apply the selected texture to all currently selected faces");
+		ImGui::EndTooltip();
+	}
+
 	ImGui::End();
 }
+
 
 void Gui::drawKeyvalueEditor()
 {
