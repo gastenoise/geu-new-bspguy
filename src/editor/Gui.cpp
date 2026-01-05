@@ -17,9 +17,7 @@
 
 #include <lodepng.h>
 #include <execution>
-#ifndef WIN_XP_86
-#include <ranges>
-#endif
+#include <unordered_set>
 #include <algorithm>
 #include "LeafNavMesh.h"
 
@@ -7303,11 +7301,10 @@ void Gui::drawOverviewWidget()
 	ImGui::End();
 }
 
-
 void Gui::drawTextureBrowser()
 {
 	Bsp* map = app->getSelectedMap();
-	BspRenderer* mapRender = map ? map->getBspRender() : NULL;
+	BspRenderer* mapRender = map ? map->getBspRender() : nullptr;
 
 	ImGui::SetNextWindowSize(ImVec2(720.f, 640.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(320.f, 120.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
@@ -7318,34 +7315,52 @@ void Gui::drawTextureBrowser()
 		return;
 	}
 
+	// Controls
 	static char textureFilterBuf[256] = "";
+	static float thumbSizeF = 96.0f;
+	static float fontSizeScale = 1.0f;
+
 	ImGui::PushItemWidth(300.0f);
 	ImGui::InputText("Filter", textureFilterBuf, sizeof(textureFilterBuf));
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 	if (ImGui::Button("Clear")) textureFilterBuf[0] = '\0';
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(120);
+	ImGui::SliderFloat("Size", &thumbSizeF, 64.0f, 160.0f, "%.0f");
+
+	fontSizeScale = thumbSizeF / 1.2f / 96.0f;
+	fontSizeScale = std::clamp(fontSizeScale, 0.4f, 1.2f);
+
 	std::string filter = toLowerCase(std::string(textureFilterBuf));
 	static std::string lastCopiedTextureName;
+	static int lastCopiedMiptex = -1;
 
-	// Build fast lookup name -> Texture*
-	std::unordered_map<std::string, Texture*> nameToTexture;
-	nameToTexture.reserve(g_all_Textures.size() * 2 + 1);
-	for (auto t : g_all_Textures) {
-		if (!t) continue;
-		nameToTexture[toLowerCase(t->texName)] = t;
+	// persistent preview cache
+	static std::unordered_map<std::string, Texture*> previewCache;
+	static size_t lastAllTexturesCount = 0;
+	if (previewCache.empty() || g_all_Textures.size() != lastAllTexturesCount)
+	{
+		previewCache.clear();
+		for (auto t : g_all_Textures) {
+			if (!t) continue;
+			previewCache[toLowerCase(t->texName)] = t;
+		}
+		lastAllTexturesCount = g_all_Textures.size();
 	}
 
-	// pending load queue for heavy WAD->Texture conversions
+	// pending WAD loads (limited per frame)
 	static std::vector<std::tuple<Wad*, int, std::string>> pendingWadLoads;
-	const int MAX_LOADS_PER_FRAME = 1;
+	const int MAX_LOADS_PER_FRAME = 2;
 	auto enqueueWadLoad = [&](Wad* wad, int dirIndex, const std::string& texName) {
+		std::string key = toLowerCase(texName);
+		if (previewCache.find(key) != previewCache.end()) return;
 		for (auto& p : pendingWadLoads) {
 			if (std::get<0>(p) == wad && std::get<1>(p) == dirIndex) return;
 		}
 		pendingWadLoads.emplace_back(wad, dirIndex, texName);
 		};
 
-	// process a small number of pending loads per frame
 	for (int l = 0; l < MAX_LOADS_PER_FRAME && !pendingWadLoads.empty(); ++l) {
 		auto task = pendingWadLoads.front();
 		pendingWadLoads.erase(pendingWadLoads.begin());
@@ -7358,18 +7373,81 @@ void Gui::drawTextureBrowser()
 		if (wtex.nWidth <= 0 || wtex.nHeight <= 0) continue;
 		COLOR4* rgba = ConvertWadTexToRGBA(wtex, NULL, 256);
 		if (!rgba) continue;
-		Texture* t = new Texture((GLsizei)wtex.nWidth, (GLsizei)wtex.nHeight, (unsigned char*)rgba, texName, true, true);
+
+		int tw = std::max(8, (int)thumbSizeF);
+		int th = tw;
+		std::vector<COLOR4> scaled;
+		scaleImage(rgba, scaled, wtex.nWidth, wtex.nHeight, tw, th);
+		delete[] rgba;
+
+		size_t bytes = (size_t)tw * (size_t)th * 4;
+		unsigned char* buf = new unsigned char[bytes];
+		memcpy(buf, scaled.data(), bytes);
+
+		Texture* t = new Texture((GLsizei)tw, (GLsizei)th, buf, texName, true, true);
 		t->upload(Texture::TYPE_TEXTURE);
 		t->setWadName(basename(wad->filename));
-		g_all_Textures.push_back(t);
-		nameToTexture[toLowerCase(texName)] = t;
+		previewCache[toLowerCase(texName)] = t;
+		lastAllTexturesCount = g_all_Textures.size();
 	}
+
+	// Top selection info
+	auto isTextureInMap = [&](const std::string& name)->int {
+		if (!map) return -1;
+		std::string low = toLowerCase(name);
+		for (int i = 0; i < map->textureCount; ++i) {
+			int texOffset = ((int*)map->textures)[i + 1];
+			if (texOffset < 0) continue;
+			BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
+			if (!tex) continue;
+			if (toLowerCase(tex->szName) == low) return i;
+		}
+		return -1;
+		};
+
+	ImGui::Separator();
+	if (copiedMiptex >= 0) {
+		std::string name = lastCopiedTextureName.empty() ? fmt::format("index {}", copiedMiptex) : lastCopiedTextureName;
+		int idx = isTextureInMap(name);
+		ImGui::Text("Selected: %s", name.c_str());
+		if (idx >= 0) {
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(0.2f, 0.9f, 0.2f, 1.0f), "(in map index %d)", idx);
+		}
+		else {
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "(Not in map)");
+		}
+	}
+	else if (!lastCopiedTextureName.empty()) {
+		int idx = isTextureInMap(lastCopiedTextureName);
+		ImGui::Text("Selected: %s", lastCopiedTextureName.c_str());
+		if (idx >= 0) {
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(0.2f, 0.9f, 0.2f, 1.0f), "(in map index %d)", idx);
+		}
+		else {
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), "(Not in map)");
+		}
+	}
+	else {
+		ImGui::Text("Selected: None");
+	}
+	ImGui::Separator();
 
 	if (ImGui::BeginTabBar("##texture_browser_tabs", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_Reorderable))
 	{
-		// --- Internal map textures tab
+		// Fixed height child window for grid (scrollable area)
+		float footerHeight = 60.0f; // Space for Apply button
+		float childHeight = ImGui::GetContentRegionAvail().y - footerHeight;
+		if (childHeight < 100.0f) childHeight = 100.0f;
+
+		// Internal map textures tab
 		if (ImGui::BeginTabItem(get_localized_string(LANG_0652).c_str()))
 		{
+			ImGui::BeginChild("##texture_grid_internal", ImVec2(0, childHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
 			if (map)
 			{
 				std::vector<std::pair<std::string, int>> internalTextures;
@@ -7386,17 +7464,18 @@ void Gui::drawTextureBrowser()
 				}
 
 				float availW = ImGui::GetContentRegionAvail().x;
-				const float thumb = 96.0f;
-				const float padding = 10.0f;
-				const float cellW = thumb + padding;
+				const float padding = 8.0f;
+				const float cellW = thumbSizeF + padding;
 				int columns = std::max(1, (int)floor((availW + padding) / cellW));
 				int total = (int)internalTextures.size();
 				int rows = (total + columns - 1) / columns;
-				float rowHeight = thumb + 24.0f;
+				float textH = ImGui::CalcTextSize("Ay").y * fontSizeScale;
+				float rowHeight = thumbSizeF + textH + 8.0f;
 
 				ImVec2 originScreen = ImGui::GetCursorScreenPos();
 				ImGuiListClipper clipper;
 				clipper.Begin(rows, rowHeight);
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
 				while (clipper.Step())
 				{
 					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row)
@@ -7417,15 +7496,15 @@ void Gui::drawTextureBrowser()
 							ImGui::BeginGroup();
 
 							Texture* previewTex = nullptr;
-							auto it = nameToTexture.find(toLowerCase(texName));
-							if (it != nameToTexture.end()) previewTex = it->second;
+							auto it = previewCache.find(toLowerCase(texName));
+							if (it != previewCache.end()) previewTex = it->second;
 
 							GLuint texId = missingTex ? missingTex->id : 0;
 							if (previewTex && previewTex->id != 0xFFFFFFFF && previewTex->id != 0) texId = previewTex->id;
 
 							ImTextureRef texRef = ImTextureRef((ImTextureID)(intptr_t)texId);
 							std::string btnId = std::string("internal_texbtn_") + std::to_string(idx);
-							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumb, thumb), ImVec2(0, 0), ImVec2(1, 1)))
+							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumbSizeF, thumbSizeF), ImVec2(0, 0), ImVec2(1, 1)))
 							{
 								copiedMiptex = texIdx;
 								lastCopiedTextureName = texName;
@@ -7439,57 +7518,85 @@ void Gui::drawTextureBrowser()
 								ImGui::EndTooltip();
 							}
 
+							bool isSelected = (!lastCopiedTextureName.empty() && toLowerCase(lastCopiedTextureName) == toLowerCase(texName)) || (copiedMiptex == texIdx);
+							if (isSelected) {
+								ImVec2 a = ImGui::GetItemRectMin();
+								ImVec2 b = ImGui::GetItemRectMax();
+								ImGui::GetWindowDrawList()->AddRect(a, b, IM_COL32(255, 200, 0, 255), 4.0f, 0, 3.0f);
+							}
+
+							// Texture name with scaled font
 							std::string displayName = texName;
-							if (displayName.length() > 20) displayName = displayName.substr(0, 17) + "...";
-							ImVec2 cur = ImGui::GetCursorPos();
-							float textW = ImGui::CalcTextSize(displayName.c_str()).x;
-							float offsetX = (thumb - textW) * 0.5f;
-							if (offsetX > 0.0f) ImGui::SetCursorPosX(cur.x + offsetX);
-							ImGui::TextWrapped("%s", displayName.c_str());
+							ImVec2 textPos = ImVec2(x, y + thumbSizeF + 4.0f);
+							ImGui::SetCursorScreenPos(textPos);
+							ImGui::PushClipRect(ImVec2(x, y + thumbSizeF), ImVec2(x + cellW, y + rowHeight), true);
+							ImGui::PushFont(smallFont);
+							ImGui::SetWindowFontScale(fontSizeScale);
+							ImGui::Text("%s", displayName.c_str());
+							ImGui::SetWindowFontScale(1.0f);
+							ImGui::PopFont();
+							ImGui::PopClipRect();
 
 							ImGui::EndGroup();
 							ImGui::PopID();
 						}
+						// Add Dummy to extend window boundaries after each row
+						ImGui::SetCursorScreenPos(ImVec2(originScreen.x, y + rowHeight));
+						ImGui::Dummy(ImVec2(availW, 0));
 					}
 				}
-				// move cursor after the clipped rows to keep scrolling consistent
-				ImGui::SetCursorScreenPos(ImVec2(originScreen.x, originScreen.y + rows * rowHeight));
+				ImGui::PopStyleVar();
 				clipper.End();
 			}
+			ImGui::EndChild();
 			ImGui::EndTabItem();
 		}
 
-		// --- Aggregated WAD textures tab
+		// Used textures in map tab
 		if (ImGui::BeginTabItem(get_localized_string(LANG_0653).c_str()))
 		{
-			if (mapRender)
+			ImGui::BeginChild("##texture_grid_used", ImVec2(0, childHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+			if (map && map->texinfos && map->texinfoCount > 0)
 			{
-				struct WadEntry { std::string name; int wadIdx; int texIdx; };
-				std::vector<WadEntry> wadTextures;
-				for (int wadIdx = 0; wadIdx < (int)mapRender->wads.size(); ++wadIdx)
+				std::unordered_set<std::string> uniqueTexNames;
+				std::vector<std::pair<std::string, int>> usedTextures;
+				for (int i = 0; i < map->texinfoCount; ++i)
 				{
-					Wad* wad = mapRender->wads[wadIdx];
-					if (!wad) continue;
-					for (int texIdx = 0; texIdx < (int)wad->dirEntries.size(); ++texIdx)
+					BSPTEXTUREINFO& texInfo = map->texinfos[i];
+					if (texInfo.iMiptex >= 0 && texInfo.iMiptex < map->textureCount)
 					{
-						std::string texName = wad->dirEntries[texIdx].szName;
-						if (!filter.empty() && toLowerCase(texName).find(filter) == std::string::npos) continue;
-						wadTextures.push_back({ texName, wadIdx, texIdx });
+						int texOffset = ((int*)map->textures)[texInfo.iMiptex + 1];
+						if (texOffset >= 0)
+						{
+							BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
+							if (tex)
+							{
+								std::string texName = tex->szName;
+								if (uniqueTexNames.find(texName) == uniqueTexNames.end())
+								{
+									uniqueTexNames.insert(texName);
+									if (!filter.empty() && toLowerCase(texName).find(filter) == std::string::npos) continue;
+									usedTextures.emplace_back(texName, texInfo.iMiptex);
+								}
+							}
+						}
 					}
 				}
 
 				float availW = ImGui::GetContentRegionAvail().x;
-				const float thumb = 96.0f;
-				const float padding = 10.0f;
-				const float cellW = thumb + padding;
+				const float padding = 8.0f;
+				const float cellW = thumbSizeF + padding;
 				int columns = std::max(1, (int)floor((availW + padding) / cellW));
-				int total = (int)wadTextures.size();
+				int total = (int)usedTextures.size();
 				int rows = (total + columns - 1) / columns;
-				float rowHeight = thumb + 24.0f;
+				float textH = ImGui::CalcTextSize("Ay").y * fontSizeScale;
+				float rowHeight = thumbSizeF + textH + 8.0f;
 
 				ImVec2 originScreen = ImGui::GetCursorScreenPos();
 				ImGuiListClipper clipper;
 				clipper.Begin(rows, rowHeight);
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
 				while (clipper.Step())
 				{
 					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row)
@@ -7500,8 +7607,9 @@ void Gui::drawTextureBrowser()
 							int idx = row * columns + col;
 							if (idx >= total) break;
 
-							const auto& e = wadTextures[idx];
-							const std::string texName = e.name;
+							const auto& entry = usedTextures[idx];
+							const std::string texName = entry.first;
+							int texIdx = entry.second;
 
 							float x = originScreen.x + col * cellW;
 							ImGui::SetCursorScreenPos(ImVec2(x, y));
@@ -7509,81 +7617,93 @@ void Gui::drawTextureBrowser()
 							ImGui::BeginGroup();
 
 							Texture* previewTex = nullptr;
-							auto it = nameToTexture.find(toLowerCase(texName));
-							if (it != nameToTexture.end()) previewTex = it->second;
-
-							if (!previewTex)
-							{
-								Wad* wad = mapRender->wads[e.wadIdx];
-								if (wad && wad->hasTexture(e.texIdx)) enqueueWadLoad(wad, e.texIdx, texName);
-							}
+							auto it = previewCache.find(toLowerCase(texName));
+							if (it != previewCache.end()) previewTex = it->second;
 
 							GLuint texId = missingTex ? missingTex->id : 0;
 							if (previewTex && previewTex->id != 0xFFFFFFFF && previewTex->id != 0) texId = previewTex->id;
 
 							ImTextureRef texRef = ImTextureRef((ImTextureID)(intptr_t)texId);
-							std::string btnId = std::string("wad_texbtn_") + std::to_string(idx);
-							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumb, thumb), ImVec2(0, 0), ImVec2(1, 1)))
+							std::string btnId = std::string("used_texbtn_") + std::to_string(idx);
+							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumbSizeF, thumbSizeF), ImVec2(0, 0), ImVec2(1, 1)))
 							{
-								if (previewTex) lastCopiedTextureName = previewTex->texName;
-								else lastCopiedTextureName = texName;
-								copiedMiptex = -1;
-								print_log("Selected WAD texture: %s from %s\n", texName.c_str(), mapRender->wads[e.wadIdx]->filename.c_str());
+								copiedMiptex = texIdx;
+								lastCopiedTextureName = texName;
 							}
 
-							if (ImGui::IsItemHovered())
-							{
-								ImGui::BeginTooltip();
-								ImGui::Text("WAD: %s", basename(mapRender->wads[e.wadIdx]->filename).c_str());
-								ImGui::Text("Name: %s", texName.c_str());
-								ImGui::EndTooltip();
+							bool isSelected = (!lastCopiedTextureName.empty() && toLowerCase(lastCopiedTextureName) == toLowerCase(texName)) || (copiedMiptex == texIdx);
+							if (isSelected) {
+								ImVec2 a = ImGui::GetItemRectMin();
+								ImVec2 b = ImGui::GetItemRectMax();
+								ImGui::GetWindowDrawList()->AddRect(a, b, IM_COL32(255, 200, 0, 255), 4.0f, 0, 3.0f);
 							}
 
+							// Texture name with scaled font
 							std::string displayName = texName;
-							if (displayName.length() > 20) displayName = displayName.substr(0, 17) + "...";
-							ImVec2 cur = ImGui::GetCursorPos();
-							float textW = ImGui::CalcTextSize(displayName.c_str()).x;
-							float offsetX = (thumb - textW) * 0.5f;
-							if (offsetX > 0.0f) ImGui::SetCursorPosX(cur.x + offsetX);
-							ImGui::TextWrapped("%s", displayName.c_str());
+							ImVec2 textPos = ImVec2(x, y + thumbSizeF + 4.0f);
+							ImGui::SetCursorScreenPos(textPos);
+							ImGui::PushClipRect(ImVec2(x, y + thumbSizeF), ImVec2(x + cellW, y + rowHeight), true);
+							ImGui::PushFont(smallFont);
+							ImGui::SetWindowFontScale(fontSizeScale);
+							ImGui::Text("%s", displayName.c_str());
+							ImGui::SetWindowFontScale(1.0f);
+							ImGui::PopFont();
+							ImGui::PopClipRect();
 
 							ImGui::EndGroup();
 							ImGui::PopID();
 						}
+						// Add Dummy to extend window boundaries after each row
+						ImGui::SetCursorScreenPos(ImVec2(originScreen.x, y + rowHeight));
+						ImGui::Dummy(ImVec2(availW, 0));
 					}
 				}
-				ImGui::SetCursorScreenPos(ImVec2(originScreen.x, originScreen.y + rows * rowHeight));
+				ImGui::PopStyleVar();
 				clipper.End();
 			}
+			ImGui::EndChild();
 			ImGui::EndTabItem();
 		}
 
-		// --- Per-WAD tabs
+		// Per-WAD tabs
 		if (mapRender)
 		{
 			for (size_t wadIdx = 0; wadIdx < mapRender->wads.size(); ++wadIdx)
 			{
 				Wad* wad = mapRender->wads[wadIdx];
 				if (!wad) continue;
+				if (wad->dirEntries.empty()) wad->readInfo();
+
 				std::string tabName = basename(wad->filename);
 				if (!ImGui::BeginTabItem(tabName.c_str())) continue;
 
+				ImGui::BeginChild("##texture_grid_wad", ImVec2(0, childHeight), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
 				float availW = ImGui::GetContentRegionAvail().x;
-				const float thumb = 96.0f;
-				const float padding = 10.0f;
-				const float cellW = thumb + padding;
+				const float padding = 8.0f;
+				const float cellW = thumbSizeF + padding;
 				int columns = std::max(1, (int)floor((availW + padding) / cellW));
 				std::vector<std::string> names;
-				names.reserve(wad->dirEntries.size());
-				for (int texIdx = 0; texIdx < (int)wad->dirEntries.size(); ++texIdx) names.push_back(wad->dirEntries[texIdx].szName);
+				std::vector<int> indices;
+				for (int texIdx = 0; texIdx < (int)wad->dirEntries.size(); ++texIdx) {
+					if (wad->dirEntries[texIdx].nType == 0x43) {
+						std::string texName = wad->dirEntries[texIdx].szName;
+						if (!filter.empty() && toLowerCase(texName).find(filter) == std::string::npos)
+							continue;
+						names.push_back(texName);
+						indices.push_back(texIdx);
+					}
+				}
 
 				int total = (int)names.size();
 				int rows = (total + columns - 1) / columns;
-				float rowHeight = thumb + 24.0f;
+				float textH = ImGui::CalcTextSize("Ay").y * fontSizeScale;
+				float rowHeight = thumbSizeF + textH + 8.0f;
 
 				ImVec2 originScreen = ImGui::GetCursorScreenPos();
 				ImGuiListClipper clipper;
 				clipper.Begin(rows, rowHeight);
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
 				while (clipper.Step())
 				{
 					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row)
@@ -7595,6 +7715,7 @@ void Gui::drawTextureBrowser()
 							if (ii >= total) break;
 
 							const std::string texName = names[ii];
+							int texIdx = indices[ii];
 
 							float x = originScreen.x + col * cellW;
 							ImGui::SetCursorScreenPos(ImVec2(x, y));
@@ -7602,22 +7723,23 @@ void Gui::drawTextureBrowser()
 							ImGui::BeginGroup();
 
 							Texture* previewTex = nullptr;
-							auto it = nameToTexture.find(toLowerCase(texName));
-							if (it != nameToTexture.end()) previewTex = it->second;
+							auto it = previewCache.find(toLowerCase(texName));
+							if (it != previewCache.end()) previewTex = it->second;
 
-							if (!previewTex && wad->hasTexture(ii)) enqueueWadLoad(wad, ii, texName);
+							if (!previewTex && wad->hasTexture(texIdx)) {
+								enqueueWadLoad(wad, texIdx, texName);
+							}
 
 							GLuint texId = missingTex ? missingTex->id : 0;
 							if (previewTex && previewTex->id != 0xFFFFFFFF && previewTex->id != 0) texId = previewTex->id;
 
 							ImTextureRef texRef = ImTextureRef((ImTextureID)(intptr_t)texId);
 							std::string btnId = std::string("wad_single_texbtn_") + std::to_string(wadIdx) + "_" + std::to_string(ii);
-							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumb, thumb), ImVec2(0, 0), ImVec2(1, 1)))
+							if (ImGui::ImageButton(btnId.c_str(), texRef, ImVec2(thumbSizeF, thumbSizeF), ImVec2(0, 0), ImVec2(1, 1)))
 							{
 								if (previewTex) lastCopiedTextureName = previewTex->texName;
 								else lastCopiedTextureName = texName;
 								copiedMiptex = -1;
-								print_log("Selected texture: %s from %s\n", texName.c_str(), basename(wad->filename).c_str());
 							}
 
 							if (ImGui::IsItemHovered())
@@ -7625,25 +7747,34 @@ void Gui::drawTextureBrowser()
 								ImGui::BeginTooltip();
 								ImGui::Text("File: %s", basename(wad->filename).c_str());
 								ImGui::Text("Name: %s", texName.c_str());
+								ImGui::Text("Entry: %d", texIdx);
 								ImGui::EndTooltip();
 							}
 
-							std::string displayName = texName;
-							if (displayName.length() > 20) displayName = displayName.substr(0, 17) + "...";
-							ImVec2 cur = ImGui::GetCursorPos();
-							float textW = ImGui::CalcTextSize(displayName.c_str()).x;
-							float offsetX = (thumb - textW) * 0.5f;
-							if (offsetX > 0.0f) ImGui::SetCursorPosX(cur.x + offsetX);
-							ImGui::TextWrapped("%s", displayName.c_str());
+							// Texture name with entry number and scaled font
+							std::string displayName = fmt::format("{} ({})", texName, texIdx);
+							ImVec2 textPos = ImVec2(x, y + thumbSizeF + 4.0f);
+							ImGui::SetCursorScreenPos(textPos);
+							ImGui::PushClipRect(ImVec2(x, y + thumbSizeF), ImVec2(x + cellW, y + rowHeight), true);
+							ImGui::PushFont(smallFont);
+							ImGui::SetWindowFontScale(fontSizeScale);
+							ImGui::Text("%s", displayName.c_str());
+							ImGui::SetWindowFontScale(1.0f);
+							ImGui::PopFont();
+							ImGui::PopClipRect();
 
 							ImGui::EndGroup();
 							ImGui::PopID();
 						}
+						// Add Dummy to extend window boundaries after each row
+						ImGui::SetCursorScreenPos(ImVec2(originScreen.x, y + rowHeight));
+						ImGui::Dummy(ImVec2(availW, 0));
 					}
 				}
-				ImGui::SetCursorScreenPos(ImVec2(originScreen.x, originScreen.y + rows * rowHeight));
+				ImGui::PopStyleVar();
 				clipper.End();
 
+				ImGui::EndChild();
 				ImGui::EndTabItem();
 			}
 		}
@@ -7651,28 +7782,30 @@ void Gui::drawTextureBrowser()
 		ImGui::EndTabBar();
 	}
 
+	// Footer with Apply button and selection summary (fixed at bottom)
 	ImGui::Separator();
-	ImGui::Spacing();
+	ImGui::BeginGroup();
+	ImGui::Text("Selected: %s", lastCopiedTextureName.empty() ? "None" : lastCopiedTextureName.c_str());
+	ImGui::SameLine();
+	if (copiedMiptex >= 0) ImGui::Text("(BSP index: %d)", copiedMiptex);
+	ImGui::EndGroup();
 
 	if (ImGui::Button("Apply Selected Texture", ImVec2(-1, 30)))
 	{
-		if (copiedMiptex >= 0 && map) pasteTexture();
-		else if (!lastCopiedTextureName.empty()) {
-			print_log("Texture preserved for future use: %s\n", lastCopiedTextureName.c_str());
+		if (copiedMiptex >= 0 && map) {
+			pasteTexture();
+			print_log("Applied texture: %s (index: %d)\n", lastCopiedTextureName.c_str(), copiedMiptex);
 		}
-		else print_log(PRINT_RED | PRINT_INTENSITY, "No texture selected");
-	}
-
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::Text("Apply the selected texture to all currently selected faces");
-		ImGui::EndTooltip();
+		else if (!lastCopiedTextureName.empty()) {
+			print_log("Texture selected (WAD): %s\n", lastCopiedTextureName.c_str());
+		}
+		else {
+			print_log(PRINT_RED | PRINT_INTENSITY, "No texture selected");
+		}
 	}
 
 	ImGui::End();
 }
-
 
 void Gui::drawKeyvalueEditor()
 {
