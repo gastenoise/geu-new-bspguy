@@ -6117,6 +6117,10 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < edgeCount; i++)
 	{
+		if (i > 0 && edges[i].iVertex[0] == edges[i].iVertex[1])
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Edge {} has same iVertex [0] == [1]\n", i);
+		}
 		for (int k = 0; k < 2; k++)
 		{
 			if (edges[i].iVertex[k] < 0 || edges[i].iVertex[k] >= vertCount)

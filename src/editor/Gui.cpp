@@ -11950,39 +11950,102 @@ bool ColorPicker4(ImGuiIO* imgui_io, float col[4])
 
 std::vector<COLOR3> colordata;
 
+static const int ATLAS_SPACING = 1;
 
 int LMapMaxWidth = 512;
 
 void DrawImageAtOneBigLightMap(COLOR3* img, int w, int h, int x, int y)
 {
-	for (int x1 = 0; x1 < w; x1++)
-	{
-		for (int y1 = 0; y1 < h; y1++)
-		{
-			int offset = ArrayXYtoId(w, x1, y1);
-			int offset2 = ArrayXYtoId(LMapMaxWidth, x + x1, y + y1);
+	if (!img || w <= 0 || h <= 0) return;
+	int bottom = y + h;
+	size_t required = (size_t)LMapMaxWidth * (size_t)bottom;
+	if (colordata.size() < required) colordata.resize(required, COLOR3(0, 0, 255));
 
-			while (offset2 >= (int)colordata.size())
+	for (int yy = 0; yy < h; ++yy)
+	{
+		int dstRow = (y + yy) * LMapMaxWidth;
+		int srcRow = yy * w;
+		for (int xx = 0; xx < w; ++xx)
+		{
+			int dstIdx = dstRow + (x + xx);
+			int srcIdx = srcRow + xx;
+			if (dstIdx >= 0 && dstIdx < (int)colordata.size())
 			{
-				colordata.emplace_back(COLOR3(0, 0, 255));
+				colordata[dstIdx] = img[srcIdx];
 			}
-			colordata[offset2] = img[offset];
 		}
 	}
 }
 
 void DrawOneBigLightMapAtImage(COLOR3* img, int w, int h, int x, int y)
 {
-	for (int x1 = 0; x1 < w; x1++)
-	{
-		for (int y1 = 0; y1 < h; y1++)
-		{
-			int offset = ArrayXYtoId(w, x1, y1);
-			int offset2 = ArrayXYtoId(LMapMaxWidth, x + x1, y + y1);
+	if (!img || w <= 0 || h <= 0) return;
 
-			img[offset] = colordata[offset2];
+	for (int yy = 0; yy < h; ++yy)
+	{
+		int dstRow = yy * w;
+		int srcRow = (y + yy) * LMapMaxWidth;
+		for (int xx = 0; xx < w; ++xx)
+		{
+			int srcIdx = srcRow + (x + xx);
+			int dstIdx = dstRow + xx;
+			if (srcIdx >= 0 && srcIdx < (int)colordata.size())
+				img[dstIdx] = colordata[srcIdx];
+			else
+				img[dstIdx] = COLOR3(0, 0, 255);
 		}
 	}
+}
+
+struct PackEntry {
+	int faceIdx;
+	int x, y;
+	int w, h;
+	int lightId;
+};
+
+static std::vector<PackEntry> PackFacesDeterministic(Bsp* map, const std::vector<int>& faces, int lightId, int atlasWidth, int& outAtlasHeight)
+{
+	std::vector<PackEntry> entries;
+	int current_x = 0;
+	int current_y = 0;
+	int max_row_height = 0;
+	int global_max_y = 0;
+
+	for (int faceIdx : faces)
+	{
+		if (map->faces[faceIdx].nLightmapOffset < 0 || map->faces[faceIdx].nStyles[lightId] == 255)
+			continue;
+
+		int size[2];
+		if (!map->GetFaceLightmapSize(faceIdx, size)) continue;
+		int sizeX = size[0], sizeY = size[1];
+		if (sizeX <= 0 || sizeY <= 0) continue;
+
+		if (current_x + sizeX > atlasWidth)
+		{
+			current_y += max_row_height + ATLAS_SPACING;
+			current_x = 0;
+			max_row_height = 0;
+		}
+
+		PackEntry e;
+		e.faceIdx = faceIdx;
+		e.lightId = lightId;
+		e.x = current_x;
+		e.y = current_y;
+		e.w = sizeX;
+		e.h = sizeY;
+		entries.push_back(e);
+
+		current_x += sizeX + ATLAS_SPACING;
+		if (sizeY > max_row_height) max_row_height = sizeY;
+		int bottom = current_y + sizeY;
+		if (bottom > global_max_y) global_max_y = bottom;
+	}
+
+	outAtlasHeight = std::max(1, global_max_y);
+	return entries;
 }
 
 std::vector<int> faces_to_export;
@@ -11991,71 +12054,94 @@ void ImportOneBigLightmapFile(Bsp* map)
 {
 	if (!faces_to_export.size())
 	{
-		print_log(get_localized_string(LANG_0405), map->faceCount);
-		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
-		{
+		for (int faceIdx = 0; faceIdx < map->faceCount; ++faceIdx)
 			faces_to_export.push_back(faceIdx);
-		}
 	}
 
-	for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++)
+	for (int lightId = 0; lightId < MAX_LIGHTMAPS; ++lightId)
 	{
-		colordata = std::vector<COLOR3>();
-		int current_x = 0;
-		int current_y = 0;
-		int max_y_found = 0;
-		//print_log(get_localized_string(LANG_0406),lightId);
-		std::string filename = fmt::format(fmt::runtime(get_localized_string(LANG_0407)), g_working_dir.c_str(), get_localized_string(LANG_0408), lightId);
-		unsigned char* image_bytes;
-		unsigned int w2, h2;
+		std::string filename = fmt::format(fmt::runtime(get_localized_string(LANG_0407)),
+			g_working_dir.c_str(),
+			get_localized_string(LANG_0408),
+			lightId);
+
+		unsigned char* image_bytes = nullptr;
+		unsigned int w2 = 0, h2 = 0;
 		auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, filename.c_str());
-
-		if (error == 0 && image_bytes)
+		if (error != 0 || !image_bytes)
 		{
-			/*for (int i = 0; i < 100; i++)
+			if (image_bytes) free(image_bytes);
+			continue;
+		}
+
+		colordata.clear();
+		try {
+			colordata.resize((size_t)w2 * (size_t)h2);
+			for (size_t i = 0, j = 0; i < colordata.size(); ++i, j += 3)
 			{
-				print_log("{}/", image_bytes[i]);
-			}*/
-			colordata.clear();
-			colordata.resize(w2 * h2);
-			memcpy(&colordata[0], image_bytes, w2 * h2 * sizeof(COLOR3));
-			free(image_bytes);
-			for (int faceIdx : faces_to_export)
-			{
-				if (map->faces[faceIdx].nLightmapOffset < 0 || map->faces[faceIdx].nStyles[lightId] == 255)
-					continue;
-
-				int size[2];
-				map->GetFaceLightmapSize((int)faceIdx, size);
-
-				int sizeX = size[0], sizeY = size[1];
-
-				int lightmapSz = sizeX * sizeY * sizeof(COLOR3);
-
-				int offset = map->faces[faceIdx].nLightmapOffset + lightId * lightmapSz;
-
-				if (sizeY > max_y_found)
-					max_y_found = sizeY;
-
-				if (current_x + sizeX + 1 > LMapMaxWidth)
-				{
-					current_y += max_y_found + 1;
-					max_y_found = sizeY;
-					current_x = 0;
-				}
-
-				unsigned char* lightmapData = new unsigned char[lightmapSz];
-
-				DrawOneBigLightMapAtImage((COLOR3*)(lightmapData), sizeX, sizeY, current_x, current_y);
-				memcpy((unsigned char*)(map->lightdata + offset), lightmapData, lightmapSz);
-
-				delete[] lightmapData;
-
-				current_x += sizeX + 1;
+				colordata[i].r = image_bytes[j + 0];
+				colordata[i].g = image_bytes[j + 1];
+				colordata[i].b = image_bytes[j + 2];
 			}
+		}
+		catch (...) {
+			free(image_bytes);
+			print_log(PRINT_RED | PRINT_INTENSITY, "Memory error while loading atlas");
+			continue;
+		}
+		free(image_bytes);
+
+		int atlasHeight = 0;
+		auto entries = PackFacesDeterministic(map, faces_to_export, lightId, LMapMaxWidth, atlasHeight);
+
+		int atlasW = (int)w2;
+		int atlasH = (int)h2;
+
+		for (const auto& e : entries)
+		{
+			int faceIdx = e.faceIdx;
+			int sizeX = e.w, sizeY = e.h;
+			int lightmapSz = sizeX * sizeY * sizeof(COLOR3);
+			int offset = map->faces[faceIdx].nLightmapOffset + lightId * lightmapSz;
+
+			int sizeCheck[2];
+			if (!map->GetFaceLightmapSize(faceIdx, sizeCheck)) continue;
+			if (sizeCheck[0] != sizeX || sizeCheck[1] != sizeY)
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Face %d size changed since export: skip import for this face", faceIdx);
+				continue;
+			}
+
+			if (!map->lightdata || offset < 0 || (size_t)offset + lightmapSz > map->lightDataLength)
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Skipping write to map->lightdata: out of bounds or null (face %d)", faceIdx);
+				continue;
+			}
+
+			std::vector<COLOR3> tmp;
+			tmp.resize(sizeX * sizeY);
+			for (int yy = 0; yy < sizeY; ++yy)
+			{
+				for (int xx = 0; xx < sizeX; ++xx)
+				{
+					int srcX = e.x + xx;
+					int srcY = e.y + yy;
+					if (srcX < 0 || srcY < 0 || srcX >= atlasW || srcY >= atlasH)
+					{
+						tmp[yy * sizeX + xx] = COLOR3(0, 0, 255);
+					}
+					else
+					{
+						tmp[yy * sizeX + xx] = colordata[srcY * atlasW + srcX];
+					}
+				}
+			}
+
+			memcpy((unsigned char*)(map->lightdata + offset), (unsigned char*)tmp.data(), lightmapSz);
 		}
 	}
 }
+
 
 float RandomFloat(float a, float b)
 {
@@ -12072,109 +12158,68 @@ std::map<float, float> mapz;
 void Gui::ExportOneBigLightmap(Bsp* map)
 {
 	std::string filename;
-
 	faces_to_export.clear();
 
 	if (app->pickInfo.selectedFaces.size() > 1)
 	{
-		print_log(get_localized_string(LANG_0409), (unsigned int)app->pickInfo.selectedFaces.size());
 		faces_to_export = app->pickInfo.selectedFaces;
 	}
 	else
 	{
-		print_log(get_localized_string(LANG_0410), map->faceCount);
-		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
-		{
+		for (int faceIdx = 0; faceIdx < map->faceCount; ++faceIdx)
 			faces_to_export.push_back(faceIdx);
-		}
 	}
 
-	/*std::vector<vec3> verts;
-	for (int i = 0; i < map->vertCount; i++)
+	for (int lightId = 0; lightId < MAX_LIGHTMAPS; ++lightId)
 	{
-		verts.push_back(map->verts[i]);
-	}
-	std::reverse(verts.begin(), verts.end());
-	for (int i = 0; i < map->vertCount; i++)
-	{
-		map->verts[i] = verts[i];
-	}*/
-	/*for (int i = 0; i < map->vertCount; i++)
-	{
-		vec3* vector = &map->verts[i];
-		vector->y *= -1;
-		vector->x *= -1;
-		/*if (mapz.find(vector->z) == mapz.end())
-			mapz[vector->z] = RandomFloat(-100, 100);
-		vector->z -= mapz[vector->z];*/
+		colordata.clear();
+		int atlasHeight = 0;
 
-		/*if (mapx.find(vector->x) == mapx.end())
-			mapx[vector->x] = RandomFloat(-50, 50);
-		vector->x += mapx[vector->x];
+		auto entries = PackFacesDeterministic(map, faces_to_export, lightId, LMapMaxWidth, atlasHeight);
 
-		if (mapy.find(vector->y) == mapy.end())
-			mapy[vector->y] = RandomFloat(-50, 50);
-		vector->y -= mapy[vector->y];
+		if (entries.empty()) continue;
 
+		size_t required = (size_t)LMapMaxWidth * (size_t)atlasHeight;
+		colordata.resize(required, COLOR3(0, 0, 255));
 
-		/*vector->x *= static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-		vector->y *= static_cast <float> (rand()) / static_cast <float> (RAND_MAX);*/
-		/* }
-
-		map->update_lump_pointers();*/
-
-
-	for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++)
-	{
-		colordata = std::vector<COLOR3>();
-		int current_x = 0;
-		int current_y = 0;
-		int max_y_found = 0;
-
-		bool found_any_lightmap = false;
-
-		//print_log(get_localized_string(LANG_0411),lightId);
-		for (int faceIdx : faces_to_export)
+		for (const auto& e : entries)
 		{
-			if (map->faces[faceIdx].nLightmapOffset < 0 || map->faces[faceIdx].nStyles[lightId] == 255)
-				continue;
-
-			int size[2];
-			map->GetFaceLightmapSize((int)faceIdx, size);
-
-			int sizeX = size[0], sizeY = size[1];
-
-
+			int sizeX = e.w, sizeY = e.h;
 			int lightmapSz = sizeX * sizeY * sizeof(COLOR3);
+			int offset = map->faces[e.faceIdx].nLightmapOffset + lightId * lightmapSz;
 
-			int offset = map->faces[faceIdx].nLightmapOffset + lightId * lightmapSz;
+			COLOR3* src = nullptr;
+			if (map->lightdata && offset >= 0 && (size_t)offset + lightmapSz <= map->lightDataLength)
+				src = (COLOR3*)(map->lightdata + offset);
 
-			if (sizeY > max_y_found)
-				max_y_found = sizeY;
-
-			if (current_x + sizeX + 1 > LMapMaxWidth)
+			if (src)
 			{
-				current_y += max_y_found + 1;
-				max_y_found = sizeY;
-				current_x = 0;
+				DrawImageAtOneBigLightMap(src, sizeX, sizeY, e.x, e.y);
 			}
-
-			DrawImageAtOneBigLightMap((COLOR3*)(map->lightdata + offset), sizeX, sizeY, current_x, current_y);
-
-			current_x += sizeX + 1;
-
-			found_any_lightmap = true;
+			else
+			{
+				std::vector<COLOR3> tmp(sizeX * sizeY, COLOR3(0, 0, 255));
+				DrawImageAtOneBigLightMap(tmp.data(), sizeX, sizeY, e.x, e.y);
+			}
 		}
 
-		if (found_any_lightmap)
+		filename = fmt::format(fmt::runtime(get_localized_string(LANG_1061)),
+			g_working_dir.c_str(),
+			get_localized_string(LANG_1062),
+			lightId);
+		print_log(get_localized_string(LANG_0412), filename);
+
+		unsigned err = lodepng_encode24_file(filename.c_str(),
+			(const unsigned char*)colordata.data(),
+			LMapMaxWidth,
+			atlasHeight);
+		if (err)
 		{
-			filename = fmt::format(fmt::runtime(get_localized_string(LANG_1061)), g_working_dir.c_str(), get_localized_string(LANG_1062), lightId);
-			print_log(get_localized_string(LANG_0412), filename);
-			lodepng_encode24_file(filename.c_str(), (const unsigned char*)colordata.data(), LMapMaxWidth, current_y + max_y_found);
+			print_log(PRINT_RED | PRINT_INTENSITY, "lodepng encode error: %u", err);
 		}
 	}
-
 }
+
 
 void ExportLightmap(const BSPFACE32& face, int faceIdx, Bsp* map)
 {
