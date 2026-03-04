@@ -10340,7 +10340,7 @@ void Gui::drawSettings()
 
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			static std::string newEngine = "engine-name";
-			ImGui::InputText("", &newEngine);
+			ImGui::InputText("##engine-name", &newEngine);
 			ImGui::SameLine();
 			if (ImGui::Button("Add##NEW ENGINE"))
 			{
