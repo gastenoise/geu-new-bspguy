@@ -1,6 +1,6 @@
 # bspguy REVAMPED
 
-![bspguy REVAMPED](https://i.imgur.com/P63fC9e.png)
+![bspguy REVAMPED](https://i.imgur.com/g8I8lbq.png)
 
 **A hardened fork of the GoldSrc map editor (bspguy & newbspguy) <br>Focused on robustness, vertical map merging, and modernized build flows.**
 
