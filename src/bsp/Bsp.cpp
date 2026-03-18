@@ -21,6 +21,7 @@
 #include <deque>
 #include <execution>
 #include <stack>
+#include <numeric>
 
 vec3 default_hull_extents[MAX_MAP_HULLS] = {
 	vec3(0.0f,  0.0f,  0.0f),	// hull 0
@@ -1031,30 +1032,70 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		g_progress.update("Moving structures", (int)ents.size() - 1);
 	}
 
-	BSPMODEL& target = models[modelIdx];
-
 	// all ents should be moved if the world is being moved
 	bool movingWorld = modelIdx == 0 && !onlyModel;
 
-	// Submodels don't use leaves like the world model does. Only the contents of a leaf matters
-	// for submodels. All other data is ignored. bspguy will reuse world leaves in submodels to 
-	// save space, which means moving leaves for those models would likely break something else.
-	// So, don't move leaves for submodels.
-	// bool dontMoveLeaves = !movingWorld;
+	std::set<int> modelsWithOrigin;
+	if (movingWorld)
+	{
+		for (auto& ent : ents)
+		{
+			int mIdx = ent->getBspModelIdx();
+			if (mIdx > 0 && mIdx < modelCount && ent->hasKey("origin"))
+			{
+				modelsWithOrigin.insert(mIdx);
+			}
+		}
+	}
 
-	if (!forceMove && does_model_use_shared_structures(modelIdx))
-		split_shared_model_structures(modelIdx);
-
+	if (!forceMove)
+	{
+		if (movingWorld)
+		{
+			for (int i = 0; i < modelCount; i++)
+			{
+				if (i > 0 && modelsWithOrigin.count(i))
+					continue;
+				if (does_model_use_shared_structures(i))
+					split_shared_model_structures(i);
+			}
+		}
+		else
+		{
+			if (does_model_use_shared_structures(modelIdx))
+				split_shared_model_structures(modelIdx);
+		}
+	}
 
 	if (movingWorld)
 	{
+		std::set<int> updatedModels;
 		for (size_t i = 1; i < ents.size(); i++)
 		{ // don't move the world entity
 			if (logged)
 				g_progress.tick();
 
-			vec3 ori = ents[i]->origin;
-			ori += offset;
+			int mIdx = ents[i]->getBspModelIdx();
+			if (mIdx > 0 && mIdx < modelCount)
+			{
+				if (ents[i]->hasKey("origin"))
+				{
+					// Brush entity with origin: move origin key and vOrigin.
+					// Geometry will NOT be moved to avoid double-offsetting in-game.
+					ents[i]->origin += offset;
+					ents[i]->setOrAddKeyvalue("origin", ents[i]->origin.toKeyvalueString());
+					if (updatedModels.find(mIdx) == updatedModels.end())
+					{
+						models[mIdx].vOrigin += offset;
+						updatedModels.insert(mIdx);
+					}
+				}
+				// else: Brush without origin: geometry will be moved.
+				continue;
+			}
+
+			// Point entity: update origin keyvalue.
+			ents[i]->origin += offset;
 
 			if (ents[i]->hasKey("spawnorigin"))
 			{
@@ -1067,26 +1108,54 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 				}
 			}
 
-			ents[i]->setOrAddKeyvalue("origin", ori.toKeyvalueString());
+			ents[i]->setOrAddKeyvalue("origin", ents[i]->origin.toKeyvalueString());
+		}
+
+		for (int i = 0; i < modelCount; i++)
+		{
+			if (i > 0 && modelsWithOrigin.count(i))
+				continue;
+
+			models[i].vOrigin += offset;
+			models[i].nMins += offset;
+			models[i].nMaxs += offset;
 		}
 
 		update_ent_lump();
 	}
+	else
+	{
+		models[modelIdx].vOrigin += offset;
+		models[modelIdx].nMins += offset;
+		models[modelIdx].nMaxs += offset;
+	}
 
-	target.nMins += offset;
-	target.nMaxs += offset;
-	if (std::fabs(target.nMins.x) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMins.y) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMins.z) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMaxs.x) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMaxs.y) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMaxs.z) > g_limits.fltMaxCoord)
+	if (std::fabs(models[modelIdx].nMins.x) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMins.y) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMins.z) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMaxs.x) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMaxs.y) > g_limits.fltMaxCoord ||
+		// Wait, if movingWorld is true, modelIdx is 0. If it's a submodel, it's modelIdx.
+		// For movingWorld, it might be better to check model 0's bounds.
+		std::fabs(models[modelIdx].nMaxs.z) > g_limits.fltMaxCoord)
 	{
 		print_log(get_localized_string(LANG_0049));
 	}
 
 	STRUCTUSAGE shouldBeMoved(this);
-	mark_model_structures(modelIdx, &shouldBeMoved, false /*dontMoveLeaves*/);
+	if (movingWorld)
+	{
+		for (int i = 0; i < modelCount; i++)
+		{
+			if (i > 0 && modelsWithOrigin.count(i))
+				continue;
+			mark_model_structures(i, &shouldBeMoved, false);
+		}
+	}
+	else
+	{
+		mark_model_structures(modelIdx, &shouldBeMoved, false /*dontMoveLeaves*/);
+	}
 
 	for (int i = 0; i < nodeCount; i++)
 	{
@@ -1199,6 +1268,156 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	}
 
 	return true;
+}
+
+void Bsp::transform(int modelIdx, mat4x4 matrix, vec3 center, bool logged)
+{
+	if (modelIdx < 0 || modelIdx >= modelCount)
+		return;
+
+	if (logged)
+	{
+		save_undo_lightmaps();
+		g_progress.update("Transforming structures", 1);
+	}
+
+	if (does_model_use_shared_structures(modelIdx))
+		split_shared_model_structures(modelIdx);
+
+	STRUCTUSAGE usage(this);
+	mark_model_structures(modelIdx, &usage, false);
+
+	bool mirrored = matrix.determinant() < 0.0f;
+
+	for (int i = 0; i < vertCount; i++)
+	{
+		if (usage.verts[i])
+		{
+			vec3& v = verts[i];
+			vec4 v4(v - center, 1.0f);
+			v = (matrix * v4).xyz() + center;
+		}
+	}
+
+	std::vector<bool> planeFlipped(planeCount, false);
+	for (int i = 0; i < planeCount; i++)
+	{
+		if (usage.planes[i])
+		{
+			BSPPLANE& p = planes[i];
+			vec3 origin = p.vNormal * p.fDist;
+			vec4 v4(origin - center, 1.0f);
+			vec3 newOrigin = (matrix * v4).xyz() + center;
+			vec4 n4(p.vNormal, 0.0f);
+			p.vNormal = (matrix * n4).xyz().normalize();
+			p.fDist = dotProduct(p.vNormal, newOrigin);
+			planeFlipped[i] = p.update_plane(true);
+		}
+	}
+
+	for (int i = 0; i < texinfoCount; i++)
+	{
+		if (usage.texInfo[i])
+		{
+			BSPTEXTUREINFO& info = texinfos[i];
+			vec4 s4(info.vS, 0.0f);
+			vec4 t4(info.vT, 0.0f);
+			vec3 oldS = info.vS;
+			vec3 oldT = info.vT;
+			info.vS = (matrix * s4).xyz();
+			info.vT = (matrix * t4).xyz();
+
+			// Adjust shifts to keep texture alignment
+			float u = dotProduct(oldS, center) + info.shiftS;
+			float v = dotProduct(oldT, center) + info.shiftT;
+			info.shiftS = u - dotProduct(info.vS, center);
+			info.shiftT = v - dotProduct(info.vT, center);
+		}
+	}
+
+	for (int i = 0; i < faceCount; i++)
+	{
+		if (usage.faces[i])
+		{
+			BSPFACE32& face = faces[i];
+			if (mirrored)
+			{
+				std::vector<int> edges_idx;
+				for (int e = 0; e < face.nEdges; e++)
+				{
+					edges_idx.push_back(surfedges[face.iFirstEdge + e]);
+				}
+				std::reverse(edges_idx.begin(), edges_idx.end());
+				for (int e = 0; e < face.nEdges; e++)
+				{
+					surfedges[face.iFirstEdge + e] = -edges_idx[e];
+				}
+			}
+			if (planeFlipped[face.iPlane])
+			{
+				face.nPlaneSide = !face.nPlaneSide;
+			}
+		}
+	}
+
+	for (int i = 0; i < nodeCount; i++)
+	{
+		if (usage.nodes[i])
+		{
+			BSPNODE32& node = nodes[i];
+			vec4 vmin(node.nMins.x - center.x, node.nMins.y - center.y, node.nMins.z - center.z, 1.0f);
+			vec4 vmax(node.nMaxs.x - center.x, node.nMaxs.y - center.y, node.nMaxs.z - center.z, 1.0f);
+			vec3 v1 = (matrix * vmin).xyz() + center;
+			vec3 v2 = (matrix * vmax).xyz() + center;
+			node.nMins = vec3(std::min(v1.x, v2.x), std::min(v1.y, v2.y), std::min(v1.z, v2.z));
+			node.nMaxs = vec3(std::max(v1.x, v2.x), std::max(v1.y, v2.y), std::max(v1.z, v2.z));
+
+			if (planeFlipped[node.iPlane])
+			{
+				std::swap(node.iChildren[0], node.iChildren[1]);
+			}
+		}
+	}
+
+	for (int i = 0; i < clipnodeCount; i++)
+	{
+		if (usage.clipnodes[i])
+		{
+			if (planeFlipped[clipnodes[i].iPlane])
+			{
+				std::swap(clipnodes[i].iChildren[0], clipnodes[i].iChildren[1]);
+			}
+		}
+	}
+
+	for (int i = 0; i < leafCount; i++)
+	{
+		if (usage.leaves[i])
+		{
+			BSPLEAF32& leaf = leaves[i];
+			vec4 vmin(leaf.nMins.x - center.x, leaf.nMins.y - center.y, leaf.nMins.z - center.z, 1.0f);
+			vec4 vmax(leaf.nMaxs.x - center.x, leaf.nMaxs.y - center.y, leaf.nMaxs.z - center.z, 1.0f);
+			vec3 v1 = (matrix * vmin).xyz() + center;
+			vec3 v2 = (matrix * vmax).xyz() + center;
+			leaf.nMins = vec3(std::min(v1.x, v2.x), std::min(v1.y, v2.y), std::min(v1.z, v2.z));
+			leaf.nMaxs = vec3(std::max(v1.x, v2.x), std::max(v1.y, v2.y), std::max(v1.z, v2.z));
+		}
+	}
+
+	BSPMODEL& model = models[modelIdx];
+	vec4 mins4(model.nMins - center, 1.0f);
+	vec4 maxs4(model.nMaxs - center, 1.0f);
+	vec3 newMins = (matrix * mins4).xyz() + center;
+	vec3 newMaxs = (matrix * maxs4).xyz() + center;
+	model.nMins = vec3(std::min(newMins.x, newMaxs.x), std::min(newMins.y, newMaxs.y), std::min(newMins.z, newMaxs.z));
+	model.nMaxs = vec3(std::max(newMins.x, newMaxs.x), std::max(newMins.y, newMaxs.y), std::max(newMins.z, newMaxs.z));
+
+	if (logged)
+	{
+		resize_all_lightmaps();
+		g_progress.clear();
+		g_progress = ProgressMeter();
+	}
 }
 
 void Bsp::move_texinfo(BSPTEXTUREINFO& info, vec3 offset)
@@ -8066,11 +8285,15 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 		std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
 			{
 				print_log(get_localized_string(LANG_0352), basename(file), basename(wadpath));
-				COLOR4* image_bytes = NULL;
+				unsigned char* img_malloc = NULL;
 				unsigned int w2, h2;
-				auto error = lodepng_decode32_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str());
-				if (error == 0 && image_bytes)
+				auto error = lodepng_decode32_file(&img_malloc, &w2, &h2, file.c_str());
+				if (error == 0 && img_malloc)
 				{
+					COLOR4* image_bytes = new COLOR4[w2 * h2];
+					memcpy(image_bytes, img_malloc, w2 * h2 * 4);
+					free(img_malloc);
+
 					COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
 					for (unsigned int i = 0; i < w2 * h2; i++)
 					{

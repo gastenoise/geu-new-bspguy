@@ -7,6 +7,9 @@ namespace fs = std::filesystem;
 #include <string>
 #include <string_view>
 #include <vector>
+#include <algorithm>
+#include <numeric>
+#include <execution>
 #include "mat4x4.h"
 #include <fstream>
 #include <cmath>

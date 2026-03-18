@@ -53,7 +53,7 @@ public:
 	// noripent - don't change any entity logic
 	// noscript - don't add support for the bspguy map script (worse performance + buggy, but simpler)
 
-	MergeResult merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles);
+	MergeResult merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles, bool verticalMerge = false, float verticalGap = 512.0f);
 
 
 	// wrapper around BSP data merging for nicer console output
@@ -62,7 +62,7 @@ public:
 	// merge BSP data
 	bool merge(Bsp& mapA, Bsp& mapB, bool modelMerge = false);
 
-	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result);
+	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool verticalMerge = false, float verticalGap = 512.0f);
 
 	// for maps in a series:
 	// - changelevels should be replaced with teleports or respawn triggers

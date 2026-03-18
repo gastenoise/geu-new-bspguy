@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #include "Bsp.h"
 #include "Texture.h"
 #include "ShaderProgram.h"
@@ -45,6 +44,7 @@ struct FaceMath
 	vec3 normal;
 	float fdist;
 	std::vector<vec2> localVerts;
+	vec2 localMins, localMaxs;
 	vec3 center;
 	FaceMath()
 	{
@@ -104,6 +104,7 @@ struct RenderGroup
 		}
 	}
 };
+
 
 struct RenderFace
 {
@@ -250,7 +251,7 @@ public:
 	bool isFinishedLoading();
 
 	void highlightFace(int faceIdx, int highlight, bool reupload = true);
-	void updateFaceUVs(int faceIdx);
+	void updateFaceUVs(int faceIdx, const BSPTEXTUREINFO* overrideTexInfo = nullptr, bool reupload = true);
 	unsigned int getFaceTextureId(int faceIdx);
 
 	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);

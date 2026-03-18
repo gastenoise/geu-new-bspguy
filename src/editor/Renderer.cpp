@@ -241,53 +241,34 @@ Renderer::Renderer()
 	unsigned char* img_dat = NULL;
 	unsigned int w, h;
 
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/missing.png");
-	missingTex_rgba = new Texture(w, h, img_dat, "missing", true);
-	img_dat = NULL;
+	auto loadTexHelper = [&](const char* path, const char* name, bool rgba) {
+		unsigned char* img_malloc = NULL;
+		unsigned int width, height;
+		unsigned int bpp = rgba ? 4 : 3;
+		if (rgba) lodepng_decode32_file(&img_malloc, &width, &height, path);
+		else lodepng_decode24_file(&img_malloc, &width, &height, path);
 
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
-	aaatriggerTex_rgba = new Texture(w, h, img_dat, "aaatrigger", true);
-	img_dat = NULL;
+		unsigned char* img_new = NULL;
+		if (img_malloc) {
+			img_new = new unsigned char[width * height * bpp];
+			memcpy(img_new, img_malloc, width * height * bpp);
+			free(img_malloc);
+		}
+		return new Texture(width, height, img_new, name, rgba, true);
+	};
 
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
-	aaatriggerTex = new Texture(w, h, img_dat, "aaatrigger");
-	img_dat = NULL;
-
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/sky.png");
-	skyTex_rgba = new Texture(w, h, img_dat, "sky", true);
-	img_dat = NULL;
-
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/clip.png");
-	clipTex_rgba = new Texture(w, h, img_dat, "clip", true);
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/missing.png");
-	missingTex = new Texture(w, h, img_dat, "missing_rgb");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/white.png");
-	whiteTex = new Texture(w, h, img_dat, "white");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/grey.png");
-	greyTex = new Texture(w, h, img_dat, "grey");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/red.png");
-	redTex = new Texture(w, h, img_dat, "red");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/yellow.png");
-	yellowTex = new Texture(w, h, img_dat, "yellow");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/black.png");
-	blackTex = new Texture(w, h, img_dat, "black");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/blue.png");
-	blueTex = new Texture(w, h, img_dat, "blue");
-	img_dat = NULL;
+	missingTex_rgba = loadTexHelper("./pictures/missing.png", "missing", true);
+	aaatriggerTex_rgba = loadTexHelper("./pictures/aaatrigger.png", "aaatrigger", true);
+	aaatriggerTex = loadTexHelper("./pictures/aaatrigger.png", "aaatrigger", false);
+	skyTex_rgba = loadTexHelper("./pictures/sky.png", "sky", true);
+	clipTex_rgba = loadTexHelper("./pictures/clip.png", "clip", true);
+	missingTex = loadTexHelper("./pictures/missing.png", "missing_rgb", false);
+	whiteTex = loadTexHelper("./pictures/white.png", "white", false);
+	greyTex = loadTexHelper("./pictures/grey.png", "grey", false);
+	redTex = loadTexHelper("./pictures/red.png", "red", false);
+	yellowTex = loadTexHelper("./pictures/yellow.png", "yellow", false);
+	blackTex = loadTexHelper("./pictures/black.png", "black", false);
+	blueTex = loadTexHelper("./pictures/blue.png", "blue", false);
 
 	missingTex_rgba->upload();
 	aaatriggerTex_rgba->upload();
@@ -2427,7 +2408,7 @@ void Renderer::moveGrabbedEnt()
 			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
 			ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
-			map->getBspRender()->refreshEnt((int)i);
+			map->getBspRender()->refreshEnt((int)i, Entity_RefreshAnglesOrigin);
 			updateEntConnectionPositions();
 		}
 	}
@@ -2596,6 +2577,7 @@ void Renderer::pickObject()
 			for (auto idx : pickInfo.selectedFaces)
 			{
 				map->getBspRender()->highlightFace(idx, 0);
+				map->getBspRender()->updateFaceUVs(idx);
 			}
 			pickInfo.selectedFaces.clear();
 		}
@@ -2619,6 +2601,7 @@ void Renderer::pickObject()
 				{
 					last_face_idx = (int)tmpPickInfo.selectedFaces[0];
 					map->getBspRender()->highlightFace(last_face_idx, 0);
+					map->getBspRender()->updateFaceUVs(last_face_idx);
 					pickInfo.selectedFaces.erase(it);
 					facePickTime = -1.0f;
 				}
@@ -2755,7 +2738,7 @@ bool Renderer::transformAxisControls()
 
 								tmpEnt->setOrAddKeyvalue("origin", (rounded - ent_offset).toKeyvalueString());
 
-								map->getBspRender()->refreshEnt((int)tmpentIdx);
+								map->getBspRender()->refreshEnt((int)tmpentIdx, Entity_RefreshAnglesOrigin);
 
 								updateEntConnectionPositions();
 							}
@@ -2780,7 +2763,7 @@ bool Renderer::transformAxisControls()
 								vec3 neworigin = map->models[tmpmdlidx].vOrigin + delta;
 								map->models[tmpmdlidx].vOrigin = neworigin;
 								//map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
-								map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);
+								map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i], Entity_RefreshAnglesOrigin);
 							}
 
 							vertPickCount++;
@@ -4752,7 +4735,59 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	}
 
 	if (copiedEnts.size())
+	{
+		gui->entityListChanged = true;
 		rend->pushUndoState("Paste Entity", FL_ENTITIES);
+	}
+}
+
+void Renderer::pasteEntAtOrigin(vec3 origin)
+{
+	auto clipboardText = ImGui::GetClipboardText();
+	if (!clipboardText)
+		return;
+
+	Bsp* map = SelectedMap;
+	if (!map)
+	{
+		print_log(get_localized_string(LANG_0925));
+		return;
+	}
+
+	BspRenderer* rend = map->getBspRender();
+	std::vector<Entity*> copiedEnts{};
+
+	try
+	{
+		copiedEnts = load_ents(clipboardText, map->bsp_name);
+	}
+	catch (...)
+	{
+	}
+
+	clearSelection();
+	selectMap(map);
+
+	if (copiedEnts.size() > 0)
+	{
+		vec3 baseOrigin = copiedEnts[0]->origin;
+
+		for (size_t i = 0; i < copiedEnts.size(); i++)
+		{
+			vec3 entOrigin = copiedEnts[i]->origin;
+			vec3 offset = entOrigin - baseOrigin;
+			vec3 newOri = origin + offset;
+
+			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
+			copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
+			copiedEnts[i]->origin = rounded;
+
+			map->ents.push_back(copiedEnts[i]);
+			selectEnt(map, (int)map->ents.size() - 1, true);
+		}
+		rend->pushUndoState("Paste Entity at Origin", FL_ENTITIES);
+		rend->preRenderEnts();
+	}
 }
 
 void Renderer::pasteEntsFromText(std::string text)
@@ -4852,6 +4887,7 @@ void Renderer::deleteEnts()
 		pickInfo.selectedEnts.clear();
 		pickCount++;
 		filterNeeded = true;
+		gui->entityListChanged = true;
 		map->getBspRender()->preRenderEnts();
 		map->getBspRender()->pushUndoState("Delete ents", FL_ENTITIES);
 	}
@@ -4899,6 +4935,7 @@ void Renderer::deselectFaces()
 	for (auto faceIdx : pickInfo.selectedFaces)
 	{
 		map->getBspRender()->highlightFace(faceIdx, 0);
+		map->getBspRender()->updateFaceUVs(faceIdx);
 	}
 
 	pickInfo.selectedFaces.clear();
@@ -4946,7 +4983,7 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 		pickInfo.selectedEnts.clear();
 	}
 
-	if (add)
+	if (add && !pickInfo.selectedEnts.empty() && pickInfo.selectedEnts[0] >= 0 && pickInfo.selectedEnts[0] < (int)map->ents.size())
 	{
 		int modelIdx = map->ents[pickInfo.selectedEnts[0]]->getBspModelIdx();
 		if (modelIdx > 0)
@@ -5192,7 +5229,7 @@ void Renderer::merge(std::string fpath)
 	maps.push_back(map2);
 
 	BspMerger merger;
-	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true, false);
+	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true, false, false, 512.0f);
 
 	if (!mergeResult.map || !mergeResult.map->bsp_valid) {
 		delete map2;

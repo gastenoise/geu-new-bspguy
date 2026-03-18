@@ -183,8 +183,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 
 	// calculate which bits of an uncompressed visibility row are used/unused
 	unsigned char lastChunkMask = 0;
-	int lastUsedIdx = (iterationLeaves / 8);
-	for (unsigned char k = 0; k < iterationLeaves % 8; k++)
+	int lastUsedIdx = (visDataLeafCount / 8);
+	for (unsigned char k = 0; k < visDataLeafCount % 8; k++)
 	{
 		lastChunkMask = lastChunkMask | (1 << k);
 	}
@@ -207,8 +207,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 
 			if (leafLump[i + 1].nVisOffset < 0)
 			{
-				memset(dest, 255, lastUsedIdx);
-				dest[lastUsedIdx] |= lastChunkMask;
+				// memset(dest, 255, lastUsedIdx); // Incorrect for merging: sets other map's leaves as visible
+				// dest[lastUsedIdx] |= lastChunkMask;
 				continue;
 			}
 
@@ -221,7 +221,7 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 			}
 			// Tracing ... 
 			// print_log(get_localized_string(LANG_0996),leafLump[i].nVisOffset,visLumpMemSize);
-			if (!DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, oldVisRowSize, visDataLeafCount,
+			if (!DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, newVisRowSize, visDataLeafCount,
 				visLumpMemSize - leafLump[i + 1].nVisOffset))
 			{
 				//print_log("Error {} - {}\n", i, iterationLeaves);
@@ -234,8 +234,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 			{
 				dest[lastUsedIdx] &= lastChunkMask;
 				int sz = newVisRowSize - (lastUsedIdx + 1);
-				//lastUsedIdx = lastUsedIdx + 1 + sz;
-				memset(dest + lastUsedIdx + 1, 0, sz);
+				if (sz > 0)
+					memset(dest + lastUsedIdx + 1, 0, sz);
 			}
 		}
 		else
@@ -417,7 +417,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	g_progress.clear();
 	g_progress = ProgressMeter();
 
-	unsigned char* compressed = new unsigned char[g_limits.maxMapLeaves / 8];
+	unsigned char* compressed = new unsigned char[g_bitbytes + 1024];
 
 	for (int i = 0; i < iterLeaves; i++)
 	{
@@ -442,12 +442,12 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 			continue;
 		}
 
-		memset(compressed, 0, g_limits.maxMapLeaves / 8);
+		memset(compressed, 0, g_bitbytes + 1024);
 
 		src = uncompressed + i * g_bitbytes;
 
 		// Compress all leafs into global compression buffer
-		x = CompressVis(src, g_bitbytes, compressed, g_limits.maxMapLeaves / 8);
+		x = CompressVis(src, g_bitbytes, compressed, g_bitbytes + 1024);
 
 		dest = vismap_p;
 		vismap_p += x;

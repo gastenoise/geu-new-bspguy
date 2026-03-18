@@ -44,6 +44,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
     {
         this->transparentMode = 2;
     }
+    std::lock_guard<std::mutex> lock(g_mutex_list[4]);
     g_all_Textures.push_back(this);
 }
 
@@ -57,6 +58,7 @@ Texture::~Texture()
     if (tex_owndata && data != NULL)
         delete[] data;
 
+    std::lock_guard<std::mutex> lock(g_mutex_list[4]);
     auto it = std::remove(g_all_Textures.begin(), g_all_Textures.end(), this);
     if (it != g_all_Textures.end())
     {
@@ -156,8 +158,10 @@ void Texture::upload(int _type)
                 rgbaData[i] = COLOR4(0, 0, 0, 0);
             }
         }
-        delete[] data;
+        if (tex_owndata && data != nullptr)
+            delete[] data;
         data = (unsigned char*)(rgbaData);
+        tex_owndata = true;
         dataLen = (unsigned int)(width * height * sizeof(COLOR4));
     }
 

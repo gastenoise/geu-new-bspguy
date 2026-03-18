@@ -126,6 +126,8 @@ public:
 	// if modelIdx=0, the world is moved and all entities along with it
 	bool move(vec3 offset, int modelIdx = 0, bool onlyModel = false, bool forceMove = false, bool logged = true);
 
+	void transform(int modelIdx, mat4x4 matrix, vec3 center, bool logged = true);
+
 	void move_texinfo(BSPTEXTUREINFO& info, vec3 offset);
 	void move_texinfo(int idx, vec3 offset);
 	void write(const std::string& path);

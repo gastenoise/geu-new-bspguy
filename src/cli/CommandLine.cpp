@@ -1,6 +1,7 @@
 #include "lang.h"
 #include "CommandLine.h"
 #include "log.h"
+#include <filesystem>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -26,9 +27,9 @@ CommandLine::CommandLine(int argc, char* argv[])
 #ifdef WIN32
 			int nArgs;
 			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-			bspfile = fs::path(szArglist[i]).string();
+			bspfile = std::filesystem::path(szArglist[i]).string();
 #else 
-			bspfile = fs::path(argv[i]).string();
+			bspfile = std::filesystem::path(argv[i]).string();
 #endif
 		}
 		if (i > 2)
@@ -66,9 +67,9 @@ CommandLine::CommandLine(int argc, char* argv[])
 #ifdef WIN32
 		int nArgs;
 		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-		bspfile = fs::path(szArglist[1]).string();
+		bspfile = std::filesystem::path(szArglist[1]).string();
 #else
-		bspfile = fs::path(argv[1]).string();
+		bspfile = std::filesystem::path(argv[1]).string();
 #endif
 	}
 }

@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <tuple>
 
 
 #define HL_PI 3.141592f
@@ -242,25 +243,40 @@ vec3 operator*(float lhs, const vec3& rhs);
 vec3 operator/(float lhs, const vec3& rhs);
 
 struct vec3Hash {
-	size_t operator()(const vec3(&v)) const {
-		size_t seed = 1;
-		std::hash<float> hasher;
-		seed ^= hasher(v[0]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-		seed ^= hasher(v[1]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-		seed ^= hasher(v[2]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	size_t operator()(const vec3& v) const {
+		size_t seed = 0;
+		auto hash_float = [](float f) {
+			union { float f; uint32_t i; } u;
+			u.f = (f == -0.0f) ? 0.0f : f;
+			return std::hash<uint32_t>{}(u.i);
+		};
+		seed ^= hash_float(v.x) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= hash_float(v.y) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= hash_float(v.z) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		return seed;
 	}
 };
 
+struct vec3ExactEqual {
+	bool operator()(const vec3& a, const vec3& b) const {
+		return a.x == b.x && a.y == b.y && a.z == b.z;
+	}
+};
 
 struct vec3PairHash {
-	template <typename T1, typename T2>
-	size_t operator()(const std::pair<T1, T2>& p) const {
-		size_t seed = 2;
+	size_t operator()(const std::pair<vec3, vec3>& p) const {
+		size_t seed = 0;
 		vec3Hash hasher;
 		seed ^= hasher(p.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		seed ^= hasher(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		return seed;
+	}
+};
+
+struct vec3PairExactEqual {
+	bool operator()(const std::pair<vec3, vec3>& a, const std::pair<vec3, vec3>& b) const {
+		vec3ExactEqual eq;
+		return eq(a.first, b.first) && eq(a.second, b.second);
 	}
 };
 

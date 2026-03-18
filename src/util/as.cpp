@@ -215,7 +215,11 @@ int Native_GetSelectedEnt()
 	{
 		if (g_app->SelectedMap)
 		{
-			return (int)g_app->SelectedMap->ents[g_app->pickInfo.selectedEnts[0]]->realIdx;
+			int entIdx = g_app->pickInfo.selectedEnts[0];
+			if (entIdx >= 0 && entIdx < (int)g_app->SelectedMap->ents.size())
+			{
+				return (int)g_app->SelectedMap->ents[entIdx]->realIdx;
+			}
 		}
 	}
 	return -1;
@@ -264,6 +268,7 @@ int Native_CreateEntity(int mapIdx, const std::string& classname)
 		{
 			rend->map->ents.push_back(new Entity(classname));
 			rend->map->update_ent_lump();
+			rend->preRenderEnts();
 			return (int)rend->map->ents.back()->realIdx;
 		}
 	}
@@ -282,6 +287,7 @@ bool Native_RemoveEntity(int entIdx)
 				{
 					rend->map->ents.erase(rend->map->ents.begin() + i);
 					rend->map->update_ent_lump();
+					rend->preRenderEnts();
 					g_app->pickInfo.selectedEnts.clear();
 					return true;
 				}

@@ -32,6 +32,14 @@ struct StatInfo
 	ImVec4 color;
 };
 
+struct TextureStyle
+{
+	float scaleX, scaleY;
+	float shiftX, shiftY;
+	float rotateX, rotateY;
+	bool valid = false;
+};
+
 class Renderer;
 
 #define SHOW_IMPORT_OPEN 1
@@ -59,6 +67,8 @@ public:
 	void openContextMenu(bool empty);
 	void copyTexture();
 	void pasteTexture();
+	void copyStyle();
+	void pasteStyle();
 	void copyLightmap();
 	void pasteLightmap();
 	void refresh();
@@ -87,6 +97,12 @@ public:
 	bool showOverviewWidget = false;
 	bool reloadSettings = true;
 	bool openSavedTabs = false;
+	bool allowExternalTextures = false;
+
+	bool manualMode = false;
+	bool applyFaceChanges = false;
+	bool entityListChanged = true;
+	bool limitsInvalidated = true;
 
 private:
 	ImGuiIO* imgui_io = NULL;
@@ -117,10 +133,16 @@ private:
 
 	int guiHoverAxis; // axis being hovered in the transform menu
 
+	std::string lastClassFilter, lastFlagsFilter;
+	int lastMAX_FILTERS = 0;
+	std::vector<std::string> lastKeyFilters, lastValueFilters;
+
 	int openEmptyContext = -2; // open context menu for rightclicking world/void
 
 	int copiedMiptex = -1;
+	TextureStyle copiedStyle;
 	LIGHTMAP copiedLightmap = LIGHTMAP();
+	std::vector<COLOR3> copiedLightmapData;
 	bool pasteTextureNow = false;
 
 	void drawBspContexMenu();

@@ -358,6 +358,7 @@ public:
 	void cutEnt();
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin, bool copyModel = false);
+	void pasteEntAtOrigin(vec3 origin);
 	void pasteEntsFromText(std::string text);
 	void deleteEnts();
 	void scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, float z);

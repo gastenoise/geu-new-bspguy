@@ -1,4 +1,5 @@
 ﻿#include "lang.h"
+#include <algorithm>
 #include "util.h"
 #include "Wad.h"
 #include "Settings.h"
@@ -2065,6 +2066,14 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 			return retdir;
 		}
 	}
+
+	// fallback to current working directory if all else fails
+	retdir = "./";
+	if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
+	{
+		return retdir;
+	}
+
 	retdir = stripFileName(arg_0_dir);
 	fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	return retdir;
@@ -2168,6 +2177,15 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force
 	}
 
 	if (candidates.empty()) {
+		if (force) {
+			// Force a separation plane on the Z axis if none was found (e.g. maps overlap)
+			float midZ = (amax.z + bmin.z) * 0.5f;
+			if (bmin.z >= amin.z) {
+				return { {0, 0, 1}, midZ, PLANE_Z };
+			} else {
+				return { {0, 0, -1}, midZ, PLANE_Z };
+			}
+		}
 		separationPlane.nType = -1; // No separating axis
 		return separationPlane;
 	}
@@ -2283,7 +2301,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 	const COLOR4 color = points[0].c;
 	const float EPS_SQ = EPSILON * EPSILON;
 
-	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash> uniqueSet;
+	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash, vec3PairExactEqual> uniqueSet;
 	std::vector<std::pair<vec3, vec3>> segments;
 	uniqueSet.reserve(points.size() / 2);
 	segments.reserve(points.size() / 2);
@@ -2293,7 +2311,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 		const vec3& p2 = points[i + 1].pos;
 
 		vec3 diff = p2 - p1;
-		if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < EPS_SQ)
+		if (diff.lengthSquared() < EPS_SQ)
 			continue;
 
 		std::pair<vec3, vec3> segForSet = (p1 < p2)
@@ -2328,7 +2346,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 		};
 		};
 
-	std::unordered_map<vec3, std::vector<std::pair<vec3, vec3>>, vec3Hash> dirGroups;
+	std::unordered_map<vec3, std::vector<std::pair<vec3, vec3>>, vec3Hash, vec3ExactEqual> dirGroups;
 
 	for (const auto& seg : segments) {
 		vec3 dir = seg.second - seg.first;
@@ -2343,84 +2361,55 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 	std::vector<std::pair<vec3, vec3>> mergedSegments;
 
 	for (auto& [canonicalDir, segs] : dirGroups) {
-		struct LineInfo {
-			vec3 basePoint;
-			vec3 direction;
-			std::vector<std::pair<float, float>> intervals;
-		};
-
-		std::vector<LineInfo> lines;
-
+		std::unordered_map<vec3, std::vector<std::pair<float, float>>, vec3Hash, vec3ExactEqual> lineGroups;
 		for (const auto& seg : segs) {
 			vec3 A = seg.first;
 			vec3 B = seg.second;
-			vec3 dir = B - A;
-			float lenSq = dir.lengthSquared();
 
-			if (lenSq < EPS_SQ) continue;
+			vec3 A_perp = A - canonicalDir * A.dot(canonicalDir);
+			constexpr float scale = 1000.0f;
+			A_perp.x = std::round(A_perp.x * scale) / scale;
+			A_perp.y = std::round(A_perp.y * scale) / scale;
+			A_perp.z = std::round(A_perp.z * scale) / scale;
 
-			vec3 dirNorm = dir * (1.0f / std::sqrt(lenSq));
-
-			bool found = false;
-			for (auto& line : lines) {
-				vec3 toA = A - line.basePoint;
-				vec3 toB = B - line.basePoint;
-
-				vec3 crossA = line.direction.cross(toA);
-				vec3 crossB = line.direction.cross(toB);
-
-				if (crossA.lengthSquared() < EPS_SQ && crossB.lengthSquared() < EPS_SQ) {
-					float tA = toA.dot(line.direction);
-					float tB = toB.dot(line.direction);
-
-					line.intervals.emplace_back(std::min(tA, tB), std::max(tA, tB));
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				LineInfo newLine;
-				newLine.basePoint = A;
-				newLine.direction = dirNorm;
-				newLine.intervals.emplace_back(0.0f, std::sqrt(lenSq));
-				lines.push_back(newLine);
-			}
+			float tA = A.dot(canonicalDir);
+			float tB = B.dot(canonicalDir);
+			lineGroups[A_perp].push_back({ std::min(tA, tB), std::max(tA, tB) });
 		}
 
-		for (auto& line : lines) {
-			if (line.intervals.empty()) continue;
-			std::sort(line.intervals.begin(), line.intervals.end());
+		for (auto& [base_perp, intervals] : lineGroups) {
+			if (intervals.empty()) continue;
+			std::sort(intervals.begin(), intervals.end());
 
-			float curStart = line.intervals[0].first;
-			float curEnd = line.intervals[0].second;
+			float curStart = intervals[0].first;
+			float curEnd = intervals[0].second;
 
-			for (size_t i = 1; i < line.intervals.size(); ++i) {
-				if (line.intervals[i].first <= curEnd + EPSILON) {
-					curEnd = std::max(curEnd, line.intervals[i].second);
+			for (size_t i = 1; i < intervals.size(); ++i) {
+				if (intervals[i].first <= curEnd + 0.01f) {
+					curEnd = std::max(curEnd, intervals[i].second);
 				}
 				else {
-					if (curEnd - curStart > EPSILON) {
+					if (curEnd - curStart > 0.01f) {
 						mergedSegments.emplace_back(
-							line.basePoint + line.direction * curStart,
-							line.basePoint + line.direction * curEnd
+							base_perp + canonicalDir * curStart,
+							base_perp + canonicalDir * curEnd
 						);
 					}
-					curStart = line.intervals[i].first;
-					curEnd = line.intervals[i].second;
+					curStart = intervals[i].first;
+					curEnd = intervals[i].second;
 				}
 			}
 
-			if (curEnd - curStart > EPSILON) {
+			if (curEnd - curStart > 0.01f) {
 				mergedSegments.emplace_back(
-					line.basePoint + line.direction * curStart,
-					line.basePoint + line.direction * curEnd
+					base_perp + canonicalDir * curStart,
+					base_perp + canonicalDir * curEnd
 				);
 			}
 		}
 	}
 
-	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash> finalCheck;
+	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash, vec3PairExactEqual> finalCheck;
 	std::vector<cVert> result;
 	result.reserve(mergedSegments.size() * 2);
 

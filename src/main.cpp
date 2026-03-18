@@ -1,4 +1,6 @@
 
+#include "util.h"
+#include <filesystem>
 #include "lang.h"
 #include "BspMerger.h"
 #include "CommandLine.h"
@@ -172,7 +174,7 @@ int merge_maps()
 	std::string output_name = g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile;
 
 	BspMerger merger;
-	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"));
+	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-vertical"), g_cmdLine.hasOption("-vgap") ? (float)g_cmdLine.getOptionInt("-vgap") : 512.0f);
 
 	print_log("\n");
 	if (result.map && result.map->validate() && result.map->isValid())
@@ -573,6 +575,8 @@ void print_help(const std::string& command)
 			"                 entities, and some ents might not spawn properly. The benefit\n"
 			"                 to this flag is that you don't have deal with script setup.\n"
 			"  -gap \"X,Y,Z\" : Amount of extra space to add between each map\n"
+			"  -vertical    : Vertical merge mode.\n"
+			"  -vgap #      : Vertical gap between maps (default 512).\n"
 			"  -v\n"
 			"  -verbose     : Verbose console output.\n"
 		);
@@ -932,7 +936,7 @@ int main(int argc, char* argv[])
 		signal(SIGBUS, signalHandler);
 #endif
 		std::string bspguy_dir = "./";
-		g_startup_dir = fs::current_path().string() + "/";
+		g_startup_dir = std::filesystem::current_path().string() + "/";
 
 #ifdef WIN32
 		int nArgs;
@@ -949,13 +953,13 @@ int main(int argc, char* argv[])
 		}
 #endif
 		std::error_code err;
-		fs::current_path(bspguy_dir, err);
+		std::filesystem::current_path(bspguy_dir, err);
 
 		if (fileExists("./log.txt"))
 		{
 			try
 			{
-				fs::remove("./log.txt", err);
+				std::filesystem::remove("./log.txt", err);
 			}
 			catch (...)
 			{
@@ -1247,7 +1251,7 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 	}
-	catch (fs::filesystem_error& ex)
+	catch (std::filesystem::filesystem_error& ex)
 	{
 		std::cout << "std::filesystem fatal error." << std::endl << "what():  " << ex.what() << '\n'
 			<< "path1(): " << ex.path1() << '\n'

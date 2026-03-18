@@ -16,6 +16,7 @@
 #include "log.h"
 
 #include <execution>
+#include <algorithm>
 
 BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 {
@@ -770,12 +771,14 @@ void BspRenderer::updateLightmapInfos()
 
 	LightmapInfo* newLightmaps = new LightmapInfo[map->faceCount];
 
-	memcpy(newLightmaps, lightmaps, std::min(numRenderLightmapInfos, map->faceCount) * sizeof(LightmapInfo));
+	if (lightmaps)
+		memcpy(newLightmaps, lightmaps, std::min(numRenderLightmapInfos, map->faceCount) * sizeof(LightmapInfo));
 
 	if (addedFaces > 0)
 		memset(newLightmaps + numRenderLightmapInfos, 0x00, addedFaces * sizeof(LightmapInfo));
 
-	delete[] lightmaps;
+	if (lightmaps)
+		delete[] lightmaps;
 	lightmaps = newLightmaps;
 	numRenderLightmapInfos = map->faceCount;
 
@@ -1231,10 +1234,14 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 
 	for (size_t i = 0; i < renderModel->renderGroups.size(); i++)
 	{
-		lightmapVert* result_verts = new lightmapVert[renderGroupVerts[i].size() + 1];
-
-		if (renderGroupVerts[i].size() > 0)
-			memcpy(result_verts, &renderGroupVerts[i][0], renderGroupVerts[i].size() * sizeof(lightmapVert));
+		if (renderGroupVerts[i].empty())
+		{
+			renderModel->renderGroups[i].buffer = NULL;
+			continue;
+		}
+		lightmapVert* result_verts = new lightmapVert[renderGroupVerts[i].size()];
+		if (result_verts)
+			memcpy(result_verts, renderGroupVerts[i].data(), renderGroupVerts[i].size() * sizeof(lightmapVert));
 
 		renderModel->renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, result_verts, (int)(renderGroupVerts[i].size()), GL_TRIANGLES, true);
 		renderModel->renderGroups[i].buffer->frameId = 0;
@@ -1254,7 +1261,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		}
 
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
-		memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
+		if (resultWireFrame)
+			memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
 
 		renderModel->wireframeBuffer = new VertexBuffer(g_app->colorShader, resultWireFrame, (int)(cleanupWireframe.size()), GL_LINES,true);
 		renderModel->wireframeBuffer->frameId = 0;
@@ -1291,18 +1299,16 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
 	{
 		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+		g_mutex_list[2].lock();
 		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
-			g_mutex_list[2].lock();
 			clipnodesBufferCache.erase(nodeIdx);
-			g_mutex_list[2].unlock();
 		}
 		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
 		{
-			g_mutex_list[2].lock();
 			nodesBufferCache.erase(nodeIdx);
-			g_mutex_list[2].unlock();
 		}
+		g_mutex_list[2].unlock();
 	}
 
 	deleteRenderModelClipnodes(&renderClipnodes[modelIdx]);
@@ -1444,10 +1450,12 @@ void BspRenderer::generateNavMeshBuffer() {
 	}
 
 	cVert* output = new cVert[allVerts.size()];
-	std::copy(allVerts.begin(), allVerts.end(), output);
+	if (output)
+		std::copy(allVerts.begin(), allVerts.end(), output);
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
+	if (wireOutput)
+		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
 
 	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
@@ -1577,10 +1585,12 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 	}
 
 	cVert* output = new cVert[allVerts.size()];
-	std::copy(allVerts.begin(), allVerts.end(), output);
+	if (output)
+		std::copy(allVerts.begin(), allVerts.end(), output);
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
+	if (wireOutput)
+		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
 	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
 		renderClip->clipnodeBuffer[hull] = NULL;
@@ -1635,6 +1645,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
 	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
+	g_mutex_list[2].lock();
 	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 	{
 		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
@@ -1643,6 +1654,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	{
 		oldHullIdxStruct = nodesBufferCache[nodeIdx];
 	}
+	g_mutex_list[2].unlock();
 
 	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
 	{
@@ -1834,10 +1846,12 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	}*/
 
 	cVert* output = new cVert[allVerts.size()];
-	std::copy(allVerts.begin(), allVerts.end(), output);
+	if (output)
+		std::copy(allVerts.begin(), allVerts.end(), output);
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
+	if (wireOutput)
+		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
 	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, output, (int)(allVerts.size()), GL_TRIANGLES,true);
 	renderClip.clipnodeBuffer[hullIdx]->frameId = 0;
@@ -1869,18 +1883,16 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
 	{
 		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+		g_mutex_list[2].lock();
 		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
-			g_mutex_list[2].lock();
 			clipnodesBufferCache.erase(nodeIdx);
-			g_mutex_list[2].unlock();
 		}
 		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
 		{
-			g_mutex_list[2].lock();
 			nodesBufferCache.erase(nodeIdx);
-			g_mutex_list[2].unlock();
 		}
+		g_mutex_list[2].unlock();
 	}
 
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
@@ -2446,9 +2458,16 @@ void BspRenderer::refreshFace(int faceIdx)
 	faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 	faceMath.localVerts = std::vector<vec2>(allVerts.size());
 
+	faceMath.localMins = vec2(FLT_MAX, FLT_MAX);
+	faceMath.localMaxs = vec2(-FLT_MAX, -FLT_MAX);
+
 	for (size_t i = 0; i < allVerts.size(); i++)
 	{
 		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xy();
+		if (faceMath.localVerts[i].x < faceMath.localMins.x) faceMath.localMins.x = faceMath.localVerts[i].x;
+		if (faceMath.localVerts[i].y < faceMath.localMins.y) faceMath.localMins.y = faceMath.localVerts[i].y;
+		if (faceMath.localVerts[i].x > faceMath.localMaxs.x) faceMath.localMaxs.x = faceMath.localVerts[i].x;
+		if (faceMath.localVerts[i].y > faceMath.localMaxs.y) faceMath.localMaxs.y = faceMath.localVerts[i].y;
 	}
 }
 
@@ -2457,12 +2476,12 @@ BspRenderer::~BspRenderer()
 	clearUndoCommands();
 	clearRedoCommands();
 
-	if (lightmapFuture.valid() && lightmapFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
-		texturesFuture.valid() && texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
-		clipnodesFuture.valid() && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-	{
-		print_log(get_localized_string(LANG_0285));
-	}
+	if (lightmapFuture.valid())
+		lightmapFuture.wait();
+	if (texturesFuture.valid())
+		texturesFuture.wait();
+	if (clipnodesFuture.valid())
+		clipnodesFuture.wait();
 
 	for (size_t i = 0; i < wads.size(); i++)
 	{
@@ -2585,6 +2604,10 @@ void BspRenderer::highlightFace(int faceIdx, int highlight, bool reupload)
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1047));
 		return;
 	}
+
+	if (!rgroup->buffer || !rgroup->buffer->getData())
+		return;
+
 	float r, g, b;
 	r = g = b = 0.0f;
 
@@ -2621,7 +2644,7 @@ void BspRenderer::highlightFace(int faceIdx, int highlight, bool reupload)
 		rgroup->buffer->reupload();
 }
 
-void BspRenderer::updateFaceUVs(int faceIdx)
+void BspRenderer::updateFaceUVs(int faceIdx, const BSPTEXTUREINFO* overrideTexInfo, bool reupload)
 {
 	RenderFace* rface;
 	RenderGroup* rgroup;
@@ -2632,7 +2655,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 	}
 
 	BSPFACE32& face = map->faces[faceIdx];
-	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+	const BSPTEXTUREINFO& texinfo = overrideTexInfo ? *overrideTexInfo : map->texinfos[face.iTextureInfo];
 	if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 	{
 		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
@@ -2654,7 +2677,8 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 				vert.u = fU * tw;
 				vert.v = fV * th;
 			}
-			rgroup->buffer->reupload();
+			if (reupload)
+				rgroup->buffer->reupload();
 		}
 	}
 }
@@ -2668,8 +2692,22 @@ bool BspRenderer::getRenderPointers(int faceIdx, RenderFace** renderFace, Render
 		return false;
 	}
 
+	if (modelIdx >= (int)renderModels.size())
+	{
+		return false;
+	}
+
 	int relativeFaceIdx = faceIdx - map->models[modelIdx].iFirstFace;
+	if (relativeFaceIdx < 0 || relativeFaceIdx >= (int)renderModels[modelIdx]->renderFaces.size())
+	{
+		return false;
+	}
 	*renderFace = &renderModels[modelIdx]->renderFaces[relativeFaceIdx];
+
+	if ((*renderFace)->group < 0 || (*renderFace)->group >= (int)renderModels[modelIdx]->renderGroups.size())
+	{
+		return false;
+	}
 	*renderGroup = &renderModels[modelIdx]->renderGroups[(*renderFace)->group];
 
 	return true;
@@ -2683,6 +2721,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 		return missingTex->id;
 	return glTextures[texinfo.iMiptex][0]->id;
 }
+
 
 void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 {
@@ -2771,7 +2810,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		drawPointEntities(highlightEnts, REND_PASS_MODELSHADER);
 	}
 
-	size_t ent_count = renderEnts.size();
+	size_t ent_count = std::min(map->ents.size(), renderEnts.size());
 
 
 	for (int pass = 0; pass <= 2; pass++)
@@ -2780,7 +2819,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		{
 			g_app->mat_upload();
 
-			if (ent_count && !map->ents[0]->hide)
+			if (ent_count && map->ents.size() > 0 && !map->ents[0]->hide)
 				drawModel(&renderEnts[0], pass, false, false);
 
 			for (int i = 1; i < (int)ent_count; i++)
@@ -2818,7 +2857,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 	{
 		if (g_render_flags & RENDER_WORLD_CLIPNODES && clipnodeHull != -1)
 		{
-			if (!map->ents[0]->hide)
+			if (map->ents.size() > 0 && !map->ents[0]->hide)
 			{
 				g_app->colorShader->pushMatrix();
 				g_app->matmodel.loadIdentity();
@@ -2839,6 +2878,8 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 					continue;
 				if (renderEnts[i].modelIdx > 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
+					if (renderEnts[i].modelIdx >= (int)renderModels.size())
+						continue;
 					if (clipnodeHull <= -1 && renderModels[renderEnts[i].modelIdx]->renderGroups.size())
 					{
 						continue; // skip rendering for models that have faces, if in auto mode
@@ -2885,6 +2926,8 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 				continue;
 			for (int highlightEnt : highlightEnts)
 			{
+				if (highlightEnt < 0 || highlightEnt >= (int)map->ents.size() || highlightEnt >= (int)renderEnts.size())
+					continue;
 				if (map->ents[highlightEnt]->hide)
 					continue;
 				if (renderEnts[highlightEnt].modelIdx > 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
@@ -3394,7 +3437,9 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		}
 	}
 
-	for (int i = 0; i < (int)map->ents.size(); i++)
+	size_t entCount = std::min(map->ents.size(), renderEnts.size());
+
+	for (int i = 0; i < (int)entCount; i++)
 	{
 		if (map->ents[i]->hide)
 			continue;
@@ -3638,6 +3683,12 @@ bool BspRenderer::pickFaceMath(const vec3& start, const vec3& dir, FaceMath& fac
 	// transform intersection point to the plane's coordinate system
 	vec3 intersection = start + dir * t;
 	vec2 localRayPoint = (faceMath.worldToLocal * vec4(intersection, 1.0f)).xy();
+
+	if (localRayPoint.x < faceMath.localMins.x || localRayPoint.x > faceMath.localMaxs.x ||
+		localRayPoint.y < faceMath.localMins.y || localRayPoint.y > faceMath.localMaxs.y)
+	{
+		return false;
+	}
 
 	// check if point is inside the polygon using the plane's 2D coordinate system
 	if (!pointInsidePolygon(faceMath.localVerts, localRayPoint))
