@@ -1,0 +1,46 @@
+name: Windows Release
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build bspguy (Windows x64)
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure CMake
+      run: >
+        cmake -S . -B build
+        -A x64
+        -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Prepare Artifacts
+      shell: bash
+      run: |
+        mkdir -p dist/bspguy
+        cp build/Release/bspguy.exe dist/bspguy/
+        cp -r resources/fonts dist/bspguy/
+        cp -r resources/languages dist/bspguy/
+        cp -r resources/palettes dist/bspguy/
+        cp -r resources/pictures dist/bspguy/
+        cp -r resources/scripts dist/bspguy/
+        cp resources/bspguy.ini dist/bspguy/
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: bspguy-windows-x64
+        path: dist/bspguy/
