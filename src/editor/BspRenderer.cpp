@@ -2798,6 +2798,13 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			ent.modelMat4x4_calc_angles = ent.modelMat4x4_angles;
 			ent.modelMat4x4_calc_angles.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
+			if (g_app->transformMode == TRANSFORM_MODE_MOVE && g_app->transformTarget == TRANSFORM_OBJECT && !g_app->moveOrigin && ent.modelIdx >= 0 && g_app->pickInfo.IsSelectedEnt((int)i))
+			{
+				vec3 previewOffset = g_app->deltaMoveOffset.flip();
+				ent.modelMat4x4_calc.translate(previewOffset.x, previewOffset.y, previewOffset.z);
+				ent.modelMat4x4_calc_angles.translate(previewOffset.x, previewOffset.y, previewOffset.z);
+			}
 		}
 	}
 

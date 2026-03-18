@@ -2746,9 +2746,6 @@ bool Renderer::transformAxisControls()
 						else
 						{
 							deltaMoveOffset += delta;
-							/*vertPickCount++;
-							map->move(delta, modelIdx, true, false, false);
-							updateEntConnectionPositions();*/
 						}
 					}
 					else if (transformTarget == TRANSFORM_ORIGIN)
@@ -2826,22 +2823,26 @@ bool Renderer::transformAxisControls()
 					else
 					{
 						saveTranformResult = false;
-						vec3 neworigin = gridSnappingEnabled ? snapToGrid(deltaMoveOffset) : deltaMoveOffset;
-						if (!neworigin.IsZero())
+						vec3 moveDelta = gridSnappingEnabled ? snapToGrid(deltaMoveOffset) : deltaMoveOffset;
+						if (!moveDelta.IsZero())
 						{
-							map->move(neworigin, modelIdx, true, false, false);
+							map->move(moveDelta, modelIdx, true, false, false);
+							deltaMoveOffset = vec3();
+							map->resize_all_lightmaps();
+
+							applyTransform(map, true);
+							map->regenerate_clipnodes(modelIdx, -1);
+
+							map->getBspRender()->refreshEnt((int)entIdx[0]);
+							map->getBspRender()->refreshModel(modelIdx);
+							map->getBspRender()->refreshModelClipnodes(modelIdx);
+							updateEntConnectionPositions();
+							map->getBspRender()->pushUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 						}
-						deltaMoveOffset = vec3();
-						map->resize_all_lightmaps();
-
-						applyTransform(map, true);
-						map->regenerate_clipnodes(modelIdx, -1);
-
-						map->getBspRender()->refreshEnt((int)entIdx[0]);
-						map->getBspRender()->refreshModel(modelIdx);
-						map->getBspRender()->refreshModelClipnodes(modelIdx);
-						updateEntConnectionPositions();
-						map->getBspRender()->pushUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
+						else
+						{
+							deltaMoveOffset = vec3();
+						}
 					}
 				}
 				else if (transformTarget == TRANSFORM_ORIGIN)
@@ -3967,6 +3968,11 @@ void Renderer::updateEntConnectionPositions()
 	{
 		Entity* ent = SelectedMap->ents[entIdx[0]];
 		vec3 pos = SelectedMap->getEntOrigin(ent).flip();
+
+		if (transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_OBJECT && !moveOrigin && ent->isBspModel())
+		{
+			pos += deltaMoveOffset.flip();
+		}
 
 		cVert* verts = (cVert*)entConnections->getData();
 		for (int i = 0; i < entConnections->numVerts; i += 2)
