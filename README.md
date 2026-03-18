@@ -1,14 +1,14 @@
 # bspguy REVAMPED
 
-![bspguy REVAMPED](/mnt/data/revamped2.png)
+![bspguy REVAMPED](https://i.imgur.com/P63fC9e.png)
 
 **A hardened fork of the GoldSrc map editor (bspguy & newbspguy) <br>Focused on robustness, vertical map merging, and modernized build flows.**
 
 ## Projects / genealogy
 
-* **entity["organization","bspguy","goldsrc map editor project"]** - the original project and starting point.
-* **entity["organization","newbspguy","improved fork by unrealkaraulov"]** - an improved fork with several enhancements.
-* **entity["organization","geu-new-bspguy","personal geu fork repo"]** - this repository (named `geu-new-bspguy`) published under the display name **bspguy REVAMPED**.
+* **[bspguy - goldsrc map editor project](https://github.com/wootguy/bspguy)** - the original project and starting point.
+* **[newbspguy - improved fork by unrealkaraulov](https://github.com/UnrealKaraulov/newbspguy)** - an improved fork with several enhancements.
+* **[geu-new-bspguy - personal geu fork repo](https://github.com/gastenoise/geu-new-bspguy)** - this repository (named `geu-new-bspguy`) published under the display name **bspguy REVAMPED**.
 
 > Note: code, build files and some assets may still reference `bspguy` or `newbspguy`. This README clarifies lineage and the purpose of this fork.
 
