@@ -1,66 +1,103 @@
-# bspguy
-A tool for view and edit GoldSrc maps, and merging Sven Co-op maps without decompiling.
+# bspguy REVAMPED
 
-This fork support multiple bsp formats: BSP2,2PSB,29,bsp30ex,broken clipnodes.
+![bspguy REVAMPED](/mnt/data/revamped2.png)
 
-# Usage
-To launch the 3D editor, drag and drop a .bsp file onto the executable/window, or "Open with" bspguy, or run `bspguy` without args.
+**A hardened fork of the GoldSrc map editor (bspguy & newbspguy) <br>Focused on robustness, vertical map merging, and modernized build flows.**
 
-See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
+## Projects / genealogy
 
-## BPSGUY Editor Features
-- Keyvalue editor with FGD support
-- Entity + BSP model creation and duplication
-- Easy object movement and scaling
-- Vertex manipulation + face splitting
-    - Used to make perfectly shaped triggers. A box is often good enough, though.
-- BSP model origin movement/alignment
-- Optimize + clean commands to prevent overflows
-- Hull deletion + redirection + creation
-  - clipnode generation is similar to `-cliptype legacy` in the CSG compiler (the _worst_ method)
-- Basic face editing
-# NEWBPSGUY Editor Updated Features:
-- Texture Rotation
-- Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
-- Cull leaf faces (for example 0 solid leaf for cleanup)
-- Leaf Editor (WIP)
-- Export obj, wad, ent, bsp/bspmodel, hlrad files.
-- Import wad, ent, bsp(in two modes)
-- Render .BSP and .MDL models.
-- Render .SPR sprites (WIP).
-- Full support for "angle" and "angles" keyvalue.
-- Full featured **LightMap Editor** for edit single or multiple faces.
-- Updated Entity Report, added search by any parameters and sorting by fgd flags.
-- Added "undo/redo" support for many manipulations. (Move ents/origin, etc)
-- Added move model(as option for transforming, like move origin)
-- Added CRC-Spoofing(now possible to replace original map and play it on any servers)
-- Updated controls logic(now can't using hotkeys and manipulation, if any input/window is active)
-- Support J.A.C.K fgd files
-- Keyvalue editor can be used for edit all selected entities
-- Protect map (anti-decompile, WIP)
-- Overview helper widget
-...
+* **entity["organization","bspguy","goldsrc map editor project"]** - the original project and starting point.
+* **entity["organization","newbspguy","improved fork by unrealkaraulov"]** - an improved fork with several enhancements.
+* **entity["organization","geu-new-bspguy","personal geu fork repo"]** - this repository (named `geu-new-bspguy`) published under the display name **bspguy REVAMPED**.
 
-![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
+> Note: code, build files and some assets may still reference `bspguy` or `newbspguy`. This README clarifies lineage and the purpose of this fork.
 
-**The editor is full of bugs, unstable, and has undo button not works for some cases. 
-Save early and often! Make backups before experimenting with anything.**
+---
 
-Requires OpenGL 3.0 or later.
+## What this repo delivers
 
-## First-time Setup
-1. Click `File` -> `Settings` -> `General`
-2. Set the `Game Directory`, then click `Apply Changes`.
-3. Click the 'Assets' tab and enter full or relative path to mod directories (cstrike/valve and etc)
-    - This will fix the missing textures
-4. Click the `FGDs` tab and add the full or relative path to your mod_name.fgd. Click `Apply Changes`.
-    - This will give point entities more colorful cubes, and enable the `Attributes` tab in the `Keyvalue editor`.
+* 3D editor and CLI tools to view, edit and merge `.bsp` GoldSrc maps (supports multiple BSP variants: BSP2, 2PSB, 29, bsp30ex, and broken clipnodes).
+* Vertical merge support (stack maps vertically) and arbitrary model/map transforms.
+* Modernized build: C++20, MSVC-friendly configuration and resource post-build copying.
+* Robustness hardening across renderer, importer, merger, and GUI.
+* Documentation, usage examples and a promotional image for the project.
 
-newbspguy saves configuration files to executable folder 
+---
 
+## Warning
 
-## Command Line
-Some functions are only available via the CLI.
+This software is still experimental. The editor contains bugs and some operations are destructive. **Always back up your maps before using merge / simplify / transform / CRC-spoofing features.**
+
+---
+
+# Quick usage
+
+* Launch the 3D editor by dragging a `.bsp` onto the executable or by opening the app and selecting `File -> Open`.
+* Run `bspguy` without arguments to open the main window.
+* Use the CLI for automated tasks and batch operations (see CLI reference below).
+
+---
+
+# Editor: Feature highlights
+
+* FGD-aware keyvalue editor (J.A.C.K. FGD supported).
+* Create and duplicate entities and BSP models.
+* Move, scale objects and manipulate vertices; face splitting for precise triggers.
+* BSP model origin movement/alignment and hull manipulation (delete/redirect/create).
+* Face editor with manual vertex editing and improved texture support.
+* Full-featured **LightMap Editor** for single or multiple faces.
+* Export/Import: OBJ, WAD, ENT, BSP (multiple modes), HLRAD export, Quake LIT import/export, etc.
+* Render BSP/MDL and preliminary SPR rendering (WIP).
+* Undo/Redo support for many actions (not exhaustive - save often).
+* CRC-spoofing to allow replacing original maps for testing on servers.
+* Map protection features (anti-decompile - WIP).
+
+---
+
+# Changes introduced in this fork (geu-new-bspguy)
+
+These are the main technical changes and fixes added on top of the prior codebase.
+
+### Build & project layout
+
+* Move `.github/workflows/build.yml` → `.github.example/workflows/build.yml` (store as example/template rather than active CI).
+* Set the project to C++20 (no extensions). Reorganize CMake for MSVC:
+
+  * MSVC-specific defines, linker paths for GLEW (x64 / Win32).
+  * Compiler options and `POST_BUILD` commands to copy resources (fonts, languages, palettes, pictures, scripts, `bspguy.ini`).
+  * Remove the previous fatal error that forced using the VS solution and eliminate duplicated `CMAKE_CXX_STANDARD` entries.
+
+### New features and robustness
+
+* Vertical merge: new `verticalMerge` option with `verticalGap` support in the BspMerger; ability to force a separation plane for stacking maps vertically.
+* Rework of model movement logic: `move()` now correctly handles world moves versus brush-origin submodels to avoid double-moving geometry and to split shared structures when necessary.
+* `transform(modelIdx, matrix, center, logged)` added to apply arbitrary matrix transforms to model geometry, planes, texinfos and bounds.
+* Fixes in texture import (lodepng memory handling) to allocate/copy/free correctly.
+* BspMerger applies `worldspawn` origin transforms prior to separation; improved offsets/overlap handling; fixed visibility decompression length/init.
+* CLI now uses `std::filesystem` for path handling.
+
+### Renderer & picking
+
+* Defensive and correctness fixes in `BspRenderer`: null checks, proper future waits in destructors, mutex/locking fixes.
+* Computing face-local bounds for correct picking and using them where appropriate.
+* Face UV update improvements (support override texinfo and optional reupload).
+* Guarding navmesh / clip buffers and fixing render loop indexing/bounds.
+
+### GUI & UX
+
+* Avoid leaking `lodepng` buffers when loading icons/textures.
+* `allowExternalTextures` flag to enable optional external texture loading without breaking rendering.
+* Copy/Paste *Style* commands, improved lightmap paste (scaling, accumulation, style copy) and persistent copied lightmap handling.
+* Improved input flow: hotkeys are disabled while an input/window is active to avoid state conflicts.
+
+### Localization and headers
+
+* Added UI strings for new features (copy/paste style, flip/rotate/fill, vertical merge/gap, etc.) across English, Russian and Chinese translation files.
+* Header updates exposing new functions and signatures; include fixes and small API adjustments.
+
+---
+
+# CLI reference
 
 ```
 Usage: bspguy <command> <mapname> [options]
@@ -78,29 +115,62 @@ Usage: bspguy <command> <mapname> [options]
   exportlit : Export .lit (Quake) lightdata file
   importlit : Import .lit (Quake) lightdata file to map.
   exportrad : Export RAD.exe .ext & .wa_ files for hlrad.exe
-  exportwad   : Export all map textures to .wad file
-  importwad   : Import all .wad textures to map
+  exportwad : Export all map textures to .wad file
+  importwad : Import all .wad textures to map
 
-  
-
-Run 'bspguy <command> help' to read about a specific command.
+Run 'bspguy <command> help' for command-specific options.
 ```
 
-# Building the source
-### Windows users:
-1. Install Visual Studio 2022
-    * Visual Studio: Make sure to checkmark "Desktop development with C++" if you're installing for the first time. 
-2. Download and extract [the source](https://github.com/UnrealKaraulov/newbspguy/archive/master.zip) somewhere
-3. Open vs-project/bspguy.sln
+> Note: The `merge` command supports `verticalMerge` and `verticalGap` options. Run the help for the exact syntax.
 
-### Linux users:
-1. Install Git, CMake, X11, GLEW, and a compiler.
-    * Debian: `sudo apt install build-essential git cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev xorg-dev libglfw3-dev libglew-dev`
-2. Download the source: `git clone https://github.com/wootguy/bspguy.git`
-3. Open a terminal in the `bspguy` folder and run these commands:
-    ```
-    mkdir build; cd build
-    cmake .. -DCMAKE_BUILD_TYPE=RELEASE
-    make
-    ```
-    (a terminal can _usually_ be opened by pressing F4 with the file manager window in focus)
+---
+
+# First-time setup (GUI)
+
+1. `File` → `Settings` → `General`.
+2. Set the **Game Directory** and click `Apply Changes`.
+3. On the `Assets` tab add full or relative paths to your mod directories (e.g. `cstrike/`, `valve/`) to resolve missing textures.
+4. On the `FGDs` tab add paths to your mod `.fgd` files (e.g. `mod_name.fgd`) and click `Apply Changes`.
+
+> Configuration files are saved to the executable folder by default.
+
+---
+
+# Building from source
+
+## Windows (MSVC)
+
+1. Install Visual Studio 2022 with "Desktop development with C++".
+2. Download and extract the source.
+3. Generate a build with CMake (MSVC-aware settings are included):
+
+```powershell
+mkdir build; cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022" -A x64
+cmake --build . --config Release
+```
+
+`POST_BUILD` steps copy required resource files (fonts, languages, palettes, pictures, scripts, `bspguy.ini`) to the executable output directory.
+
+## Linux
+
+1. Install dependencies. Example (Debian/Ubuntu):
+
+```
+sudo apt install build-essential git cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev xorg-dev libglfw3-dev libglew-dev
+```
+
+2. Clone and build:
+
+```
+git clone https://github.com/wootguy/bspguy.git
+mkdir build; cd build
+cmake .. -DCMAKE_BUILD_TYPE=RELEASE
+make -j$(nproc)
+```
+
+---
+
+# License
+
+This fork respects the original project’s license unless an explicit LICENSE file in this repo states otherwise. See the repo root for `LICENSE`.
