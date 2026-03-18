@@ -6,7 +6,9 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
 project(bspguy LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(fmt)
 add_subdirectory(glfw)
@@ -142,7 +144,37 @@ set(SOURCE_FILES
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-if(NOT MSVC)
+if(MSVC)
+	add_definitions(-DWIN32 -D_WINDOWS -DGLEW_STATIC -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		target_link_libraries(${PROJECT_NAME} fmt::fmt glfw angelscript opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32s.lib)
+	else()
+		target_link_libraries(${PROJECT_NAME} fmt::fmt glfw angelscript opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/Win32/glew32s.lib)
+	endif()
+
+	target_compile_options(${PROJECT_NAME} PRIVATE /utf-8 /MP /W4 /wd4244 /wd4018 /std:c++20 /EHsc)
+
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/fonts"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/languages"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/languages"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/palettes"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/palettes"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/pictures"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/pictures"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/scripts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/scripts"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/bspguy.ini")
+else()
 	add_definitions(-DNDEBUG)
 	if(WIN32)
 		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -155,10 +187,8 @@ if(NOT MSVC)
 	else()
 		target_link_libraries(${PROJECT_NAME} GL GLU fmt::fmt glfw angelscript Xxf86vm Xrandr pthread Xi GLEW stdc++fs )
 	endif()
-	set(CMAKE_CXX_STANDARD 20)
-	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(PICO_ENABLE_CXX_EXCEPTIONS 1)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++2a -g0 -O3 -fno-stack-protector -w -Wfatal-errors\
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g0 -O3 -fno-stack-protector -w -Wfatal-errors\
 	-fcf-protection=none -ffunction-sections -fdata-sections -mtune=generic -fpermissive -fno-sized-deallocation\
 	-Wno-delete-non-virtual-dtor -Wno-invalid-offsetof -Wno-unused-variable -Wno-unused-value -Wno-unused-result\
 	-Wno-unused-function -Wno-write-strings -Wno-switch -Wno-enum-compare -Wno-sign-compare -Wno-format\
@@ -169,6 +199,24 @@ if(NOT MSVC)
 	-Wno-unused-result -Wno-unused-function -Wno-write-strings -Wno-switch -Wno-enum-compare -Wno-sign-compare\
 	-Wno-format -Wno-ignored-attributes -Wno-strict-aliasing -fno-plt -fno-devirtualize -Wno-unused-local-typedefs\
 	-Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-class-memaccess")
-else()
-	message(FATAL_ERROR "Use vs-project/bspguy.sln for Visual Studio")
+
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/fonts"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/languages"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/languages"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/palettes"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/palettes"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/pictures"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/pictures"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/scripts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/scripts"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/bspguy.ini")
 endif()
