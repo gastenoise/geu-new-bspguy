@@ -84,3 +84,4 @@ ascript/angelscript/projects/msvc2022/Debug/angelscript.vcxproj.FileListAbsolute
 /vs-project/fmt/fmt/ReleaseXPx86
 /vs-project/glfw/src/ReleaseXP
 /vs-project/as/as
+.cache/
