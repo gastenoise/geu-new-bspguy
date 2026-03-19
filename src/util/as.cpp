@@ -441,7 +441,7 @@ void RegisterStructs(asIScriptEngine* engine)
 	r = engine->RegisterGlobalFunction("vec3 opMul_r(float)", asFUNCTIONPR(operator*, (float, const vec3&), vec3), asCALL_CDECL); print_assert(r >= 0);
 }
 
-void RegisterClasses(asIScriptEngine* engine)
+void RegisterClasses(asIScriptEngine* /*engine*/)
 {
 
 }

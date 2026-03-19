@@ -77,7 +77,7 @@ void error_callback(int error, const char* description)
 	print_log(get_localized_string(LANG_0895), error, description);
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
@@ -92,7 +92,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 static bool g_settings_changed = false;
 
-void drop_callback(GLFWwindow* window, int count, const char** paths)
+void drop_callback(GLFWwindow* /*window*/, int count, const char** paths)
 {
 	if (!g_app->isLoading && count > 0 && paths[0] && paths[0][0] != '\0')
 	{
@@ -117,7 +117,7 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 	}
 }
 
-void window_size_callback(GLFWwindow* window, int width, int height)
+void window_size_callback(GLFWwindow* /*window*/, int width, int height)
 {
 	if (g_settings.maximized || width == 0 || height == 0
 		|| (g_settings.windowWidth == width && g_settings.windowHeight == height))
@@ -129,7 +129,7 @@ void window_size_callback(GLFWwindow* window, int width, int height)
 	g_settings_changed = true;
 }
 
-void window_pos_callback(GLFWwindow* window, int x, int y)
+void window_pos_callback(GLFWwindow* /*window*/, int x, int y)
 {
 	if (g_settings.windowX != x || g_settings.windowY != y)
 	{
@@ -139,7 +139,7 @@ void window_pos_callback(GLFWwindow* window, int x, int y)
 	}
 }
 
-void window_maximize_callback(GLFWwindow* window, int maximized)
+void window_maximize_callback(GLFWwindow* /*window*/, int maximized)
 {
 	bool maximize = maximized == GLFW_TRUE;
 
@@ -150,24 +150,24 @@ void window_maximize_callback(GLFWwindow* window, int maximized)
 	}
 }
 
-void window_minimize_callback(GLFWwindow* window, int iconified)
+void window_minimize_callback(GLFWwindow* /*window*/, int iconified)
 {
 	g_app->is_minimized = iconified == GLFW_TRUE;
 }
 
-void window_focus_callback(GLFWwindow* window, int focused)
+void window_focus_callback(GLFWwindow* /*window*/, int focused)
 {
 	g_app->is_focused = focused == GLFW_TRUE;
 }
 
-void window_close_callback(GLFWwindow* window)
+void window_close_callback(GLFWwindow* /*window*/)
 {
 	g_app->is_closing = true;
 }
 
 int g_scroll = 0;
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
 {
 	g_scroll += (int)round(yoffset);
 }
@@ -238,8 +238,8 @@ Renderer::Renderer()
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
 	glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
 
-	unsigned char* img_dat = NULL;
-	unsigned int w, h;
+	//unsigned char* img_dat = NULL;
+	//unsigned int w, h;
 
 	auto loadTexHelper = [&](const char* path, const char* name, bool rgba) {
 		unsigned char* img_malloc = NULL;
@@ -1021,7 +1021,7 @@ void Renderer::renderLoop()
 					}
 
 					if (g_render_flags & RENDER_MAP_BOUNDARY) {
-						drawBox(SelectedMap->ents[0]->origin * -1, g_limits.maxMapBoundary * 2, COLOR4(0, 255, 0, 64));
+						drawBox(SelectedMap->ents[0]->origin * -1 + SelectedMap->getBspRender()->mapOffset, g_limits.maxMapBoundary * 2, COLOR4(0, 255, 0, 64));
 					}
 
 					if (hasCullbox) {
@@ -3292,10 +3292,13 @@ void Renderer::drawBox(vec3 center, float width, COLOR4 color) {
 }
 
 void Renderer::drawBox(vec3 mins, vec3 maxs, COLOR4 color) {
-	mins = vec3(mins.x, mins.z, -mins.y);
-	maxs = vec3(maxs.x, maxs.z, -maxs.y);
+	vec3 flippedMins = vec3(mins.x, mins.z, -mins.y);
+	vec3 flippedMaxs = vec3(maxs.x, maxs.z, -maxs.y);
 
-	cCube cube(mins, maxs, color);
+	vec3 realMins = vec3(std::min(flippedMins.x, flippedMaxs.x), std::min(flippedMins.y, flippedMaxs.y), std::min(flippedMins.z, flippedMaxs.z));
+	vec3 realMaxs = vec3(std::max(flippedMins.x, flippedMaxs.x), std::max(flippedMins.y, flippedMaxs.y), std::max(flippedMins.z, flippedMaxs.z));
+
+	cCube cube(realMins, realMaxs, color);
 
 	VertexBuffer buffer(g_app->colorShader, &cube, 6 * 6, GL_TRIANGLES, false);
 	buffer.drawFull();
@@ -3986,21 +3989,16 @@ void Renderer::updateEntConnectionPositions()
 }
 
 void Renderer::updateCullBox() {
-	if (!mapRenderers.size()) {
-		hasCullbox = false;
-		return;
-	}
-
-	Bsp* map = mapRenderers[0]->map;
-
 	cullMins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	cullMaxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	int findCount = 0;
-	for (Entity* ent : map->ents) {
-		if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
-			expandBoundingBox(ent->origin, cullMins, cullMaxs);
-			findCount++;
+	for (auto& rend : mapRenderers) {
+		for (Entity* ent : rend->map->ents) {
+			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
+				expandBoundingBox(ent->origin + rend->mapOffset, cullMins, cullMaxs);
+				findCount++;
+			}
 		}
 	}
 
@@ -4150,7 +4148,7 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, flo
 	scaleSelectedObject(map, modelIdx, dir, vec3());
 }
 
-void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool logging)
+void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool /*logging*/)
 {
 	bool scaleFromOrigin = std::fabs(fromDir.x) < EPSILON && std::fabs(fromDir.y) < EPSILON && std::fabs(fromDir.z) < EPSILON;
 
@@ -4796,7 +4794,7 @@ void Renderer::pasteEntAtOrigin(vec3 origin)
 	}
 }
 
-void Renderer::pasteEntsFromText(std::string text)
+void Renderer::pasteEntsFromText(std::string /*text*/)
 {
 	auto clipboardText = ImGui::GetClipboardText();
 	if (!clipboardText)
@@ -4896,6 +4894,7 @@ void Renderer::deleteEnts()
 		gui->entityListChanged = true;
 		map->getBspRender()->preRenderEnts();
 		map->getBspRender()->pushUndoState("Delete ents", FL_ENTITIES);
+		updateCullBox();
 	}
 }
 
@@ -5136,6 +5135,7 @@ void Renderer::updateEnts()
 		g_app->updateEntConnections();
 		g_app->updateEntConnectionPositions();
 	}
+	updateCullBox();
 }
 
 bool Renderer::isEntTransparent(const char* classname)
@@ -5266,4 +5266,85 @@ bool Renderer::hasCopiedEnt()
 		return true;
 	}
 	return false;
+}
+void Renderer::selectBoxEntities() {
+	Bsp* map = SelectedMap;
+	if (!map || !hasCullbox)
+		return;
+
+	vec3 mapOffset = map->getBspRender()->mapOffset;
+
+	for (size_t i = 1; i < map->ents.size(); i++) {
+		vec3 v = map->ents[i]->origin;
+		int modelIdx = map->ents[i]->getBspModelIdx();
+
+		bool isInside = false;
+		bool isCullEnt = map->ents[i]->hasKey("classname") && map->ents[i]->keyvalues["classname"] == "cull";
+		if (isCullEnt)
+			continue;
+
+		if (modelIdx != -1) {
+			vec3 mins, maxs;
+			map->get_model_vertex_bounds(modelIdx, mins, maxs);
+			mins += v + mapOffset;
+			maxs += v + mapOffset;
+			if (boxesIntersect(mins, maxs, cullMins, cullMaxs)) {
+				isInside = true;
+			}
+		}
+		else {
+			if (pointInBox(v + mapOffset, cullMins, cullMaxs)) {
+				isInside = true;
+			}
+		}
+
+		if (isInside) {
+			if (!pickInfo.IsSelectedEnt((int)i)) {
+				pickInfo.AddSelectedEnt((int)i);
+			}
+		}
+	}
+}
+
+void Renderer::selectBoxFaces() {
+	Bsp* map = SelectedMap;
+	if (!map || !hasCullbox)
+		return;
+
+	pickMode = PICK_FACE;
+
+	vec3 mapOffset = map->getBspRender()->mapOffset;
+	BSPMODEL& worldmodel = map->models[0];
+
+	for (int i = 0; i < worldmodel.nFaces; i++) {
+		int faceIdx = worldmodel.iFirstFace + i;
+		BSPFACE32& face = map->faces[faceIdx];
+
+		bool isInside = false;
+		for (int e = 0; e < face.nEdges; e++) {
+			int edgeIdx = map->surfedges[face.iFirstEdge + e];
+			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
+			int vertIdx = edgeIdx >= 0 ? edge.iVertex[0] : edge.iVertex[1];
+
+			vec3 v = map->verts[vertIdx];
+
+			if (pointInBox(v + mapOffset, cullMins, cullMaxs)) {
+				isInside = true;
+				break;
+			}
+		}
+
+		if (isInside) {
+			bool alreadySelected = false;
+			for (int selectedFace : pickInfo.selectedFaces) {
+				if (selectedFace == faceIdx) {
+					alreadySelected = true;
+					break;
+				}
+			}
+			if (!alreadySelected) {
+				selectFace(map, faceIdx, true);
+			}
+		}
+	}
 }

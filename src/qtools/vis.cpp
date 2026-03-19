@@ -174,11 +174,11 @@ int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 // iterationLeaves = number of leaves to decompress vis for
 // visDataLeafCount = total leaves in this map (exluding the shared solid leaf 0)
 // newNumLeaves = total leaves that will be in the map after merging is finished (again, excluding solid leaf 0)
-void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, unsigned char* output,
+void decompress_vis_lump(Bsp* /*map*/, BSPLEAF32* leafLump, unsigned char* visLump, unsigned char* output,
 	int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
 {
 	unsigned char* dest;
-	int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
+	//int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
 	int newVisRowSize = ((newNumLeaves + 63) & ~63) >> 3;
 
 	// calculate which bits of an uncompressed visibility row are used/unused

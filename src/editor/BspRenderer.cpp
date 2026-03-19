@@ -2981,7 +2981,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 }
 
 
-void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
+void BspRenderer::drawModelClipnodes(int modelIdx, bool /*highlight*/, int hullIdx)
 {
 	if (hullIdx <= -1)
 	{
@@ -3270,7 +3270,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 	}
 }
 
-void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
+void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass)
 {
 	// skip worldspawn
 	bool isAltPressed = g_app->pressed[GLFW_KEY_LEFT_ALT] || g_app->pressed[GLFW_KEY_RIGHT_ALT];

@@ -31,7 +31,7 @@ Winding::Winding(const Winding& other)
 }
 
 
-Winding::Winding(const BSPPLANE& plane, float epsilon)
+Winding::Winding(const BSPPLANE& plane, float /*epsilon*/)
 {
 	int             i;
 	float           max, v;

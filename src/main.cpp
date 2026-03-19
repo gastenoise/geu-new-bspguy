@@ -30,6 +30,9 @@ std::string g_version_string = "NewBSPGuy v4.71";
 
 
 #ifdef WIN32
+#ifdef APIENTRY
+#undef APIENTRY
+#endif
 #include <Windows.h>
 #ifdef WIN_XP_86
 #include <shellapi.h>

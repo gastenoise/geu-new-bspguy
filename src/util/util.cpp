@@ -8,6 +8,9 @@
 #include "log.h"
 
 #ifdef WIN32
+#ifdef APIENTRY
+#undef APIENTRY
+#endif
 #include <Windows.h>
 #include <Shlobj.h>
 #include <io.h>
@@ -2436,7 +2439,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 	return result;
 }
 
-void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
+void removeColinearPoints(std::vector<vec3>& verts, float /*epsilon*/) {
 
 	for (size_t i1 = 0; i1 < verts.size(); i1++)
 	{

@@ -684,7 +684,7 @@ static unsigned HuffmanTree_makeTable(HuffmanTree* tree) {
   size = headsize;
   for(i = 0; i < headsize; ++i) {
     unsigned l = maxlens[i];
-    if(l > FIRSTBITS) size += (1u << (l - FIRSTBITS));
+    if(l > FIRSTBITS) size += (size_t)(1u << (l - FIRSTBITS));
   }
   tree->table_len = (unsigned char*)lodepng_malloc(size * sizeof(*tree->table_len));
   tree->table_value = (unsigned short*)lodepng_malloc(size * sizeof(*tree->table_value));
@@ -703,7 +703,7 @@ static unsigned HuffmanTree_makeTable(HuffmanTree* tree) {
     if(l <= FIRSTBITS) continue;
     tree->table_len[i] = l;
     tree->table_value[i] = pointer;
-    pointer += (1u << (l - FIRSTBITS));
+    pointer += (unsigned short)(1u << (l - FIRSTBITS));
   }
   lodepng_free(maxlens);
 
@@ -727,7 +727,7 @@ static unsigned HuffmanTree_makeTable(HuffmanTree* tree) {
         unsigned index = reverse | (j << l);
         if(tree->table_len[index] != 16) return 55; /*invalid tree: long symbol shares prefix with short symbol*/
         tree->table_len[index] = l;
-        tree->table_value[index] = i;
+        tree->table_value[index] = (unsigned short)i;
       }
     } else {
       /*long symbol, shares prefix with other long symbols in first lookup table, needs second lookup*/
@@ -744,7 +744,7 @@ static unsigned HuffmanTree_makeTable(HuffmanTree* tree) {
         unsigned reverse2 = reverse >> FIRSTBITS; /* l - FIRSTBITS bits */
         unsigned index2 = start + (reverse2 | (j << (l - FIRSTBITS)));
         tree->table_len[index2] = l;
-        tree->table_value[index2] = i;
+        tree->table_value[index2] = (unsigned short)i;
       }
     }
   }
@@ -3723,7 +3723,7 @@ unsigned lodepng_compute_color_stats(LodePNGColorStats* stats,
   if(!numcolors_done) {
     for(i = 0; i < stats->numcolors; i++) {
       const unsigned char* color = &stats->palette[i * 4];
-      error = color_tree_add(&tree, color[0], color[1], color[2], color[3], i);
+      error = color_tree_add(&tree, color[0], color[1], color[2], color[3], (unsigned int)i);
       if(error) goto cleanup;
     }
   }
@@ -4726,7 +4726,7 @@ static unsigned readChunk_iCCP(LodePNGInfo* info, const LodePNGDecoderSettings* 
                           length, &zlibsettings);
   /*error: ICC profile larger than  decoder->max_icc_size*/
   if(error && size > zlibsettings.max_output_size) error = 113;
-  info->iccp_profile_size = size;
+  info->iccp_profile_size = (unsigned int)size;
   if(!error && !info->iccp_profile_size) error = 100; /*invalid ICC profile size*/
   return error;
 }
@@ -4995,18 +4995,18 @@ static void decodeGeneric(unsigned char** out, unsigned* w, unsigned* h,
     If the decompressed size does not match the prediction, the image must be corrupt.*/
     if(state->info_png.interlace_method == 0) {
       size_t bpp = lodepng_get_bpp(&state->info_png.color);
-      expected_size = lodepng_get_raw_size_idat(*w, *h, bpp);
+      expected_size = (unsigned int)lodepng_get_raw_size_idat(*w, *h, bpp);
     } else {
       size_t bpp = lodepng_get_bpp(&state->info_png.color);
       /*Adam-7 interlaced: expected size is the sum of the 7 sub-images sizes*/
       expected_size = 0;
-      expected_size += lodepng_get_raw_size_idat((*w + 7) >> 3, (*h + 7) >> 3, bpp);
-      if(*w > 4) expected_size += lodepng_get_raw_size_idat((*w + 3) >> 3, (*h + 7) >> 3, bpp);
-      expected_size += lodepng_get_raw_size_idat((*w + 3) >> 2, (*h + 3) >> 3, bpp);
-      if(*w > 2) expected_size += lodepng_get_raw_size_idat((*w + 1) >> 2, (*h + 3) >> 2, bpp);
-      expected_size += lodepng_get_raw_size_idat((*w + 1) >> 1, (*h + 1) >> 2, bpp);
-      if(*w > 1) expected_size += lodepng_get_raw_size_idat((*w + 0) >> 1, (*h + 1) >> 1, bpp);
-      expected_size += lodepng_get_raw_size_idat((*w + 0), (*h + 0) >> 1, bpp);
+      expected_size += (unsigned int)lodepng_get_raw_size_idat((*w + 7) >> 3, (*h + 7) >> 3, bpp);
+      if(*w > 4) expected_size += (unsigned int)lodepng_get_raw_size_idat((*w + 3) >> 3, (*h + 7) >> 3, bpp);
+      expected_size += (unsigned int)lodepng_get_raw_size_idat((*w + 3) >> 2, (*h + 3) >> 3, bpp);
+      if(*w > 2) expected_size += (unsigned int)lodepng_get_raw_size_idat((*w + 1) >> 2, (*h + 3) >> 2, bpp);
+      expected_size += (unsigned int)lodepng_get_raw_size_idat((*w + 1) >> 1, (*h + 1) >> 2, bpp);
+      if(*w > 1) expected_size += (unsigned int)lodepng_get_raw_size_idat((*w + 0) >> 1, (*h + 1) >> 1, bpp);
+      expected_size += (unsigned int)lodepng_get_raw_size_idat((*w + 0), (*h + 0) >> 1, bpp);
     }
 
     state->error = zlib_decompress(&scanlines, &scanlines_size, expected_size, idat, idatsize, &state->decoder.zlibsettings);
@@ -5201,7 +5201,7 @@ static unsigned addChunk_PLTE(ucvector* out, const LodePNGColorMode* info) {
     return 68; /*invalid palette size, it is only allowed to be 1-256*/
   }
 
-  CERROR_TRY_RETURN(lodepng_chunk_init(&chunk, out, info->palettesize * 3, "PLTE"));
+  CERROR_TRY_RETURN(lodepng_chunk_init(&chunk, out, (unsigned int)info->palettesize * 3, "PLTE"));
 
   for(i = 0; i != info->palettesize; ++i) {
     /*add all channels except alpha channel*/
@@ -5225,7 +5225,7 @@ static unsigned addChunk_tRNS(ucvector* out, const LodePNGColorMode* info) {
       --amount;
     }
     if(amount) {
-      CERROR_TRY_RETURN(lodepng_chunk_init(&chunk, out, amount, "tRNS"));
+      CERROR_TRY_RETURN(lodepng_chunk_init(&chunk, out, (unsigned int)amount, "tRNS"));
       /*add the alpha channel values from the palette*/
       for(i = 0; i != amount; ++i) chunk[8 + i] = info->palette[4 * i + 3];
     }
@@ -5259,7 +5259,7 @@ static unsigned addChunk_IDAT(ucvector* out, const unsigned char* data, size_t d
 
   error = zlib_compress(&zlib, &zlibsize, data, datasize, zlibsettings);
   if(!error) {
-    error = lodepng_chunk_createv(out, zlibsize, "IDAT", zlib);
+    error = lodepng_chunk_createv(out, (unsigned int)zlibsize, "IDAT", zlib);
   }
   lodepng_free(zlib);
   return error;
@@ -5276,7 +5276,7 @@ static unsigned addChunk_tEXt(ucvector* out, const char* keyword, const char* te
   size_t keysize = lodepng_strlen(keyword), textsize = lodepng_strlen(textstring);
   size_t size = keysize + 1 + textsize;
   if(keysize < 1 || keysize > 79) return 89; /*error: invalid keyword size*/
-  CERROR_TRY_RETURN(lodepng_chunk_init(&chunk, out, size, "tEXt"));
+  CERROR_TRY_RETURN(lodepng_chunk_init(&chunk, out, (unsigned int)size, "tEXt"));
   lodepng_memcpy(chunk + 8, keyword, keysize);
   chunk[8 + keysize] = 0; /*null termination char*/
   lodepng_memcpy(chunk + 9 + keysize, textstring, textsize);
@@ -5298,7 +5298,7 @@ static unsigned addChunk_zTXt(ucvector* out, const char* keyword, const char* te
                         (const unsigned char*)textstring, textsize, zlibsettings);
   if(!error) {
     size_t size = keysize + 2 + compressedsize;
-    error = lodepng_chunk_init(&chunk, out, size, "zTXt");
+    error = lodepng_chunk_init(&chunk, out, (unsigned int)size, "zTXt");
   }
   if(!error) {
     lodepng_memcpy(chunk + 8, keyword, keysize);
@@ -5329,7 +5329,7 @@ static unsigned addChunk_iTXt(ucvector* out, unsigned compress, const char* keyw
   }
   if(!error) {
     size_t size = keysize + 3 + langsize + 1 + transsize + 1 + (compress ? compressedsize : textsize);
-    error = lodepng_chunk_init(&chunk, out, size, "iTXt");
+    error = lodepng_chunk_init(&chunk, out, (unsigned int)size, "iTXt");
   }
   if(!error) {
     size_t pos = 8;
@@ -5442,7 +5442,7 @@ static unsigned addChunk_iCCP(ucvector* out, const LodePNGInfo* info, LodePNGCom
                         info->iccp_profile, info->iccp_profile_size, zlibsettings);
   if(!error) {
     size_t size = keysize + 2 + compressedsize;
-    error = lodepng_chunk_init(&chunk, out, size, "iCCP");
+    error = lodepng_chunk_init(&chunk, out, (unsigned int)size, "iCCP");
   }
   if(!error) {
     lodepng_memcpy(chunk + 8, info->iccp_name, keysize);
@@ -5556,7 +5556,7 @@ static size_t ilog2i(size_t i) {
   l = ilog2(i);
   /* approximate i*log2(i): l is integer logarithm, ((i - (1u << l)) << 1u)
   linearly approximates the missing fractional part multiplied by i */
-  return i * l + ((i - (1u << l)) << 1u);
+  return (size_t)i * l + ((size_t)(i - (1u << l)) << 1u);
 }
 
 static unsigned filter(unsigned char* out, const unsigned char* in, unsigned w, unsigned h,

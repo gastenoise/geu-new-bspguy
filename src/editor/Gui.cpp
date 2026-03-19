@@ -4707,7 +4707,7 @@ void Gui::drawMenuBar()
 						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
 					}
 					else {
-						map->delete_box_data(g_app->cullMins, g_app->cullMaxs);
+						map->delete_box_data(g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset);
 						rend->pushUndoState("Delete Boxed Data", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 
@@ -4717,6 +4717,26 @@ void Gui::drawMenuBar()
 					"engine with stricter map limits.\n\n"
 					"Create 2 cull entities from the \"Create\" menu to define the culling box. "
 					"A transparent red box will form between them.");
+
+				if (ImGui::MenuItem("Select Boxed Entities", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
+					if (!g_app->hasCullbox) {
+						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
+					}
+					else {
+						app->selectBoxEntities();
+					}
+				}
+				IMGUI_TOOLTIP(g, "Selects all entities inside of a box defined by 2 \"cull\" entities.");
+
+				if (ImGui::MenuItem("Select Boxed Faces", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
+					if (!g_app->hasCullbox) {
+						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
+					}
+					else {
+						app->selectBoxFaces();
+					}
+				}
+				IMGUI_TOOLTIP(g, "Selects all world model faces inside of a box defined by 2 \"cull\" entities.");
 				if (ImGui::MenuItem("Deduplicate Models", 0, false, rend && !app->isLoading && app->getSelectedMap()))
 				{
 					map->deduplicate_models();
@@ -4788,7 +4808,16 @@ void Gui::drawMenuBar()
 						"customize compile settings much.");
 					ImGui::EndMenu();
 				}
-				if (ImGui::MenuItem("Cull Entity", 0, false, app->getSelectedMap())) {
+				int cullCount = 0;
+				for (auto& r : mapRenderers) {
+					for (Entity* ent : r->map->ents) {
+						if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
+							cullCount++;
+						}
+					}
+				}
+
+				if (ImGui::MenuItem("Cull Entity", 0, false, app->getSelectedMap() && cullCount < 2)) {
 					Entity* newEnt = new Entity();
 					vec3 origin = (cameraOrigin + app->cameraForward * 100);
 					if (app->gridSnappingEnabled)
@@ -4797,6 +4826,7 @@ void Gui::drawMenuBar()
 					newEnt->addKeyvalue("classname", "cull");
 					map->ents.push_back(newEnt);
 					rend->pushUndoState("Cull Entity", FL_ENTITIES);
+					app->updateCullBox();
 				}
 				IMGUI_TOOLTIP(g, "Create a point entity for use with the culling tool. 2 of these define the bounding box for structure culling operations.\n");
 
@@ -6516,11 +6546,11 @@ void Gui::drawMenuBar()
 
 	if (g_app->pickInfo.selectedEnts.size() == 1)
 	{
-		Bsp* selectedMap = app->getSelectedMap();
-		if (selectedMap && (size_t)g_app->pickInfo.selectedEnts[0] < selectedMap->ents.size())
+		Bsp* selectedMap_2 = app->getSelectedMap();
+		if (selectedMap_2 && (size_t)g_app->pickInfo.selectedEnts[0] < selectedMap_2->ents.size())
 		{
-			Entity* ent = selectedMap->ents[g_app->pickInfo.selectedEnts[0]];
-			vec3 entOrigin = selectedMap->getEntOrigin(ent);
+			Entity* ent = selectedMap_2->ents[g_app->pickInfo.selectedEnts[0]];
+			vec3 entOrigin = selectedMap_2->getEntOrigin(ent);
 
 			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImGui::GetStyle().Colors[ImGuiCol_TitleBgActive]);
 			if (ImGui::BeginViewportSideBar("SecondaryStatus", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))

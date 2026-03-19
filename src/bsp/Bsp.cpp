@@ -7352,7 +7352,7 @@ bool Bsp::is_leaf_visible(int ileaf, vec3 pos) {
 	return isVisible;
 }
 
-bool Bsp::is_face_visible(int faceIdx, vec3 pos, vec3 angles) {
+bool Bsp::is_face_visible(int faceIdx, vec3 /*pos*/, vec3 /*angles*/) {
 	BSPFACE32& face = faces[faceIdx];
 	BSPPLANE& plane = planes[face.iPlane];
 	vec3 normal = plane.vNormal;
@@ -11478,7 +11478,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	renderer->pushUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 }
 
-void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl, bool export_csm, int grouping)
+void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool /*lightmapmode*/, bool with_mdl, bool export_csm, int grouping)
 {
 	if (!createDir(path))
 	{
@@ -14710,7 +14710,7 @@ void Bsp::setBspRender(BspRenderer* rnd)
 	renderer = rnd;
 }
 
-void Bsp::decalShoot(vec3 pos, const std::string& texname)
+void Bsp::decalShoot(vec3 /*pos*/, const std::string& /*texname*/)
 {
 	/*if (!renderer || renderer->faceMaths.empty())
 		return;
@@ -14834,7 +14834,7 @@ int Bsp::getFaceFromPlane(int iPlane)
 }
 
 
-int Bsp::getFaceFromVec(const vec3& pos, int modelIdx, int& content)
+int Bsp::getFaceFromVec(const vec3& pos, int modelIdx, int& /*content*/)
 {
 	if (modelIdx >= 0 && modelIdx < modelCount)
 	{

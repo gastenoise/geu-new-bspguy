@@ -368,6 +368,8 @@ public:
 	void selectFace(Bsp* map, int face, bool add = false);
 	void deselectFaces();
 	void selectEnt(Bsp* map, int entIdx, bool add = false);
+	void selectBoxEntities();
+	void selectBoxFaces();
 	void goToEnt(Bsp* map, int entIdx);
 	void goToCoords(float x, float y, float z);
 	void goToCoords(const vec3& pos);
