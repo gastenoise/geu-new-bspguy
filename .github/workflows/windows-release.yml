@@ -42,5 +42,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: bspguy-windows-x64
+        name: bspguy-revamped-windows-x64
         path: dist/bspguy/
