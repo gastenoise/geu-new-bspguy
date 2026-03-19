@@ -656,14 +656,33 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	int newModelIdx = map->create_model();
 	map->models[newModelIdx] = bspModel->models[0];
 
-	map->models[newModelIdx].iFirstFace = remap.faces[map->models[newModelIdx].iFirstFace];
-	map->models[newModelIdx].iHeadnodes[0] = map->models[newModelIdx].iHeadnodes[0] < 0 ? -1 : remap.nodes[map->models[newModelIdx].iHeadnodes[0]];
+	if (map->models[newModelIdx].iFirstFace >= 0 && map->models[newModelIdx].iFirstFace < (int)remap.faces.size())
+		map->models[newModelIdx].iFirstFace = remap.faces[map->models[newModelIdx].iFirstFace];
+
+	auto getRemappedLeaf = [&](int leafIdx) {
+		if (leafIdx >= 0 && leafIdx < (int)remap.leaves.size()) {
+			return ~(remap.leaves[leafIdx]);
+		}
+		return -1;
+	};
+
+	if (map->models[newModelIdx].iHeadnodes[0] < 0)
+		map->models[newModelIdx].iHeadnodes[0] = getRemappedLeaf(~map->models[newModelIdx].iHeadnodes[0]);
+	else if (map->models[newModelIdx].iHeadnodes[0] < (int)remap.nodes.size())
+		map->models[newModelIdx].iHeadnodes[0] = remap.nodes[map->models[newModelIdx].iHeadnodes[0]];
+	else
+		map->models[newModelIdx].iHeadnodes[0] = -1;
 
 	if (!noclip)
 	{
 		for (int i = 1; i < MAX_MAP_HULLS; i++)
 		{
-			map->models[newModelIdx].iHeadnodes[i] = map->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[map->models[newModelIdx].iHeadnodes[i]];
+			if (map->models[newModelIdx].iHeadnodes[i] < 0)
+				map->models[newModelIdx].iHeadnodes[i] = map->models[newModelIdx].iHeadnodes[i];
+			else if (map->models[newModelIdx].iHeadnodes[i] < (int)remap.clipnodes.size())
+				map->models[newModelIdx].iHeadnodes[i] = remap.clipnodes[map->models[newModelIdx].iHeadnodes[i]];
+			else
+				map->models[newModelIdx].iHeadnodes[i] = -1;
 		}
 	}
 	else
@@ -707,6 +726,129 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	map->getBspRender()->pushUndoState("IMPORT MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 
 	return newModelIdx;
+}
+
+void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const std::vector<int>& faceIdxs, int ExportType, bool movemodel)
+{
+	if (faceIdxs.empty()) return;
+
+	LumpState backupLumps = src_map->duplicate_lumps();
+
+	// Create a temporary model in the source map
+	int newModelIdx = src_map->create_model();
+
+	// Copy faces to a temporary buffer first to avoid pointer invalidation during append
+	std::vector<BSPFACE32> tempFaces;
+	for (int fid : faceIdxs) {
+		tempFaces.push_back(src_map->faces[fid]);
+	}
+
+	// Copy faces to the end of the face lump to make them contiguous for the model
+	int firstFace = src_map->faceCount;
+	for (auto& face : tempFaces) {
+		src_map->append_lump(LUMP_FACES, &face, sizeof(BSPFACE32));
+	}
+	src_map->update_lump_pointers();
+
+	src_map->models[newModelIdx].iFirstFace = firstFace;
+	src_map->models[newModelIdx].nFaces = (int)faceIdxs.size();
+
+	src_map->get_model_vertex_bounds(newModelIdx, src_map->models[newModelIdx].nMins, src_map->models[newModelIdx].nMaxs);
+
+	// Create a basic node tree for the model
+	// We first create a bounding box to ensure the model has finite boundaries.
+	int anyEmptyLeaf = src_map->create_leaf(CONTENTS_EMPTY);
+	src_map->create_node_box(src_map->models[newModelIdx].nMins, src_map->models[newModelIdx].nMaxs, &src_map->models[newModelIdx], false, anyEmptyLeaf);
+
+	// The node box creation sets iHeadnodes[0] to its first node.
+	// We find the 'solid' leaf of this box and replace it with our face-based tree.
+	int boxHeadNode = src_map->models[newModelIdx].iHeadnodes[0];
+
+	// We build a "ladder" of nodes, one for each face, to ensure all planes are represented.
+	int faceTreeHead = src_map->nodeCount;
+	int sharedSolidLeaf = 0;
+
+	for (int i = 0; i < (int)faceIdxs.size(); i++) {
+		BSPNODE32 node;
+		node.iFirstFace = firstFace + i;
+		node.nFaces = 1;
+		node.iPlane = src_map->faces[node.iFirstFace].iPlane;
+		node.nMins = src_map->models[newModelIdx].nMins;
+		node.nMaxs = src_map->models[newModelIdx].nMaxs;
+
+		int side = src_map->faces[node.iFirstFace].nPlaneSide;
+
+		if (i == (int)faceIdxs.size() - 1) {
+			node.iChildren[1 - side] = ~sharedSolidLeaf;
+		}
+		else {
+			node.iChildren[1 - side] = faceTreeHead + i + 1;
+		}
+		node.iChildren[side] = ~anyEmptyLeaf;
+
+		src_map->append_lump(LUMP_NODES, &node, sizeof(BSPNODE32));
+	}
+	src_map->update_lump_pointers();
+
+	// Connect the box tree to the face tree. The last node of the box (index 5 from boxHeadNode)
+	// points to ~sharedSolidLeaf. We change it to point to faceTreeHead.
+	src_map->nodes[boxHeadNode + 5].iChildren[1] = faceTreeHead;
+
+	// Manually generate clipnodes for all hulls with proper expansion
+	for (int hull = 1; hull < MAX_MAP_HULLS; hull++) {
+		vec3 hullExtent = default_hull_extents[hull];
+
+		// Create a bounding box for this hull
+		src_map->create_clipnode_box(src_map->models[newModelIdx].nMins, src_map->models[newModelIdx].nMaxs, &src_map->models[newModelIdx], hull, false, false);
+		int hullBoxHeadNode = src_map->models[newModelIdx].iHeadnodes[hull];
+
+		// Build expanded face ladder for this hull
+		int hullFaceTreeHead = src_map->clipnodeCount;
+		for (int i = 0; i < (int)faceIdxs.size(); i++) {
+			BSPFACE32& face = src_map->faces[firstFace + i];
+			BSPCLIPNODE32 clipnode;
+
+			BSPPLANE srcPlane = src_map->planes[face.iPlane];
+			vec3 absNormal = vec3(std::abs(srcPlane.vNormal.x), std::abs(srcPlane.vNormal.y), std::abs(srcPlane.vNormal.z));
+			float offset = dotProduct(absNormal, hullExtent);
+			if (face.nPlaneSide == 0)
+				srcPlane.fDist += offset;
+			else
+				srcPlane.fDist -= offset;
+
+			clipnode.iPlane = src_map->create_plane();
+			src_map->planes[clipnode.iPlane] = srcPlane;
+
+			int side = face.nPlaneSide;
+			if (i == (int)faceIdxs.size() - 1) {
+				clipnode.iChildren[1 - side] = CONTENTS_SOLID;
+			}
+			else {
+				clipnode.iChildren[1 - side] = hullFaceTreeHead + i + 1;
+			}
+			clipnode.iChildren[side] = CONTENTS_EMPTY;
+
+			src_map->append_lump(LUMP_CLIPNODES, &clipnode, sizeof(BSPCLIPNODE32));
+		}
+		src_map->update_lump_pointers();
+
+		// Link hull box to expanded face ladder
+		// The last node of the box (index 5 from hullBoxHeadNode) points to CONTENTS_SOLID.
+		// We change it to point to our expanded face ladder.
+		src_map->clipnodes[hullBoxHeadNode + 5].iChildren[1] = hullFaceTreeHead;
+	}
+
+	// Now export this temporary model
+	ExportModel(src_map, export_path, newModelIdx, ExportType, movemodel);
+
+	src_map->replace_lumps(backupLumps);
+	for (int i = 0; i < HEADER_LUMPS; i++) {
+		if (backupLumps.lumps[i].size() == 0 && src_map->lumps[i].size() > 0) {
+			src_map->lumps[i].clear();
+			src_map->bsp_header.lump[i].nLength = 0;
+		}
+	}
+	src_map->update_lump_pointers();
 }
 
 void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int ExportType, bool movemodel)
@@ -907,10 +1049,10 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 
 	bspModel->models[newModelIdx] = src_map->models[model_id];
 	bspModel->models[newModelIdx].iFirstFace = remap.faces[bspModel->models[newModelIdx].iFirstFace];
-	bspModel->models[newModelIdx].iHeadnodes[0] = remap.nodes[bspModel->models[newModelIdx].iHeadnodes[0]];
+	bspModel->models[newModelIdx].iHeadnodes[0] = bspModel->models[newModelIdx].iHeadnodes[0] < 0 ? -1 : remap.nodes[bspModel->models[newModelIdx].iHeadnodes[0]];
 	for (int i = 1; i < MAX_MAP_HULLS; i++)
 	{
-		bspModel->models[newModelIdx].iHeadnodes[i] = remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
+		bspModel->models[newModelIdx].iHeadnodes[i] = bspModel->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
 	}
 
 	/*STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
@@ -1339,6 +1481,58 @@ void Gui::drawBspContexMenu()
 
 				ImGui::EndMenu();
 			}
+
+			ImGui::Separator();
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading && map && !app->pickInfo.selectedFaces.empty()))
+			{
+				std::string timestamp = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+				std::string export_path = g_working_dir + map->bsp_name + "_faces_" + timestamp + ".bsp";
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_0467).c_str(), !app->isLoading))
+				{
+					if (ImGui::MenuItem(get_localized_string(LANG_0468).c_str(), 0, false, !app->isLoading))
+					{
+						ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 0, false);
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0469).c_str(), 0, false, !app->isLoading))
+					{
+						ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 2, false);
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0470).c_str(), 0, false, !app->isLoading))
+					{
+						ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 1, false);
+					}
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_0471).c_str(), !app->isLoading && map))
+				{
+					if (ImGui::MenuItem(get_localized_string(LANG_1070).c_str(), 0, false, !app->isLoading))
+					{
+						ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 0, true);
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_1071).c_str(), 0, false, !app->isLoading))
+					{
+						ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 2, true);
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_1072).c_str(), 0, false, !app->isLoading))
+					{
+						ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 1, true);
+					}
+					ImGui::EndMenu();
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted(get_localized_string(LANG_0472).c_str());
+				ImGui::EndTooltip();
+			}
+
 			/*ImGui::Separator();
 			if (ImGui::BeginMenu("Extact faces"))
 			{
@@ -3937,6 +4131,7 @@ void Gui::drawMenuBar()
 				{
 					createDir(g_working_dir + map->bsp_name + "/dump_textures/");
 
+					g_mutex_list[4].lock();
 					if (g_all_Textures.size() && rend)
 					{
 						for (const auto& tex : g_all_Textures)
@@ -3950,6 +4145,7 @@ void Gui::drawMenuBar()
 							}
 						}
 					}
+					g_mutex_list[4].unlock();
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -7585,6 +7781,7 @@ void Gui::drawTextureBrowser()
 	// persistent preview cache
 	static std::unordered_map<std::string, Texture*> previewCache;
 	static size_t lastAllTexturesCount = 0;
+	g_mutex_list[4].lock();
 	if (previewCache.empty() || g_all_Textures.size() != lastAllTexturesCount)
 	{
 		previewCache.clear();
@@ -7594,6 +7791,7 @@ void Gui::drawTextureBrowser()
 		}
 		lastAllTexturesCount = g_all_Textures.size();
 	}
+	g_mutex_list[4].unlock();
 
 	// pending WAD loads (limited per frame)
 	static std::vector<std::tuple<Wad*, int, std::string>> pendingWadLoads;
@@ -7634,7 +7832,9 @@ void Gui::drawTextureBrowser()
 		t->upload(Texture::TYPE_TEXTURE);
 		t->setWadName(basename(wad->filename));
 		previewCache[toLowerCase(texName)] = t;
+		g_mutex_list[4].lock();
 		lastAllTexturesCount = g_all_Textures.size();
+		g_mutex_list[4].unlock();
 	}
 
 	// Top selection info
@@ -10777,6 +10977,7 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox("Texture Filter", &renderTexturesFilter))
 			{
 				g_render_flags ^= RENDER_TEXTURES_NOFILTER;
+				g_mutex_list[4].lock();
 				for (auto& tex : g_all_Textures)
 				{
 					bool filternoneed = g_render_flags & RENDER_TEXTURES_NOFILTER;
@@ -10786,6 +10987,7 @@ void Gui::drawSettings()
 						tex->upload(tex->type);
 					}
 				}
+				g_mutex_list[4].unlock();
 			}
 			if (ImGui::Checkbox(get_localized_string(LANG_0781).c_str(), &renderLightmaps))
 			{
@@ -11430,7 +11632,9 @@ void Gui::drawLimits()
 					{
 						stats.clear();
 
+						g_mutex_list[4].lock();
 						stats.emplace_back(calcStat("GL_TEXTURES", (unsigned int)g_all_Textures.size(), 0, false));
+						g_mutex_list[4].unlock();
 						stats.emplace_back(calcStat("models", map->modelCount, g_limits.maxMapModels, false));
 						stats.emplace_back(calcStat("planes", map->planeCount, map->is_bsp2 ? INT_MAX : MAX_MAP_PLANES, false));
 						stats.emplace_back(calcStat("vertexes", map->vertCount, MAX_MAP_VERTS, false));

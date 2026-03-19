@@ -35,6 +35,7 @@ struct LeafDebug
 };
 
 extern size_t totalBspStructs;
+extern vec3 default_hull_extents[MAX_MAP_HULLS];
 
 class Bsp
 {

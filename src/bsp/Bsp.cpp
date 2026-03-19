@@ -7410,7 +7410,7 @@ int Bsp::count_visible_polys(vec3 pos, vec3 angles) {
 
 void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 {
-	if (iFace > faceCount)
+	if (iFace < 0 || iFace >= faceCount)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0144));
 		return;
@@ -7420,23 +7420,34 @@ void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 
 	for (int e = 0; e < face.nEdges; e++)
 	{
-		int edgeIdx = surfedges[face.iFirstEdge + e];
-		BSPEDGE32& edge = edges[abs(edgeIdx)];
+		int sIdx = face.iFirstEdge + e;
+		if (sIdx < 0 || sIdx >= surfedgeCount) continue;
+		int edgeIdx = surfedges[sIdx];
+		int aEdgeIdx = abs(edgeIdx);
+		if (aEdgeIdx < 0 || aEdgeIdx >= edgeCount) continue;
+
+		BSPEDGE32& edge = edges[aEdgeIdx];
 		int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 
-		usage->surfEdges[face.iFirstEdge + e] = true;
-		usage->edges[abs(edgeIdx)] = true;
-		usage->verts[vertIdx] = true;
+		usage->surfEdges[sIdx] = true;
+		usage->edges[aEdgeIdx] = true;
+		if (vertIdx >= 0 && vertIdx < vertCount)
+			usage->verts[vertIdx] = true;
 	}
 
-	usage->texInfo[face.iTextureInfo] = true;
-	usage->planes[face.iPlane] = true;
-	usage->textures[texinfos[face.iTextureInfo].iMiptex] = true;
+	if (face.iTextureInfo >= 0 && face.iTextureInfo < texinfoCount) {
+		usage->texInfo[face.iTextureInfo] = true;
+		int mip = texinfos[face.iTextureInfo].iMiptex;
+		if (mip >= 0 && mip < textureCount)
+			usage->textures[mip] = true;
+	}
+	if (face.iPlane >= 0 && face.iPlane < planeCount)
+		usage->planes[face.iPlane] = true;
 }
 
 void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 {
-	if (iNode > nodeCount)
+	if (iNode < 0 || iNode >= nodeCount)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0145));
 		return;
@@ -7444,7 +7455,8 @@ void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 	BSPNODE32& node = nodes[iNode];
 
 	usage->nodes[iNode] = true;
-	usage->planes[node.iPlane] = true;
+	if (node.iPlane >= 0 && node.iPlane < planeCount)
+		usage->planes[node.iPlane] = true;
 
 	for (int i = 0; i < node.nFaces; i++)
 	{
@@ -7459,21 +7471,26 @@ void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 		}
 		else if (!skipLeaves)
 		{
-			BSPLEAF32& leaf = leaves[~node.iChildren[i]];
-			for (int n = 0; n < leaf.nMarkSurfaces; n++)
-			{
-				usage->markSurfs[leaf.iFirstMarkSurface + n] = true;
-				mark_face_structures(marksurfs[leaf.iFirstMarkSurface + n], usage);
+			int leafIdx = ~node.iChildren[i];
+			if (leafIdx >= 0 && leafIdx < leafCount) {
+				BSPLEAF32& leaf = leaves[leafIdx];
+				for (int n = 0; n < leaf.nMarkSurfaces; n++)
+				{
+					int msIdx = leaf.iFirstMarkSurface + n;
+					if (msIdx >= 0 && msIdx < marksurfCount) {
+						usage->markSurfs[msIdx] = true;
+						mark_face_structures(marksurfs[msIdx], usage);
+					}
+				}
+				usage->leaves[leafIdx] = true;
 			}
-
-			usage->leaves[~node.iChildren[i]] = true;
 		}
 	}
 }
 
 void Bsp::mark_clipnode_structures(int iNode, STRUCTUSAGE* usage)
 {
-	if (iNode > clipnodeCount)
+	if (iNode < 0 || iNode >= clipnodeCount)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0146));
 		return;
@@ -7481,7 +7498,8 @@ void Bsp::mark_clipnode_structures(int iNode, STRUCTUSAGE* usage)
 	BSPCLIPNODE32& node = clipnodes[iNode];
 
 	usage->clipnodes[iNode] = true;
-	usage->planes[node.iPlane] = true;
+	if (node.iPlane >= 0 && node.iPlane < planeCount)
+		usage->planes[node.iPlane] = true;
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -9292,7 +9310,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
-		if (usage.planes[i])
+		if (usage.planes[i] && i < (int)remap.planes.size())
 		{
 			remap.planes[i] = targetMap->planeCount + (int)newPlanes.size();
 			newPlanes.push_back(this->planes[i]);
@@ -9301,7 +9319,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.verts; i++)
 	{
-		if (usage.verts[i])
+		if (usage.verts[i] && i < (int)remap.verts.size())
 		{
 			remap.verts[i] = targetMap->vertCount + (int)newVerts.size();
 			newVerts.push_back(this->verts[i]);
@@ -9310,27 +9328,35 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.edges; i++)
 	{
-		if (usage.edges[i])
+		if (usage.edges[i] && i < (int)remap.edges.size())
 		{
 			remap.edges[i] = targetMap->edgeCount + (int)newEdges.size();
 
 			BSPEDGE32 edge = this->edges[i];
-			for (int k = 0; k < 2; k++)
-				edge.iVertex[k] = remap.verts[edge.iVertex[k]];
+			for (int k = 0; k < 2; k++) {
+				if (edge.iVertex[k] >= 0 && edge.iVertex[k] < (int)remap.verts.size())
+					edge.iVertex[k] = remap.verts[edge.iVertex[k]];
+			}
 			newEdges.push_back(edge);
 		}
 	}
 
 	for (unsigned int i = 0; i < usage.count.surfEdges; i++)
 	{
-		if (usage.surfEdges[i])
+		if (usage.surfEdges[i] && i < (int)remap.surfEdges.size())
 		{
 			remap.surfEdges[i] = targetMap->surfedgeCount + (int)newSurfedges.size();
 
-			int surfedge = remap.edges[abs(this->surfedges[i])];
-			if (surfedges[i] < 0)
-				surfedge = -surfedge;
-			newSurfedges.push_back(surfedge);
+			int edgeIdx = abs(this->surfedges[i]);
+			if (edgeIdx < (int)remap.edges.size()) {
+				int surfedge = remap.edges[edgeIdx];
+				if (this->surfedges[i] < 0)
+					surfedge = -surfedge;
+				newSurfedges.push_back(surfedge);
+			}
+			else {
+				newSurfedges.push_back(0);
+			}
 		}
 	}
 
@@ -9339,10 +9365,10 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.texInfos; i++)
 	{
-		if (usage.texInfo[i])
+		if (usage.texInfo[i] && i < (int)remap.texInfo.size())
 		{
 			BSPTEXTUREINFO texinfo = texinfos[i];
-			if (texinfo.iMiptex >= 0)
+			if (texinfo.iMiptex >= 0 && texinfo.iMiptex < textureCount)
 			{
 				int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
 				if (texOffset >= 0 && !usedmips.count(texinfo.iMiptex))
@@ -9379,14 +9405,17 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	int lightmapAppendSz = 0;
 	for (unsigned int i = 0; i < usage.count.faces; i++)
 	{
-		if (usage.faces[i])
+		if (usage.faces[i] && i < (int)remap.faces.size())
 		{
 			remap.faces[i] = targetMap->faceCount + (int)newFaces.size();
 
 			BSPFACE32 face = faces[i];
-			face.iFirstEdge = remap.surfEdges[face.iFirstEdge];
-			face.iPlane = remap.planes[face.iPlane];
-			face.iTextureInfo = remap.texInfo[face.iTextureInfo];
+			if (face.iFirstEdge >= 0 && face.iFirstEdge < (int)remap.surfEdges.size())
+				face.iFirstEdge = remap.surfEdges[face.iFirstEdge];
+			if (face.iPlane >= 0 && face.iPlane < (int)remap.planes.size())
+				face.iPlane = remap.planes[face.iPlane];
+			if (face.iTextureInfo >= 0 && face.iTextureInfo < (int)remap.texInfo.size())
+				face.iTextureInfo = remap.texInfo[face.iTextureInfo];
 
 			// TODO: Check if face even has lighting
 			int size[2];
@@ -9421,23 +9450,25 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	{
 		for (unsigned int i = 0; i < usage.count.markSurfs; i++)
 		{
-			if (usage.markSurfs[i])
+			if (usage.markSurfs[i] && i < (int)remap.markSurfs.size())
 			{
 				remap.markSurfs[i] = targetMap->marksurfCount + (int)newMarkSurfs.size();
-				int marksurf = remap.faces[this->marksurfs[i]];
+				int msFaceIdx = this->marksurfs[i];
+				int marksurf = (msFaceIdx >= 0 && msFaceIdx < (int)remap.faces.size()) ? remap.faces[msFaceIdx] : 0;
 				newMarkSurfs.push_back(marksurf);
 			}
 		}
 
 		for (unsigned int i = 0; i < usage.count.leaves; i++)
 		{
-			if (usage.leaves[i])
+			if (usage.leaves[i] && i < (int)remap.leaves.size())
 			{
 				remap.leaves[i] = targetMap->leafCount + (int)newLeafs.size();
 				BSPLEAF32 leaf = this->leaves[i];
 				// no visdata at this time
 				leaf.nVisOffset = -1;
-				leaf.iFirstMarkSurface = remap.markSurfs[leaf.iFirstMarkSurface];
+				if (leaf.iFirstMarkSurface >= 0 && leaf.iFirstMarkSurface < (int)remap.markSurfs.size())
+					leaf.iFirstMarkSurface = remap.markSurfs[leaf.iFirstMarkSurface];
 				newLeafs.push_back(leaf);
 			}
 		}
@@ -9445,7 +9476,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.nodes; i++)
 	{
-		if (usage.nodes[i])
+		if (usage.nodes[i] && i < (int)remap.nodes.size())
 		{
 			remap.nodes[i] = targetMap->nodeCount + (int)newNodes.size();
 			newNodes.push_back(this->nodes[i]);
@@ -9457,26 +9488,36 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	for (size_t i = 0; i < newNodes.size(); i++)
 	{
 		BSPNODE32& node = newNodes[i];
-		node.iFirstFace = remap.faces[node.iFirstFace];
-		node.iPlane = remap.planes[node.iPlane];
+		if (node.iFirstFace >= 0 && node.iFirstFace < (int)remap.faces.size())
+			node.iFirstFace = remap.faces[node.iFirstFace];
+		if (node.iPlane >= 0 && node.iPlane < (int)remap.planes.size())
+			node.iPlane = remap.planes[node.iPlane];
 
 		for (int k = 0; k < 2; k++)
 		{
 			if (node.iChildren[k] >= 0)
 			{
-				node.iChildren[k] = remap.nodes[node.iChildren[k]];
+				if (node.iChildren[k] < (int)remap.nodes.size())
+					node.iChildren[k] = remap.nodes[node.iChildren[k]];
+				else if (forExport)
+					node.iChildren[k] = -1;
 			}
 			else if (forExport)
 			{
 				int leafIdx = ~node.iChildren[k];
-				if (leafIdx == 0)
-				{
-					node.iChildren[k] = -1;
-					if (~(remap.leaves[leafIdx]) != -1)
-						found_zero_leaf = true;
+				if (leafIdx >= 0 && leafIdx < (int)remap.leaves.size()) {
+					if (leafIdx == 0)
+					{
+						node.iChildren[k] = -1;
+						if (~(remap.leaves[leafIdx]) != -1)
+							found_zero_leaf = true;
+					}
+					else
+						node.iChildren[k] = ~(remap.leaves[leafIdx]);
 				}
-				else
-					node.iChildren[k] = ~(remap.leaves[leafIdx]);
+				else {
+					node.iChildren[k] = -1;
+				}
 			}
 		}
 	}
@@ -9500,7 +9541,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.clipnodes; i++)
 	{
-		if (usage.clipnodes[i])
+		if (usage.clipnodes[i] && i < (int)remap.clipnodes.size())
 		{
 			remap.clipnodes[i] = targetMap->clipnodeCount + (int)newClipnodes.size();
 			newClipnodes.push_back(this->clipnodes[i]);
@@ -9510,13 +9551,17 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	for (size_t i = 0; i < newClipnodes.size(); i++)
 	{
 		BSPCLIPNODE32& clipnode = newClipnodes[i];
-		clipnode.iPlane = remap.planes[clipnode.iPlane];
+		if (clipnode.iPlane >= 0 && clipnode.iPlane < (int)remap.planes.size())
+			clipnode.iPlane = remap.planes[clipnode.iPlane];
 
 		for (int k = 0; k < 2; k++)
 		{
 			if (clipnode.iChildren[k] >= 0)
 			{
-				clipnode.iChildren[k] = remap.clipnodes[clipnode.iChildren[k]];
+				if (clipnode.iChildren[k] < (int)remap.clipnodes.size())
+					clipnode.iChildren[k] = remap.clipnodes[clipnode.iChildren[k]];
+				else
+					clipnode.iChildren[k] = -1;
 			}
 		}
 	}

@@ -177,6 +177,7 @@ private:
 	void checkValidHulls();
 	void reloadLimits();
 	void ExportOneBigLightmap(Bsp* map);
+	void ExportFaceModel(Bsp* src_map, const std::string& export_path, const std::vector<int>& faceIdxs, int ExportType, bool movemodel);
 	void loadFonts();
 	void checkFaceErrors();
 };
