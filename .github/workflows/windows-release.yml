@@ -10,6 +10,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build bspguy-revamped (Windows x64)
@@ -22,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.0
         with:
           submodules: recursive
           fetch-depth: 0
@@ -54,7 +57,7 @@ jobs:
           Compress-Archive -Path dist/${{ env.APP_NAME }}/* -DestinationPath "dist/${{ env.ARCHIVE_NAME }}" -Force
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.3.3
         with:
           name: ${{ env.APP_NAME }}-windows-x64
           path: dist/${{ env.ARCHIVE_NAME }}
@@ -72,7 +75,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.0
         with:
           fetch-depth: 0
 
@@ -85,7 +88,7 @@ jobs:
           git push origin "${RELEASE_VERSION}"
 
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.7
         with:
           name: ${{ env.APP_NAME }}-windows-x64
           path: release
