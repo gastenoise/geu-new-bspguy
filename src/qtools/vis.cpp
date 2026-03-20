@@ -3,7 +3,6 @@
 #include "bsptypes.h"
 #include "Bsp.h"
 #include "log.h"
-#include <unordered_map>
 
 bool g_debug_shift = false;
 
@@ -147,42 +146,25 @@ int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 
 	if (byteShifts > 0)
 	{
+		// TODO: detect overflows here too
 		if (shift > 0)
 		{
+			unsigned char* temp = new unsigned char[g_limits.maxMapLeaves / 8];
+
 			int startByte = (offsetLeaf + bitShifts) / 8;
 			int moveSize = len - (startByte + byteShifts);
 
-			if (moveSize > 0)
-			{
-				unsigned char* temp = new unsigned char[moveSize];
-				memcpy(temp, (unsigned char*)vis + startByte, moveSize);
-				memset((unsigned char*)vis + startByte, 0, byteShifts);
-				memcpy((unsigned char*)vis + startByte + byteShifts, temp, moveSize);
-				delete[] temp;
-			}
-			else
-			{
-				memset((unsigned char*)vis + startByte, 0, len - startByte);
-			}
+			memcpy(temp, (unsigned char*)vis + startByte, moveSize);
+			memset((unsigned char*)vis + startByte, 0, byteShifts);
+			memcpy((unsigned char*)vis + startByte + byteShifts, temp, moveSize);
+
+			delete[] temp;
 		}
 		else
 		{
-			int startByte = (offsetLeaf - bitShifts) / 8;
-			int moveSize = len - (startByte + byteShifts);
-
-			if (moveSize > 0)
-			{
-				unsigned char* temp = new unsigned char[moveSize];
-				memcpy(temp, (unsigned char*)vis + startByte + byteShifts, moveSize);
-				memset((unsigned char*)vis + startByte + moveSize, 0, byteShifts);
-				memcpy((unsigned char*)vis + startByte, temp, moveSize);
-				delete[] temp;
-			}
-			else
-			{
-				memset((unsigned char*)vis, 0, startByte + byteShifts);
-			}
+			// TODO LOL
 		}
+
 	}
 
 	return overflow;
@@ -233,10 +215,9 @@ void decompress_vis_lump(Bsp* /*map*/, BSPLEAF32* leafLump, unsigned char* visLu
 			if (leafLump[i + 1].nVisOffset >= visLumpMemSize)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0995), leafLump[i + 1].nVisOffset, visLumpMemSize);
-				// g_progress.clear();
-				// g_progress = ProgressMeter();
-				// return;
-				continue;
+				g_progress.clear();
+				g_progress = ProgressMeter();
+				return;
 			}
 			// Tracing ... 
 			// print_log(get_localized_string(LANG_0996),leafLump[i].nVisOffset,visLumpMemSize);
@@ -293,9 +274,10 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 	{
 		if (src >= startsrc + src_length)
 		{
-			// Robustness: if we ran out of source data, just zero out the rest of the row
-			memset(out, 0, row - (out - dest));
-			return true;
+			print_log(PRINT_RED | PRINT_INTENSITY,
+				get_localized_string(LANG_0999),
+				(int)(src - startsrc), src_length);
+			return false;
 		}
 
 		if (*src) 
@@ -314,9 +296,10 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 
 		if (src + 1 >= startsrc + src_length)
 		{
-			// Robustness: if we ran out of source data, just zero out the rest of the row
-			memset(out, 0, row - (out - dest));
-			return true;
+			print_log(PRINT_RED | PRINT_INTENSITY,
+				get_localized_string(LANG_0999),
+				(int)(src - startsrc), src_length);
+			return false;
 		}
 
 		c = src[1];
@@ -410,40 +393,24 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	g_progress.update("Compress vis", iterLeaves);
 
 	int* sharedRows = new int[iterLeaves];
-
-	auto hasher = [&](const unsigned char* data) {
-		size_t hash = 0;
-		for (unsigned int i = 0; i < g_bitbytes; i++) {
-			hash ^= (size_t)data[i] + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-		}
-		return hash;
-	};
-
-	auto equal = [&](const unsigned char* a, const unsigned char* b) {
-		return memcmp(a, b, g_bitbytes) == 0;
-	};
-
-	std::unordered_map<size_t, std::vector<int>> hash_to_indices;
-
 	for (int i = 0; i < iterLeaves; i++)
 	{
 		src = uncompressed + i * g_bitbytes;
-		size_t h = hasher(src);
 
 		sharedRows[i] = i;
-		if (hash_to_indices.count(h)) {
-			for (int k : hash_to_indices[h]) {
-				if (equal(src, uncompressed + k * g_bitbytes)) {
-					sharedRows[i] = k;
-					break;
-				}
+		for (int k = 0; k < i; k++)
+		{
+			if (sharedRows[k] != k)
+			{
+				continue; // already compared in an earlier row
+			}
+			unsigned char* previous = uncompressed + k * g_bitbytes;
+			if (memcmp(src, previous, g_bitbytes) == 0)
+			{
+				sharedRows[i] = k;
+				break;
 			}
 		}
-
-		if (sharedRows[i] == i) {
-			hash_to_indices[h].push_back(i);
-		}
-
 		g_progress.tick();
 	}
 
@@ -489,13 +456,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1003), (void*)vismap_p, (void*)(output + bufferSize));
 
-			// Fill remaining leafs with a safe value before returning
-			for (int j = i; j < iterLeaves; j++) {
-				if (j + 1 < maxLeafs) leafs[j + 1].nVisOffset = -1;
-			}
-
 			delete[] sharedRows;
-			delete[] compressed;
 			return (int)(vismap_p - output);
 		}
 

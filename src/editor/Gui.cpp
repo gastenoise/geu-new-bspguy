@@ -11313,7 +11313,7 @@ void Gui::drawMergeWindow()
 	static bool NoRipent = false;
 	static bool NoStyles = false;
 	static bool NoScript = false;
-	static bool VerticalMerge = false;
+	static bool OverlapMerge = false;
 	static vec3 OverlapGap = vec3(0, 0, 512.0f);
 
 	bool addNew = false;
@@ -11367,17 +11367,12 @@ void Gui::drawMergeWindow()
 		ImGui::Checkbox(get_localized_string(LANG_0831).c_str(), &NoRipent);
 		ImGui::Checkbox(get_localized_string(LANG_0832).c_str(), &NoScript);
 		ImGui::Checkbox("Skip lightstyles merging", &NoStyles);
-		ImGui::Checkbox(get_localized_string(LANG_1181).c_str(), &VerticalMerge);
-		if (VerticalMerge)
+		ImGui::Checkbox(get_localized_string(LANG_1181).c_str(), &OverlapMerge);
+		if (OverlapMerge)
 		{
-			ImGui::SetNextItemWidth(100);
-			ImGui::InputFloat(get_localized_string(LANG_1183).c_str(), &OverlapGap.x);
 			ImGui::SameLine();
-			ImGui::SetNextItemWidth(100);
-			ImGui::InputFloat(get_localized_string(LANG_1184).c_str(), &OverlapGap.y);
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(100);
-			ImGui::InputFloat(get_localized_string(LANG_1185).c_str(), &OverlapGap.z);
+			ImGui::SetNextItemWidth(200);
+			ImGui::InputFloat3(get_localized_string(LANG_1182).c_str(), &OverlapGap.x);
 		}
 
 		if (ImGui::Button(get_localized_string(LANG_1122).c_str(), ImVec2(120, 0)))
@@ -11441,7 +11436,7 @@ void Gui::drawMergeWindow()
 					print_log("\n");
 				}
 				BspMerger merger;
-				MergeResult result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, false, NoStyles, VerticalMerge, OverlapGap);
+				MergeResult result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, false, NoStyles, OverlapMerge, OverlapGap);
 
 				print_log("\n");
 				if (result.map && result.map->isValid())

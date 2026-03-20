@@ -177,7 +177,7 @@ int merge_maps()
 	std::string output_name = g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile;
 
 	BspMerger merger;
-	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-vertical"), vec3(0, 0, g_cmdLine.hasOption("-vgap") ? (float)g_cmdLine.getOptionInt("-vgap") : 512.0f));
+	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-overlap"), g_cmdLine.hasOption("-overlapgap") ? g_cmdLine.getOptionVector("-overlapgap") : vec3(0, 0, 512.0f));
 
 	print_log("\n");
 	if (result.map && result.map->validate() && result.map->isValid())
@@ -578,8 +578,8 @@ void print_help(const std::string& command)
 			"                 entities, and some ents might not spawn properly. The benefit\n"
 			"                 to this flag is that you don't have deal with script setup.\n"
 			"  -gap \"X,Y,Z\" : Amount of extra space to add between each map\n"
-			"  -vertical    : Vertical merge mode.\n"
-			"  -vgap #      : Vertical gap between maps (default 512).\n"
+			"  -overlap     : GEU overlap merge mode.\n"
+			"  -overlapgap \"X,Y,Z\" : Overlap gap between maps (default \"0,0,512\").\n"
 			"  -v\n"
 			"  -verbose     : Verbose console output.\n"
 		);

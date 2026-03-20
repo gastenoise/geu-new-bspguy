@@ -57,10 +57,10 @@ public:
 
 
 	// wrapper around BSP data merging for nicer console output
-	void merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultName, bool overlapMerge = false);
+	void merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultName);
 
 	// merge BSP data
-	bool merge(Bsp& mapA, Bsp& mapB, bool modelMerge = false, bool overlapMerge = false);
+	bool merge(Bsp& mapA, Bsp& mapB, bool modelMerge = false);
 
 	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool overlapMerge = false, vec3 overlapGap = vec3(0, 0, 512.0f));
 
@@ -86,13 +86,13 @@ public:
 	void merge_marksurfs(Bsp& mapA, Bsp& mapB);
 	void merge_edges(Bsp& mapA, Bsp& mapB);
 	void merge_surfedges(Bsp& mapA, Bsp& mapB);
-	void merge_nodes(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
-	void merge_clipnodes(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
-	void merge_models(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
-	void merge_vis(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
+	void merge_nodes(Bsp& mapA, Bsp& mapB);
+	void merge_clipnodes(Bsp& mapA, Bsp& mapB);
+	void merge_models(Bsp& mapA, Bsp& mapB);
+	void merge_vis(Bsp& mapA, Bsp& mapB);
 	void merge_lighting(Bsp& mapA, Bsp& mapB);
 
-	void create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane, bool overlapMerge = false);
+	void create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane);
 
 
 	// remapped structure indexes for mapB when merging
