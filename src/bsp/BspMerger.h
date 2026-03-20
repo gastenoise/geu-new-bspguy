@@ -53,16 +53,16 @@ public:
 	// noripent - don't change any entity logic
 	// noscript - don't add support for the bspguy map script (worse performance + buggy, but simpler)
 
-	MergeResult merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles, bool verticalMerge = false, float verticalGap = 512.0f);
+	MergeResult merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles, bool overlapMerge = false, vec3 overlapGap = vec3(0, 0, 512.0f));
 
 
 	// wrapper around BSP data merging for nicer console output
-	void merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultName);
+	void merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultName, bool overlapMerge = false);
 
 	// merge BSP data
-	bool merge(Bsp& mapA, Bsp& mapB, bool modelMerge = false);
+	bool merge(Bsp& mapA, Bsp& mapB, bool modelMerge = false, bool overlapMerge = false);
 
-	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool verticalMerge = false, float verticalGap = 512.0f);
+	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool overlapMerge = false, vec3 overlapGap = vec3(0, 0, 512.0f));
 
 	// for maps in a series:
 	// - changelevels should be replaced with teleports or respawn triggers
@@ -86,13 +86,13 @@ public:
 	void merge_marksurfs(Bsp& mapA, Bsp& mapB);
 	void merge_edges(Bsp& mapA, Bsp& mapB);
 	void merge_surfedges(Bsp& mapA, Bsp& mapB);
-	void merge_nodes(Bsp& mapA, Bsp& mapB);
-	void merge_clipnodes(Bsp& mapA, Bsp& mapB);
-	void merge_models(Bsp& mapA, Bsp& mapB);
-	void merge_vis(Bsp& mapA, Bsp& mapB);
+	void merge_nodes(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
+	void merge_clipnodes(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
+	void merge_models(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
+	void merge_vis(Bsp& mapA, Bsp& mapB, bool overlapMerge = false);
 	void merge_lighting(Bsp& mapA, Bsp& mapB);
 
-	void create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane);
+	void create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane, bool overlapMerge = false);
 
 
 	// remapped structure indexes for mapB when merging

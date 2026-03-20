@@ -4,7 +4,7 @@
 #include "log.h"
 
 
-MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles, bool verticalMerge, float verticalGap)
+MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles, bool overlapMerge, vec3 overlapGap)
 {
 	MergeResult result;
 	result.fpath = "";
@@ -129,7 +129,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 	}
 
 
-	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap, nomove, result, verticalMerge, verticalGap);
+	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap, nomove, result, overlapMerge, overlapGap);
 
 
 	print_log(get_localized_string(LANG_0220));
@@ -186,7 +186,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 				{
 					//print_log(get_localized_string(LANG_0222),x,y,z,0,y,z);
 					std::string merge_name = ++mergeCount < maps.size() ? "row_" + std::to_string(rowId) : "result";
-					merge(rowStart, block, merge_name);
+					merge(rowStart, block, merge_name, overlapMerge);
 				}
 			}
 			rowId++;
@@ -206,7 +206,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 			{
 				//print_log(get_localized_string(LANG_1042),0,y,z,0,0,z);
 				std::string merge_name = ++mergeCount < maps.size() ? "layer_" + std::to_string(colId) : "result";
-				merge(colStart, block, merge_name);
+				merge(colStart, block, merge_name, overlapMerge);
 			}
 		}
 		colId++;
@@ -221,7 +221,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 		if (z != 0)
 		{
 			//print_log(get_localized_string(LANG_1147),0,0,z,0,0,0);
-			merge(layerStart, block, "result");
+			merge(layerStart, block, "result", overlapMerge);
 		}
 	}
 
@@ -257,17 +257,17 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 	return result;
 }
 
-void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
+void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType, bool overlapMerge)
 {
 	std::string thisName = dst.merge_name.size() ? dst.merge_name : dst.map->bsp_name;
 	std::string otherName = src.merge_name.size() ? src.merge_name : src.map->bsp_name;
 	dst.merge_name = std::move(resultType);
 	print_log("    {:>8} = {} + {}\n", dst.merge_name, thisName, otherName);
 
-	merge(*dst.map, *src.map);
+	merge(*dst.map, *src.map, false, overlapMerge);
 }
 
-std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool verticalMerge, float verticalGap)
+std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool overlapMerge, vec3 overlapGap)
 {
 	std::vector<MAPBLOCK> blocks;
 
@@ -307,7 +307,7 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	}
 
 	bool noOverlap = true;
-	if (!verticalMerge)
+	if (!overlapMerge)
 	{
 		for (size_t i = 0; i < blocks.size() && noOverlap; i++) {
 			for (size_t k = 0; k < blocks.size(); k++) {
@@ -329,7 +329,7 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 		noOverlap = false;
 	}
 
-	if (noOverlap && !verticalMerge) {
+	if (noOverlap && !overlapMerge) {
 		if (!nomove)
 			print_log("Maps do not overlap. They will be merged without moving.\n");
 
@@ -349,18 +349,18 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 		return orderedBlocks;
 	}
 
-	if (nomove && !verticalMerge) {
+	if (nomove && !overlapMerge) {
 		return orderedBlocks;
 	}
 
-	if (verticalMerge)
+	if (overlapMerge)
 	{
 		for (size_t i = 0; i < blocks.size(); i++)
 		{
 			MAPBLOCK& block = blocks[i];
 
-			// Shift each map by exactly (i * verticalGap) units along the Z-axis.
-			block.offset = vec3(0, 0, (float)i * verticalGap);
+			// Shift each map by (i * overlapGap).
+			block.offset = overlapGap * (float)i;
 
 			std::vector<MAPBLOCK> row;
 			row.push_back(block);
@@ -1086,11 +1086,11 @@ int BspMerger::force_unique_ent_names_per_map(Bsp* mergedMap)
 	return renameCount;
 }
 
-bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
+bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge, bool overlapMerge)
 {
 	// TODO: Create a new map and store result there. Don't break mapA.
 	BSPPLANE separationPlane = separate_plane(mapA, mapB);
-	if (separationPlane.nType == -1 && !modelMerge)
+	if (separationPlane.nType == -1 && !modelMerge && !overlapMerge)
 	{
 		// Force a separation plane if maps are merged vertically or otherwise known to be separable
 		separationPlane = getSeparatePlane(mapA.models[0].nMins, mapA.models[0].nMaxs,
@@ -1186,19 +1186,19 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 
 	if (shouldMerge[LUMP_NODES])
 	{
-		create_merge_headnodes(mapA, mapB, separationPlane);
-		merge_nodes(mapA, mapB);
-		merge_clipnodes(mapA, mapB);
+		create_merge_headnodes(mapA, mapB, separationPlane, overlapMerge);
+		merge_nodes(mapA, mapB, overlapMerge);
+		merge_clipnodes(mapA, mapB, overlapMerge);
 	}
 
 	if (shouldMerge[LUMP_MODELS] && !modelMerge)
-		merge_models(mapA, mapB);
+		merge_models(mapA, mapB, overlapMerge);
 
 	merge_lighting(mapA, mapB);
 
 	// doing this last because it takes way longer than anything else, and limit overflows should fail the
 	// merge as soon as possible. // TODO: fail fast if overflow detected in other merges? Kind ni
-	merge_vis(mapA, mapB);
+	merge_vis(mapA, mapB, overlapMerge);
 
 	g_progress.clear();
 
@@ -1759,7 +1759,7 @@ void BspMerger::merge_surfedges(Bsp& mapA, Bsp& mapB)
 	delete[] newSurfs;
 }
 
-void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
+void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB, bool overlapMerge)
 {
 	thisNodeCount = mapA.nodeCount;
 
@@ -1772,17 +1772,27 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 	{
 		BSPNODE32 node = mapA.nodes[i];
 
-		if (i > 0)
+		if (i > 0 || overlapMerge)
 		{ // new headnode should already be correct
 			for (int k = 0; k < 2; k++)
 			{
 				if (node.iChildren[k] >= 0)
 				{
-					node.iChildren[k] += 1; // shifted from new head node
+					node.iChildren[k] += overlapMerge ? 0 : 1; // shifted from new head node
 				}
 				else
 				{
-					node.iChildren[k] = ~(modelLeafRemap[~node.iChildren[k]]);
+					int leafIdx = ~node.iChildren[k];
+					if (overlapMerge && leafIdx == 0) {
+						int targetNode = mapB.models[0].iHeadnodes[0];
+						if (targetNode >= 0)
+							node.iChildren[k] = targetNode + thisNodeCount;
+						else
+							node.iChildren[k] = targetNode; // typically CONTENTS_EMPTY
+					}
+					else {
+						node.iChildren[k] = ~(modelLeafRemap[leafIdx]);
+					}
 				}
 			}
 		}
@@ -1829,7 +1839,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 	delete[] newNodeData;
 }
 
-void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
+void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB, bool overlapMerge)
 {
 	thisClipnodeCount = mapA.clipnodeCount;
 
@@ -1838,16 +1848,48 @@ void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
 	std::vector<BSPCLIPNODE32> mergedNodes;
 	mergedNodes.reserve(thisClipnodeCount + mapB.clipnodeCount);
 
+	std::vector<int> nodeHull(thisClipnodeCount, -1);
+	if (overlapMerge) {
+		for (int h = 1; h < MAX_MAP_HULLS; h++) {
+			int head = mapA.models[0].iHeadnodes[h];
+			if (head >= 0 && head < thisClipnodeCount) {
+				std::vector<int> stack = { head };
+				while (!stack.empty()) {
+					int curr = stack.back();
+					stack.pop_back();
+					if (nodeHull[curr] != -1) continue;
+					nodeHull[curr] = h - 1;
+					for (int k = 0; k < 2; k++) {
+						int child = mapA.clipnodes[curr].iChildren[k];
+						if (child >= 0 && child < thisClipnodeCount) {
+							stack.push_back(child);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	for (int i = 0; i < thisClipnodeCount; i++)
 	{
 		BSPCLIPNODE32 node = mapA.clipnodes[i];
-		if (i > 2)
+		if (i >= (overlapMerge ? 0 : 3))
 		{ // new headnodes should already be correct
 			for (int k = 0; k < 2; k++)
 			{
 				if (node.iChildren[k] >= 0)
 				{
-					node.iChildren[k] += MAX_MAP_HULLS - 1; // offset from new headnodes being added
+					node.iChildren[k] += overlapMerge ? 0 : (MAX_MAP_HULLS - 1); // offset from new headnodes being added
+				}
+				else if (overlapMerge && node.iChildren[k] == CONTENTS_SOLID)
+				{
+					int hullIdx = nodeHull[i];
+					if (hullIdx != -1)
+					{
+						int otherHead = mapB.models[0].iHeadnodes[hullIdx + 1];
+						if (otherHead >= 0)
+							node.iChildren[k] = otherHead + thisClipnodeCount;
+					}
 				}
 			}
 		}
@@ -1880,7 +1922,7 @@ void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
 	delete[] newClipnodeData;
 }
 
-void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
+void BspMerger::merge_models(Bsp& mapA, Bsp& mapB, bool overlapMerge)
 {
 	g_progress.update("Merging models", mapA.modelCount + mapB.modelCount);
 
@@ -1895,7 +1937,7 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	{
 		BSPMODEL model = mapB.models[i];
 		if (model.iHeadnodes[0] >= 0)
-			model.iHeadnodes[0] += thisNodeCount; // already includes new head nodes (merge_nodes comes after create_merge_headnodes)
+			model.iHeadnodes[0] += thisNodeCount; // already includes new head nodes
 		for (int k = 1; k < MAX_MAP_HULLS; k++)
 		{
 			if (model.iHeadnodes[k] >= 0)
@@ -1911,11 +1953,11 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	{
 		BSPMODEL model = mapA.models[i];
 		if (model.iHeadnodes[0] >= 0)
-			model.iHeadnodes[0] += 1; // adjust for new head node
+			model.iHeadnodes[0] += overlapMerge ? 0 : 1; // adjust for new head node
 		for (int k = 1; k < MAX_MAP_HULLS; k++)
 		{
 			if (model.iHeadnodes[k] >= 0)
-				model.iHeadnodes[k] += (MAX_MAP_HULLS - 1); // adjust for new head nodes
+				model.iHeadnodes[k] += overlapMerge ? 0 : (MAX_MAP_HULLS - 1); // adjust for new head nodes
 		}
 		if (model.iFirstFace >= thisWorldFaceCount)
 		{
@@ -1926,10 +1968,13 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	}
 
 	// update world head nodes
-	mergedModels[0].iHeadnodes[0] = 0;
-	mergedModels[0].iHeadnodes[1] = 0;
-	mergedModels[0].iHeadnodes[2] = 1;
-	mergedModels[0].iHeadnodes[3] = 2;
+	if (!overlapMerge)
+	{
+		mergedModels[0].iHeadnodes[0] = 0;
+		mergedModels[0].iHeadnodes[1] = 0;
+		mergedModels[0].iHeadnodes[2] = 1;
+		mergedModels[0].iHeadnodes[3] = 2;
+	}
 	mergedModels[0].nVisLeafs = mapA.models[0].nVisLeafs + mapB.models[0].nVisLeafs;
 	mergedModels[0].nFaces = mapA.models[0].nFaces + mapB.models[0].nFaces;
 
@@ -1949,28 +1994,27 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	delete[] newModelData;
 }
 
-void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
+void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB, bool overlapMerge)
 {
+	// thisLeafCount and otherLeafCount were set in merge_leaves to original values
 	if (thisLeafCount == 0)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0243));
 		return;
 	}
-	if (thisWorldLeafCount == 0)
-		thisWorldLeafCount = mapA.leafCount;
-	if (otherWorldLeafCount == 0)
-		otherWorldLeafCount = mapB.leafCount;
 
 	BSPLEAF32* allLeaves = mapA.leaves; // combined with mapB's leaves earlier in merge_leaves
 
-	int thisVisLeaves = thisLeafCount - 1; // VIS ignores the shared solid leaf 0
-	int otherVisLeaves = otherLeafCount; // already does not include the solid leaf (see merge_leaves)
-	int totalVisLeaves = thisVisLeaves + otherVisLeaves;
+	int original_thisVisLeaves = thisLeafCount - 1;
+	int original_otherVisLeaves = otherLeafCount; // already doesn't include solid leaf 0 (decremented in merge_leaves)
+
+	int totalVisLeaves = mapA.leafCount - 1;
 
 	int mergedWorldLeafCount = thisWorldLeafCount + otherWorldLeafCount;
 
+	// In GoldSrc, VIS row size is based on the total number of leaves in the lump
 	unsigned int newVisRowSize = ((totalVisLeaves + 63) & ~63) >> 3;
-	int decompressedVisSize = totalVisLeaves * newVisRowSize;
+	int decompressedVisSize = mergedWorldLeafCount * newVisRowSize;
 
 	g_progress.update("Merging visibility", thisWorldLeafCount + otherWorldLeafCount * 2 + mergedWorldLeafCount);
 	g_progress.tick();
@@ -1981,12 +2025,12 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	// decompress this map's world leaves
 	// model leaves don't need to be decompressed because the game ignores VIS for them.
 	decompress_vis_lump(&mapA, allLeaves, mapA.visdata, decompressedVis,
-		thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_LEAVES].nLength, mapA.visDataLength);
+		thisWorldLeafCount, original_thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_LEAVES].nLength, mapA.visDataLength);
 
 	// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
 	unsigned char* decompressedOtherVis = decompressedVis + thisWorldLeafCount * newVisRowSize;
 	decompress_vis_lump(&mapB, allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
-		otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_LEAVES].nLength, mapB.visDataLength);
+		otherWorldLeafCount, original_otherVisLeaves, totalVisLeaves, mapB.bsp_header.lump[LUMP_LEAVES].nLength, mapB.visDataLength);
 
 	// shift mapB's world leaves after mapA's world leaves
 
@@ -2001,11 +2045,45 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	if (overflows > 0)
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0993), overflows);
 
+	if (overlapMerge)
+	{
+		// Visibility Union: Make Map A see Map B and vice versa
+		// For every world leaf in Map A, mark all world leaves of Map B as visible
+		for (int i = 0; i < thisWorldLeafCount; i++)
+		{
+			unsigned char* row = decompressedVis + i * newVisRowSize;
+			for (int j = 1; j < otherWorldLeafCount; j++)
+			{
+				int leafIdx = thisWorldLeafCount + j;
+				row[leafIdx >> 3] |= (1 << (leafIdx & 7));
+			}
+		}
+		// For every world leaf in Map B, mark all world leaves of Map A as visible
+		for (int i = 0; i < otherWorldLeafCount; i++)
+		{
+			unsigned char* row = decompressedOtherVis + i * newVisRowSize;
+			for (int j = 1; j < thisWorldLeafCount; j++)
+			{
+				int leafIdx = j;
+				row[leafIdx >> 3] |= (1 << (leafIdx & 7));
+			}
+		}
+	}
+
 
 	// recompress the combined vis data
-	unsigned char* compressedVis = new unsigned char[decompressedVisSize];
-	memset(compressedVis, 0, decompressedVisSize);
-	int newVisLen = CompressAll(allLeaves, decompressedVis, compressedVis, totalVisLeaves, mergedWorldLeafCount, decompressedVisSize, thisWorldLeafCount + otherWorldLeafCount);
+	// compressed vis can be larger than decompressed in worst case (RLE expansion)
+	int compressedBufferSize = decompressedVisSize * 2 + 1024;
+	unsigned char* compressedVis = new unsigned char[compressedBufferSize];
+	memset(compressedVis, 0, compressedBufferSize);
+	int newVisLen = CompressAll(allLeaves, decompressedVis, compressedVis, totalVisLeaves, mergedWorldLeafCount, compressedBufferSize, mapA.leafCount);
+
+	// Set submodel leaves to -1 vis offset to prevent crashes/hangs
+	for (int i = mergedWorldLeafCount; i < totalVisLeaves; i++)
+	{
+		allLeaves[i + 1].nVisOffset = -1;
+	}
+
 	unsigned int oldLen = mapA.bsp_header.lump[LUMP_VISIBILITY].nLength;
 
 	unsigned char* compressedVisResize = new unsigned char[newVisLen];
@@ -2013,7 +2091,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 
 	mapA.replace_lump(LUMP_VISIBILITY, compressedVisResize, newVisLen);
 
-	print_log(get_localized_string(LANG_0244), oldLen, newVisLen);
+	print_log(get_localized_string(LANG_0244), newVisLen, compressedBufferSize);
 	print_log("\n");
 
 	delete[] compressedVisResize;
@@ -2095,8 +2173,11 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 	}
 }
 
-void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane)
+void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane, bool overlapMerge)
 {
+	if (overlapMerge)
+		return;
+
 	BSPMODEL& thisWorld = mapA.models[0];
 	BSPMODEL& otherWorld = mapB.models[0];
 

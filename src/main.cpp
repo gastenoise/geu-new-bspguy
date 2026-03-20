@@ -177,7 +177,7 @@ int merge_maps()
 	std::string output_name = g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile;
 
 	BspMerger merger;
-	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-vertical"), g_cmdLine.hasOption("-vgap") ? (float)g_cmdLine.getOptionInt("-vgap") : 512.0f);
+	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-vertical"), vec3(0, 0, g_cmdLine.hasOption("-vgap") ? (float)g_cmdLine.getOptionInt("-vgap") : 512.0f));
 
 	print_log("\n");
 	if (result.map && result.map->validate() && result.map->isValid())
