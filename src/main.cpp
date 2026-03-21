@@ -177,7 +177,18 @@ int merge_maps()
 	std::string output_name = g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile;
 
 	BspMerger merger;
-	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-overlap"), g_cmdLine.hasOption("-overlapgap") ? g_cmdLine.getOptionVector("-overlapgap") : vec3(0, 0, 512.0f));
+	std::vector<vec3> overlapGaps;
+	if (g_cmdLine.hasOption("-overlapgap")) {
+		overlapGaps = g_cmdLine.getOptionVectorList("-overlapgap");
+	}
+	else {
+		// Default behavior or single vector compatibility
+		for (size_t i = 0; i < maps.size(); i++) {
+			overlapGaps.push_back(vec3(0, 0, 512.0f) * (float)i);
+		}
+	}
+
+	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-overlap") || g_cmdLine.hasOption("-overlapgap"), overlapGaps);
 
 	print_log("\n");
 	if (result.map && result.map->validate() && result.map->isValid())
@@ -579,7 +590,7 @@ void print_help(const std::string& command)
 			"                 to this flag is that you don't have deal with script setup.\n"
 			"  -gap \"X,Y,Z\" : Amount of extra space to add between each map\n"
 			"  -overlap     : GEU overlap merge mode.\n"
-			"  -overlapgap \"X,Y,Z\" : Overlap gap between maps (default \"0,0,512\").\n"
+			"  -overlapgap \"X,Y,Z;X2,Y2,Z2;...\" : Overlap positions for each map (default \"0,0,0;0,0,512;0,0,1024;...\").\n"
 			"  -v\n"
 			"  -verbose     : Verbose console output.\n"
 		);

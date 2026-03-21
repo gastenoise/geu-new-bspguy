@@ -11303,10 +11303,11 @@ void Gui::drawAbout()
 
 void Gui::drawMergeWindow()
 {
-	ImGui::SetNextWindowSize(ImVec2(600.f, 250.f), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(600.f, 250.f), ImVec2(600.f, 500.f));
+	ImGui::SetNextWindowSize(ImVec2(900.f, 250.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(900.f, 250.f), ImVec2(900.f, 500.f));
 	static std::string outPath = "outbsp.bsp";
 	static std::vector<std::string> inPaths;
+	static std::vector<vec3> inOffsets;
 	static bool DeleteUnusedInfo = true;
 	static bool Optimize = false;
 	static bool DeleteHull2 = false;
@@ -11314,7 +11315,6 @@ void Gui::drawMergeWindow()
 	static bool NoStyles = false;
 	static bool NoScript = false;
 	static bool OverlapMerge = false;
-	static vec3 OverlapGap = vec3(0, 0, 512.0f);
 
 	bool addNew = false;
 
@@ -11323,6 +11323,12 @@ void Gui::drawMergeWindow()
 	if (inPaths.size() < 1)
 	{
 		inPaths.emplace_back("");
+		inOffsets.emplace_back(vec3());
+	}
+
+	if (inOffsets.size() != inPaths.size())
+	{
+		inOffsets.resize(inPaths.size());
 	}
 
 	if (ImGui::Begin(fmt::format("{}###MERGE_WIDGET", get_localized_string(LANG_0825)).c_str(), &showMergeMapWidget))
@@ -11352,6 +11358,13 @@ void Gui::drawMergeWindow()
 			ImGui::SameLine();
 			ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0826)), i).c_str());
 
+			if (OverlapMerge)
+			{
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(250);
+				ImGui::InputFloat3(fmt::format("##offset{}", i).c_str(), &inOffsets[i].x);
+			}
+
 			if (s.length() > 1 && i + 1 == inPaths.size())
 			{
 				addNew = true;
@@ -11368,36 +11381,29 @@ void Gui::drawMergeWindow()
 		ImGui::Checkbox(get_localized_string(LANG_0832).c_str(), &NoScript);
 		ImGui::Checkbox("Skip lightstyles merging", &NoStyles);
 		ImGui::Checkbox(get_localized_string(LANG_1181).c_str(), &OverlapMerge);
-		if (OverlapMerge)
-		{
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(200);
-			ImGui::InputFloat3(get_localized_string(LANG_1182).c_str(), &OverlapGap.x);
-		}
 
 		if (ImGui::Button(get_localized_string(LANG_1122).c_str(), ImVec2(120, 0)))
 		{
 			std::vector<Bsp*> maps;
-			for (int i = 1; i < 16; i++)
+			std::vector<vec3> mapsOffsets;
+			for (size_t i = 0; i < inPaths.size(); i++)
 			{
-				if (i == 0 || inPaths[i - 1].size())
+				if (inPaths[i].size())
 				{
-					if (fileExists(inPaths[i - 1]))
+					if (fileExists(inPaths[i]))
 					{
-						Bsp* tmpMap = new Bsp(inPaths[i - 1]);
+						Bsp* tmpMap = new Bsp(inPaths[i]);
 						if (tmpMap->bsp_valid)
 						{
 							maps.push_back(tmpMap);
+							mapsOffsets.push_back(inOffsets[i]);
 						}
 						else
 						{
 							delete tmpMap;
-							continue;
 						}
 					}
 				}
-				else
-					break;
 			}
 			if (maps.size() < 2)
 			{
@@ -11436,7 +11442,7 @@ void Gui::drawMergeWindow()
 					print_log("\n");
 				}
 				BspMerger merger;
-				MergeResult result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, false, NoStyles, OverlapMerge, OverlapGap);
+				MergeResult result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, false, NoStyles, OverlapMerge, mapsOffsets);
 
 				print_log("\n");
 				if (result.map && result.map->isValid())
@@ -11473,6 +11479,7 @@ void Gui::drawMergeWindow()
 	if (addNew)
 	{
 		inPaths.emplace_back(std::string(""));
+		inOffsets.emplace_back(vec3());
 	}
 }
 

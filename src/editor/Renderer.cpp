@@ -5235,7 +5235,7 @@ void Renderer::merge(std::string fpath)
 	maps.push_back(map2);
 
 	BspMerger merger;
-	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true, false, false, vec3(0, 0, 512.0f));
+	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true, false, false, {vec3(0, 0, 0), vec3(0, 0, 512.0f)});
 
 	if (!mergeResult.map || !mergeResult.map->bsp_valid) {
 		delete map2;

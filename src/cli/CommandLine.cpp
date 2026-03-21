@@ -126,6 +126,27 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 	return ret;
 }
 
+std::vector<vec3> CommandLine::getOptionVectorList(const std::string& optionName)
+{
+	std::vector<vec3> ret;
+	std::vector<std::string> parts = splitString(optionVals[optionName], ";");
+
+	for (size_t i = 0; i < parts.size(); i++)
+	{
+		std::vector<std::string> vparts = splitString(parts[i], ",");
+		if (vparts.size() == 3)
+		{
+			vec3 v;
+			v.x = str_to_float(trimSpaces(vparts[0]));
+			v.y = str_to_float(trimSpaces(vparts[1]));
+			v.z = str_to_float(trimSpaces(vparts[2]));
+			ret.push_back(v);
+		}
+	}
+
+	return ret;
+}
+
 std::vector<std::string> CommandLine::getOptionList(const std::string& optionName)
 {
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");

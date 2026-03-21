@@ -4,7 +4,7 @@
 #include "log.h"
 
 
-MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles, bool overlapMerge, vec3 overlapGap)
+MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles, bool overlapMerge, std::vector<vec3> overlapGaps)
 {
 	MergeResult result;
 	result.fpath = "";
@@ -129,7 +129,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 	}
 
 
-	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap, nomove, result, overlapMerge, overlapGap);
+	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap, nomove, result, overlapMerge, overlapGaps);
 
 
 	print_log(get_localized_string(LANG_0220));
@@ -267,7 +267,7 @@ void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
 	merge(*dst.map, *src.map);
 }
 
-std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool overlapMerge, vec3 overlapGap)
+std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result, bool overlapMerge, std::vector<vec3> overlapGaps)
 {
 	std::vector<MAPBLOCK> blocks;
 
@@ -359,8 +359,12 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 		{
 			MAPBLOCK& block = blocks[i];
 
-			// Shift each map by exactly (i * overlapGap) units.
-			block.offset = overlapGap * (float)i;
+			if (i < overlapGaps.size()) {
+				block.offset = overlapGaps[i];
+			}
+			else {
+				block.offset = vec3();
+			}
 
 			std::vector<MAPBLOCK> row;
 			row.push_back(block);

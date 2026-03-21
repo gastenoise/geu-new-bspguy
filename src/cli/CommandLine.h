@@ -18,6 +18,7 @@ public:
 	std::string getOption(const std::string& optionName);
 	int getOptionInt(const std::string& optionName);
 	vec3 getOptionVector(const std::string& optionName);
+	std::vector<vec3> getOptionVectorList(const std::string& optionName);
 	std::vector<std::string> getOptionList(const std::string& optionName);
 
 private:
