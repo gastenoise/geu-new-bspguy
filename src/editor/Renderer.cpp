@@ -1934,11 +1934,6 @@ void Renderer::controls()
 			cameraPickingControls();
 		}
 
-		if (!gui->imgui_io->WantCaptureKeyboard)
-		{
-			shortcutControls();
-			globalShortcutControls();
-		}
 	}
 	else
 	{
@@ -1948,6 +1943,12 @@ void Renderer::controls()
 			oldLeftMouse = GLFW_PRESS;
 			cameraPickingControls();
 		}
+	}
+
+	if (is_focused && !gui->imgui_io->WantTextInput)
+	{
+		shortcutControls();
+		globalShortcutControls();
 	}
 
 	oldScroll = g_scroll;
@@ -4887,12 +4888,11 @@ void Renderer::deleteEnts()
 			reloadBspModels();
 		}
 
-		map->update_ent_lump();
 		pickInfo.selectedEnts.clear();
 		pickCount++;
 		filterNeeded = true;
 		gui->entityListChanged = true;
-		map->getBspRender()->preRenderEnts();
+		// pushUndoState with FL_ENTITIES will call update_ent_lump() and preRenderEnts()
 		map->getBspRender()->pushUndoState("Delete ents", FL_ENTITIES);
 		updateCullBox();
 	}

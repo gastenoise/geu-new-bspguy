@@ -1313,6 +1313,44 @@ void Gui::drawBspContexMenu()
 	{
 		if (ImGui::BeginPopup("face_context"))
 		{
+			if (app->pickInfo.selectedFaces.size() > 0)
+			{
+				bool allWorld = true;
+				for (int fIdx : app->pickInfo.selectedFaces)
+				{
+					if (map->get_model_from_face(fIdx) != 0)
+					{
+						allWorld = false;
+						break;
+					}
+				}
+
+				if (allWorld)
+				{
+					if (ImGui::BeginMenu(get_localized_string("DELETE_FACES").c_str()))
+					{
+						if (ImGui::MenuItem(get_localized_string("JUST_FACES").c_str()))
+						{
+							rend->pushUndoState("Delete Faces", EDIT_MODEL_LUMPS);
+							map->remove_faces(app->pickInfo.selectedFaces);
+							app->deselectFaces();
+							rend->reload();
+							pickCount++;
+						}
+						if (ImGui::MenuItem(get_localized_string("FACES_AND_CLIPNODES").c_str()))
+						{
+							rend->pushUndoState("Delete Faces and Collision", EDIT_MODEL_LUMPS);
+							map->delete_faces_and_collision(app->pickInfo.selectedFaces);
+							app->deselectFaces();
+							rend->reload();
+							pickCount++;
+						}
+						ImGui::EndMenu();
+					}
+					ImGui::Separator();
+				}
+			}
+
 			if (ImGui::MenuItem(get_localized_string(LANG_0438).c_str()))
 			{
 				copyTexture();

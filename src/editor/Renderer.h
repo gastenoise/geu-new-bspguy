@@ -139,7 +139,6 @@ public:
 	Fgd* fgd = NULL;
 
 	bool hideGui = false;
-	bool isFocused = false;
 	bool isHovered = false;
 	bool isIconified = false;
 	

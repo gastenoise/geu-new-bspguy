@@ -3376,7 +3376,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 
 
 void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes) {
+	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect) {
 	BSPNODE32& node = nodes[iNode];
 
 	if (node.iPlane < 0) {
@@ -3395,12 +3395,12 @@ void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 
 		if (node.iChildren[i] >= 0) {
 			delete_box_nodes(node.iChildren[i], &node.iChildren[i], clipOrder, clipMins, clipMaxs,
-				oobHistory, isFirstPass, removedNodes);
-			if (node.iChildren[i] >= 0) {
+				oobHistory, isFirstPass, removedNodes, redirect);
+			if (node.iChildren[i] >= 0 || (oobHistory && node.iChildren[i] == redirect)) {
 				isoob = false; // children weren't empty, so this node isn't empty either
 			}
 		}
-		else if (isFirstPass) {
+		else {
 			std::vector<BSPPLANE> cuts;
 			for (int k = (int)clipOrder.size() - 1; k >= 0; k--) {
 				cuts.push_back(clipOrder[k]);
@@ -3409,14 +3409,34 @@ void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 			Clipper clipper;
 			CMesh nodeVolume = clipper.clip(cuts);
 
+			vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
+			vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+			bool anyVisible = false;
+
 			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
+				expandBoundingBox(v, mins, maxs);
+				anyVisible = true;
+			}
 
-				if (!pointInBox(v, clipMins, clipMaxs)) {
-					isoob = false; // node can't be empty if both children aren't oob
+			bool leafInsideBox = anyVisible && (mins.x >= clipMins.x && maxs.x <= clipMaxs.x &&
+				mins.y >= clipMins.y && maxs.y <= clipMaxs.y &&
+				mins.z >= clipMins.z && maxs.z <= clipMaxs.z);
+
+			if (isFirstPass) {
+				if (!leafInsideBox) {
+					isoob = false;
 				}
+			}
+			else if (leafInsideBox) {
+				// unlinking leaves in Hull 0 is risky because it shares leaves with the whole world.
+				// However, if redirect is CONTENTS_SOLID, we are effectively removing air.
+				// Since this is currently called with CONTENTS_SOLID in delete_box_data, we'll keep it.
+				// But we should probably not unlink Hull 0 leaves in delete_faces_and_collision.
+				node.iChildren[i] = redirect;
+				removedNodes++;
 			}
 		}
 
@@ -3424,22 +3444,18 @@ void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 	}
 
 	if (isFirstPass) {
-		// only check if each node is ever considered in bounds, after considering all branches.
-		// don't remove anything until the entire tree has been scanned
-
 		if (!isoob) {
 			oobHistory[iNode] = false;
 		}
 	}
 	else if (parentBranch && isoob) {
-		// we know which nodes are OOB now, so it's safe to unlink this node from the paranet
-		*parentBranch = CONTENTS_SOLID;
+		*parentBranch = redirect;
 		removedNodes++;
 	}
 }
 
 void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes) {
+	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect) {
 	BSPCLIPNODE32& node = clipnodes[iNode];
 
 	if (node.iPlane < 0) {
@@ -3458,12 +3474,12 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 
 		if (node.iChildren[i] >= 0) {
 			delete_box_clipnodes(node.iChildren[i], &node.iChildren[i], clipOrder, clipMins, clipMaxs,
-				oobHistory, isFirstPass, removedNodes);
-			if (node.iChildren[i] >= 0) {
+				oobHistory, isFirstPass, removedNodes, redirect);
+			if (node.iChildren[i] >= 0 || (oobHistory && node.iChildren[i] == redirect)) {
 				isoob = false; // children weren't empty, so this node isn't empty either
 			}
 		}
-		else if (isFirstPass) {
+		else {
 			std::vector<BSPPLANE> cuts;
 			for (int k = (int)clipOrder.size() - 1; k >= 0; k--) {
 				cuts.push_back(clipOrder[k]);
@@ -3474,17 +3490,28 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 
 			vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
 			vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+			bool anyVisible = false;
 
 			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
-
 				expandBoundingBox(v, mins, maxs);
+				anyVisible = true;
 			}
 
-			if (!boxesIntersect(mins, maxs, clipMins, clipMaxs)) {
-				isoob = false; // node can't be empty if both children aren't in the clip box
+			bool leafInsideBox = anyVisible && (mins.x >= clipMins.x && maxs.x <= clipMaxs.x &&
+				mins.y >= clipMins.y && maxs.y <= clipMaxs.y &&
+				mins.z >= clipMins.z && maxs.z <= clipMaxs.z);
+
+			if (isFirstPass) {
+				if (!leafInsideBox) {
+					isoob = false;
+				}
+			}
+			else if (leafInsideBox) {
+				node.iChildren[i] = redirect;
+				removedNodes++;
 			}
 		}
 
@@ -3492,17 +3519,35 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 	}
 
 	if (isFirstPass) {
-		// only check if each node is ever considered in bounds, after considering all branches.
-		// don't remove anything until the entire tree has been scanned
-
 		if (!isoob) {
 			oobHistory[iNode] = false;
 		}
 	}
 	else if (parentBranch && isoob) {
-		// we know which nodes are OOB now, so it's safe to unlink this node from the paranet
-		*parentBranch = CONTENTS_SOLID;
+		*parentBranch = redirect;
 		removedNodes++;
+	}
+}
+
+void Bsp::delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect) {
+	BSPMODEL& worldmodel = models[0];
+
+	// remove clipnodes in the clipping box
+	{
+		std::vector<BSPPLANE> clipOrder;
+
+		bool* oobMarks = new bool[clipnodeCount];
+		for (int i = 1; i < MAX_MAP_HULLS; i++) {
+			// collect oob data, then actually remove the nodes
+			int removedNodes = 0;
+			do {
+				removedNodes = 0;
+				memset(oobMarks, 1, clipnodeCount * sizeof(bool)); // assume everything is oob at first
+				delete_box_clipnodes(worldmodel.iHeadnodes[i], NULL, clipOrder, clipMins, clipMaxs, oobMarks, true, removedNodes, redirect);
+				delete_box_clipnodes(worldmodel.iHeadnodes[i], NULL, clipOrder, clipMins, clipMaxs, oobMarks, false, removedNodes, redirect);
+			} while (removedNodes);
+		}
+		delete[] oobMarks;
 	}
 }
 
@@ -9907,6 +9952,63 @@ std::vector<int> Bsp::getFaceContents(int faceIdx)
 	return out;
 }
 
+void Bsp::remove_faces(std::vector<int> faceIdxs)
+{
+	if (faceIdxs.empty())
+		return;
+
+	std::sort(faceIdxs.begin(), faceIdxs.end(), std::greater<int>());
+
+	g_progress.update("Removing faces", (int)faceIdxs.size());
+
+	int removedFaces = 0;
+	for (int faceIdx : faceIdxs)
+	{
+		if (remove_face(faceIdx))
+		{
+			removedFaces++;
+		}
+		g_progress.tick();
+	}
+
+	save_undo_lightmaps();
+	resize_all_lightmaps();
+
+	g_progress.clear();
+	g_progress = ProgressMeter();
+
+	print_log("Removed {} faces from map!\n", removedFaces);
+}
+
+void Bsp::delete_faces_and_collision(std::vector<int> faceIdxs)
+{
+	if (faceIdxs.empty())
+		return;
+
+	vec3 totalMins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+	vec3 totalMaxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	for (int faceIdx : faceIdxs)
+	{
+		if (faceIdx < 0 || faceIdx >= faceCount)
+			continue;
+
+		std::vector<vec3> faceVerts = get_face_verts(faceIdx);
+		for (auto& v : faceVerts)
+		{
+			expandBoundingBox(v, totalMins, totalMaxs);
+		}
+	}
+
+	// Use a very small epsilon to catch clipnodes tightly associated with this selection
+	totalMins -= vec3(0.1f, 0.1f, 0.1f);
+	totalMaxs += vec3(0.1f, 0.1f, 0.1f);
+
+	delete_box_collision(totalMins, totalMaxs, CONTENTS_EMPTY);
+
+	remove_faces(faceIdxs);
+}
+
 void Bsp::remove_faces_by_content(int content)
 {
 	std::vector<int> faces_to_remove;
@@ -9932,25 +10034,7 @@ void Bsp::remove_faces_by_content(int content)
 		g_progress.tick();
 	}
 
-	g_progress.update("Remove faces by content[DELETE]", (int)faces_to_remove.size());
-
-	int removedFaces = 0;
-
-	while (faces_to_remove.size())
-	{
-		remove_face(faces_to_remove[faces_to_remove.size() - 1]);
-		faces_to_remove.pop_back();
-		g_progress.tick();
-		removedFaces++;
-	}
-
-	save_undo_lightmaps();
-	resize_all_lightmaps();
-
-	g_progress.clear();
-	g_progress = ProgressMeter();
-
-	print_log("Removed {} faces from map!\n", removedFaces);
+	remove_faces(faces_to_remove);
 }
 
 bool Bsp::remove_face(int faceIdx, bool fromModels)

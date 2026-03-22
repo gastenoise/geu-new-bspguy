@@ -248,10 +248,11 @@ public:
 
 	// deletes data inside a bounding box
 	void delete_box_data(vec3 clipMins, vec3 clipMaxs);
+	void delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 	void delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes);
+		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
 	void delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes);
+		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
 
 	// assumes contiguous leaves starting at 0. Only works for worldspawn, which is the only model which
 	// should have leaves anyway.
@@ -373,6 +374,8 @@ public:
 	bool leaf_add_face(int faceIdx, int leafIdx);
 	bool leaf_del_face(int faceIdx, int leafIdx);
 	bool remove_face(int faceid, bool fromModels = false);
+	void remove_faces(std::vector<int> faceIdxs);
+	void delete_faces_and_collision(std::vector<int> faceIdxs);
 	void remove_faces_by_content(int content);
 	std::vector<int> getFaceContents(int faceIdx);
 	int clone_world_leaf(int oldleafIdx);
