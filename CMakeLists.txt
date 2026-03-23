@@ -144,6 +144,10 @@ set(SOURCE_FILES
 	src/util/as.h					src/util/as.cpp
 )
 
+if(WIN32)
+	list(APPEND SOURCE_FILES src/res/bspguy.rc)
+endif()
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 if(MSVC)
