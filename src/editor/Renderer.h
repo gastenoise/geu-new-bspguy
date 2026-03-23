@@ -93,6 +93,7 @@ extern int vertPickCount;
 
 extern int g_drawFrameId;
 
+extern bool g_settings_changed;
 
 extern std::vector<BspRenderer*> mapRenderers;
 
@@ -350,6 +351,7 @@ public:
 	void moveSelectedVerts(const vec3& delta);
 	bool splitModelFace();
 	void updateCullBox();
+	void updateGridSnap();
 
 	vec3 snapToGrid(vec3 pos);
 

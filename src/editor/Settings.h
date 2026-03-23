@@ -64,6 +64,7 @@ struct Settings
 	int fpslimit;
 	int settings_tab;
 	int render_flags;
+	int grid_snap_level;
 
 
 	float fov;

@@ -90,7 +90,7 @@ void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action,
 	g_app->pressed[key] = action != GLFW_RELEASE;
 }
 
-static bool g_settings_changed = false;
+bool g_settings_changed = false;
 
 void drop_callback(GLFWwindow* /*window*/, int count, const char** paths)
 {
@@ -1601,6 +1601,7 @@ void Renderer::saveGuiSettings()
 	g_settings.fontSize = gui->fontSize;
 	g_settings.moveSpeed = moveSpeed;
 	g_settings.rotSpeed = rotationSpeed;
+	g_settings.grid_snap_level = gridSnapLevel;
 }
 
 void Renderer::loadGuiSettings()
@@ -1629,6 +1630,8 @@ void Renderer::loadGuiSettings()
 	gui->fontSize = g_settings.fontSize;
 	rotationSpeed = g_settings.rotSpeed;
 	moveSpeed = g_settings.moveSpeed;
+	gridSnapLevel = g_settings.grid_snap_level;
+	updateGridSnap();
 
 	gui->shouldReloadFonts = true;
 	gui->settingLoaded = true;
@@ -4603,6 +4606,17 @@ void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, floa
 	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
 	map->getBspRender()->refreshModel(modelIdx);
 	updateSelectionSize(map, modelIdx);
+}
+
+void Renderer::updateGridSnap()
+{
+	const float element_values[] = { 0.00001f, 0.01f, 0.1f, 0.5f, 1.f, 2.f, 4.f, 8.f, 16.f, 32.f, 64.f };
+	const int grid_snap_modes = sizeof(element_values) / sizeof(float);
+	if (gridSnapLevel >= 0 && gridSnapLevel < grid_snap_modes)
+	{
+		gridSnappingEnabled = gridSnapLevel != 0;
+		snapSize = element_values[gridSnapLevel];
+	}
 }
 
 vec3 Renderer::snapToGrid(vec3 pos)

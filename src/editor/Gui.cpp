@@ -9808,7 +9808,7 @@ void Gui::drawTransformWidget()
 			const int grid_snap_modes = sizeof(element_names) / sizeof(element_names[0]);
 			const float element_values[grid_snap_modes] = { 0.00001f, 0.01f, 0.1f,0.5f,1.f,2.f,4.f,8.f,16.f,32.f,64.f };
 
-			static int current_element = app->gridSnapLevel;
+			int current_element = app->gridSnapLevel;
 
 			ImGui::Columns(2, 0, false);
 			ImGui::SetColumnWidth(0, inputWidth4);
@@ -9818,9 +9818,9 @@ void Gui::drawTransformWidget()
 
 			if (ImGui::SliderInt(get_localized_string(LANG_0700).c_str(), &current_element, 0, grid_snap_modes - 1, element_names[current_element]))
 			{
-				app->gridSnapLevel = current_element - 1;
-				app->gridSnappingEnabled = current_element != 0;
-				app->snapSize = element_values[current_element];
+				app->gridSnapLevel = current_element;
+				app->updateGridSnap();
+				g_settings_changed = true;
 			}
 
 			ImGui::Columns(1);

@@ -72,6 +72,7 @@ void Settings::loadDefaultSettings()
 	fov = 75.0f;
 	zfar = 262144.0f;
 	rotSpeed = 5.0f;
+	grid_snap_level = 1;
 
 	rad_path = "hlrad.exe";
 	rad_options = "\"{map_path}\"";
@@ -381,6 +382,7 @@ void Settings::loadSettings()
 	}
 
 	g_settings.moveSpeed = settings_ini->Get<float>("INPUT", "move_speed", 500.0f);
+	g_settings.grid_snap_level = settings_ini->Get<int>("INPUT", "grid_snap_level", 1);
 
 	if (g_settings.moveSpeed < 100) {
 		print_log(get_localized_string(LANG_0927));
@@ -720,7 +722,8 @@ void Settings::saveSettings(std::string path)
 
 	iniData << "[INPUT]\n";
 	iniData << "move_speed=" << g_settings.moveSpeed << "\n";
-	iniData << "rot_speed=" << g_settings.rotSpeed << "\n\n";
+	iniData << "rot_speed=" << g_settings.rotSpeed << "\n";
+	iniData << "grid_snap_level=" << g_settings.grid_snap_level << "\n\n";
 
 	iniData << "[PATHS]\n";
 	iniData << "gamedir=" << g_settings.gamedir << "\n";
