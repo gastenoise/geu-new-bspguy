@@ -3,6 +3,9 @@ cmake_minimum_required (VERSION 3.28)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
+set(AS_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
 set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
 project(bspguy LANGUAGES C CXX)
 
@@ -42,6 +45,7 @@ set(SOURCE_FILES
 
 	# command line
 	src/cli/CommandLine.h			src/cli/CommandLine.cpp
+	src/cli/EntityQuery.h			src/cli/EntityQuery.cpp
 	src/cli/ProgressMeter.h			src/cli/ProgressMeter.cpp
 
 	# BSP and related structures
@@ -226,3 +230,20 @@ else()
 		"${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini"
 		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/bspguy.ini")
 endif()
+
+# Installation rules
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/languages" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/palettes" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/pictures" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/scripts" DESTINATION .)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini" DESTINATION .)
+
+# Custom target to mirror GitHub Release build locally
+add_custom_target(package_release
+    COMMAND ${CMAKE_COMMAND} --build . --config Release
+    COMMAND ${CMAKE_COMMAND} --install . --prefix "${CMAKE_CURRENT_SOURCE_DIR}/dist/bspguy-revamped" --config Release
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Building and creating release package in dist/bspguy-revamped (Release configuration)"
+)

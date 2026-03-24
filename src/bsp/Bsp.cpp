@@ -6675,16 +6675,6 @@ bool Bsp::validate()
 			renderer->preRenderFaces();
 		}
 	}
-	if (leaves)
-	{
-		unsigned int newVisRowSize = ((leafCount + 63) & ~63) >> 3;
-		int decompressedVisSize = leafCount * newVisRowSize;
-		unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
-		memset(decompressedVis, 0xFF, decompressedVisSize);
-		decompress_vis_lump(this, leaves, visdata, decompressedVis,
-			models[0].nVisLeafs, leafCount - 1, leafCount - 1, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
-		delete[] decompressedVis;
-	}
 	return isValid;
 }
 

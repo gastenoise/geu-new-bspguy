@@ -42,14 +42,7 @@ jobs:
       - name: Prepare Artifacts
         shell: bash
         run: |
-          mkdir -p dist/${APP_NAME}
-          cp build/Release/bspguy.exe dist/${APP_NAME}/
-          cp -r resources/fonts dist/${APP_NAME}/
-          cp -r resources/languages dist/${APP_NAME}/
-          cp -r resources/palettes dist/${APP_NAME}/
-          cp -r resources/pictures dist/${APP_NAME}/
-          cp -r resources/scripts dist/${APP_NAME}/
-          cp resources/bspguy.ini dist/${APP_NAME}/
+          cmake --install build --prefix dist/${APP_NAME} --config Release
 
       - name: Create ZIP Package
         shell: pwsh

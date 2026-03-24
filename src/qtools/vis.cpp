@@ -263,6 +263,7 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 	unsigned int dest_length, unsigned int numLeaves,
 	unsigned int src_length)
 {
+	static int errorCount = 0;
 	unsigned char* startsrc = src;
 	unsigned char* startdst = dest;
 
@@ -274,9 +275,12 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 	{
 		if (src >= startsrc + src_length)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY,
-				get_localized_string(LANG_0999),
-				(int)(src - startsrc), src_length);
+			if (errorCount < 10) {
+				print_log(PRINT_RED | PRINT_INTENSITY,
+					get_localized_string(LANG_0999),
+					(int)(src - startsrc), src_length);
+				if (++errorCount == 10) print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
+			}
 			return false;
 		}
 
@@ -284,9 +288,12 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 		{
 			if (out >= startdst + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY,
-					get_localized_string(LANG_0998),
-					(int)(out - startdst), dest_length);
+				if (errorCount < 10) {
+					print_log(PRINT_RED | PRINT_INTENSITY,
+						get_localized_string(LANG_0998),
+						(int)(out - startdst), dest_length);
+					if (++errorCount == 10) print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
+				}
 				return false;
 			}
 
@@ -296,9 +303,12 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 
 		if (src + 1 >= startsrc + src_length)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY,
-				get_localized_string(LANG_0999),
-				(int)(src - startsrc), src_length);
+			if (errorCount < 10) {
+				print_log(PRINT_RED | PRINT_INTENSITY,
+					get_localized_string(LANG_0999),
+					(int)(src - startsrc), src_length);
+				if (++errorCount == 10) print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
+			}
 			return false;
 		}
 

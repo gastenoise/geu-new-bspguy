@@ -1,10 +1,15 @@
 
 #include "util.h"
 #include <filesystem>
+#include <chrono>
 #include "lang.h"
 #include "BspMerger.h"
 #include "CommandLine.h"
+#include "EntityQuery.h"
+#include <filesystem>
 #include "remap.h"
+
+namespace fs = std::filesystem;
 #include "Renderer.h"
 #include "Settings.h"
 #include "winding.h"
@@ -561,6 +566,165 @@ int unembed()
 	return 1;
 }
 
+int modent()
+{
+	std::string target = g_cmdLine.bspfile;
+	std::vector<std::string> files;
+
+	auto now = std::chrono::system_clock::now();
+	auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+	std::string unixTime = std::to_string(seconds);
+
+	if (dirExists(target))
+	{
+		for (const auto& entry : fs::directory_iterator(target))
+		{
+			if (entry.is_regular_file() && entry.path().extension() == ".bsp")
+			{
+				files.push_back(entry.path().string());
+			}
+		}
+	}
+	else if (fileExists(target))
+	{
+		files.push_back(target);
+	}
+	else
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "Target file or directory not found: {}\n", target);
+		return 1;
+	}
+
+	if (files.empty())
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "No BSP files found to modify.\n");
+		return 1;
+	}
+
+	std::string queryStr = g_cmdLine.getOption("--query");
+	if (queryStr.empty())
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "Missing --query parameter.\n");
+		return 1;
+	}
+
+	EntityQuery query(queryStr);
+	if (!query.isValid())
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "Invalid query: {}\n", queryStr);
+		return 1;
+	}
+
+	bool doDelete = g_cmdLine.hasOption("--delete");
+	std::string setVal = g_cmdLine.getOption("--set");
+	std::string removeKey = g_cmdLine.getOption("--removekey");
+
+	if (!doDelete && setVal.empty() && removeKey.empty())
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "No action specified (--delete, --set, or --removekey).\n");
+		return 1;
+	}
+
+	for (const auto& file : files)
+	{
+		Bsp* map = new Bsp(file);
+		if (!map->bsp_valid)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Failed to load BSP: {}\n", file);
+			delete map;
+			continue;
+		}
+
+		int modifiedCount = 0;
+
+		if (doDelete)
+		{
+			auto it = std::remove_if(map->ents.begin(), map->ents.end(), [&](Entity* ent) {
+				if (ent->isWorldSpawn()) return false;
+				if (query.evaluate(ent)) {
+					delete ent;
+					modifiedCount++;
+					return true;
+				}
+				return false;
+			});
+			map->ents.erase(it, map->ents.end());
+		}
+		else
+		{
+			for (Entity* ent : map->ents)
+			{
+				if (query.evaluate(ent))
+				{
+					if (!setVal.empty())
+					{
+						std::vector<std::string> pairs = splitStringIgnoringQuotes(setVal, ",");
+						for (auto& pair : pairs)
+						{
+							size_t eqPos = pair.find('=');
+							if (eqPos != std::string::npos)
+							{
+								std::string k = trimSpaces(pair.substr(0, eqPos));
+								std::string v = trimSpaces(pair.substr(eqPos + 1));
+								if (k.size() >= 2 && k.front() == '"' && k.back() == '"') k = k.substr(1, k.size() - 2);
+								if (v.size() >= 2 && v.front() == '"' && v.back() == '"') v = v.substr(1, v.size() - 2);
+								ent->setOrAddKeyvalue(k, v);
+							}
+						}
+						modifiedCount++;
+					}
+					else if (!removeKey.empty())
+					{
+						std::string k = removeKey;
+						if (k.size() >= 2 && k.front() == '"' && k.back() == '"') k = k.substr(1, k.size() - 2);
+						ent->removeKeyvalue(k);
+						modifiedCount++;
+					}
+				}
+			}
+		}
+
+		if (modifiedCount > 0)
+		{
+			map->update_ent_lump();
+			std::string outPath;
+			if (g_cmdLine.hasOption("-o"))
+			{
+				outPath = g_cmdLine.getOption("-o");
+				if (files.size() > 1)
+				{
+					createDir(outPath);
+					outPath = outPath + "/" + basename(file);
+				}
+			}
+			else
+			{
+				std::string outDir = "bspguy_work/modent/" + unixTime;
+				createDir(outDir);
+				outPath = outDir + "/" + basename(file);
+			}
+
+			if (map->isValid())
+			{
+				map->write(outPath);
+				print_log("Modified {} entities in {}. Saved to {}\n", modifiedCount, basename(file), outPath);
+			}
+			else
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Map validation failed for {}. Changes not saved.\n", basename(file));
+			}
+		}
+		else
+		{
+			print_log("No entities matched query in {}.\n", basename(file));
+		}
+
+		delete map;
+	}
+
+	return 0;
+}
+
 void print_help(const std::string& command)
 {
 	if (command == "merge")
@@ -777,6 +941,24 @@ void print_help(const std::string& command)
 			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
 		);
 	}
+	else if (command == "modent")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"modent - Modify entities using a search query\n\n"
+
+			"Usage:   bspguy modent <mapname|directory> --query \"<query>\" [action]\n"
+			"Example: bspguy modent . --query \"classname=monster_* AND targetname=\" --delete\n"
+			"Example: bspguy modent svencoop1.bsp --query \"classname=monster_*\" --set \"targetname=monstruo\"\n"
+
+			"\n[Actions]\n"
+			"  --delete          : Delete matched entities.\n"
+			"  --set \"k=v, ...\"  : Set or add keyvalues.\n"
+			"  --removekey \"k\"   : Remove a keyvalue.\n"
+
+			"\n[Options]\n"
+			"  -o <file|dir>     : Output file or directory. Default is bspguy_work/modent/UNIX_TIME/\n"
+		);
+	}
 	else
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, "{}\n\n", g_version_string);
@@ -792,6 +974,7 @@ void print_help(const std::string& command)
 				"  simplify    : Simplify BSP models\n"
 				"  transform   : Apply 3D transformations to the BSP\n"
 				"  unembed     : Deletes embedded texture data\n"
+				"  modent      : Modify entities using a search query\n"
 				"  exportobj   : Export bsp geometry to obj [WIP]\n"
 				"  cullfaces   : Remove leaf faces from map.\n"
 				"  exportlit   : Export .lit (Quake) lightdata file.\n"
@@ -1025,7 +1208,7 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		g_progress.simpleMode = false;
+		g_progress.simpleMode = true;
 
 		if (g_cmdLine.askingForHelp)
 		{
@@ -1240,6 +1423,10 @@ int main(int argc, char* argv[])
 			}
 			else
 				retval = unembed();
+		}
+		else if (g_cmdLine.command == "modent")
+		{
+			retval = modent();
 		}
 		else
 		{
