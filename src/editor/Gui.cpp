@@ -4973,6 +4973,16 @@ void Gui::drawMenuBar()
 						}
 					}
 					ImGui::Separator();
+					if (ImGui::MenuItem("Clipnodes"))
+					{
+						rend->pushUndoState("Delete Clipnodes In Box", EDIT_MODEL_LUMPS);
+						for (int i = 1; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
+						}
+						rend->reload();
+						pickCount++;
+					}
 					if (ImGui::MenuItem("All Hulls"))
 					{
 						rend->pushUndoState("Delete Hulls In Box", EDIT_MODEL_LUMPS);
@@ -4999,6 +5009,16 @@ void Gui::drawMenuBar()
 						}
 					}
 					ImGui::Separator();
+					if (ImGui::MenuItem("Clipnodes"))
+					{
+						rend->pushUndoState("Create Clipnodes In Box", EDIT_MODEL_LUMPS);
+						for (int i = 1; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
+						}
+						rend->reload();
+						pickCount++;
+					}
 					if (ImGui::MenuItem("All Hulls"))
 					{
 						rend->pushUndoState("Create Hulls In Box", EDIT_MODEL_LUMPS);
