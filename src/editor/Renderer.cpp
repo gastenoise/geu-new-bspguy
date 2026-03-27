@@ -10,6 +10,12 @@
 #include "util.h"
 #include "log.h"
 
+#ifdef WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <Windows.h>
+#include <GLFW/glfw3native.h>
+#endif
+
 #include <chrono>
 #include <execution>
 #include "NavMesh.h"
@@ -213,6 +219,16 @@ Renderer::Renderer()
 		FlushConsoleLog(true);
 		return;
 	}
+
+#ifdef WIN32
+	HWND hwnd = glfwGetWin32Window(window);
+	HICON hIcon = (HICON)LoadImageA(GetModuleHandleA(NULL), MAKEINTRESOURCEA(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+	if (hIcon)
+	{
+		SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	}
+#endif
 
 	glfwMakeContextCurrent(window);
 	glfwSetDropCallback(window, drop_callback);

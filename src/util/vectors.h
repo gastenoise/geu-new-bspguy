@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <tuple>
+#include <cstdint>
 
 
 #define HL_PI 3.141592f

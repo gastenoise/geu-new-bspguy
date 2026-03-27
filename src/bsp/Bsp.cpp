@@ -1,5 +1,4 @@
 #include "Bsp.h"
-#include "lang.h"
 #include "util.h"
 #include "log.h"
 #include "lodepng.h"
@@ -1827,53 +1826,82 @@ LumpState Bsp::duplicate_lumps(unsigned int targets)
 	return state;
 }
 
-int Bsp::delete_embedded_textures()
+int Bsp::unembed_textures(std::vector<int> texIndices)
 {
-	unsigned int headerSz = (textureCount + 1) * sizeof(int);
-	unsigned int newTexDataSize = headerSz + (textureCount * sizeof(BSPMIPTEX));
+	if (texIndices.empty())
+		return 0;
 
-	unsigned char* newTextureData = new unsigned char[newTexDataSize + sizeof(int)];
-	memset(newTextureData, 0, newTexDataSize);
+	std::set<int> toUnembed(texIndices.begin(), texIndices.end());
 
-	int* header = (int*)newTextureData;
-	int offset = headerSz;
-
-	int numRemoved = 0;
+	int totalSize = 4;
 	for (int i = 0; i < textureCount; i++)
 	{
-		int oldoffset = ((int*)textures)[i + 1];
-		if (oldoffset < 0)
+		if (toUnembed.count(i))
 		{
-			numRemoved++;
+			totalSize += sizeof(BSPMIPTEX) + sizeof(int);
+		}
+		else
+		{
+			totalSize += getBspTextureSize(i) + sizeof(int);
+		}
+	}
+
+	totalSize = (totalSize + 3) & ~3; // 4 bytes align
+
+	unsigned char* newTextureData = new unsigned char[totalSize + sizeof(int)];
+	memset(newTextureData, 0, totalSize);
+
+	int* texHeader = (int*)newTextureData;
+	texHeader[0] = textureCount;
+
+	int newOffset = (textureCount + 1) * sizeof(int);
+	int numRemoved = 0;
+
+	for (int i = 0; i < textureCount; i++)
+	{
+		int oldOffset = ((int*)textures)[i + 1];
+		if (oldOffset < 0)
+		{
+			texHeader[i + 1] = -1;
 			continue;
 		}
 
-		header[0]++;
+		BSPMIPTEX* oldMip = (BSPMIPTEX*)(textures + oldOffset);
+		BSPMIPTEX* newMip = (BSPMIPTEX*)(newTextureData + newOffset);
 
-		BSPMIPTEX* oldMip = (BSPMIPTEX*)(textures + oldoffset);
-
-		if (oldMip->nOffsets[0] + oldMip->nOffsets[1] +
-			oldMip->nOffsets[2] + oldMip->nOffsets[3] > 0)
+		if (toUnembed.count(i))
 		{
-			numRemoved++;
+			if (oldMip->nOffsets[0] > 0)
+				numRemoved++;
+			memcpy(newMip, oldMip, sizeof(BSPMIPTEX));
+			newMip->nOffsets[0] = newMip->nOffsets[1] =
+				newMip->nOffsets[2] = newMip->nOffsets[3] = 0;
+			texHeader[i + 1] = newOffset;
+			newOffset += sizeof(BSPMIPTEX);
 		}
-
-		BSPMIPTEX* newMip = (BSPMIPTEX*)(newTextureData + offset);
-
-		memcpy(newMip, oldMip, sizeof(BSPMIPTEX));
-
-		newMip->nOffsets[0] = newMip->nOffsets[1] =
-			newMip->nOffsets[2] = newMip->nOffsets[3] = 0;
-
-		header[1 + i] = offset;
-		offset += sizeof(BSPMIPTEX);
+		else
+		{
+			int sz = getBspTextureSize(i);
+			memcpy(newTextureData + newOffset, textures + oldOffset, sz);
+			texHeader[i + 1] = newOffset;
+			newOffset += sz;
+		}
 	}
 
-	replace_lump(LUMP_TEXTURES, newTextureData, newTexDataSize);
+	replace_lump(LUMP_TEXTURES, newTextureData, totalSize);
 	delete[] newTextureData;
 
-	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
+	return numRemoved;
+}
 
+int Bsp::delete_embedded_textures()
+{
+	std::vector<int> allIndices;
+	for (int i = 0; i < textureCount; i++)
+		allIndices.push_back(i);
+
+	int numRemoved = unembed_textures(allIndices);
+	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 	return numRemoved;
 }
 
@@ -3529,25 +3557,127 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 	}
 }
 
-void Bsp::delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect) {
+int Bsp::delete_box_nodes_fast(int iNode, vec3 clipMins, vec3 clipMaxs, int redirect) {
+	if (iNode < 0)
+		return iNode;
+
+	BSPNODE32& node = nodes[iNode];
+
+	if (node.nMins.x > clipMaxs.x || node.nMaxs.x < clipMins.x ||
+		node.nMins.y > clipMaxs.y || node.nMaxs.y < clipMins.y ||
+		node.nMins.z > clipMaxs.z || node.nMaxs.z < clipMins.z) {
+		return iNode;
+	}
+
+	if (node.nMins.x >= clipMins.x && node.nMaxs.x <= clipMaxs.x &&
+		node.nMins.y >= clipMins.y && node.nMaxs.y <= clipMaxs.y &&
+		node.nMins.z >= clipMins.z && node.nMaxs.z <= clipMaxs.z) {
+		return redirect;
+	}
+
+	for (int i = 0; i < 2; i++) {
+		node.iChildren[i] = delete_box_nodes_fast(node.iChildren[i], clipMins, clipMaxs, redirect);
+	}
+
+	if (node.iChildren[0] < 0 && node.iChildren[0] == node.iChildren[1]) {
+		return node.iChildren[0];
+	}
+
+	return iNode;
+}
+
+int Bsp::delete_box_clipnodes_fast(int iNode, std::vector<BSPPLANE>& clipOrder,
+	vec3 clipMins, vec3 clipMaxs, int redirect) {
+	if (iNode < 0) {
+		std::vector<BSPPLANE> cuts;
+		for (int k = (int)clipOrder.size() - 1; k >= 0; k--) {
+			cuts.push_back(clipOrder[k]);
+		}
+
+		Clipper clipper;
+		CMesh nodeVolume = clipper.clip(cuts);
+
+		vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
+		vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		bool anyVisible = false;
+
+		for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
+			if (!nodeVolume.verts[k].visible)
+				continue;
+			vec3 v = nodeVolume.verts[k].pos;
+			expandBoundingBox(v, mins, maxs);
+			anyVisible = true;
+		}
+
+		if (anyVisible && (mins.x >= clipMins.x - 0.01f && maxs.x <= clipMaxs.x + 0.01f &&
+			mins.y >= clipMins.y - 0.01f && maxs.y <= clipMaxs.y + 0.01f &&
+			mins.z >= clipMins.z - 0.01f && maxs.z <= clipMaxs.z + 0.01f)) {
+			return redirect;
+		}
+		return iNode;
+	}
+
+	BSPCLIPNODE32& node = clipnodes[iNode];
+
+	for (int i = 0; i < 2; i++) {
+		BSPPLANE plane = planes[node.iPlane];
+		if (i != 0) {
+			plane.vNormal = plane.vNormal.invert();
+			plane.fDist = -plane.fDist;
+		}
+
+		bool box_behind = true;
+		for (int k = 0; k < 8; k++) {
+			vec3 corner = vec3(
+				(k & 1) ? clipMaxs.x : clipMins.x,
+				(k & 2) ? clipMaxs.y : clipMins.y,
+				(k & 4) ? clipMaxs.z : clipMins.z
+			);
+			if (dotProduct(plane.vNormal, corner) - plane.fDist > 0.01f) {
+				box_behind = false;
+				break;
+			}
+		}
+
+		if (box_behind) continue;
+
+		clipOrder.push_back(plane);
+		node.iChildren[i] = delete_box_clipnodes_fast(node.iChildren[i], clipOrder, clipMins, clipMaxs, redirect);
+		clipOrder.pop_back();
+	}
+
+	if (node.iChildren[0] < 0 && node.iChildren[0] == node.iChildren[1]) {
+		return node.iChildren[0];
+	}
+
+	return iNode;
+}
+
+void Bsp::delete_hull_in_box(int hullIdx, vec3 clipMins, vec3 clipMaxs, int redirect) {
 	BSPMODEL& worldmodel = models[0];
 
-	// remove clipnodes in the clipping box
-	{
-		std::vector<BSPPLANE> clipOrder;
+	if (hullIdx < 0 || hullIdx >= MAX_MAP_HULLS)
+		return;
 
-		bool* oobMarks = new bool[clipnodeCount];
-		for (int i = 1; i < MAX_MAP_HULLS; i++) {
-			// collect oob data, then actually remove the nodes
-			int removedNodes = 0;
-			do {
-				removedNodes = 0;
-				memset(oobMarks, 1, clipnodeCount * sizeof(bool)); // assume everything is oob at first
-				delete_box_clipnodes(worldmodel.iHeadnodes[i], NULL, clipOrder, clipMins, clipMaxs, oobMarks, true, removedNodes, redirect);
-				delete_box_clipnodes(worldmodel.iHeadnodes[i], NULL, clipOrder, clipMins, clipMaxs, oobMarks, false, removedNodes, redirect);
-			} while (removedNodes);
+	if (hullIdx == 0) {
+		int realRedirect = redirect;
+		if (redirect == CONTENTS_EMPTY) {
+			realRedirect = ~(create_leaf(CONTENTS_EMPTY));
 		}
-		delete[] oobMarks;
+		else if (redirect == CONTENTS_SOLID) {
+			realRedirect = ~(create_leaf(CONTENTS_SOLID));
+		}
+		worldmodel.iHeadnodes[0] = delete_box_nodes_fast(worldmodel.iHeadnodes[0], clipMins, clipMaxs, realRedirect);
+	}
+	else {
+		std::vector<BSPPLANE> clipOrder;
+		worldmodel.iHeadnodes[hullIdx] = delete_box_clipnodes_fast(worldmodel.iHeadnodes[hullIdx], clipOrder, clipMins, clipMaxs, redirect);
+	}
+}
+
+void Bsp::delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect) {
+	for (int i = 1; i < MAX_MAP_HULLS; i++) {
+		delete_hull_in_box(i, clipMins, clipMaxs, redirect);
 	}
 }
 
@@ -9970,34 +10100,6 @@ void Bsp::remove_faces(std::vector<int> faceIdxs)
 	print_log("Removed {} faces from map!\n", removedFaces);
 }
 
-void Bsp::delete_faces_and_collision(std::vector<int> faceIdxs)
-{
-	if (faceIdxs.empty())
-		return;
-
-	vec3 totalMins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-	vec3 totalMaxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-	for (int faceIdx : faceIdxs)
-	{
-		if (faceIdx < 0 || faceIdx >= faceCount)
-			continue;
-
-		std::vector<vec3> faceVerts = get_face_verts(faceIdx);
-		for (auto& v : faceVerts)
-		{
-			expandBoundingBox(v, totalMins, totalMaxs);
-		}
-	}
-
-	// Use a very small epsilon to catch clipnodes tightly associated with this selection
-	totalMins -= vec3(0.1f, 0.1f, 0.1f);
-	totalMaxs += vec3(0.1f, 0.1f, 0.1f);
-
-	delete_box_collision(totalMins, totalMaxs, CONTENTS_EMPTY);
-
-	remove_faces(faceIdxs);
-}
 
 void Bsp::remove_faces_by_content(int content)
 {

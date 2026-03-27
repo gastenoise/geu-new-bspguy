@@ -1327,25 +1327,13 @@ void Gui::drawBspContexMenu()
 
 				if (allWorld)
 				{
-					if (ImGui::BeginMenu(get_localized_string("DELETE_FACES").c_str()))
+					if (ImGui::MenuItem(get_localized_string("DELETE_FACES").c_str()))
 					{
-						if (ImGui::MenuItem(get_localized_string("JUST_FACES").c_str()))
-						{
-							rend->pushUndoState("Delete Faces", EDIT_MODEL_LUMPS);
-							map->remove_faces(app->pickInfo.selectedFaces);
-							app->deselectFaces();
-							rend->reload();
-							pickCount++;
-						}
-						if (ImGui::MenuItem(get_localized_string("FACES_AND_CLIPNODES").c_str()))
-						{
-							rend->pushUndoState("Delete Faces and Collision", EDIT_MODEL_LUMPS);
-							map->delete_faces_and_collision(app->pickInfo.selectedFaces);
-							app->deselectFaces();
-							rend->reload();
-							pickCount++;
-						}
-						ImGui::EndMenu();
+						rend->pushUndoState("Delete Faces", EDIT_MODEL_LUMPS);
+						map->remove_faces(app->pickInfo.selectedFaces);
+						app->deselectFaces();
+						rend->reload();
+						pickCount++;
 					}
 					ImGui::Separator();
 				}
@@ -4952,6 +4940,14 @@ void Gui::drawMenuBar()
 					"Create 2 cull entities from the \"Create\" menu to define the culling box. "
 					"A transparent red box will form between them.");
 
+				if (ImGui::MenuItem("Delete internal textures", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
+					rend->pushUndoState("Delete internal textures", FL_TEXTURES);
+					int deleted = map->delete_embedded_textures();
+					rend->reloadTextures();
+					rend->reload();
+					print_log("Deleted {} embedded textures\n", deleted);
+				}
+
 				if (ImGui::MenuItem("Select Boxed Entities", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
 					if (!g_app->hasCullbox) {
 						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
@@ -4961,6 +4957,60 @@ void Gui::drawMenuBar()
 					}
 				}
 				IMGUI_TOOLTIP(g, "Selects all entities inside of a box defined by 2 \"cull\" entities.");
+
+				ImGui::Separator();
+
+				if (ImGui::BeginMenu("Delete Hulls in Cull Area", !app->isLoading && app->getSelectedMap() && rend && g_app->hasCullbox))
+				{
+					for (int i = 0; i < MAX_MAP_HULLS; i++)
+					{
+						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
+						{
+							rend->pushUndoState("Delete Hull In Box", EDIT_MODEL_LUMPS);
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
+							rend->reload();
+							pickCount++;
+						}
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem("All Hulls"))
+					{
+						rend->pushUndoState("Delete Hulls In Box", EDIT_MODEL_LUMPS);
+						for (int i = 0; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
+						}
+						rend->reload();
+						pickCount++;
+					}
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::BeginMenu("Create Hulls in Cull Area", !app->isLoading && app->getSelectedMap() && rend && g_app->hasCullbox))
+				{
+					for (int i = 0; i < MAX_MAP_HULLS; i++)
+					{
+						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
+						{
+							rend->pushUndoState("Create Hull In Box", EDIT_MODEL_LUMPS);
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
+							rend->reload();
+							pickCount++;
+						}
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem("All Hulls"))
+					{
+						rend->pushUndoState("Create Hulls In Box", EDIT_MODEL_LUMPS);
+						for (int i = 0; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
+						}
+						rend->reload();
+						pickCount++;
+					}
+					ImGui::EndMenu();
+				}
 
 				if (ImGui::MenuItem("Select Boxed Faces", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
 					if (!g_app->hasCullbox) {
@@ -8274,7 +8324,42 @@ void Gui::drawTextureBrowser()
 	if (copiedMiptex >= 0) ImGui::Text("(BSP index: %d)", copiedMiptex);
 	ImGui::EndGroup();
 
-	if (ImGui::Button("Apply Selected Texture", ImVec2(-1, 30)))
+	bool showDeleteButton = (copiedMiptex >= 0 && map);
+	float footerBtnWidth = showDeleteButton ? (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2.0f : -1.0f;
+
+	if (showDeleteButton)
+	{
+		if (ImGui::Button(get_localized_string(LANG_0451).c_str(), ImVec2(footerBtnWidth, 30)))
+		{
+			ImGui::OpenPopup("##delete_confirm");
+		}
+
+		if (ImGui::BeginPopup("##delete_confirm"))
+		{
+			ImGui::Text(get_localized_string(LANG_0940).c_str());
+			if (ImGui::Button(get_localized_string(LANG_0451).c_str()))
+			{
+				mapRender->pushUndoState("Unembed Texture", FL_TEXTURES);
+				if (map->unembed_textures({ copiedMiptex }))
+				{
+					mapRender->reloadTextures();
+					mapRender->reload();
+					copiedMiptex = -1;
+					lastCopiedTextureName = "";
+				}
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(get_localized_string(LANG_0945).c_str())) // Cancel
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+		ImGui::SameLine();
+	}
+
+	if (ImGui::Button("Apply Selected Texture", ImVec2(footerBtnWidth, 30)))
 	{
 		if (copiedMiptex >= 0 && map) {
 			pasteTexture();
