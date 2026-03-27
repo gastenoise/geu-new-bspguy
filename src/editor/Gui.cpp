@@ -1224,6 +1224,31 @@ void Gui::drawBspContexMenu()
 
 					ImGui::EndMenu();
 				}
+
+				ImGui::Separator();
+				if (ImGui::MenuItem("Fix transparent rendering"))
+				{
+					rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
+					for (int entIdx : entIdxs)
+					{
+						Entity* sel_ent = map->ents[entIdx];
+						int sel_modelIdx = sel_ent->getBspModelIdx();
+						if (sel_modelIdx <= 0) continue;
+
+						BSPMODEL& sel_model = map->models[sel_modelIdx];
+						for (int i = 0; i < sel_model.nFaces; i++)
+						{
+							int faceIdx = sel_model.iFirstFace + i;
+							BSPFACE32& face = map->faces[faceIdx];
+							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+							map->fix_transparency(texinfo.iMiptex);
+						}
+						rend->refreshEnt(entIdx);
+					}
+					rend->reuploadTextures();
+					rend->preRenderFaces();
+					pickCount++;
+				}
 			}
 			else if (modelIdx > 0)
 			{
@@ -1295,6 +1320,31 @@ void Gui::drawBspContexMenu()
 						pickCount++;
 					}
 					ImGui::EndMenu();
+				}
+
+				ImGui::Separator();
+				if (ImGui::MenuItem("Fix transparent rendering"))
+				{
+					rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
+					for (int entIdx : entIdxs)
+					{
+						Entity* sel_ent = map->ents[entIdx];
+						int sel_modelIdx = sel_ent->getBspModelIdx();
+						if (sel_modelIdx <= 0) continue;
+
+						BSPMODEL& sel_model = map->models[sel_modelIdx];
+						for (int i = 0; i < sel_model.nFaces; i++)
+						{
+							int faceIdx = sel_model.iFirstFace + i;
+							BSPFACE32& face = map->faces[faceIdx];
+							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+							map->fix_transparency(texinfo.iMiptex);
+						}
+						rend->refreshEnt(entIdx);
+					}
+					rend->reuploadTextures();
+					rend->preRenderFaces();
+					pickCount++;
 				}
 			}
 			else
@@ -1503,6 +1553,7 @@ void Gui::drawBspContexMenu()
 							}
 						}
 					}
+
 				}
 
 				ImGui::EndMenu();
@@ -1875,6 +1926,7 @@ void Gui::drawBspContexMenu()
 						}
 					}
 				}
+
 				if (modelIdx > 0)
 				{
 					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
@@ -5907,6 +5959,7 @@ void Gui::drawMenuBar()
 				}
 				if (ImGui::MenuItem(get_localized_string(LANG_0577).c_str()))
 				{
+					rend->pushUndoState("Fix swapped mins/maxs", FL_MODELS);
 					for (int i = 0; i < map->modelCount; i++)
 					{
 						for (int n = 0; n < 3; n++)
@@ -5940,6 +5993,18 @@ void Gui::drawMenuBar()
 				{
 					ImGui::BeginTooltip();
 					ImGui::TextUnformatted(get_localized_string(LANG_0580).c_str());
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1183).c_str()))
+				{
+					rend->pushUndoState("Fix model face ranges", EDIT_MODEL_LUMPS);
+					map->fix_invalid_model_face_ranges();
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_1184).c_str());
 					ImGui::EndTooltip();
 				}
 

@@ -177,6 +177,7 @@ public:
 
 	// face has duplicate verts, this is bad?
 	bool is_face_duplicate_edges(int faceIdx);
+	void fix_invalid_model_face_ranges();
 	void face_fix_duplicate_edges_index(int faceIdx);
 
 	// get all verts used by this model
@@ -342,6 +343,8 @@ public:
 	// Returns -1 on failure, else the new texture index
 	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
 	int add_texture(const WADTEX& tex, bool embedded = false);
+
+	void fix_transparency(int texIdx);
 
 	bool export_wad_to_pngs(const std::string& wadpath, const std::string& targetdir);
 	bool import_textures_to_wad(const std::string& wadpath, const std::string& texpath, bool dithering);

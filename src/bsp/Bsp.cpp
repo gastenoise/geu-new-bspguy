@@ -2559,7 +2559,10 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 
 	for (unsigned int i = 0; i < newCounts.markSurfs; i++)
 	{
-		marksurfs[i] = remap.faces[marksurfs[i]];
+		if (marksurfs[i] >= 0 && marksurfs[i] < (int)remap.faces.size())
+			marksurfs[i] = remap.faces[marksurfs[i]];
+		else
+			marksurfs[i] = 0;
 
 		if (!(target & CLEAN_LEAVES))
 		{
@@ -2613,7 +2616,15 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	{
 		nodes[i].iPlane = remap.planes[nodes[i].iPlane];
 		if (nodes[i].nFaces > 0)
-			nodes[i].iFirstFace = remap.faces[nodes[i].iFirstFace];
+		{
+			if (nodes[i].iFirstFace >= 0 && nodes[i].iFirstFace < (int)remap.faces.size())
+				nodes[i].iFirstFace = remap.faces[nodes[i].iFirstFace];
+			else
+			{
+				nodes[i].iFirstFace = 0;
+				nodes[i].nFaces = 0;
+			}
+		}
 		for (int k = 0; k < 2; k++)
 		{
 			if (nodes[i].iChildren[k] >= 0)
@@ -2643,7 +2654,18 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	for (int i = 0; i < modelCount; i++)
 	{
 		if (models[i].nFaces > 0)
-			models[i].iFirstFace = remap.faces[models[i].iFirstFace];
+		{
+			if (models[i].iFirstFace >= 0 && models[i].iFirstFace < (int)remap.faces.size())
+				models[i].iFirstFace = remap.faces[models[i].iFirstFace];
+			else
+			{
+				models[i].iFirstFace = 0;
+				models[i].nFaces = 0;
+			}
+		}
+		else
+			models[i].iFirstFace = 0;
+
 		if (models[i].iHeadnodes[0] >= 0)
 			models[i].iHeadnodes[0] = remap.nodes[models[i].iHeadnodes[0]];
 		for (int k = 1; k < MAX_MAP_HULLS; k++)
@@ -8130,6 +8152,8 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	{
 		COLOR3* src = (COLOR3*)data;
 
+		bool isTransparent = name[0] == '{';
+
 		// If custom pal || quake || force quake
 		if (!is_texture_has_pal || force_custompal)
 		{
@@ -8158,25 +8182,45 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			for (int x = 0; x < width; x++)
 			{
 				int paletteIdx = -1;
-				for (int k = 0; k < colorCount; k++)
+
+				if (isTransparent && src->r == 0 && src->g == 0 && src->b == 255)
 				{
-					if (*src == palette[k])
-					{
-						paletteIdx = k;
-						break;
-					}
+					palette[255] = COLOR3(0, 0, 255);
+					paletteIdx = 255;
+					if (colorCount <= 255)
+						colorCount = 256;
 				}
-				if (paletteIdx == -1)
+				else
 				{
-					if (colorCount >= 256)
+					for (int k = 0; k < colorCount; k++)
 					{
-						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0167));
-						delete[] mip[0];
-						return -1;
+						if (isTransparent && k == 255)
+							continue;
+						if (*src == palette[k])
+						{
+							paletteIdx = k;
+							break;
+						}
 					}
-					palette[colorCount] = *src;
-					paletteIdx = colorCount;
-					colorCount++;
+					if (paletteIdx == -1)
+					{
+						int targetIdx = colorCount;
+						if (isTransparent && targetIdx == 255)
+						{
+							targetIdx = 256; // Skip 255 if it's reserved
+						}
+
+						if (targetIdx >= 256)
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0167));
+							delete[] mip[0];
+							return -1;
+						}
+						palette[targetIdx] = *src;
+						paletteIdx = targetIdx;
+						if (targetIdx >= colorCount)
+							colorCount = targetIdx + 1;
+					}
 				}
 
 				mip[0][y * width + x] = (unsigned char)paletteIdx;
@@ -8198,12 +8242,22 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				for (int x = 0; x < mipWidth; x++)
 				{
 					int paletteIdx = -1;
-					for (int k = 0; k < colorCount; k++)
+
+					if (isTransparent && src->r == 0 && src->g == 0 && src->b == 255)
 					{
-						if (*src == palette[k])
+						paletteIdx = 255;
+					}
+					else
+					{
+						for (int k = 0; k < colorCount; k++)
 						{
-							paletteIdx = k;
-							break;
+							if (isTransparent && k == 255)
+								continue;
+							if (*src == palette[k])
+							{
+								paletteIdx = k;
+								break;
+							}
 						}
 					}
 
@@ -15152,6 +15206,56 @@ bool Bsp::is_texture_with_pal(int textureid)
 	return is_texture_has_pal;
 }
 
+void Bsp::fix_invalid_model_face_ranges()
+{
+	for (int i = 0; i < modelCount; i++)
+	{
+		if (models[i].nFaces > 0 && (models[i].iFirstFace < 0 || models[i].iFirstFace >= faceCount || models[i].iFirstFace + models[i].nFaces > faceCount))
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Model {} has invalid face range: {} + {} (Total: {}). Resetting.\n",
+				i, models[i].iFirstFace, models[i].nFaces, faceCount);
+			models[i].iFirstFace = 0;
+			models[i].nFaces = 0;
+		}
+		else if (models[i].nFaces <= 0)
+		{
+			models[i].iFirstFace = 0;
+			models[i].nFaces = 0;
+		}
+	}
+
+	for (int i = 0; i < nodeCount; i++)
+	{
+		if (nodes[i].nFaces > 0 && (nodes[i].iFirstFace < 0 || nodes[i].iFirstFace >= faceCount || nodes[i].iFirstFace + nodes[i].nFaces > faceCount))
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Node {} has invalid face range: {} + {} (Total: {}). Resetting.\n",
+				i, nodes[i].iFirstFace, nodes[i].nFaces, faceCount);
+			nodes[i].iFirstFace = 0;
+			nodes[i].nFaces = 0;
+		}
+		else if (nodes[i].nFaces <= 0)
+		{
+			nodes[i].iFirstFace = 0;
+			nodes[i].nFaces = 0;
+		}
+	}
+
+	int fixedMarks = 0;
+	for (int i = 0; i < marksurfCount; i++)
+	{
+		if (marksurfs[i] < 0 || marksurfs[i] >= faceCount)
+		{
+			marksurfs[i] = 0;
+			fixedMarks++;
+		}
+	}
+
+	if (fixedMarks > 0)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "Fixed {} invalid marksurface references.\n", fixedMarks);
+	}
+}
+
 void Bsp::fix_all_duplicate_vertices()
 {
 	std::set<int> verts_usage;
@@ -15509,3 +15613,58 @@ vec3 Bsp::getEntOffset(Entity* ent)
 	return vec3();
 }
 
+void Bsp::fix_transparency(int texIdx)
+{
+	if (texIdx < 0 || texIdx >= textureCount)
+		return;
+
+	int texOffset = ((int*)textures)[texIdx + 1];
+	if (texOffset < 0)
+		return;
+
+	BSPMIPTEX* tex = (BSPMIPTEX*)(textures + texOffset);
+
+	if (tex->szName[0] != '{' || tex->nOffsets[0] <= 0)
+		return;
+
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
+	COLOR3* pal = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+
+	// Check if blue is at 255
+	if (!(pal[255].r == 0 && pal[255].g == 0 && pal[255].b == 255))
+	{
+		// Find blue
+		int blueIdx = -1;
+		for (int k = 0; k < 256; k++)
+		{
+			if (pal[k].r == 0 && pal[k].g == 0 && pal[k].b == 255)
+			{
+				blueIdx = k;
+				break;
+			}
+		}
+
+		if (blueIdx != -1)
+		{
+			// Swap colors in palette
+			COLOR3 temp = pal[255];
+			pal[255] = pal[blueIdx];
+			pal[blueIdx] = temp;
+
+			// Remap pixels
+			for (int m = 0; m < MIPLEVELS; m++)
+			{
+				if (tex->nOffsets[m] > 0)
+				{
+					unsigned char* pixels = ((unsigned char*)tex) + tex->nOffsets[m];
+					int pixCount = (tex->nWidth >> m) * (tex->nHeight >> m);
+					for (int p = 0; p < pixCount; p++)
+					{
+						if (pixels[p] == 255) pixels[p] = (unsigned char)blueIdx;
+						else if (pixels[p] == blueIdx) pixels[p] = 255;
+					}
+				}
+			}
+		}
+	}
+}
