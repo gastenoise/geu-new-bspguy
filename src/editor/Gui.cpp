@@ -5027,22 +5027,6 @@ void Gui::drawMenuBar()
 
 					ImGui::EndMenu();
 				}
-				if (ImGui::MenuItem("Delete Boxed Data", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
-					if (!g_app->hasCullbox) {
-						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
-					}
-					else {
-						map->delete_box_data(g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset);
-						rend->pushUndoState("Delete Boxed Data", EDIT_MODEL_LUMPS | FL_ENTITIES);
-					}
-
-				}
-				IMGUI_TOOLTIP(g, "Deletes BSP data and entities inside of a box defined by 2 \"cull\" entities "
-					"(for the min and max extent of the box). This is useful for getting maps to run in an "
-					"engine with stricter map limits.\n\n"
-					"Create 2 cull entities from the \"Create\" menu to define the culling box. "
-					"A transparent red box will form between them.");
-
 				if (ImGui::MenuItem("Delete internal textures", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
 					rend->pushUndoState("Delete internal textures", FL_TEXTURES);
 					int deleted = map->delete_embedded_textures();
@@ -5051,99 +5035,6 @@ void Gui::drawMenuBar()
 					print_log("Deleted {} embedded textures\n", deleted);
 				}
 
-				if (ImGui::MenuItem("Select Boxed Entities", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
-					if (!g_app->hasCullbox) {
-						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
-					}
-					else {
-						app->selectBoxEntities();
-					}
-				}
-				IMGUI_TOOLTIP(g, "Selects all entities inside of a box defined by 2 \"cull\" entities.");
-
-				ImGui::Separator();
-
-				if (ImGui::BeginMenu("Delete Hulls in Cull Area", !app->isLoading && app->getSelectedMap() && rend && g_app->hasCullbox))
-				{
-					for (int i = 0; i < MAX_MAP_HULLS; i++)
-					{
-						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
-						{
-							rend->pushUndoState("Delete Hull In Box", EDIT_MODEL_LUMPS);
-							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
-							rend->reload();
-							pickCount++;
-						}
-					}
-					ImGui::Separator();
-					if (ImGui::MenuItem("Clipnodes"))
-					{
-						rend->pushUndoState("Delete Clipnodes In Box", EDIT_MODEL_LUMPS);
-						for (int i = 1; i < MAX_MAP_HULLS; i++)
-						{
-							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
-						}
-						rend->reload();
-						pickCount++;
-					}
-					if (ImGui::MenuItem("All Hulls"))
-					{
-						rend->pushUndoState("Delete Hulls In Box", EDIT_MODEL_LUMPS);
-						for (int i = 0; i < MAX_MAP_HULLS; i++)
-						{
-							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
-						}
-						rend->reload();
-						pickCount++;
-					}
-					ImGui::EndMenu();
-				}
-
-				if (ImGui::BeginMenu("Create Hulls in Cull Area", !app->isLoading && app->getSelectedMap() && rend && g_app->hasCullbox))
-				{
-					for (int i = 0; i < MAX_MAP_HULLS; i++)
-					{
-						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
-						{
-							rend->pushUndoState("Create Hull In Box", EDIT_MODEL_LUMPS);
-							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
-							rend->reload();
-							pickCount++;
-						}
-					}
-					ImGui::Separator();
-					if (ImGui::MenuItem("Clipnodes"))
-					{
-						rend->pushUndoState("Create Clipnodes In Box", EDIT_MODEL_LUMPS);
-						for (int i = 1; i < MAX_MAP_HULLS; i++)
-						{
-							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
-						}
-						rend->reload();
-						pickCount++;
-					}
-					if (ImGui::MenuItem("All Hulls"))
-					{
-						rend->pushUndoState("Create Hulls In Box", EDIT_MODEL_LUMPS);
-						for (int i = 0; i < MAX_MAP_HULLS; i++)
-						{
-							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
-						}
-						rend->reload();
-						pickCount++;
-					}
-					ImGui::EndMenu();
-				}
-
-				if (ImGui::MenuItem("Select Boxed Faces", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
-					if (!g_app->hasCullbox) {
-						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
-					}
-					else {
-						app->selectBoxFaces();
-					}
-				}
-				IMGUI_TOOLTIP(g, "Selects all world model faces inside of a box defined by 2 \"cull\" entities.");
 				if (ImGui::MenuItem("Deduplicate Models", 0, false, rend && !app->isLoading && app->getSelectedMap()))
 				{
 					map->deduplicate_models();
@@ -5215,27 +5106,6 @@ void Gui::drawMenuBar()
 						"customize compile settings much.");
 					ImGui::EndMenu();
 				}
-				int cullCount = 0;
-				for (auto& r : mapRenderers) {
-					for (Entity* ent : r->map->ents) {
-						if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
-							cullCount++;
-						}
-					}
-				}
-
-				if (ImGui::MenuItem("Cull Entity", 0, false, app->getSelectedMap() && cullCount < 2)) {
-					Entity* newEnt = new Entity();
-					vec3 origin = (cameraOrigin + app->cameraForward * 100);
-					if (app->gridSnappingEnabled)
-						origin = app->snapToGrid(origin);
-					newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-					newEnt->addKeyvalue("classname", "cull");
-					map->ents.push_back(newEnt);
-					rend->pushUndoState("Cull Entity", FL_ENTITIES);
-					app->updateCullBox();
-				}
-				IMGUI_TOOLTIP(g, "Create a point entity for use with the culling tool. 2 of these define the bounding box for structure culling operations.\n");
 
 
 
@@ -5351,6 +5221,199 @@ void Gui::drawMenuBar()
 				}
 
 				IMGUI_TOOLTIP(g, "Create overlay for every map face.\n");
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_1185).c_str(), map))
+			{
+				int cullCount = 0;
+				for (auto& r : mapRenderers) {
+					for (Entity* ent : r->map->ents) {
+						if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
+							cullCount++;
+						}
+					}
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1186).c_str(), 0, false, app->getSelectedMap() && cullCount < 2)) {
+					Entity* newEnt = new Entity();
+					vec3 origin = (cameraOrigin + app->cameraForward * 100);
+					if (app->gridSnappingEnabled)
+						origin = app->snapToGrid(origin);
+					newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+					newEnt->addKeyvalue("classname", "cull");
+					map->ents.push_back(newEnt);
+					rend->pushUndoState("Cull Entity", FL_ENTITIES);
+					app->updateCullBox();
+				}
+				IMGUI_TOOLTIP(g, get_localized_string(LANG_1187).c_str());
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1203).c_str(), 0, false, !app->isLoading && app->getSelectedMap() && cullCount > 0)) {
+					rend->pushUndoState("Delete Cull Entities", FL_ENTITIES);
+					app->deselectObject();
+					for (int i = (int)map->ents.size() - 1; i >= 0; i--) {
+						if (map->ents[i]->hasKey("classname") && map->ents[i]->keyvalues["classname"] == "cull") {
+							delete map->ents[i];
+							map->ents.erase(map->ents.begin() + i);
+						}
+					}
+					app->updateEnts();
+					app->updateCullBox();
+				}
+				IMGUI_TOOLTIP(g, get_localized_string(LANG_1204).c_str());
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1188).c_str(), 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
+					if (!g_app->hasCullbox) {
+						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
+					}
+					else {
+						map->delete_box_data(g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset);
+						rend->pushUndoState("Delete Boxed Data", EDIT_MODEL_LUMPS | FL_ENTITIES);
+					}
+
+				}
+				IMGUI_TOOLTIP(g, get_localized_string(LANG_1189).c_str());
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1190).c_str(), 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
+					if (!g_app->hasCullbox) {
+						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
+					}
+					else {
+						app->selectBoxEntities();
+					}
+				}
+				IMGUI_TOOLTIP(g, get_localized_string(LANG_1191).c_str());
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1194).c_str(), 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
+					if (!g_app->hasCullbox) {
+						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
+					}
+					else {
+						app->selectBoxFaces();
+					}
+				}
+				IMGUI_TOOLTIP(g, get_localized_string(LANG_1195).c_str());
+
+				ImGui::Separator();
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_1192).c_str(), !app->isLoading && app->getSelectedMap() && rend && g_app->hasCullbox))
+				{
+					for (int i = 0; i < MAX_MAP_HULLS; i++)
+					{
+						if (ImGui::MenuItem((get_localized_string(LANG_0568 + i)).c_str()))
+						{
+							rend->pushUndoState("Delete Hull In Box", EDIT_MODEL_LUMPS);
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
+							rend->reload();
+							pickCount++;
+						}
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem(get_localized_string(LANG_0458).c_str()))
+					{
+						rend->pushUndoState("Delete Clipnodes In Box", EDIT_MODEL_LUMPS);
+						for (int i = 1; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
+						}
+						rend->reload();
+						pickCount++;
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0460).c_str()))
+					{
+						rend->pushUndoState("Delete Hulls In Box", EDIT_MODEL_LUMPS);
+						for (int i = 0; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_EMPTY);
+						}
+						rend->reload();
+						pickCount++;
+					}
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_1193).c_str(), !app->isLoading && app->getSelectedMap() && rend && g_app->hasCullbox))
+				{
+					for (int i = 0; i < MAX_MAP_HULLS; i++)
+					{
+						if (ImGui::MenuItem((get_localized_string(LANG_0568 + i)).c_str()))
+						{
+							rend->pushUndoState("Create Hull In Box", EDIT_MODEL_LUMPS);
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
+							rend->reload();
+							pickCount++;
+						}
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem(get_localized_string(LANG_0458).c_str()))
+					{
+						rend->pushUndoState("Create Clipnodes In Box", EDIT_MODEL_LUMPS);
+						for (int i = 1; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
+						}
+						rend->reload();
+						pickCount++;
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0460).c_str()))
+					{
+						rend->pushUndoState("Create Hulls In Box", EDIT_MODEL_LUMPS);
+						for (int i = 0; i < MAX_MAP_HULLS; i++)
+						{
+							map->delete_hull_in_box(i, g_app->cullMins - rend->mapOffset, g_app->cullMaxs - rend->mapOffset, CONTENTS_SOLID);
+						}
+						rend->reload();
+						pickCount++;
+					}
+					ImGui::EndMenu();
+				}
+
+				ImGui::Separator();
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_1196).c_str(), map))
+				{
+					if (ImGui::MenuItem(get_localized_string(LANG_1197).c_str()))
+					{
+						map->remove_faces_by_content(CONTENTS_SKY);
+
+						map->save_undo_lightmaps();
+						map->resize_all_lightmaps();
+
+						rend->pushUndoState("REMOVE FACES FROM SKY", EDIT_MODEL_LUMPS);
+					}
+					IMGUI_TOOLTIP(g, get_localized_string(LANG_1198).c_str());
+
+					if (ImGui::MenuItem(get_localized_string(LANG_1199).c_str()))
+					{
+						map->remove_faces_by_content(CONTENTS_SOLID);
+
+						map->save_undo_lightmaps();
+						map->resize_all_lightmaps();
+
+						rend->pushUndoState("REMOVE FACES FROM SOLID", EDIT_MODEL_LUMPS);
+					}
+					IMGUI_TOOLTIP(g, get_localized_string(LANG_1200).c_str());
+
+					if (rend->curLeafIdx > 0 && app->clipnodeRenderHull <= 0)
+					{
+						if (ImGui::MenuItem(fmt::format(fmt::runtime(get_localized_string(LANG_1201)), rend->curLeafIdx).c_str()))
+						{
+							map->cull_leaf_faces(rend->curLeafIdx);
+
+							map->resize_all_lightmaps();
+
+							rend->loadLightmaps();
+							rend->preRenderFaces();
+
+							rend->pushUndoState(fmt::format("REMOVE FACES FROM {} LEAF", rend->curLeafIdx), EDIT_MODEL_LUMPS);
+						}
+						IMGUI_TOOLTIP(g, get_localized_string(LANG_1202).c_str());
+					}
+					ImGui::EndMenu();
+				}
 
 				ImGui::EndMenu();
 			}
@@ -5844,63 +5907,6 @@ void Gui::drawMenuBar()
 				}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Delete cull faces", map))
-			{
-				if (ImGui::MenuItem("Delete from [SKY LEAFS]"))
-				{
-					map->remove_faces_by_content(CONTENTS_SKY);
-
-					map->save_undo_lightmaps();
-					map->resize_all_lightmaps();
-
-					rend->pushUndoState("REMOVE FACES FROM SKY", EDIT_MODEL_LUMPS);
-				}
-				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-				{
-					ImGui::BeginTooltip();
-					ImGui::TextUnformatted("WARNING! Can remove unexpected faces if VIS has been edited previously.");
-					ImGui::EndTooltip();
-				}
-
-				if (ImGui::MenuItem("Delete from [SOLID LEAFS]"))
-				{
-					map->remove_faces_by_content(CONTENTS_SOLID);
-
-					map->save_undo_lightmaps();
-					map->resize_all_lightmaps();
-
-					rend->pushUndoState("REMOVE FACES FROM SOLID", EDIT_MODEL_LUMPS);
-				}
-				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-				{
-					ImGui::BeginTooltip();
-					ImGui::TextUnformatted("WARNING! Can remove unexpected faces if VIS has been edited previously.");
-					ImGui::EndTooltip();
-				}
-				if (rend->curLeafIdx > 0 && app->clipnodeRenderHull <= 0)
-				{
-					if (ImGui::MenuItem(fmt::format("Delete from [{} leaf]", rend->curLeafIdx).c_str()))
-					{
-						map->cull_leaf_faces(rend->curLeafIdx);
-
-						map->resize_all_lightmaps();
-
-						rend->loadLightmaps();
-						rend->preRenderFaces();
-
-						rend->pushUndoState(fmt::format("REMOVE FACES FROM {} LEAF", rend->curLeafIdx), EDIT_MODEL_LUMPS);
-					}
-					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-					{
-						ImGui::BeginTooltip();
-						ImGui::TextUnformatted("WARNING! Can remove unexpected faces if VIS has been edited previously.");
-						ImGui::EndTooltip();
-					}
-				}
-				ImGui::EndMenu();
-			}
-
-			ImGui::Separator();
 
 			bool hasAnyCollision = anyHullValid[1] || anyHullValid[2] || anyHullValid[3];
 
