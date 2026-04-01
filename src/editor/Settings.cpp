@@ -5,7 +5,7 @@
 
 std::string g_settings_path = "./bspguy.ini";
 std::string g_game_dir = "/";
-std::string g_working_dir = "./";
+std::string g_working_dir = "./bspguy_work/";
 std::string g_startup_dir = "";
 
 

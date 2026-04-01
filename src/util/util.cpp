@@ -1411,6 +1411,18 @@ void removeDir(const std::string& dirName)
 	fs::remove_all(dirName, err);
 }
 
+void ClearTempDirectory()
+{
+	if (g_settings.workingdir.empty())
+		return;
+
+	std::string tempDir = g_settings.workingdir + "temp/";
+	if (dirExists(tempDir))
+	{
+		removeDir(tempDir);
+	}
+}
+
 
 bool replaceAll(std::string& str, const std::string& from, const std::string& to)
 {
@@ -1818,11 +1830,11 @@ bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpat
 	// Search in working directory
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_working_dir + filename) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_settings.workingdir + filename) << "]\n";
 	}
-	if (fileExists(g_working_dir + filename))
+	if (fileExists(g_settings.workingdir + filename))
 	{
-		outpath = g_working_dir + filename;
+		outpath = g_settings.workingdir + filename;
 		return true;
 	}
 

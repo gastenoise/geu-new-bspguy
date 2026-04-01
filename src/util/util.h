@@ -77,6 +77,7 @@ bool dirExists(const std::string& dirName);
 bool createDir(const std::string& dirName);
 
 void removeDir(const std::string& dirName);
+void ClearTempDirectory();
 
 std::string toLowerCase(const std::string& s);
 

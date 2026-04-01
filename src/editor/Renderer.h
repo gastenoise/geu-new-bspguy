@@ -323,6 +323,7 @@ public:
 	void setupView(int forceW = 0, int forceH = 0);
 	void setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bboxMax);
 	void getPickRay(vec3& start, vec3& pickDir);
+	bool worldToScreen(const vec3& worldPos, vec2& screenPos);
 	void revertInvalidSolid(Bsp* map, int modelIdx);
 
 	void drawModelVerts();

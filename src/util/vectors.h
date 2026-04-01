@@ -213,23 +213,23 @@ struct vec3
 	}
 
 	vec3 normalize(float length = 1.0f)  const;
-	vec3 snap(float snapSize);
+	vec3 snap(float snapSize) const;
 	vec3 normalize_angles() const;
-	vec3 swap_xz();
+	vec3 swap_xz() const;
 	bool equal(vec3 to, float epsilon = EPSILON) const;
-	float size_test();
-	float sizeXY_test();
-	vec3 abs();
+	float size_test() const;
+	float sizeXY_test() const;
+	vec3 abs() const;
 	float length() const;
 	float lengthSquared() const;
 	bool IsZero() const;
-	vec3 invert();
-	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
-	std::string toString();
-	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
-	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
-	vec3 unflip();
-	vec3 unflipUV();
+	vec3 invert() const;
+	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "") const;
+	std::string toString() const;
+	vec3 flip() const; // flip from opengl to Half-life coordinate system and vice versa
+	vec3 flipUV() const; // flip from opengl to Half-life coordinate system and vice versa
+	vec3 unflip() const;
+	vec3 unflipUV() const;
 	float dist(vec3 to)  const;
 	float dot(const vec3& other) const {
 		return x * other.x + y * other.y + z * other.z;

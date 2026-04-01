@@ -263,7 +263,7 @@ Bsp::Bsp(std::string fpath)
 		entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
 	}
 	else {
-		entFilePath = g_working_dir + (bsp_name + ".ent");
+		entFilePath = g_settings.workingdir + "exported_entities/" + (bsp_name + ".ent");
 	}
 
 	if (g_settings.auto_import_ent && fileExists(entFilePath))
@@ -5003,10 +5003,13 @@ void Bsp::write(const std::string& path)
 	if (g_settings.savebackup)
 	{
 		std::vector<unsigned char> oldData;
-		if (!fileExists(path + ".bak") && readFile(path, oldData))
+		std::string backupDir = g_settings.workingdir + "backup/";
+		createDir(backupDir);
+		std::string backupPath = backupDir + basename(path) + ".bak";
+		if (!fileExists(backupPath) && readFile(path, oldData))
 		{
-			writeFile(path + ".bak", oldData);
-			print_log(get_localized_string(LANG_0074), path + ".bak");
+			writeFile(backupPath, oldData);
+			print_log(get_localized_string(LANG_0074), backupPath);
 		}
 	}
 
@@ -5049,13 +5052,14 @@ void Bsp::write(const std::string& path)
 
 	if (target_save_texture_has_pal != is_texture_has_pal)
 	{
-		createDir(g_working_dir);
-		removeFile(g_working_dir + "temp.wad");
-		if (ExportEmbeddedWad(g_working_dir + "temp.wad"))
+		createDir(g_settings.workingdir + "temp/");
+		std::string tempWad = g_settings.workingdir + "temp/temp.wad";
+		removeFile(tempWad);
+		if (ExportEmbeddedWad(tempWad))
 		{
 			is_texture_has_pal = target_save_texture_has_pal;
-			ImportWad(g_working_dir + "temp.wad");
-			removeFile(g_working_dir + "temp.wad");
+			ImportWad(tempWad);
+			removeFile(tempWad);
 		}
 	}
 
@@ -8466,7 +8470,11 @@ bool Bsp::export_wad_to_pngs(const std::string& wadpath, const std::string& targ
 					print_log(get_localized_string(LANG_0346), texture.szName, basename(wad->filename));
 					COLOR4* texturedata = ConvertWadTexToRGBA(texture);
 
-					lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture.szName) + ".png").c_str()
+					std::string exportPath = g_settings.workingdir + "exported_wads/pngs/" + basename(wad->filename) + "/";
+					createDir(g_settings.workingdir + "exported_wads/");
+					createDir(g_settings.workingdir + "exported_wads/pngs/");
+					createDir(exportPath);
+					lodepng_encode32_file((exportPath + std::string(texture.szName) + ".png").c_str()
 						, (unsigned char*)texturedata, texture.nWidth, texture.nHeight);
 					delete texturedata;
 				}
@@ -13869,8 +13877,9 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		if (getEmbeddedTexCount() > 0)
 		{
 			std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4) + "_emb.wad";
-			createDir(g_working_dir);
-			ExportEmbeddedWad(g_working_dir + basename(targetMapFileName));
+			std::string exportPath = g_settings.workingdir + "exported_wads/";
+			createDir(exportPath);
+			ExportEmbeddedWad(exportPath + basename(targetMapFileName));
 			print_log(PRINT_BLUE, "Export {} wad!\n", targetMapFileName);
 		}
 

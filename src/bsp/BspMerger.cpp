@@ -1023,7 +1023,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	mergedMap->update_ent_lump();
 
-	if (!noscript)
+	if (!noscript && !output_name.empty())
 	{
 		mergedMap->export_entities(output_name + ".ent");
 	}

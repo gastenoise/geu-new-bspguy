@@ -1472,7 +1472,9 @@ void BspRenderer::generateNavMeshBuffer() {
 
 	renderClip->faceMaths[hull] = std::move(navFaceMaths);
 
-	std::string navmesh_hull3_path = g_working_dir + map->bsp_name + "_hull" + std::to_string(hull) + ".obj";
+	std::string exportPath = g_settings.workingdir + "exported_geometry/";
+	createDir(exportPath);
+	std::string navmesh_hull3_path = exportPath + map->bsp_name + "_hull" + std::to_string(hull) + ".obj";
 
 	std::ofstream file(navmesh_hull3_path, std::ios::out | std::ios::trunc);
 	for (size_t i = 0; i < allVerts.size(); i++) {

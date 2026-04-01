@@ -851,8 +851,36 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 	src_map->update_lump_pointers();
 }
 
+std::string get_auto_export_path(Bsp* map, int modelIdx)
+{
+	std::string targetname = "";
+	std::string classname = "unknown";
+
+	int entIdx = map->get_ent_from_model(modelIdx);
+	if (entIdx >= 0)
+	{
+		Entity* ent = map->ents[entIdx];
+		if (ent->hasKey("targetname") && !ent->keyvalues["targetname"].empty())
+			targetname = "_" + ent->keyvalues["targetname"];
+		if (ent->hasKey("classname"))
+			classname = ent->keyvalues["classname"];
+	}
+
+	std::string folder = g_settings.workingdir + "exported_models/" + map->bsp_name + "/";
+	createDir(g_settings.workingdir + "exported_models/");
+	createDir(folder);
+
+	return folder + std::to_string(modelIdx) + targetname + "_" + classname + ".bsp";
+}
+
 void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int ExportType, bool movemodel)
 {
+	std::string final_path = export_path;
+	if (export_path.empty())
+	{
+		final_path = get_auto_export_path(src_map, model_id);
+	}
+
 	LumpState backupLumps = src_map->duplicate_lumps();
 
 	Bsp* bspModel = new Bsp();
@@ -1096,7 +1124,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	//	}
 	//}
 
-	bspModel->bsp_path = export_path;
+	bspModel->bsp_path = final_path;
 	bspModel->write(bspModel->bsp_path);
 	removeFile(bspModel->bsp_path);
 
@@ -1130,6 +1158,8 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	delete[] tmpCompressed;
 
 	src_map->replace_lumps(backupLumps);
+
+	print_log(get_localized_string(LANG_1068), final_path);
 }
 
 
@@ -1564,7 +1594,7 @@ void Gui::drawBspContexMenu()
 			if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading && map && !app->pickInfo.selectedFaces.empty()))
 			{
 				std::string timestamp = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-				std::string export_path = g_working_dir + map->bsp_name + "_faces_" + timestamp + ".bsp";
+				std::string export_path = g_settings.workingdir + "exported_models/" + map->bsp_name + "/faces_" + timestamp + ".bsp";
 
 				if (ImGui::BeginMenu(get_localized_string(LANG_0467).c_str(), !app->isLoading))
 				{
@@ -2062,15 +2092,15 @@ void Gui::drawBspContexMenu()
 					{
 						if (ImGui::MenuItem(get_localized_string(LANG_0468).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 0, false);
+							ExportModel(map, "", modelIdx, 0, false);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_0469).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 2, false);
+							ExportModel(map, "", modelIdx, 2, false);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_0470).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 1, false);
+							ExportModel(map, "", modelIdx, 1, false);
 						}
 						ImGui::EndMenu();
 					}
@@ -2079,15 +2109,15 @@ void Gui::drawBspContexMenu()
 					{
 						if (ImGui::MenuItem(get_localized_string(LANG_1070).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 0, true);
+							ExportModel(map, "", modelIdx, 0, true);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_1071).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 2, true);
+							ExportModel(map, "", modelIdx, 2, true);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_1072).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 1, true);
+							ExportModel(map, "", modelIdx, 1, true);
 						}
 						ImGui::EndMenu();
 					}
@@ -2250,13 +2280,14 @@ void Gui::drawMenuBar()
 				g_settings.lastdir = stripFileName(res.string());
 				if (dirExists(png_import_dir))
 				{
-					createDir(g_working_dir);
-					removeFile(g_working_dir + "temp2.wad");
-					if (map && map->import_textures_to_wad(g_working_dir + "temp2.wad", png_import_dir, ditheringEnabled))
+					createDir(g_settings.workingdir + "temp/");
+					std::string tempWad = g_settings.workingdir + "temp/temp2.wad";
+					removeFile(tempWad);
+					if (map && map->import_textures_to_wad(tempWad, png_import_dir, ditheringEnabled))
 					{
-						map->ImportWad(g_working_dir + "temp2.wad");
+						map->ImportWad(tempWad);
 					}
-					removeFile(g_working_dir + "temp2.wad");
+					removeFile(tempWad);
 				}
 			}
 			ifd::FileDialog::Instance().Close();
@@ -3183,8 +3214,8 @@ void Gui::drawMenuBar()
 						}
 					}
 					else {
-						entFilePath = g_working_dir + (map->bsp_name + ".ent");
-						createDir(g_working_dir);
+						createDir(g_settings.workingdir + "exported_entities/");
+						entFilePath = g_settings.workingdir + "exported_entities/" + (map->bsp_name + ".ent");
 					}
 
 					print_log(get_localized_string(LANG_0342), entFilePath);
@@ -3192,9 +3223,10 @@ void Gui::drawMenuBar()
 				}
 				if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
-					print_log(get_localized_string(LANG_0343), g_working_dir, map->bsp_name + ".wad");
-					createDir(g_working_dir);
-					if (map->ExportEmbeddedWad(g_working_dir + map->bsp_name + ".wad"))
+					createDir(g_settings.workingdir + "exported_wads/");
+					std::string wadPath = g_settings.workingdir + "exported_wads/" + map->bsp_name + ".wad";
+					print_log(get_localized_string(LANG_0343), g_settings.workingdir + "exported_wads/", map->bsp_name + ".wad");
+					if (map->ExportEmbeddedWad(wadPath))
 					{
 						print_log(get_localized_string(LANG_0344));
 						map->delete_embedded_textures();
@@ -3225,7 +3257,9 @@ void Gui::drawMenuBar()
 
 					if (ImGui::MenuItem("Do Export", NULL))
 					{
-						map->ExportToSmdWIP(g_working_dir, splitSmd, oneRoot);
+						std::string exportPath = g_settings.workingdir + "exported_geometry/";
+						createDir(exportPath);
+						map->ExportToSmdWIP(exportPath, splitSmd, oneRoot);
 					}
 					ImGui::EndMenu();
 				}
@@ -3279,26 +3313,30 @@ void Gui::drawMenuBar()
 
 					if (ImGui::BeginMenu("Export .obj"))
 					{
+						std::string exportPath = g_settings.workingdir + "exported_geometry/";
+						createDir(exportPath);
 						if (ImGui::MenuItem("Export only bsp"))
 						{
-							map->ExportToObjWIP(g_working_dir, g_scale, false, false, false, !g_group_faces &&
+							map->ExportToObjWIP(exportPath, g_scale, false, false, false, !g_group_faces &&
 								!g_group_as_objects ? 0 : (g_group_faces ? 1 : 2));
 						}
 						if (ImGui::MenuItem("Export with models"))
 						{
-							map->ExportToObjWIP(g_working_dir, g_scale, false, true);
+							map->ExportToObjWIP(exportPath, g_scale, false, true);
 						}
 						ImGui::EndMenu();
 					}
 					if (ImGui::BeginMenu("Export .csm"))
 					{
+						std::string exportPath = g_settings.workingdir + "exported_geometry/";
+						createDir(exportPath);
 						if (ImGui::MenuItem("Export only bsp"))
 						{
-							map->ExportToObjWIP(g_working_dir, g_scale, false, false, true);
+							map->ExportToObjWIP(exportPath, g_scale, false, false, true);
 						}
 						if (ImGui::MenuItem("Export with models"))
 						{
-							map->ExportToObjWIP(g_working_dir, g_scale, false, true, true);
+							map->ExportToObjWIP(exportPath, g_scale, false, true, true);
 						}
 						ImGui::EndMenu();
 					}
@@ -3328,11 +3366,15 @@ void Gui::drawMenuBar()
 
 					if (ImGui::MenuItem("Full .map"))
 					{
-						map->ExportToMapWIP(g_working_dir, false, merge_faces, use_one_back_vert, inside_box);
+						std::string exportPath = g_settings.workingdir + "exported_maps/";
+						createDir(exportPath);
+						map->ExportToMapWIP(exportPath, false, merge_faces, use_one_back_vert, inside_box);
 					}
 					else if (ImGui::MenuItem("Selected faces"))
 					{
-						map->ExportToMapWIP(g_working_dir, true, merge_faces, use_one_back_vert, inside_box);
+						std::string exportPath = g_settings.workingdir + "exported_maps/";
+						createDir(exportPath);
+						map->ExportToMapWIP(exportPath, true, merge_faces, use_one_back_vert, inside_box);
 					}
 					ImGui::EndMenu();
 				}
@@ -3346,7 +3388,8 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0537).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
-					map->ExportPortalFile(map->bsp_path);
+					createDir(g_settings.workingdir + "exported_vis/");
+					map->ExportPortalFile(g_settings.workingdir + "exported_vis/" + map->bsp_name + ".bsp");
 				}
 
 
@@ -3360,7 +3403,8 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					std::string newpath;
-					map->ExportExtFile(map->bsp_path, newpath);
+					createDir(g_settings.workingdir + "exported_rad/");
+					map->ExportExtFile(g_settings.workingdir + "exported_rad/" + map->bsp_name + ".bsp", newpath);
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -3374,7 +3418,8 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0540).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
-					map->ExportLightFile(map->bsp_path);
+					createDir(g_settings.workingdir + "exported_lighting/");
+					map->ExportLightFile(g_settings.workingdir + "exported_lighting/" + map->bsp_name + ".lit");
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -3401,15 +3446,15 @@ void Gui::drawMenuBar()
 							{
 								if (ImGui::MenuItem(get_localized_string(LANG_1154).c_str(), 0, false, true))
 								{
-									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 0, false);
+									ExportModel(map, "", i, 0, false);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1155).c_str(), 0, false, true))
 								{
-									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 2, false);
+									ExportModel(map, "", i, 2, false);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1156).c_str(), 0, false, true))
 								{
-									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 1, false);
+									ExportModel(map, "", i, 1, false);
 								}
 								ImGui::EndMenu();
 							}
@@ -3417,15 +3462,15 @@ void Gui::drawMenuBar()
 							{
 								if (ImGui::MenuItem(get_localized_string(LANG_1173).c_str(), 0, false, true))
 								{
-									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 0, true);
+									ExportModel(map, "", i, 0, true);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1174).c_str(), 0, false, true))
 								{
-									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 2, true);
+									ExportModel(map, "", i, 2, true);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1175).c_str(), 0, false, true))
 								{
-									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 1, true);
+									ExportModel(map, "", i, 1, true);
 								}
 								ImGui::EndMenu();
 							}
@@ -3447,7 +3492,10 @@ void Gui::drawMenuBar()
 						if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 						{
 							print_log(get_localized_string(LANG_0345), basename(wad->filename));
-							map->export_wad_to_pngs(wad->filename, g_working_dir + "wads/" + basename(wad->filename));
+							std::string exportPath = g_settings.workingdir + "exported_wads/pngs/" + basename(wad->filename);
+							createDir(g_settings.workingdir + "exported_wads/");
+							createDir(g_settings.workingdir + "exported_wads/pngs/");
+							map->export_wad_to_pngs(wad->filename, exportPath);
 						}
 					}
 
@@ -4132,11 +4180,11 @@ void Gui::drawMenuBar()
 						{
 							umdTextures.push_back("SKY");
 						}
-						createDir(g_working_dir);
+						createDir(g_settings.workingdir + "exported_umd/");
 
-						std::ofstream tmpmap(g_working_dir + "exported.umd", std::ios::out | std::ios::binary);
+						std::ofstream tmpmap(g_settings.workingdir + "exported_umd/exported.umd", std::ios::out | std::ios::binary);
 
-						print_log("\nSaved .umd map to {} path\n", g_working_dir + "exported.umd");
+						print_log("\nSaved .umd map to {} path\n", g_settings.workingdir + "exported_umd/exported.umd");
 
 						if (tmpmap.is_open()) {
 							tmpmap.write((const char*)(&UMD_MAGIC), 4);
@@ -4207,7 +4255,9 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem(get_localized_string("LANG_DUMP_TEX").c_str(), NULL, false, map))
 				{
-					createDir(g_working_dir + map->bsp_name + "/dump_textures/");
+					std::string dumpPath = g_settings.workingdir + "dumped_textures/" + map->bsp_name + "/";
+					createDir(g_settings.workingdir + "dumped_textures/");
+					createDir(dumpPath);
 
 					g_mutex_list[4].lock();
 					if (g_all_Textures.size() && rend)
@@ -4217,9 +4267,9 @@ void Gui::drawMenuBar()
 							if (tex != missingTex)
 							{
 								if (tex->format == GL_RGBA)
-									lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
+									lodepng_encode32_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
 								else
-									lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
+									lodepng_encode24_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
 							}
 						}
 					}
@@ -4287,7 +4337,7 @@ void Gui::drawMenuBar()
 							}
 						}
 						else {
-							entFilePath = g_working_dir + (map->bsp_name + ".ent");
+							entFilePath = g_settings.workingdir + "exported_entities/" + (map->bsp_name + ".ent");
 						}
 
 						if (fileExists(entFilePath))
@@ -4326,7 +4376,7 @@ void Gui::drawMenuBar()
 					if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
 						ImGui::BeginTooltip();
-						ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_working_dir, map->bsp_name + ".wad").c_str());
+						ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_settings.workingdir + "exported_wads/", map->bsp_name + ".wad").c_str());
 						ImGui::EndTooltip();
 					}
 				}
@@ -4346,7 +4396,7 @@ void Gui::drawMenuBar()
 						if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 						{
 							ImGui::BeginTooltip();
-							ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_working_dir, map->bsp_name + ".wad").c_str());
+							ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_settings.workingdir + "exported_wads/", map->bsp_name + ".wad").c_str());
 							ImGui::EndTooltip();
 						}
 					}
@@ -4367,7 +4417,8 @@ void Gui::drawMenuBar()
 						if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 						{
 							print_log(get_localized_string(LANG_0350), basename(wad->filename));
-							if (!map->import_textures_to_wad(wad->filename, g_working_dir + "wads/" + basename(wad->filename), ditheringEnabled))
+							std::string importPath = g_settings.workingdir + "exported_wads/pngs/" + basename(wad->filename);
+							if (!map->import_textures_to_wad(wad->filename, importPath, ditheringEnabled))
 							{
 								//
 							}
@@ -7246,7 +7297,7 @@ void Gui::drawDebugWidget()
 		if (ImGui::CollapsingHeader("DEBUG INFO", ImGuiTreeNodeFlags_None))
 		{
 			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
-			ImGui::Text(fmt::format("Workdir: {}", g_working_dir).c_str());
+			ImGui::Text(fmt::format("Workdir: {}", g_settings.workingdir).c_str());
 			if (imgui_io)
 			{
 				ImGui::Text(fmt::format("Opengl Errors: {} ", app->gl_errors).c_str());
@@ -7868,7 +7919,10 @@ void Gui::drawOverviewWidget()
 		if (ImGui::Button("Save .txt"))
 		{
 			FILE* overfile = NULL;
-			fopen_s(&overfile, (g_working_dir + map->bsp_name + ".txt").c_str(), "wb");
+			std::string overPath = g_settings.workingdir + "overviews/";
+			createDir(overPath);
+			std::string overFile = overPath + map->bsp_name + ".txt";
+			fopen_s(&overfile, overFile.c_str(), "wb");
 			if (overfile)
 			{
 				fprintf(overfile, "// overview description file for %s\n\n", map->bsp_name.c_str());
@@ -7880,7 +7934,7 @@ void Gui::drawOverviewWidget()
 				fprintf(overfile, "\tIMAGE\t\"overviews/%s%s\"\n", map->bsp_name.c_str(), imgFormat.c_str());
 				fprintf(overfile, "\tHEIGHT\t%.2f\n}\n", ortho_mins.z + ortho_offset.z);
 				fclose(overfile);
-				print_log("Saved to {}\n", g_working_dir + map->bsp_name + ".txt");
+				print_log("Saved to {}\n", overFile);
 			}
 		}
 		ImGui::SeparatorText("DEV INFO");
@@ -10603,6 +10657,7 @@ void Gui::drawSettings()
 			ImGui::Text(get_localized_string(LANG_0716).c_str());
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::InputText(get_localized_string(LANG_0717).c_str(), &g_settings.workingdir);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "This directory will be used for all generated content (exports, backups, etc.)");
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.workingdir.size())
 			{
 				ImGui::BeginTooltip();
@@ -11650,22 +11705,33 @@ void Gui::drawMergeWindow()
 					print_log("\n");
 				}
 				BspMerger merger;
-				MergeResult result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, false, NoStyles, OverlapMerge, mapsOffsets);
+
+				std::string finalOutPath = g_settings.workingdir + "merged_maps/" + outPath;
+				createDir(g_settings.workingdir + "merged_maps/");
+
+				std::string finalEntPath = g_settings.workingdir + "exported_entities/" + stripExt(basename(outPath));
+				createDir(g_settings.workingdir + "exported_entities/");
+				// Pass empty string for output_name to BspMerger::merge to avoid duplicate/misplaced entity export
+				MergeResult result = merger.merge(maps, vec3(), "", NoRipent, NoScript, false, NoStyles, OverlapMerge, mapsOffsets);
 
 				print_log("\n");
 				if (result.map && result.map->isValid())
 				{
-					result.map->write(outPath);
+					result.map->write(finalOutPath);
+					if (!NoScript)
+					{
+						result.map->export_entities(finalEntPath + ".ent");
+					}
 					print_log("\n");
 					result.map->print_info(false, 0, 0);
 
 					app->clearMaps();
 
-					fixupPath(outPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+					fixupPath(finalOutPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
 
-					if (fileExists(outPath))
+					if (fileExists(finalOutPath))
 					{
-						app->addMap(new Bsp(outPath));
+						app->addMap(new Bsp(finalOutPath));
 					}
 					else
 					{
@@ -12890,10 +12956,11 @@ void ImportOneBigLightmapFile(Bsp* map)
 			faces_to_export.push_back(faceIdx);
 	}
 
+	std::string importPath = g_settings.workingdir + "exported_lighting/";
 	for (int lightId = 0; lightId < MAX_LIGHTMAPS; ++lightId)
 	{
 		std::string filename = fmt::format(fmt::runtime(get_localized_string(LANG_0407)),
-			g_working_dir.c_str(),
+			importPath.c_str(),
 			get_localized_string(LANG_0408),
 			lightId);
 
@@ -13035,8 +13102,10 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 			}
 		}
 
+		std::string exportPath = g_settings.workingdir + "exported_lighting/";
+		createDir(exportPath);
 		filename = fmt::format(fmt::runtime(get_localized_string(LANG_1061)),
-			g_working_dir.c_str(),
+			exportPath.c_str(),
 			get_localized_string(LANG_1062),
 			lightId);
 		print_log(get_localized_string(LANG_0412), filename);
@@ -13058,6 +13127,8 @@ void ExportLightmap(const BSPFACE32& face, int faceIdx, Bsp* map)
 	int size[2];
 	map->GetFaceLightmapSize(faceIdx, size);
 	std::string filename;
+	std::string exportPath = g_settings.workingdir + "exported_lighting/";
+	createDir(exportPath);
 
 	for (int i = 0; i < MAX_LIGHTMAPS; i++)
 	{
@@ -13065,7 +13136,7 @@ void ExportLightmap(const BSPFACE32& face, int faceIdx, Bsp* map)
 			continue;
 		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 		int offset = face.nLightmapOffset + i * lightmapSz;
-		filename = fmt::format(fmt::runtime(get_localized_string(LANG_0413)), g_working_dir.c_str(), get_localized_string(LANG_0408), faceIdx, i);
+		filename = fmt::format(fmt::runtime(get_localized_string(LANG_0413)), exportPath.c_str(), get_localized_string(LANG_0408), faceIdx, i);
 		print_log(get_localized_string(LANG_0414), filename);
 		lodepng_encode24_file(filename.c_str(), (unsigned char*)(map->lightdata + offset), size[0], size[1]);
 	}
@@ -13076,13 +13147,14 @@ void ImportLightmap(const BSPFACE32& face, int faceIdx, Bsp* map)
 	std::string filename;
 	int size[2];
 	map->GetFaceLightmapSize(faceIdx, size);
+	std::string importPath = g_settings.workingdir + "exported_lighting/";
 	for (int i = 0; i < MAX_LIGHTMAPS; i++)
 	{
 		if (face.nStyles[i] == 255)
 			continue;
 		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 		int offset = face.nLightmapOffset + i * lightmapSz;
-		filename = fmt::format(fmt::runtime(get_localized_string(LANG_1063)), g_working_dir.c_str(), get_localized_string(LANG_1062), faceIdx, i);
+		filename = fmt::format(fmt::runtime(get_localized_string(LANG_1063)), importPath.c_str(), get_localized_string(LANG_1062), faceIdx, i);
 		unsigned int w = size[0], h = size[1];
 		unsigned int w2 = 0, h2 = 0;
 		print_log(get_localized_string(LANG_0415), filename);
@@ -13365,7 +13437,7 @@ void Gui::drawLightMapTool()
 				if (ImGui::Button(get_localized_string(LANG_1128).c_str(), ImVec2(120, 0)))
 				{
 					print_log(get_localized_string(LANG_0420));
-					createDir(g_working_dir);
+					createDir(g_settings.workingdir + "exported_lighting/");
 					ExportLightmap(*face, faceIdx, map);
 				}
 				ImGui::SameLine();
@@ -13384,7 +13456,7 @@ void Gui::drawLightMapTool()
 			if (ImGui::Button(get_localized_string(LANG_0867).c_str(), ImVec2(125, 0)))
 			{
 				print_log(get_localized_string(LANG_1064));
-				createDir(g_working_dir);
+				createDir(g_settings.workingdir + "exported_lighting/");
 
 				//for (int z = 0; z < map->faceCount; z++)
 				//{

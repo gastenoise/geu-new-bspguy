@@ -375,6 +375,7 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {
 	print_log(get_localized_string(LANG_0901));
+	ClearTempDirectory();
 	glfwTerminate();
 }
 
@@ -1025,15 +1026,28 @@ void Renderer::renderLoop()
 						matmodel.loadIdentity();
 						mat_upload();
 						vec3 offset = SelectedMap->getBspRender()->mapOffset;
-						vec3 p1 = offset + vec3(-10240.0f, 0.0f, 0.0f);
-						vec3 p2 = offset + vec3(10240.0f, 0.0f, 0.0f);
-						drawLine(p1, p2, { 128, 128, 255, 255 });
-						vec3 p3 = offset + vec3(0.0f, -10240.0f, 0.0f);
-						vec3 p4 = offset + vec3(0.0f, 10240.0f, 0.0f);
-						drawLine(p3, p4, { 0, 0, 255, 255 });
-						vec3 p5 = offset + vec3(0.0f, 0.0f, -10240.0f);
-						vec3 p6 = offset + vec3(0.0f, 0.0f, 10240.0f);
-						drawLine(p5, p6, { 0, 255, 0, 255 });
+
+						float axisLen = 1024.0f;
+						vec3 pX = offset + vec3(axisLen, 0.0f, 0.0f);
+						vec3 pY = offset + vec3(0.0f, axisLen, 0.0f);
+						vec3 pZ = offset + vec3(0.0f, 0.0f, axisLen);
+
+						cVert origin_verts[6];
+						// Rojo para X
+						origin_verts[0] = cVert(offset.flip(), { 255, 0, 0, 255 });
+						origin_verts[1] = cVert(pX.flip(),     { 255, 0, 0, 255 });
+						// Azul para Y
+						origin_verts[2] = cVert(offset.flip(), { 0, 0, 255, 255 });
+						origin_verts[3] = cVert(pY.flip(),     { 0, 0, 255, 255 });
+						// Verde para Z
+						origin_verts[4] = cVert(offset.flip(), { 0, 255, 0, 255 });
+						origin_verts[5] = cVert(pZ.flip(),     { 0, 255, 0, 255 });
+
+						VertexBuffer originBuf(colorShader, origin_verts, 6, GL_LINES, false);
+						originBuf.drawFull();
+
+						matmodel.loadIdentity();
+						mat_upload();
 					}
 
 					if (g_render_flags & RENDER_MAP_BOUNDARY) {
@@ -1363,7 +1377,8 @@ void Renderer::renderLoop()
 				{
 					if (make_screenshot)
 					{
-						std::string screenPath = g_working_dir;
+						std::string screenPath = g_settings.workingdir + "screenshots/";
+						createDir(g_settings.workingdir + "screenshots/");
 
 
 						if (make_screenshot_dir.size() && dirExists(make_screenshot_dir))
@@ -1387,8 +1402,11 @@ void Renderer::renderLoop()
 					}
 					else
 					{
-						stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
-						print_log("Saved to {} file!\n", (g_working_dir + "overview.tga"));
+						std::string overPath = g_settings.workingdir + "overviews/";
+						createDir(overPath);
+						std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga");
+						stbi_write_tga(finalPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+						print_log("Saved to {} file!\n", finalPath);
 					}
 				}
 				else
@@ -1435,9 +1453,12 @@ void Renderer::renderLoop()
 					}
 
 
-					WriteBMP_PAL(g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp"), indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
+					std::string overPath = g_settings.workingdir + "overviews/";
+					createDir(overPath);
+					std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp");
+					WriteBMP_PAL(finalPath, indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
 
-					print_log("Saved to {} file!\n", (g_working_dir + "overview.bmp").c_str());
+					print_log("Saved to {} file!\n", finalPath.c_str());
 				}
 
 
@@ -1522,7 +1543,7 @@ void Renderer::renderLoop()
 
 			oldTime = curTime;
 
-			if (is_closing)
+			if (is_closing || glfwWindowShouldClose(window))
 			{
 				if (g_settings_changed)
 				{
@@ -1531,6 +1552,7 @@ void Renderer::renderLoop()
 				}
 
 				print_log(get_localized_string(LANG_0901));
+				ClearTempDirectory();
 
 #ifdef MINGW 
 				std::set_terminate(NULL);
@@ -2950,6 +2972,23 @@ vec3 Renderer::getMoveDir()
 	if (anyCtrlPressed)
 		wishdir *= 0.1f;
 	return wishdir;
+}
+
+bool Renderer::worldToScreen(const vec3& worldPos, vec2& screenPos)
+{
+	vec3 flipped = worldPos.flip();
+	vec4 world(flipped.x, flipped.y, flipped.z, 1.0f);
+	vec4 clip = modelViewProjection * world;
+
+	if (clip.w <= 0.0f)
+		return false;
+
+	vec3 ndc(clip.x / clip.w, clip.y / clip.w, clip.z / clip.w);
+
+	screenPos.x = (ndc.x + 1.0f) * 0.5f * (float)windowWidth;
+	screenPos.y = (1.0f - ndc.y) * 0.5f * (float)windowHeight;
+
+	return true;
 }
 
 void Renderer::getPickRay(vec3& start, vec3& pickDir)
@@ -4672,8 +4711,10 @@ void Renderer::cutEnt()
 
 			if (map->ents[ents[i]]->getBspModelIdx() > 0)
 			{
-				removeFile(g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp");
-				ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+				std::string tempPath = g_settings.workingdir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
+				createDir(g_settings.workingdir + "temp/");
+				removeFile(tempPath);
+				ExportModel(map, tempPath, map->ents[ents[i]]->getBspModelIdx(), 2, true);
 			}
 		}
 		ImGui::SetClipboardText(ss.str().c_str());
@@ -4703,7 +4744,9 @@ void Renderer::copyEnt()
 		ss << map->ents[ents[i]]->serialize();
 		if (map->ents[ents[i]]->getBspModelIdx() > 0)
 		{
-			ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+			std::string tempPath = g_settings.workingdir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
+			createDir(g_settings.workingdir + "temp/");
+			ExportModel(map, tempPath, map->ents[ents[i]]->getBspModelIdx(), 2, true);
 		}
 	}
 
@@ -4742,7 +4785,8 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	{
 		if (copiedEnts[i]->getBspModelIdxForce() > 0 && copyModel)
 		{
-			int mdlIdx = ImportModel(map, g_working_dir + "copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp");
+			std::string tempPath = g_settings.workingdir + "temp/copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp";
+			int mdlIdx = ImportModel(map, tempPath);
 			if (mdlIdx > 0)
 			{
 				copiedEnts[i]->setOrAddKeyvalue("model", "*" + std::to_string(mdlIdx));
