@@ -1026,28 +1026,15 @@ void Renderer::renderLoop()
 						matmodel.loadIdentity();
 						mat_upload();
 						vec3 offset = SelectedMap->getBspRender()->mapOffset;
-
-						float axisLen = 1024.0f;
-						vec3 pX = offset + vec3(axisLen, 0.0f, 0.0f);
-						vec3 pY = offset + vec3(0.0f, axisLen, 0.0f);
-						vec3 pZ = offset + vec3(0.0f, 0.0f, axisLen);
-
-						cVert origin_verts[6];
-						// Rojo para X
-						origin_verts[0] = cVert(offset.flip(), { 255, 0, 0, 255 });
-						origin_verts[1] = cVert(pX.flip(),     { 255, 0, 0, 255 });
-						// Azul para Y
-						origin_verts[2] = cVert(offset.flip(), { 0, 0, 255, 255 });
-						origin_verts[3] = cVert(pY.flip(),     { 0, 0, 255, 255 });
-						// Verde para Z
-						origin_verts[4] = cVert(offset.flip(), { 0, 255, 0, 255 });
-						origin_verts[5] = cVert(pZ.flip(),     { 0, 255, 0, 255 });
-
-						VertexBuffer originBuf(colorShader, origin_verts, 6, GL_LINES, false);
-						originBuf.drawFull();
-
-						matmodel.loadIdentity();
-						mat_upload();
+						vec3 p1 = offset + vec3(-10240.0f, 0.0f, 0.0f);
+						vec3 p2 = offset + vec3(10240.0f, 0.0f, 0.0f);
+						drawLine(p1, p2, { 128, 128, 255, 255 });
+						vec3 p3 = offset + vec3(0.0f, -10240.0f, 0.0f);
+						vec3 p4 = offset + vec3(0.0f, 10240.0f, 0.0f);
+						drawLine(p3, p4, { 0, 0, 255, 255 });
+						vec3 p5 = offset + vec3(0.0f, 0.0f, -10240.0f);
+						vec3 p6 = offset + vec3(0.0f, 0.0f, 10240.0f);
+						drawLine(p5, p6, { 0, 255, 0, 255 });
 					}
 
 					if (g_render_flags & RENDER_MAP_BOUNDARY) {
@@ -2972,23 +2959,6 @@ vec3 Renderer::getMoveDir()
 	if (anyCtrlPressed)
 		wishdir *= 0.1f;
 	return wishdir;
-}
-
-bool Renderer::worldToScreen(const vec3& worldPos, vec2& screenPos)
-{
-	vec3 flipped = worldPos.flip();
-	vec4 world(flipped.x, flipped.y, flipped.z, 1.0f);
-	vec4 clip = modelViewProjection * world;
-
-	if (clip.w <= 0.0f)
-		return false;
-
-	vec3 ndc(clip.x / clip.w, clip.y / clip.w, clip.z / clip.w);
-
-	screenPos.x = (ndc.x + 1.0f) * 0.5f * (float)windowWidth;
-	screenPos.y = (1.0f - ndc.y) * 0.5f * (float)windowHeight;
-
-	return true;
 }
 
 void Renderer::getPickRay(vec3& start, vec3& pickDir)

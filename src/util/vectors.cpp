@@ -156,7 +156,7 @@ bool vec3::equal(vec3 to, float epsilon) const
 	return true;
 }
 
-vec3 vec3::snap(float snapSize) const
+vec3 vec3::snap(float snapSize)
 {
 	if (snapSize < 0.00001f)
 		return vec3(x, y, z);
@@ -186,17 +186,17 @@ vec3 vec3::normalize_angles() const
 	return vec3(fullnormalizeangle(x), fullnormalizeangle(y), fullnormalizeangle(z));
 }
 
-vec3 vec3::swap_xz() const
+vec3 vec3::swap_xz()
 {
 	return vec3(z, y, x);
 }
 
-vec3 vec3::abs() const
+vec3 vec3::abs()
 {
 	return vec3(std::fabs(x), std::fabs(y), std::fabs(z));
 }
 
-vec3 vec3::invert() const
+vec3 vec3::invert()
 {
 	return vec3(-x, -y, -z);
 }
@@ -216,12 +216,12 @@ bool vec3::IsZero() const
 	return (std::fabs(x) + std::fabs(y) + std::fabs(z)) < EPSILON;
 }
 
-std::string vec3::toString() const
+std::string vec3::toString()
 {
 	return std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z);
 }
 
-std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z) const
+std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z)
 {
 	std::string parts[3] = { std::to_string(x) ,std::to_string(y), std::to_string(z) };
 
@@ -249,33 +249,33 @@ std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, c
 	return parts[0] + suffix_x + parts[1] + suffix_y + parts[2] + suffix_z;
 }
 
-vec3 vec3::flip() const
+vec3 vec3::flip()
 {
 	return vec3(x, z, -y);
 }
 
-vec3 vec3::flipUV() const
+vec3 vec3::flipUV()
 {
 	return vec3(x, -z, y);
 }
 
-vec3 vec3::unflip() const
+vec3 vec3::unflip()
 {
 	return flipUV();
 }
 
-vec3 vec3::unflipUV() const
+vec3 vec3::unflipUV()
 {
 	return flip();
 }
 
 
-float vec3::size_test() const
+float vec3::size_test()
 {
 	return (x + y) * (z / 256.0f);
 }
 
-float vec3::sizeXY_test() const
+float vec3::sizeXY_test()
 {
 	return x + y;
 }
