@@ -1472,7 +1472,7 @@ void BspRenderer::generateNavMeshBuffer() {
 
 	renderClip->faceMaths[hull] = std::move(navFaceMaths);
 
-	std::string exportPath = g_settings.workingdir + "exported_geometry/";
+	std::string exportPath = g_working_dir + "exported_geometry/";
 	createDir(exportPath);
 	std::string navmesh_hull3_path = exportPath + map->bsp_name + "_hull" + std::to_string(hull) + ".obj";
 
@@ -2564,7 +2564,7 @@ void BspRenderer::delayLoadData()
 		for (int i = 0; i < glLightmapTextures.size(); i++)
 		{
 			if (glLightmapTextures[i])
-				glLightmapTextures[i]->upload();
+				glLightmapTextures[i]->upload(Texture::TYPE_LIGHTMAP);
 		}
 		preRenderFaces();
 		lightmapsUploaded = true;

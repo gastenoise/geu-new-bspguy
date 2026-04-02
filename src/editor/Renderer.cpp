@@ -415,12 +415,12 @@ void Renderer::renderLoop()
 
 	{
 		line_verts = new cVert[2];
-		lineBuf = new VertexBuffer(colorShader, line_verts, 2, GL_LINES, true);
+		lineBuf = new VertexBuffer(colorShader, line_verts, 2, GL_LINES, false);
 	}
 
 	{
 		plane_verts = new cQuad(cVert(), cVert(), cVert(), cVert());
-		planeBuf = new VertexBuffer(colorShader, plane_verts, 6, GL_TRIANGLES, true);
+		planeBuf = new VertexBuffer(colorShader, plane_verts, 6, GL_TRIANGLES, false);
 	}
 
 	{
@@ -1026,15 +1026,21 @@ void Renderer::renderLoop()
 						matmodel.loadIdentity();
 						mat_upload();
 						vec3 offset = SelectedMap->getBspRender()->mapOffset;
-						vec3 p1 = offset + vec3(-10240.0f, 0.0f, 0.0f);
-						vec3 p2 = offset + vec3(10240.0f, 0.0f, 0.0f);
-						drawLine(p1, p2, { 128, 128, 255, 255 });
-						vec3 p3 = offset + vec3(0.0f, -10240.0f, 0.0f);
-						vec3 p4 = offset + vec3(0.0f, 10240.0f, 0.0f);
-						drawLine(p3, p4, { 0, 0, 255, 255 });
-						vec3 p5 = offset + vec3(0.0f, 0.0f, -10240.0f);
-						vec3 p6 = offset + vec3(0.0f, 0.0f, 10240.0f);
-						drawLine(p5, p6, { 0, 255, 0, 255 });
+						float limit = g_limits.maxMapBoundary;
+
+						cVert origin_verts[6];
+						// X axis - Purple
+						origin_verts[0] = cVert((offset + vec3(-limit, 0.0f, 0.0f)).flip(), moveAxes.dimColor[0]);
+						origin_verts[1] = cVert((offset + vec3(limit, 0.0f, 0.0f)).flip(), moveAxes.dimColor[0]);
+						// Y axis - Blue
+						origin_verts[2] = cVert((offset + vec3(0.0f, -limit, 0.0f)).flip(), moveAxes.dimColor[1]);
+						origin_verts[3] = cVert((offset + vec3(0.0f, limit, 0.0f)).flip(), moveAxes.dimColor[1]);
+						// Z axis - Green
+						origin_verts[4] = cVert((offset + vec3(0.0f, 0.0f, -limit)).flip(), moveAxes.dimColor[2]);
+						origin_verts[5] = cVert((offset + vec3(0.0f, 0.0f, limit)).flip(), moveAxes.dimColor[2]);
+
+						VertexBuffer originBuf(colorShader, origin_verts, 6, GL_LINES, false);
+						originBuf.drawFull();
 					}
 
 					if (g_render_flags & RENDER_MAP_BOUNDARY) {
@@ -1364,8 +1370,8 @@ void Renderer::renderLoop()
 				{
 					if (make_screenshot)
 					{
-						std::string screenPath = g_settings.workingdir + "screenshots/";
-						createDir(g_settings.workingdir + "screenshots/");
+						std::string screenPath = g_working_dir + "screenshots/";
+						createDir(g_working_dir + "screenshots/");
 
 
 						if (make_screenshot_dir.size() && dirExists(make_screenshot_dir))
@@ -1389,7 +1395,7 @@ void Renderer::renderLoop()
 					}
 					else
 					{
-						std::string overPath = g_settings.workingdir + "overviews/";
+						std::string overPath = g_working_dir + "overviews/";
 						createDir(overPath);
 						std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga");
 						stbi_write_tga(finalPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
@@ -1440,7 +1446,7 @@ void Renderer::renderLoop()
 					}
 
 
-					std::string overPath = g_settings.workingdir + "overviews/";
+					std::string overPath = g_working_dir + "overviews/";
 					createDir(overPath);
 					std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp");
 					WriteBMP_PAL(finalPath, indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
@@ -3297,6 +3303,7 @@ void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
 	line_verts[1].c = color;
 
 	lineBuf->reupload();
+	lineBuf->frameId = -1;
 	lineBuf->drawFull();
 }
 
@@ -3308,6 +3315,7 @@ void Renderer::drawLine2D(vec2 start, vec2 end, COLOR4 color) {
 	line_verts[1].c = color;
 
 	lineBuf->reupload();
+	lineBuf->frameId = -1;
 	lineBuf->drawFull();
 }
 
@@ -3406,6 +3414,7 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 	plane_verts->v4 = topRightVert;
 
 	planeBuf->reupload();
+	planeBuf->frameId = -1;
 	planeBuf->drawFull();
 }
 
@@ -4681,8 +4690,8 @@ void Renderer::cutEnt()
 
 			if (map->ents[ents[i]]->getBspModelIdx() > 0)
 			{
-				std::string tempPath = g_settings.workingdir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
-				createDir(g_settings.workingdir + "temp/");
+				std::string tempPath = g_working_dir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
+				createDir(g_working_dir + "temp/");
 				removeFile(tempPath);
 				ExportModel(map, tempPath, map->ents[ents[i]]->getBspModelIdx(), 2, true);
 			}
@@ -4714,8 +4723,8 @@ void Renderer::copyEnt()
 		ss << map->ents[ents[i]]->serialize();
 		if (map->ents[ents[i]]->getBspModelIdx() > 0)
 		{
-			std::string tempPath = g_settings.workingdir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
-			createDir(g_settings.workingdir + "temp/");
+			std::string tempPath = g_working_dir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
+			createDir(g_working_dir + "temp/");
 			ExportModel(map, tempPath, map->ents[ents[i]]->getBspModelIdx(), 2, true);
 		}
 	}
@@ -4755,7 +4764,7 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	{
 		if (copiedEnts[i]->getBspModelIdxForce() > 0 && copyModel)
 		{
-			std::string tempPath = g_settings.workingdir + "temp/copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp";
+			std::string tempPath = g_working_dir + "temp/copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp";
 			int mdlIdx = ImportModel(map, tempPath);
 			if (mdlIdx > 0)
 			{

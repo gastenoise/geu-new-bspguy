@@ -257,7 +257,7 @@ std::string Native_GetEntClassname(int entIdx)
 
 std::string Native_GetWorkDir()
 {
-	return g_settings.workingdir;
+	return g_working_dir;
 }
 
 int Native_CreateEntity(int mapIdx, const std::string& classname)

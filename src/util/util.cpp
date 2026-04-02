@@ -1413,10 +1413,10 @@ void removeDir(const std::string& dirName)
 
 void ClearTempDirectory()
 {
-	if (g_settings.workingdir.empty())
+	if (g_working_dir.empty())
 		return;
 
-	std::string tempDir = g_settings.workingdir + "temp/";
+	std::string tempDir = g_working_dir + "temp/";
 	if (dirExists(tempDir))
 	{
 		removeDir(tempDir);
@@ -1830,11 +1830,11 @@ bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpat
 	// Search in working directory
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_settings.workingdir + filename) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_working_dir + filename) << "]\n";
 	}
-	if (fileExists(g_settings.workingdir + filename))
+	if (fileExists(g_working_dir + filename))
 	{
-		outpath = g_settings.workingdir + filename;
+		outpath = g_working_dir + filename;
 		return true;
 	}
 
@@ -1870,43 +1870,43 @@ void FixupAllSystemPaths()
 	}
 
 	// first fix slashes and check if dir exists
-	fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+	std::string tempWorkDir = g_settings.workingdir;
+	fixupPath(tempWorkDir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 
-	if (!dirExists(g_settings.workingdir))
+	g_working_dir = "./bspguy_work/"; // Default fallback
+
+	if (!tempWorkDir.empty() && tempWorkDir != "./" && tempWorkDir != "/")
 	{
-		/*
-			fixup workingdir to relative
-		*/
-		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-
-		if (!dirExists("./" + g_settings.workingdir))
+		if (dirExists(tempWorkDir))
 		{
-			if (!dirExists(g_game_dir + g_settings.workingdir))
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not exits!\n", g_settings.workingdir);
-				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not exits!\n", g_game_dir + g_settings.workingdir);
-				print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "Using default path\n");
-			}
-			g_working_dir = g_game_dir + g_settings.workingdir;
-			try
-			{
-				if (!dirExists(g_working_dir))
-					createDir(g_working_dir);
-			}
-			catch (...)
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Error: Can't create workdir at {} !\n", g_settings.workingdir);
-				g_working_dir = "./";
-			}
+			g_working_dir = tempWorkDir;
+		}
+		else if (dirExists("./" + tempWorkDir))
+		{
+			g_working_dir = "./" + tempWorkDir;
+		}
+		else if (dirExists(g_game_dir + tempWorkDir))
+		{
+			g_working_dir = g_game_dir + tempWorkDir;
 		}
 		else
 		{
-			g_working_dir = "./" + g_settings.workingdir;
+			// Try to create it if it doesn't exist
+			if (createDir(tempWorkDir))
+			{
+				g_working_dir = tempWorkDir;
+			}
+			else
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not found and could not be created!\n", tempWorkDir);
+				print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "Using default path: {}\n", g_working_dir);
+			}
 		}
 	}
-	else
+
+	if (!dirExists(g_working_dir))
 	{
-		g_working_dir = g_settings.workingdir;
+		createDir(g_working_dir);
 	}
 
 	for (auto& s : g_settings.fgdPaths)
