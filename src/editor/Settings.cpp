@@ -74,6 +74,8 @@ void Settings::loadDefaultSettings()
 	rotSpeed = 5.0f;
 	grid_snap_level = 1;
 
+	mapBoundaryColor = COLOR3(0, 255, 0);
+
 	rad_path = "hlrad.exe";
 	rad_options = "\"{map_path}\"";
 
@@ -366,6 +368,15 @@ void Settings::loadSettings()
 	g_settings.fov = settings_ini->Get<float>("GRAPHICS", "fov", 60.0f);
 	g_settings.zfar = settings_ini->Get<float>("GRAPHICS", "zfar", 1000.0f);
 	g_settings.render_flags = settings_ini->Get<int>("GRAPHICS", "renders_flags", 0);
+
+	std::string mapBoundColStr = settings_ini->Get<std::string>("GRAPHICS", "map_boundary_color", "0 255 0");
+	std::vector<std::string> mapBoundColParts = splitString(mapBoundColStr, " ");
+	if (mapBoundColParts.size() == 3) {
+		g_settings.mapBoundaryColor.r = (unsigned char)atoi(mapBoundColParts[0].c_str());
+		g_settings.mapBoundaryColor.g = (unsigned char)atoi(mapBoundColParts[1].c_str());
+		g_settings.mapBoundaryColor.b = (unsigned char)atoi(mapBoundColParts[2].c_str());
+	}
+
 	g_settings.fontSize = settings_ini->Get<float>("GRAPHICS", "font_size", 22.0f);
 	g_settings.fpslimit = settings_ini->Get<int>("GRAPHICS", "fpslimit", 60);
 
@@ -712,6 +723,7 @@ void Settings::saveSettings(std::string path)
 	iniData << "fov=" << g_settings.fov << "\n";
 	iniData << "zfar=" << g_settings.zfar << "\n";
 	iniData << "renders_flags=" << g_settings.render_flags << "\n";
+	iniData << "map_boundary_color=" << (int)g_settings.mapBoundaryColor.r << " " << (int)g_settings.mapBoundaryColor.g << " " << (int)g_settings.mapBoundaryColor.b << "\n";
 	iniData << "font_size=" << g_settings.fontSize << "\n";
 	iniData << "fpslimit=" << g_settings.fpslimit << "\n\n";
 

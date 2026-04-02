@@ -1044,7 +1044,12 @@ void Renderer::renderLoop()
 					}
 
 					if (g_render_flags & RENDER_MAP_BOUNDARY) {
-						drawBox(SelectedMap->ents[0]->origin * -1 + SelectedMap->getBspRender()->mapOffset, g_limits.maxMapBoundary * 2, COLOR4(0, 255, 0, 64));
+						vec3 center = SelectedMap->ents[0]->origin * -1 + SelectedMap->getBspRender()->mapOffset;
+						float width = g_limits.maxMapBoundary * 2;
+						drawBox(center, width, COLOR4(g_settings.mapBoundaryColor, 64));
+						glLineWidth(2.5f);
+						drawBoxWireframe(center - vec3(width * 0.5f, width * 0.5f, width * 0.5f), center + vec3(width * 0.5f, width * 0.5f, width * 0.5f), COLOR4(100, 100, 100, 255));
+						glLineWidth(1.3f);
 					}
 
 					if (hasCullbox) {
@@ -3325,6 +3330,41 @@ void Renderer::drawBox(vec3 center, float width, COLOR4 color) {
 	vec3 pos = vec3(center.x, center.z, -center.y);
 	cCube cube(pos - sz, pos + sz, color);
 	VertexBuffer buffer(g_app->colorShader, &cube, 6 * 6, GL_TRIANGLES, false);
+	buffer.drawFull();
+}
+
+void Renderer::drawBoxWireframe(vec3 mins, vec3 maxs, COLOR4 color) {
+	vec3 flippedMins = vec3(mins.x, mins.z, -mins.y);
+	vec3 flippedMaxs = vec3(maxs.x, maxs.z, -maxs.y);
+
+	vec3 v[8];
+	v[0] = vec3(flippedMins.x, flippedMins.y, flippedMins.z);
+	v[1] = vec3(flippedMaxs.x, flippedMins.y, flippedMins.z);
+	v[2] = vec3(flippedMaxs.x, flippedMaxs.y, flippedMins.z);
+	v[3] = vec3(flippedMins.x, flippedMaxs.y, flippedMins.z);
+	v[4] = vec3(flippedMins.x, flippedMins.y, flippedMaxs.z);
+	v[5] = vec3(flippedMaxs.x, flippedMins.y, flippedMaxs.z);
+	v[6] = vec3(flippedMaxs.x, flippedMaxs.y, flippedMaxs.z);
+	v[7] = vec3(flippedMins.x, flippedMaxs.y, flippedMaxs.z);
+
+	cVert verts[24];
+	// Bottom
+	verts[0] = cVert(v[0], color); verts[1] = cVert(v[1], color);
+	verts[2] = cVert(v[1], color); verts[3] = cVert(v[2], color);
+	verts[4] = cVert(v[2], color); verts[5] = cVert(v[3], color);
+	verts[6] = cVert(v[3], color); verts[7] = cVert(v[0], color);
+	// Top
+	verts[8] = cVert(v[4], color); verts[9] = cVert(v[5], color);
+	verts[10] = cVert(v[5], color); verts[11] = cVert(v[6], color);
+	verts[12] = cVert(v[6], color); verts[13] = cVert(v[7], color);
+	verts[14] = cVert(v[7], color); verts[15] = cVert(v[4], color);
+	// Sides
+	verts[16] = cVert(v[0], color); verts[17] = cVert(v[4], color);
+	verts[18] = cVert(v[1], color); verts[19] = cVert(v[5], color);
+	verts[20] = cVert(v[2], color); verts[21] = cVert(v[6], color);
+	verts[22] = cVert(v[3], color); verts[23] = cVert(v[7], color);
+
+	VertexBuffer buffer(g_app->colorShader, verts, 24, GL_LINES, false);
 	buffer.drawFull();
 }
 

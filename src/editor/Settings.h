@@ -67,6 +67,7 @@ struct Settings
 	int render_flags;
 	int grid_snap_level;
 
+	COLOR3 mapBoundaryColor;
 
 	float fov;
 	float zfar;

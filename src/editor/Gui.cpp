@@ -11357,6 +11357,21 @@ void Gui::drawSettings()
 			ImGui::Columns(1);
 
 			ImGui::Separator();
+
+			float mapBoundCol[3] = { g_settings.mapBoundaryColor.r / 255.0f, g_settings.mapBoundaryColor.g / 255.0f, g_settings.mapBoundaryColor.b / 255.0f };
+			if (ImGui::ColorEdit3("Map boundary color", mapBoundCol)) {
+				g_settings.mapBoundaryColor.r = (unsigned char)(mapBoundCol[0] * 255.0f);
+				g_settings.mapBoundaryColor.g = (unsigned char)(mapBoundCol[1] * 255.0f);
+				g_settings.mapBoundaryColor.b = (unsigned char)(mapBoundCol[2] * 255.0f);
+				g_settings_changed = true;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Reset##resetMapBoundCol")) {
+				g_settings.mapBoundaryColor = COLOR3(0, 255, 0);
+				g_settings_changed = true;
+			}
+
+			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0793).c_str());
 
 			for (size_t i = 0; i < g_settings.transparentTextures.size(); i++)
