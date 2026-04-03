@@ -9549,6 +9549,84 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 	ImGui::InputText(get_localized_string(LANG_0675).c_str(), &keyName);
 
+	ImGui::Separator();
+
+	bool multipleEnts = app->pickInfo.selectedEnts.size() > 1;
+
+	if (multipleEnts) ImGui::BeginDisabled();
+	if (ImGui::Button(get_localized_string(LANG_1207).c_str()))
+	{
+		ImGui::SetClipboardText(ent->serialize().c_str());
+	}
+	if (multipleEnts) ImGui::EndDisabled();
+
+	float pasteBtnWidth = ImGui::CalcTextSize(get_localized_string(LANG_1208).c_str()).x + style.FramePadding.x * 2.0f;
+	ImGui::SameLine(ImGui::GetWindowWidth() - pasteBtnWidth - style.WindowPadding.x);
+
+	if (multipleEnts) ImGui::BeginDisabled();
+	if (ImGui::Button(get_localized_string(LANG_1208).c_str()))
+	{
+		ImGui::OpenPopup(get_localized_string(LANG_1209).c_str());
+	}
+	if (multipleEnts) ImGui::EndDisabled();
+
+	if (ImGui::BeginPopupModal(get_localized_string(LANG_1209).c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text(get_localized_string(LANG_1210).c_str());
+		ImGui::Separator();
+
+		if (ImGui::Button(get_localized_string(LANG_0943).c_str(), ImVec2(120, 0)))
+		{
+			const char* clipText = ImGui::GetClipboardText();
+			if (clipText)
+			{
+				std::string clipboard = clipText;
+				if (clipboard.find("classname") == std::string::npos)
+				{
+					clipboard = "{\n\"classname\" \"_temp\"\n" + clipboard + "\n}";
+				}
+
+				std::vector<Entity*> newEnts = load_ents(clipboard, "clipboard");
+				if (newEnts.size() > 0)
+				{
+					Entity* source = newEnts[0];
+					std::string oldClassname = ent->keyvalues["classname"];
+					std::string oldModel = ent->hasKey("model") ? ent->keyvalues["model"] : "";
+
+					ent->keyvalues.clear();
+					ent->keyOrder.clear();
+
+					ent->setOrAddKeyvalue("classname", oldClassname);
+					if (!oldModel.empty())
+					{
+						ent->setOrAddKeyvalue("model", oldModel);
+					}
+
+					for (auto const& key : source->keyOrder)
+					{
+						if (key == "classname" || key == "model") continue;
+						ent->setOrAddKeyvalue(key, source->keyvalues[key]);
+					}
+
+					map->getBspRender()->refreshEnt(entIdx);
+					app->updateEntConnections();
+					map->getBspRender()->pushEntityUndoStateDelay("Paste Keyvalues");
+				}
+
+				for (auto e : newEnts) delete e;
+			}
+
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button(get_localized_string(LANG_0945).c_str(), ImVec2(120, 0)))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+
 	ImGui::EndChild();
 }
 
