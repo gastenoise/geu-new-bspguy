@@ -217,6 +217,20 @@ void Gui::draw()
 		{
 			drawTextureBrowser();
 		}
+	bool inOverview = showOverviewWidget && orthoMode;
+	if (inOverview && !wasInOverview)
+	{
+		oldCameraOrigin = cameraOrigin;
+		oldCameraAngles = cameraAngles;
+		wasInOverview = true;
+	}
+	else if (!inOverview && wasInOverview)
+	{
+		cameraOrigin = oldCameraOrigin;
+		cameraAngles = oldCameraAngles;
+		wasInOverview = false;
+	}
+
 		if (showOverviewWidget)
 		{
 			drawOverviewWidget();
@@ -7803,7 +7817,6 @@ void Gui::drawDebugWidget()
 void Gui::drawOverviewWidget()
 {
 	static Bsp* lastMap = NULL;
-	static bool orthoMode = true;
 	static bool updateFarNear = false;
 	static std::string imgFormat = ".tga";
 	if (updateFarNear)
@@ -7813,7 +7826,7 @@ void Gui::drawOverviewWidget()
 		ortho_far = (ortho_maxs.z - ortho_mins.z) * 2 + cameraOrigin.z;
 	}
 
-	ortho_overview = orthoMode;
+	ortho_overview = showOverviewWidget && orthoMode;
 
 	Bsp* map = app->getSelectedMap();
 
@@ -7896,6 +7909,12 @@ void Gui::drawOverviewWidget()
 		{
 			ortho_save_bmp = true;
 			imgFormat = ".bmp";
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Save FULL"))
+		{
+			ortho_save_png_full = true;
+			imgFormat = ".png";
 		}
 		ImGui::SameLine();
 
@@ -9116,12 +9135,13 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 
 			map->getBspRender()->pushEntityUndoStateDelay(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag");
 		}
-		if ((!name.empty() || !description.empty()) && ImGui::IsItemHovered())
+		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 			ImGui::PushStyleColor(ImGuiCol_Text, { 0.9f,0.4f,0.2f,1.0f });
-			ImGui::TextUnformatted(name.c_str());
+			std::string title = (name.empty() ? get_localized_string(LANG_0659) : name) + " (" + std::to_string(1U << i) + ")";
+			ImGui::TextUnformatted(title.c_str());
 			ImGui::PopStyleColor();
 			if (description.size())
 				ImGui::TextUnformatted(description.c_str());
@@ -11333,7 +11353,7 @@ void Gui::drawSettings()
 				for (auto& tex : g_all_Textures)
 				{
 					bool filternoneed = g_render_flags & RENDER_TEXTURES_NOFILTER;
-					if (tex->type >= 0 && tex->type != Texture::TYPE_LIGHTMAP)
+					if (tex->type >= 0 && tex->type != Texture::TYPE_LIGHTMAP && tex->type != Texture::TYPE_LIGHTMAP_NOFILTER)
 					{
 						tex->farFilter = tex->nearFilter = !filternoneed ? GL_LINEAR : GL_NEAREST;
 						tex->upload(tex->type);
@@ -11683,8 +11703,8 @@ void Gui::drawAbout()
 
 void Gui::drawMergeWindow()
 {
-	ImGui::SetNextWindowSize(ImVec2(900.f, 250.f), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(900.f, 250.f), ImVec2(900.f, 500.f));
+	ImGui::SetNextWindowSize(ImVec2(1000.f, 250.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(1000.f, 250.f), ImVec2(1200.f, 500.f));
 	static std::string outPath = "outbsp.bsp";
 	static std::vector<std::string> inPaths;
 	static std::vector<vec3> inOffsets;
@@ -11694,7 +11714,6 @@ void Gui::drawMergeWindow()
 	static bool NoRipent = false;
 	static bool NoStyles = false;
 	static bool NoScript = false;
-	static bool OverlapMerge = false;
 
 	bool addNew = false;
 
@@ -11727,7 +11746,7 @@ void Gui::drawMergeWindow()
 		for (size_t i = 0; i < inPaths.size(); i++)
 		{
 			std::string& s = inPaths[i];
-			ImGui::SetNextItemWidth(280);
+			ImGui::SetNextItemWidth(350);
 			ImGui::InputText(fmt::format(fmt::runtime("##inpath{}"), i).c_str(), &s);
 			ImGui::SameLine();
 			if (ImGui::Button((get_localized_string(LANG_0834) + "##" + std::to_string(i)).c_str()))
@@ -11738,11 +11757,17 @@ void Gui::drawMergeWindow()
 			ImGui::SameLine();
 			ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0826)), i).c_str());
 
-			if (OverlapMerge)
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(250);
+			if (i == 0)
 			{
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(250);
-				ImGui::InputFloat3(fmt::format("##offset{}", i).c_str(), &inOffsets[i].x);
+				inOffsets[i] = vec3(0, 0, 0);
+				ImGui::BeginDisabled();
+			}
+			ImGui::InputFloat3(fmt::format("##offset{}", i).c_str(), &inOffsets[i].x);
+			if (i == 0)
+			{
+				ImGui::EndDisabled();
 			}
 
 			if (s.length() > 1 && i + 1 == inPaths.size())
@@ -11760,7 +11785,6 @@ void Gui::drawMergeWindow()
 		ImGui::Checkbox(get_localized_string(LANG_0831).c_str(), &NoRipent);
 		ImGui::Checkbox(get_localized_string(LANG_0832).c_str(), &NoScript);
 		ImGui::Checkbox("Skip lightstyles merging", &NoStyles);
-		ImGui::Checkbox(get_localized_string(LANG_1181).c_str(), &OverlapMerge);
 
 		if (ImGui::Button(get_localized_string(LANG_1122).c_str(), ImVec2(120, 0)))
 		{
@@ -11829,7 +11853,7 @@ void Gui::drawMergeWindow()
 				std::string finalEntPath = g_working_dir + "exported_entities/" + stripExt(basename(outPath));
 				createDir(g_working_dir + "exported_entities/");
 				// Pass empty string for output_name to BspMerger::merge to avoid duplicate/misplaced entity export
-				MergeResult result = merger.merge(maps, vec3(), "", NoRipent, NoScript, false, NoStyles, OverlapMerge, mapsOffsets);
+				MergeResult result = merger.merge(maps, "", NoRipent, NoScript, NoStyles, mapsOffsets);
 
 				print_log("\n");
 				if (result.map && result.map->isValid())
@@ -13369,7 +13393,7 @@ void Gui::drawLightMapTool()
 						memset(currentlightMap[i]->getData(), 255, lightmapSz);
 					else
 						memcpy(currentlightMap[i]->getData(), map->lightdata + offset, lightmapSz);
-					currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
+					currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP_NOFILTER);
 					lightmap_count++;
 					//print_log(get_localized_string(LANG_0418),i,offset);
 				}
@@ -13471,7 +13495,7 @@ void Gui::drawLightMapTool()
 					{
 						lighdata[offset] = COLOR3(FixBounds(colourPatch[0] * 255.f),
 							FixBounds(colourPatch[1] * 255.f), FixBounds(colourPatch[2] * 255.f));
-						currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
+						currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP_NOFILTER);
 					}
 				}
 			}

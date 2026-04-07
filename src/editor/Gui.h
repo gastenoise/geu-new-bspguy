@@ -95,6 +95,10 @@ public:
 	bool showGOTOWidget = false;
 	bool showTextureBrowser = false;
 	bool showOverviewWidget = false;
+	bool orthoMode = true;
+	bool wasInOverview = false;
+	vec3 oldCameraOrigin;
+	vec3 oldCameraAngles;
 	bool reloadSettings = true;
 	bool openSavedTabs = false;
 	bool allowExternalTextures = false;

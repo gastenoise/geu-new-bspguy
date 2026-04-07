@@ -1209,6 +1209,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			RenderGroup newGroup = RenderGroup();
 			newGroup.transparent = isTransparent;
 			newGroup.special = isSpecial;
+			newGroup.isTransparentByList = (tex && IsTextureTransparent(tex->szName));
 			newGroup.textures = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : std::vector<Texture*>{ greyTex };
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
@@ -1948,7 +1949,7 @@ bool BspRenderer::setRenderAngles(const std::string& classname, mat4x4& outmat, 
 	else
 	{
 		// based at cs 1.6 gamedll
-		if (classname == "func_breakable")
+		if (strcasecmp(classname.c_str(), "func_breakable") == 0)
 		{
 			outangles.y = 0.0f;
 			outmat.rotateY(0.0f);
@@ -1959,7 +1960,7 @@ bool BspRenderer::setRenderAngles(const std::string& classname, mat4x4& outmat, 
 		{
 			outangles = vec3();
 		}
-		else if (classname == "env_sprite")
+		else if (strcasecmp(classname.c_str(), "env_sprite") == 0)
 		{
 			if (std::fabs(outangles.y) >= EPSILON && std::fabs(outangles.z) < EPSILON)
 			{
@@ -1980,7 +1981,7 @@ bool BspRenderer::setRenderAngles(const std::string& classname, mat4x4& outmat, 
 			bool foundAngles = false;
 			for (const auto& prefix : g_settings.entsNegativePitchPrefix)
 			{
-				if (starts_with(classname, prefix))
+				if (istarts_with(classname, prefix))
 				{
 					outmat.rotateY((outangles.y * (HL_PI / 180.0f)));
 					outmat.rotateZ((outangles.x * (HL_PI / 180.0f)));
@@ -2060,6 +2061,7 @@ void BspRenderer::refreshEnt(int entIdx, int refreshFlags)
 	{
 		rendEntity.angles = vec3();
 		rendEntity.needAngles = false;
+		rendEntity.isTransparentByList = g_app->isEntTransparent(ent->classname.c_str());
 	}
 
 	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
@@ -2829,11 +2831,27 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			g_app->mat_upload();
 
 			if (ent_count && map->ents.size() > 0 && !map->ents[0]->hide)
-				drawModel(&renderEnts[0], pass, false, false);
+			{
+				if (!ortho_overview || !renderEnts[0].isTransparentByList)
+					drawModel(&renderEnts[0], pass, false, false);
+			}
 
 			for (int i = 1; i < (int)ent_count; i++)
 			{
-				if (map->ents[i]->hide)
+				bool isTransparent = renderEnts[i].isTransparentByList;
+				if (!isTransparent && renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < (int)renderModels.size())
+				{
+					for (auto& rgroup : renderModels[renderEnts[i].modelIdx]->renderGroups)
+					{
+						if (rgroup.transparent || rgroup.isTransparentByList)
+						{
+							isTransparent = true;
+							break;
+						}
+					}
+				}
+
+				if (map->ents[i]->hide || (ortho_overview && isTransparent))
 					continue;
 				if (g_app->pickInfo.IsSelectedEnt(i))
 				{
@@ -3148,6 +3166,8 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 	for (auto& rgroup : renderModels[modelIdx]->renderGroups)
 	{
+		if (ortho_overview && (rgroup.isTransparentByList || rgroup.transparent))
+			continue;
 		if (rgroup.special)
 		{
 			if (ortho_overview | make_screenshot)
@@ -3162,6 +3182,9 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 				continue;
 			}
 		}
+
+		if (ortho_overview && ent && ent->isTransparentByList)
+			continue;
 		else if (modelIdx != 0 && !(g_render_flags & RENDER_ENTS))
 		{
 			continue;
@@ -3294,8 +3317,8 @@ void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass
 
 		if (ortho_overview || make_screenshot)
 		{
-			if (!starts_with(mapEnt->classname, "cycler_") &&
-				!starts_with(mapEnt->classname, "func_"))
+			if (!istarts_with(mapEnt->classname, "cycler_") &&
+				!istarts_with(mapEnt->classname, "func_"))
 			{
 				continue;
 			}

@@ -47,6 +47,7 @@ int ortho_tga_w = 1024;
 int ortho_tga_h = 768;
 bool ortho_save_tga = false;
 bool ortho_save_bmp = false;
+bool ortho_save_png_full = false;
 
 // for screenmaker cmd
 int make_screenshot = 0;
@@ -549,15 +550,27 @@ void Renderer::renderLoop()
 			GLuint fbo = NULL, texture, rbo;
 
 
-			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
+			if (ortho_save_tga || ortho_save_bmp || ortho_save_png_full || (make_screenshot && !isLoading))
 			{
-				glEnable(GL_MULTISAMPLE);
-				glEnable(GL_LINE_SMOOTH);
-				glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-				glEnable(GL_POLYGON_SMOOTH);
-				glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-				glEnable(GL_POINT_SMOOTH);
-				glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+				int captureW = ortho_tga_w;
+				int captureH = ortho_tga_h;
+
+				if (ortho_save_png_full)
+				{
+					captureW = windowWidth;
+					captureH = windowHeight;
+				}
+
+				if (!ortho_save_png_full)
+				{
+					glEnable(GL_MULTISAMPLE);
+					glEnable(GL_LINE_SMOOTH);
+					glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+					glEnable(GL_POLYGON_SMOOTH);
+					glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+					glEnable(GL_POINT_SMOOTH);
+					glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+				}
 
 				glHint(GL_FRAGMENT_SHADER_DERIVATIVE_HINT, GL_NICEST);
 				
@@ -577,7 +590,7 @@ void Renderer::renderLoop()
 #ifdef GL_UNPACK_ROW_LENGTH 
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ortho_tga_w, ortho_tga_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, captureW, captureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glBindTexture(GL_TEXTURE_2D, 0);
@@ -585,7 +598,7 @@ void Renderer::renderLoop()
 
 				glGenRenderbuffers(1, &rbo);
 				glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, ortho_tga_w, ortho_tga_h);
+				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, captureW, captureH);
 				glBindRenderbuffer(GL_RENDERBUFFER, 0);
 				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
@@ -750,6 +763,10 @@ void Renderer::renderLoop()
 				{
 					setupFakeOrthoView(ortho_tga_w, ortho_tga_h, ortho_mins, ortho_maxs);
 				}
+				else if (ortho_save_png_full)
+				{
+					setupFakeOrthoView(windowWidth, windowHeight, ortho_mins, ortho_maxs);
+				}
 				else
 				{
 					setupFakeOrthoView(0, 0, ortho_mins, ortho_maxs);
@@ -768,11 +785,12 @@ void Renderer::renderLoop()
 			}
 
 			// Disable smoothing during overview capture to prevent wireframe artifacts
-			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
+			if (ortho_save_tga || ortho_save_bmp || ortho_save_png_full || (make_screenshot && !isLoading))
 			{
 				glDisable(GL_LINE_SMOOTH);
 				glDisable(GL_POLYGON_SMOOTH);
 				glDisable(GL_POINT_SMOOTH);
+				glDisable(GL_MULTISAMPLE);
 			}
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1358,20 +1376,29 @@ void Renderer::renderLoop()
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
 
-			if (fbo && (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading)))
+			if (fbo && (ortho_save_tga || ortho_save_bmp || ortho_save_png_full || (make_screenshot && !isLoading)))
 			{
-				std::vector<uint8_t> pixels(3 * ortho_tga_w * ortho_tga_h);
-				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-				glReadPixels(0, 0, ortho_tga_w, ortho_tga_h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				int captureW = ortho_tga_w;
+				int captureH = ortho_tga_h;
 
-				for (int line = 0; line != ortho_tga_h / 2; ++line) {
-					std::swap_ranges(pixels.begin() + 3 * ortho_tga_w * line,
-						pixels.begin() + 3 * ortho_tga_w * (line + 1),
-						pixels.begin() + 3 * ortho_tga_w * (ortho_tga_h - line - 1));
+				if (ortho_save_png_full)
+				{
+					captureW = windowWidth;
+					captureH = windowHeight;
 				}
 
-				if (ortho_save_tga || (make_screenshot && !isLoading))
+				std::vector<uint8_t> pixels(3 * captureW * captureH);
+				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+				glReadPixels(0, 0, captureW, captureH, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				for (int line = 0; line != captureH / 2; ++line) {
+					std::swap_ranges(pixels.begin() + 3 * captureW * line,
+						pixels.begin() + 3 * captureW * (line + 1),
+						pixels.begin() + 3 * captureW * (captureH - line - 1));
+				}
+
+				if (ortho_save_tga || ortho_save_png_full || (make_screenshot && !isLoading))
 				{
 					if (make_screenshot)
 					{
@@ -1402,9 +1429,18 @@ void Renderer::renderLoop()
 					{
 						std::string overPath = g_working_dir + "overviews/";
 						createDir(overPath);
-						std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga");
-						stbi_write_tga(finalPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
-						print_log("Saved to {} file!\n", finalPath);
+						if (ortho_save_png_full)
+						{
+							std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + "_full.png") : "overview_full.png");
+							stbi_write_png(finalPath.c_str(), captureW, captureH, 3, pixels.data(), captureW * 3);
+							print_log("Saved to {} file!\n", finalPath);
+						}
+						else
+						{
+							std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga");
+							stbi_write_tga(finalPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+							print_log("Saved to {} file!\n", finalPath);
+						}
 					}
 				}
 				else
@@ -1466,8 +1502,7 @@ void Renderer::renderLoop()
 				glDeleteRenderbuffers(1, &rbo);
 				ortho_save_tga = false;
 				ortho_save_bmp = false;
-				ortho_overview = 0; // Reset overview mode
-				g_render_flags |= RENDER_WIREFRAME; // Re-enable wireframe after BMP save
+				ortho_save_png_full = false;
 				
 				// Disable smoothing settings that were enabled for overview capture
 				glDisable(GL_LINE_SMOOTH);
@@ -5328,7 +5363,7 @@ void Renderer::merge(std::string fpath)
 	maps.push_back(map2);
 
 	BspMerger merger;
-	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true, false, false, {vec3(0, 0, 0), vec3(0, 0, 512.0f)});
+	mergeResult = merger.merge(maps, thismap->bsp_name, true, true, false, {vec3(0, 0, 0), vec3(0, 0, 512.0f)});
 
 	if (!mergeResult.map || !mergeResult.map->bsp_valid) {
 		delete map2;

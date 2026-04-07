@@ -280,6 +280,7 @@ std::string flt_to_str(float f);
 float half_prefloat(unsigned short h);
 
 bool starts_with(const std::string& str, const std::string& prefix);
+bool istarts_with(const std::string& str, const std::string& prefix);
 bool starts_with(const std::wstring& str, const std::wstring& prefix);
 bool ends_with(const std::string& str, const std::string& suffix);
 bool ends_with(const std::wstring& str, const std::wstring& suffix);

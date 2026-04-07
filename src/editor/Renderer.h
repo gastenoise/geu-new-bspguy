@@ -64,6 +64,7 @@ extern int ortho_tga_w;
 extern int ortho_tga_h;
 extern bool ortho_save_tga;
 extern bool ortho_save_bmp;
+extern bool ortho_save_png_full;
 
 extern int make_screenshot;
 extern int make_screenshot_target;

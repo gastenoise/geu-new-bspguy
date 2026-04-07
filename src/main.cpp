@@ -109,7 +109,7 @@ int test()
 	removed.print_delete_stats(1);
 
 	BspMerger merger;
-	MergeResult result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false, false, false);
+	MergeResult result = merger.merge(maps, "yabma_move", false, false, false);
 	print_log("\n");
 	if (result.map)
 	{
@@ -177,7 +177,6 @@ int merge_maps()
 		print_log("\n");
 	}
 
-	vec3 gap = g_cmdLine.hasOption("-gap") ? g_cmdLine.getOptionVector("-gap") : vec3();
 
 	std::string output_name = g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile;
 
@@ -193,7 +192,7 @@ int merge_maps()
 		}
 	}
 
-	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"), g_cmdLine.hasOption("-overlap") || g_cmdLine.hasOption("-overlapgap"), overlapGaps);
+	MergeResult result = merger.merge(maps, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nostyles"), overlapGaps);
 
 	print_log("\n");
 	if (result.map && result.map->validate() && result.map->isValid())
@@ -752,8 +751,6 @@ void print_help(const std::string& command)
 			"                 effective entity logic. This may cause lag in maps with lots of\n"
 			"                 entities, and some ents might not spawn properly. The benefit\n"
 			"                 to this flag is that you don't have deal with script setup.\n"
-			"  -gap \"X,Y,Z\" : Amount of extra space to add between each map\n"
-			"  -overlap     : GEU overlap merge mode.\n"
 			"  -overlapgap \"X,Y,Z;X2,Y2,Z2;...\" : Overlap positions for each map (default \"0,0,0;0,0,512;0,0,1024;...\").\n"
 			"  -v\n"
 			"  -verbose     : Verbose console output.\n"

@@ -346,36 +346,36 @@ vec3 parseVector(const std::string& s)
 
 bool IsEntNotSupportAngles(const std::string& entname)
 {
-	if (entname == "func_wall" ||
-		entname == "func_wall_toggle" ||
-		entname == "func_illusionary" ||
-		entname == "spark_shower" ||
-		entname == "func_plat" ||
-		entname == "func_door" ||
-		entname == "momentary_door" ||
-		entname == "func_water" ||
-		entname == "func_conveyor" ||
-		entname == "func_rot_button" ||
-		entname == "func_button" ||
-		entname == "env_blood" ||
-		entname == "gibshooter" ||
-		entname == "trigger" ||
-		entname == "trigger_monsterjump" ||
-		entname == "trigger_hurt" ||
-		entname == "trigger_multiple" ||
-		entname == "trigger_push" ||
-		entname == "trigger_teleport" ||
-		entname == "func_bomb_target" ||
-		entname == "func_hostage_rescue" ||
-		entname == "func_vip_safetyzone" ||
-		entname == "func_escapezone" ||
-		entname == "trigger_autosave" ||
-		entname == "trigger_endsection" ||
-		entname == "trigger_gravity" ||
-		entname == "env_snow" ||
-		entname == "func_snow" ||
-		entname == "env_rain" ||
-		entname == "func_rain")
+	if (strcasecmp(entname.c_str(), "func_wall") == 0 ||
+		strcasecmp(entname.c_str(), "func_wall_toggle") == 0 ||
+		strcasecmp(entname.c_str(), "func_illusionary") == 0 ||
+		strcasecmp(entname.c_str(), "spark_shower") == 0 ||
+		strcasecmp(entname.c_str(), "func_plat") == 0 ||
+		strcasecmp(entname.c_str(), "func_door") == 0 ||
+		strcasecmp(entname.c_str(), "momentary_door") == 0 ||
+		strcasecmp(entname.c_str(), "func_water") == 0 ||
+		strcasecmp(entname.c_str(), "func_conveyor") == 0 ||
+		strcasecmp(entname.c_str(), "func_rot_button") == 0 ||
+		strcasecmp(entname.c_str(), "func_button") == 0 ||
+		strcasecmp(entname.c_str(), "env_blood") == 0 ||
+		strcasecmp(entname.c_str(), "gibshooter") == 0 ||
+		strcasecmp(entname.c_str(), "trigger") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_monsterjump") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_hurt") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_multiple") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_push") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_teleport") == 0 ||
+		strcasecmp(entname.c_str(), "func_bomb_target") == 0 ||
+		strcasecmp(entname.c_str(), "func_hostage_rescue") == 0 ||
+		strcasecmp(entname.c_str(), "func_vip_safetyzone") == 0 ||
+		strcasecmp(entname.c_str(), "func_escapezone") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_autosave") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_endsection") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_gravity") == 0 ||
+		strcasecmp(entname.c_str(), "env_snow") == 0 ||
+		strcasecmp(entname.c_str(), "func_snow") == 0 ||
+		strcasecmp(entname.c_str(), "env_rain") == 0 ||
+		strcasecmp(entname.c_str(), "func_rain") == 0)
 		return true;
 	return false;
 }
@@ -3116,6 +3116,9 @@ float half_prefloat(unsigned short h)
 
 bool starts_with(const std::string& str, const std::string& prefix) {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+}
+bool istarts_with(const std::string& str, const std::string& prefix) {
+	return str.size() >= prefix.size() && strncasecmp(str.c_str(), prefix.c_str(), prefix.size()) == 0;
 }
 bool starts_with(const std::wstring& str, const std::wstring& prefix) {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;

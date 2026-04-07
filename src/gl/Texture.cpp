@@ -124,6 +124,12 @@ void Texture::upload(int _type)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         }
         break;
+    case TYPE_LIGHTMAP_NOFILTER:
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        break;
     case TYPE_TEXTURE:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -207,7 +213,7 @@ bool IsTextureTransparent(const std::string& texname)
         return false;
     for (const auto& s : g_settings.transparentTextures)
     {
-        if (s == texname)
+        if (strcasecmp(s.c_str(), texname.c_str()) == 0)
             return true;
     }
     return false;
