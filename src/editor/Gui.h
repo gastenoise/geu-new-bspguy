@@ -137,9 +137,10 @@ private:
 
 	int guiHoverAxis; // axis being hovered in the transform menu
 
-	std::string lastClassFilter, lastFlagsFilter;
 	int lastMAX_FILTERS = 0;
 	std::vector<std::string> lastKeyFilters, lastValueFilters;
+	std::vector<int> lastOpFilters;
+	std::vector<int> lastLogicFilters;
 
 	int openEmptyContext = -2; // open context menu for rightclicking world/void
 

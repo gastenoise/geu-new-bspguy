@@ -3114,6 +3114,48 @@ float half_prefloat(unsigned short h)
 }
 
 
+bool matchWildcard(const std::string& pattern, const std::string& text, bool caseSensitive) {
+	if (pattern == "*") return true;
+
+	std::string p = caseSensitive ? pattern : toLowerCase(pattern);
+	std::string t = caseSensitive ? text : toLowerCase(text);
+
+	if (p.empty()) return t.empty();
+
+	size_t n = t.size();
+	size_t m = p.size();
+
+	// Optimized wildcard matching using two rows (prev and curr) to save space
+	std::vector<bool> dp(m + 1, false);
+	dp[0] = true;
+
+	for (size_t j = 1; j <= m; j++) {
+		if (p[j - 1] == '*') {
+			dp[j] = dp[j - 1];
+		}
+	}
+
+	for (size_t i = 1; i <= n; i++) {
+		bool prev_diag = dp[0];
+		dp[0] = false;
+		for (size_t j = 1; j <= m; j++) {
+			bool next_prev_diag = dp[j];
+			if (p[j - 1] == '*') {
+				dp[j] = dp[j] || dp[j - 1];
+			}
+			else if (p[j - 1] == t[i - 1]) {
+				dp[j] = prev_diag;
+			}
+			else {
+				dp[j] = false;
+			}
+			prev_diag = next_prev_diag;
+		}
+	}
+
+	return dp[m];
+}
+
 bool starts_with(const std::string& str, const std::string& prefix) {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
 }

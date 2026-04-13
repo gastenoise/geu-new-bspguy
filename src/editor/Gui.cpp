@@ -11759,16 +11759,7 @@ void Gui::drawMergeWindow()
 
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(250);
-			if (i == 0)
-			{
-				inOffsets[i] = vec3(0, 0, 0);
-				ImGui::BeginDisabled();
-			}
 			ImGui::InputFloat3(fmt::format("##offset{}", i).c_str(), &inOffsets[i].x);
-			if (i == 0)
-			{
-				ImGui::EndDisabled();
-			}
 
 			if (s.length() > 1 && i + 1 == inPaths.size())
 			{
@@ -12279,7 +12270,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 
 void Gui::drawEntityReport()
 {
-	ImGui::SetNextWindowSize(ImVec2(550.f, 630.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(1200.f, 630.f), ImGuiCond_FirstUseEver);
 	Bsp* map = app->getSelectedMap();
 
 	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
@@ -12294,23 +12285,20 @@ void Gui::drawEntityReport()
 		{
 			static float startFrom = 0.0f;
 			static int MAX_FILTERS = 1;
-			static std::vector<std::string> keyFilter = std::vector<std::string>();
-			static std::vector<std::string> valueFilter = std::vector<std::string>();
+			static std::vector<std::string> keyFilter = {""};
+			static std::vector<std::string> valueFilter = {""};
+			static std::vector<int> opFilter = {0}; // 0: =, 1: !=
+			static std::vector<int> logicFilter = std::vector<int>(); // 0: AND, 1: OR
 			static int lastSelect = -1;
-			static std::string classFilter = "(none)";
-			static std::string flagsFilter = "(none)";
-			static bool partialMatches = true;
 			static std::vector<int> visibleEnts;
 			static std::vector<bool> selectedItems;
 			static bool selectAllItems = false;
 
-			float footerHeight = ImGui::GetFrameHeightWithSpacing() * 5.f + 16.f;
-
 			ImGui::BeginGroup();
-			ImGui::BeginChild(get_localized_string(LANG_0848).c_str(), ImVec2(0.f, -footerHeight));
+			ImGui::BeginChild(get_localized_string(LANG_0848).c_str(), ImVec2(0.f, 500.f));
 
 			bool criteriaChanged = false;
-			if (classFilter != lastClassFilter || flagsFilter != lastFlagsFilter || MAX_FILTERS != lastMAX_FILTERS)
+			if (MAX_FILTERS != lastMAX_FILTERS)
 			{
 				criteriaChanged = true;
 			}
@@ -12319,7 +12307,9 @@ void Gui::drawEntityReport()
 				for (int k = 0; k < MAX_FILTERS; k++)
 				{
 					if (k >= (int)lastKeyFilters.size() || k >= (int)lastValueFilters.size() ||
-						keyFilter[k] != lastKeyFilters[k] || valueFilter[k] != lastValueFilters[k])
+						k >= (int)lastOpFilters.size() || k >= (int)lastLogicFilters.size() ||
+						keyFilter[k] != lastKeyFilters[k] || valueFilter[k] != lastValueFilters[k] ||
+						opFilter[k] != lastOpFilters[k] || logicFilter[k] != lastLogicFilters[k])
 					{
 						criteriaChanged = true;
 						break;
@@ -12329,11 +12319,11 @@ void Gui::drawEntityReport()
 
 			if (filterNeeded || criteriaChanged || entityListChanged)
 			{
-				lastClassFilter = classFilter;
-				lastFlagsFilter = flagsFilter;
 				lastMAX_FILTERS = MAX_FILTERS;
 				lastKeyFilters = keyFilter;
 				lastValueFilters = valueFilter;
+				lastOpFilters = opFilter;
+				lastLogicFilters = logicFilter;
 				entityListChanged = false;
 
 				visibleEnts.clear();
@@ -12341,91 +12331,91 @@ void Gui::drawEntityReport()
 					keyFilter.emplace_back(std::string());
 				while ((int)valueFilter.size() < MAX_FILTERS)
 					valueFilter.emplace_back(std::string());
+				while ((int)opFilter.size() < MAX_FILTERS)
+					opFilter.push_back(0);
+				while ((int)logicFilter.size() < MAX_FILTERS)
+					logicFilter.push_back(0);
 
 				for (size_t i = 1; i < map->ents.size(); i++)
 				{
 					Entity* ent = map->ents[i];
-					std::string cname = ent->keyvalues["classname"];
-
 					bool visible = true;
-
-					if (!classFilter.empty() && classFilter != "(none)")
-					{
-						if (strcasecmp(cname.c_str(), classFilter.c_str()) != 0)
-						{
-							visible = false;
-						}
-					}
-
-					if (!flagsFilter.empty() && flagsFilter != "(none)")
-					{
-						visible = false;
-						FgdClass* fgdClass = app->fgd->getFgdClass(ent->keyvalues["classname"]);
-						if (fgdClass)
-						{
-							for (int k = 0; k < 32; k++)
-							{
-								if (fgdClass->spawnFlagNames[k] == flagsFilter)
-								{
-									visible = true;
-								}
-							}
-						}
-					}
 
 					for (int k = 0; k < MAX_FILTERS; k++)
 					{
-						if (keyFilter[k].size() && keyFilter[k][0] != '\0')
+						bool filterMatch = false;
+						if (!keyFilter[k].empty())
 						{
-							std::string searchKey = trimSpaces(toLowerCase(keyFilter[k]));
+							std::string searchKey = trimSpaces(keyFilter[k]);
+							std::string searchValue = valueFilter[k];
 
 							bool foundKey = false;
 							std::string actualKey;
 							for (size_t c = 0; c < ent->keyOrder.size(); c++)
 							{
-								std::string key = toLowerCase(ent->keyOrder[c]);
-								if (key == searchKey || (partialMatches && key.find(searchKey) != std::string::npos))
+								if (matchWildcard(searchKey, ent->keyOrder[c], false))
 								{
 									foundKey = true;
-									actualKey = std::move(key);
+									actualKey = ent->keyOrder[c];
 									break;
 								}
-							}
-							if (!foundKey)
-							{
-								visible = false;
-								break;
 							}
 
-							std::string searchValue = trimSpaces(toLowerCase(valueFilter[k]));
-							if (!searchValue.empty())
+							bool valMatch = false;
+							if (foundKey)
 							{
-								if ((partialMatches && ent->keyvalues[actualKey].find(searchValue) == std::string::npos) ||
-									(!partialMatches && ent->keyvalues[actualKey] != searchValue))
+								if (actualKey == "spawnflags")
 								{
-									visible = false;
-									break;
+									int bit = 0;
+									try {
+										bit = std::stoi(searchValue);
+									}
+									catch (...) {}
+									int val = 0;
+									try {
+										val = std::stoi(ent->keyvalues[actualKey]);
+									}
+									catch (...) {}
+									valMatch = (val & bit) != 0;
+								}
+								else
+								{
+									valMatch = matchWildcard(searchValue, ent->keyvalues[actualKey], false);
 								}
 							}
+							else
+							{
+								valMatch = matchWildcard(searchValue, "", false);
+							}
+
+							filterMatch = (opFilter[k] == 0) ? valMatch : !valMatch;
 						}
-						else if (valueFilter[k].size() && valueFilter[k][0] != '\0')
+						else if (!valueFilter[k].empty())
 						{
-							std::string searchValue = trimSpaces(toLowerCase(valueFilter[k]));
+							std::string searchValue = valueFilter[k];
 							bool foundMatch = false;
 							for (size_t c = 0; c < ent->keyOrder.size(); c++)
 							{
-								std::string val = toLowerCase(ent->keyvalues[ent->keyOrder[c]]);
-								if (val == searchValue || (partialMatches && val.find(searchValue) != std::string::npos))
+								if (matchWildcard(searchValue, ent->keyvalues[ent->keyOrder[c]], false))
 								{
 									foundMatch = true;
 									break;
 								}
 							}
-							if (!foundMatch)
-							{
-								visible = false;
-								break;
-							}
+							filterMatch = (opFilter[k] == 0) ? foundMatch : !foundMatch;
+						}
+						else {
+							filterMatch = true;
+						}
+
+						if (k == 0) {
+							visible = visible && filterMatch;
+						}
+						else {
+							if (logicFilter[k - 1] == 0) // AND
+								visible = visible && filterMatch;
+							else // OR
+								visible = visible || filterMatch;
 						}
 					}
 					if (visible)
@@ -12595,150 +12585,221 @@ void Gui::drawEntityReport()
 
 			ImGui::EndChild();
 
-			ImGui::BeginChild(get_localized_string(LANG_0849).c_str());
-
+			ImGui::Dummy(ImVec2(0, 8));
 			ImGui::Separator();
 			ImGui::Dummy(ImVec2(0, 8));
 
-			static std::vector<std::string> usedClasses;
-			static std::set<std::string> uniqueClasses;
+			ImGui::Text(get_localized_string(LANG_1214).c_str()); // FILTERS
 
-			static bool comboWasOpen = false;
+			float footerHeight = ImGui::GetFrameHeightWithSpacing() * 2.f + 16.f;
+			ImGui::BeginChild("ConditionRows", ImVec2(0.f, -footerHeight));
 
-			ImGui::SetNextItemWidth(280);
-			ImGui::Text(get_localized_string(LANG_0850).c_str());
-			ImGui::SameLine(280);
-			ImGui::Text(get_localized_string(LANG_0851).c_str());
-			ImGui::SetNextItemWidth(270);
-			if (ImGui::BeginCombo(get_localized_string(LANG_0852).c_str(), classFilter.c_str()))
+			if (ImGui::BeginTable("FilterTable", 5, ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY))
 			{
-				if (!comboWasOpen)
+				ImGui::TableSetupColumn(get_localized_string(LANG_1215).c_str(), ImGuiTableColumnFlags_WidthFixed, 100.0f); // LOGIC
+				ImGui::TableSetupColumn(get_localized_string(LANG_1216).c_str(), ImGuiTableColumnFlags_WidthStretch);     // KEY
+				ImGui::TableSetupColumn(get_localized_string(LANG_1217).c_str(), ImGuiTableColumnFlags_WidthFixed, 80.0f);  // OPERAND
+				ImGui::TableSetupColumn(get_localized_string(LANG_1218).c_str(), ImGuiTableColumnFlags_WidthStretch);     // VALUE
+				ImGui::TableSetupColumn(get_localized_string(LANG_1219).c_str(), ImGuiTableColumnFlags_WidthFixed, 60.0f);  // ACTION
+				ImGui::TableHeadersRow();
+
+				while ((int)keyFilter.size() < MAX_FILTERS)
+					keyFilter.emplace_back(std::string());
+				while ((int)valueFilter.size() < MAX_FILTERS)
+					valueFilter.emplace_back(std::string());
+				while ((int)opFilter.size() < MAX_FILTERS)
+					opFilter.push_back(0);
+				while ((int)logicFilter.size() < MAX_FILTERS)
+					logicFilter.push_back(0);
+
+				for (int i = 0; i < MAX_FILTERS; i++)
 				{
-					comboWasOpen = true;
-
-					usedClasses.clear();
-					uniqueClasses.clear();
-					usedClasses.push_back("(none)");
-
-					for (size_t i = 1; i < map->ents.size(); i++)
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0); // LOGIC
+					if (i > 0)
 					{
-						Entity* ent = map->ents[i];
-						std::string cname = ent->keyvalues["classname"];
-
-						if (uniqueClasses.find(cname) == uniqueClasses.end())
+						ImGui::SetNextItemWidth(-FLT_MIN);
+						if (ImGui::BeginCombo(("##Logic" + std::to_string(i)).c_str(),
+							get_localized_string(logicFilter[i - 1] == 0 ? LANG_1212 : LANG_1213).c_str()))
 						{
-							usedClasses.push_back(cname);
-							uniqueClasses.insert(cname);
+							if (ImGui::Selectable(get_localized_string(LANG_1212).c_str(), logicFilter[i - 1] == 0))
+							{
+								logicFilter[i - 1] = 0;
+								filterNeeded = true;
+							}
+							if (ImGui::Selectable(get_localized_string(LANG_1213).c_str(), logicFilter[i - 1] == 1))
+							{
+								logicFilter[i - 1] = 1;
+								filterNeeded = true;
+							}
+							ImGui::EndCombo();
 						}
 					}
-					sort(usedClasses.begin(), usedClasses.end());
 
-				}
-
-				for (size_t k = 0; k < usedClasses.size(); k++)
-				{
-					bool selected = usedClasses[k] == classFilter;
-					if (ImGui::Selectable(usedClasses[k].c_str(), selected))
+					ImGui::TableSetColumnIndex(1); // KEY
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					if (ImGui::InputText(("##Key" + std::to_string(i)).c_str(), &keyFilter[i]))
 					{
-						classFilter = usedClasses[k];
 						filterNeeded = true;
 					}
+
+					ImGui::TableSetColumnIndex(2); // OPERAND
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					if (ImGui::BeginCombo(("##Op" + std::to_string(i)).c_str(), opFilter[i] == 0 ? "=" : "!="))
+					{
+						if (ImGui::Selectable("=", opFilter[i] == 0))
+						{
+							opFilter[i] = 0;
+							filterNeeded = true;
+						}
+						if (ImGui::Selectable("!=", opFilter[i] == 1))
+						{
+							opFilter[i] = 1;
+							filterNeeded = true;
+						}
+						ImGui::EndCombo();
+					}
+
+					ImGui::TableSetColumnIndex(3); // VALUE
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					if (ImGui::InputText(("##Value" + std::to_string(i)).c_str(), &valueFilter[i]))
+					{
+						filterNeeded = true;
+					}
+
+					ImGui::TableSetColumnIndex(4); // ACTION
+					if (ImGui::Button(("-##Del" + std::to_string(i)).c_str(), ImVec2(-FLT_MIN, 0)))
+					{
+						keyFilter.erase(keyFilter.begin() + i);
+						valueFilter.erase(valueFilter.begin() + i);
+						opFilter.erase(opFilter.begin() + i);
+						if (i > 0)
+							logicFilter.erase(logicFilter.begin() + i - 1);
+						else if (logicFilter.size() > 0)
+							logicFilter.erase(logicFilter.begin());
+
+						MAX_FILTERS--;
+						if (MAX_FILTERS < 1)
+						{
+							MAX_FILTERS = 1;
+							keyFilter.emplace_back("");
+							valueFilter.emplace_back("");
+							opFilter.push_back(0);
+						}
+						filterNeeded = true;
+						break;
+					}
 				}
-
-				ImGui::EndCombo();
+				ImGui::EndTable();
 			}
-			else
+			ImGui::EndChild();
+
+			if (ImGui::Button(get_localized_string(LANG_1220).c_str())) // CLEAR FILTERS
 			{
-				comboWasOpen = false;
+				keyFilter.clear();
+				valueFilter.clear();
+				opFilter.clear();
+				logicFilter.clear();
+				keyFilter.emplace_back("");
+				valueFilter.emplace_back("");
+				opFilter.push_back(0);
+				MAX_FILTERS = 1;
+				filterNeeded = true;
 			}
+			ImGui::SameLine();
+			if (ImGui::Button(get_localized_string(LANG_1221).c_str())) // ADD FILTER
+			{
+				MAX_FILTERS++;
+				filterNeeded = true;
+			}
+			ImGui::SameLine();
 
+			static std::vector<std::string> usedClasses;
+			static std::set<std::string> uniqueClasses;
+			if (ImGui::Button(get_localized_string(LANG_1222).c_str())) // CLASSNAME FILTER
+			{
+				ImGui::OpenPopup("classname_filter_popup");
+				usedClasses.clear();
+				uniqueClasses.clear();
+				usedClasses.push_back("(none)");
+				for (size_t i = 1; i < map->ents.size(); i++)
+				{
+					Entity* ent = map->ents[i];
+					std::string cname = ent->keyvalues["classname"];
+					if (uniqueClasses.find(cname) == uniqueClasses.end())
+					{
+						usedClasses.push_back(cname);
+						uniqueClasses.insert(cname);
+					}
+				}
+				sort(usedClasses.begin(), usedClasses.end());
+			}
+			if (ImGui::BeginPopup("classname_filter_popup"))
+			{
+				for (size_t k = 0; k < usedClasses.size(); k++)
+				{
+					if (ImGui::Selectable(usedClasses[k].c_str()))
+					{
+						if (usedClasses[k] != "(none)")
+						{
+							if (MAX_FILTERS == 1 && keyFilter[0].empty() && valueFilter[0].empty())
+							{
+								keyFilter[0] = "classname";
+								valueFilter[0] = usedClasses[k];
+								opFilter[0] = 0;
+							}
+							else
+							{
+								keyFilter.push_back("classname");
+								valueFilter.push_back(usedClasses[k]);
+								opFilter.push_back(0);
+								logicFilter.push_back(0); // AND
+								MAX_FILTERS++;
+							}
+							filterNeeded = true;
+						}
+					}
+				}
+				ImGui::EndPopup();
+			}
 
 			ImGui::SameLine();
-			ImGui::SetNextItemWidth(270);
-			if (ImGui::BeginCombo(get_localized_string(LANG_0853).c_str(), flagsFilter.c_str()))
+			if (ImGui::Button(get_localized_string(LANG_1223).c_str())) // SPAWNFLAG FILTER
+			{
+				ImGui::OpenPopup("spawnflag_filter_popup");
+			}
+			if (ImGui::BeginPopup("spawnflag_filter_popup"))
 			{
 				if (app->fgd)
 				{
-					if (ImGui::Selectable(get_localized_string(LANG_0854).c_str(), false))
+					for (size_t i = 0; i < app->fgd->existsFlagNames.size(); i++)
 					{
-						flagsFilter = "(none)";
-						filterNeeded = true;
-					}
-					else
-					{
-						for (size_t i = 0; i < app->fgd->existsFlagNames.size(); i++)
+						if (ImGui::Selectable((app->fgd->existsFlagNames[i] +
+							" ( bit " + std::to_string(app->fgd->existsFlagNamesBits[i]) + " )").c_str()))
 						{
-							bool selected = flagsFilter == app->fgd->existsFlagNames[i];
-							if (ImGui::Selectable((app->fgd->existsFlagNames[i] +
-								" ( bit " + std::to_string(app->fgd->existsFlagNamesBits[i]) + " )").c_str(), selected))
+							if (MAX_FILTERS == 1 && keyFilter[0].empty() && valueFilter[0].empty())
 							{
-								flagsFilter = app->fgd->existsFlagNames[i];
-								filterNeeded = true;
+								keyFilter[0] = "spawnflags";
+								valueFilter[0] = std::to_string(app->fgd->existsFlagNamesBits[i]);
+								opFilter[0] = 0;
 							}
+							else
+							{
+								keyFilter.push_back("spawnflags");
+								valueFilter.push_back(std::to_string(app->fgd->existsFlagNamesBits[i]));
+								opFilter.push_back(0);
+								logicFilter.push_back(0); // AND
+								MAX_FILTERS++;
+							}
+							filterNeeded = true;
 						}
 					}
 				}
-				ImGui::EndCombo();
+				ImGui::EndPopup();
 			}
-
-			ImGui::Dummy(ImVec2(0, 8));
-			ImGui::Text(get_localized_string(LANG_0855).c_str());
-
-			ImGuiStyle& style = ImGui::GetStyle();
-			float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
-			float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.4f;
-			inputWidth -= smallFont->CalcTextSizeA(fontSize, FLT_MAX, FLT_MAX, " = ").x;
-
-			while ((int)keyFilter.size() < MAX_FILTERS)
-				keyFilter.emplace_back(std::string());
-			while ((int)valueFilter.size() < MAX_FILTERS)
-				valueFilter.emplace_back(std::string());
-
-			for (int i = 0; i < MAX_FILTERS; i++)
-			{
-				ImGui::SetNextItemWidth(inputWidth);
-				if (ImGui::InputText(("##Key" + std::to_string(i)).c_str(), &keyFilter[i]))
-				{
-					filterNeeded = true;
-				}
-
-				ImGui::SameLine();
-				ImGui::Text(" = "); ImGui::SameLine();
-				ImGui::SetNextItemWidth(inputWidth);
-
-				if (ImGui::InputText(("##Value" + std::to_string(i)).c_str(), &valueFilter[i]))
-				{
-					filterNeeded = true;
-				}
-
-				if (i == 0)
-				{
-					ImGui::SameLine();
-					if (ImGui::Button(get_localized_string(LANG_0856).c_str(), ImVec2(100, 0)))
-					{
-						MAX_FILTERS++;
-						break;
-					}
-				}
-
-				if (i == 1)
-				{
-					ImGui::SameLine();
-					if (ImGui::Button(get_localized_string(LANG_1168).c_str(), ImVec2(100, 0)))
-					{
-						if (MAX_FILTERS > 1)
-							MAX_FILTERS--;
-						break;
-					}
-				}
-			}
-
-			if (ImGui::Checkbox(get_localized_string(LANG_0857).c_str(), &partialMatches))
-			{
-				filterNeeded = true;
-			}
-
-			ImGui::SameLine();
+			ImGui::Dummy(ImVec2(0, 4));
+			ImGui::Separator();
+			ImGui::Dummy(ImVec2(0, 4));
 
 			if (app->pickInfo.selectedEnts.size() != 1)
 			{
@@ -12763,8 +12824,6 @@ void Gui::drawEntityReport()
 				if (startFrom < 0.0f)
 					startFrom = 0.0f;
 			}
-
-			ImGui::EndChild();
 
 			ImGui::EndGroup();
 		}

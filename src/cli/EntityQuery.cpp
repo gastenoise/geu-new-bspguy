@@ -1,4 +1,5 @@
 #include "EntityQuery.h"
+#include "util.h"
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -20,43 +21,6 @@ public:
 
         bool match = matchWildcard(value, entValue);
         return isNot ? !match : match;
-    }
-
-private:
-    bool matchWildcard(const std::string& pattern, const std::string& text) {
-        if (pattern == "*") return true;
-        if (pattern.empty()) return text.empty();
-
-        size_t n = text.size();
-        size_t m = pattern.size();
-
-        // Optimized wildcard matching using two rows (prev and curr) to save space
-        std::vector<bool> dp(m + 1, false);
-        dp[0] = true;
-
-        for (size_t j = 1; j <= m; j++) {
-            if (pattern[j - 1] == '*') {
-                dp[j] = dp[j - 1];
-            }
-        }
-
-        for (size_t i = 1; i <= n; i++) {
-            bool prev_diag = dp[0];
-            dp[0] = false;
-            for (size_t j = 1; j <= m; j++) {
-                bool next_prev_diag = dp[j];
-                if (pattern[j - 1] == '*') {
-                    dp[j] = dp[j] || dp[j - 1];
-                } else if (pattern[j - 1] == text[i - 1]) {
-                    dp[j] = prev_diag;
-                } else {
-                    dp[j] = false;
-                }
-                prev_diag = next_prev_diag;
-            }
-        }
-
-        return dp[m];
     }
 };
 

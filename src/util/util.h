@@ -279,6 +279,7 @@ std::string flt_to_str(float f);
 
 float half_prefloat(unsigned short h);
 
+bool matchWildcard(const std::string& pattern, const std::string& text, bool caseSensitive = true);
 bool starts_with(const std::string& str, const std::string& prefix);
 bool istarts_with(const std::string& str, const std::string& prefix);
 bool starts_with(const std::wstring& str, const std::wstring& prefix);

@@ -89,6 +89,7 @@ These are the main technical changes and fixes added on top of the prior codebas
 * `allowExternalTextures` flag to enable optional external texture loading without breaking rendering.
 * Copy/Paste *Style* commands, improved lightmap paste (scaling, accumulation, style copy) and persistent copied lightmap handling.
 * Improved input flow: hotkeys are disabled while an input/window is active to avoid state conflicts.
+* **Enhanced Entity Report**: Advanced filtering with multi-line support, customizable operators (`=`, `!=`), and boolean logic (`AND`, `OR`). Consistent `*` wildcard support across CLI and GUI. Matches empty keyvalues correctly.
 
 ### Localization and headers
 
