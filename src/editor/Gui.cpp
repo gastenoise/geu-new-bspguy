@@ -8658,8 +8658,11 @@ void Gui::drawKeyvalueEditor()
 						{
 							if (ImGui::MenuItem(group.classes[k]->name.c_str()))
 							{
-								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
-								map->getBspRender()->refreshEnt((int)entIdx[0]);
+								for (auto selected_entId : entIdx)
+								{
+									map->ents[selected_entId]->setOrAddKeyvalue("classname", group.classes[k]->name);
+									map->getBspRender()->refreshEnt((int)selected_entId);
+								}
 							}
 						}
 
@@ -9115,22 +9118,25 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 
 		if (ImGui::Checkbox((name + "##flag" + std::to_string(i)).c_str(), &checkboxEnabled[i]))
 		{
-			if (!checkboxEnabled[i])
-			{
-				spawnflags &= ~(1U << i);
-			}
-			else
-			{
-				spawnflags |= (1U << i);
-			}
-
 			for (auto selected_entId : g_app->pickInfo.selectedEnts)
 			{
 				Entity* selected_ent = map->ents[selected_entId];
-				if (spawnflags != 0)
-					selected_ent->setOrAddKeyvalue("spawnflags", std::to_string(spawnflags));
+				unsigned int entSpawnflags = strtoul(selected_ent->keyvalues["spawnflags"].c_str(), NULL, 10);
+				if (!checkboxEnabled[i])
+				{
+					entSpawnflags &= ~(1U << i);
+				}
+				else
+				{
+					entSpawnflags |= (1U << i);
+				}
+
+				if (entSpawnflags != 0)
+					selected_ent->setOrAddKeyvalue("spawnflags", std::to_string(entSpawnflags));
 				else
 					selected_ent->removeKeyvalue("spawnflags");
+
+				map->getBspRender()->refreshEnt((int)selected_entId);
 			}
 
 			map->getBspRender()->pushEntityUndoStateDelay(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag");
@@ -9527,8 +9533,11 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 			if (ImGui::Button((" X ##delorder" + keyOrdname).c_str()))
 			{
-				ent->removeKeyvalue(keyOrdname);
-				map->getBspRender()->refreshEnt(entIdx);
+				for (auto selected_entId : app->pickInfo.selectedEnts)
+				{
+					map->ents[selected_entId]->removeKeyvalue(keyOrdname);
+					map->getBspRender()->refreshEnt((int)selected_entId);
+				}
 				app->updateEntConnections();
 				map->getBspRender()->pushEntityUndoStateDelay("Delete Keyvalue RAW");
 			}
@@ -9557,13 +9566,16 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 	if (ImGui::Button(get_localized_string(LANG_0674).c_str()))
 	{
-		if (!ent->hasKey(keyName))
+		for (auto selected_entId : app->pickInfo.selectedEnts)
 		{
-			ent->addKeyvalue(keyName, "");
-			map->getBspRender()->refreshEnt(entIdx);
-			keyName.clear();
-			map->getBspRender()->pushEntityUndoStateDelay("Add Keyvalue");
+			if (!map->ents[selected_entId]->hasKey(keyName))
+			{
+				map->ents[selected_entId]->addKeyvalue(keyName, "");
+				map->getBspRender()->refreshEnt((int)selected_entId);
+			}
 		}
+		keyName.clear();
+		map->getBspRender()->pushEntityUndoStateDelay("Add Keyvalue");
 	}
 	ImGui::SameLine();
 
