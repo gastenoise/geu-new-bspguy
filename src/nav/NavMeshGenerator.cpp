@@ -7,6 +7,8 @@
 #include "log.h"
 #include "util.h"
 #include <algorithm>
+#include <unordered_map>
+#include <utility>
 
 
 #include "GLFW/glfw3.h"
@@ -323,12 +325,46 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 void NavMeshGenerator::cullTinyFaces(std::vector<Polygon3D>& faces) {
 	const int TINY_POLY = 64; // cull faces smaller than this
 
+	std::unordered_map<std::pair<vec3, vec3>, int, vec3PairHash, vec3PairExactEqual> edgeCounts;
+
+	// Count occurrences of each edge across all faces
+	for (size_t i = 0; i < faces.size(); i++) {
+		const Polygon3D& poly = faces[i];
+		for (size_t j = 0; j < poly.verts.size(); j++) {
+			vec3 v1 = poly.verts[j];
+			vec3 v2 = poly.verts[(j + 1) % poly.verts.size()];
+
+			// Normalize edge to treat it as undirected
+			if (v2.x < v1.x || (v2.x == v1.x && v2.y < v1.y) || (v2.x == v1.x && v2.y == v1.y && v2.z < v1.z)) {
+				std::swap(v1, v2);
+			}
+			edgeCounts[{v1, v2}]++;
+		}
+	}
+
 	std::vector<Polygon3D> finalPolys;
 	for (size_t i = 0; i < faces.size(); i++) {
 		if (faces[i].area < TINY_POLY) {
-			// TODO: only remove if there is at least one unconnected edge,
-			// otherwise there will be holes
-			continue;
+			bool hasUnconnectedEdge = false;
+			const Polygon3D& poly = faces[i];
+
+			for (size_t j = 0; j < poly.verts.size(); j++) {
+				vec3 v1 = poly.verts[j];
+				vec3 v2 = poly.verts[(j + 1) % poly.verts.size()];
+
+				if (v2.x < v1.x || (v2.x == v1.x && v2.y < v1.y) || (v2.x == v1.x && v2.y == v1.y && v2.z < v1.z)) {
+					std::swap(v1, v2);
+				}
+
+				if (edgeCounts[{v1, v2}] == 1) {
+					hasUnconnectedEdge = true;
+					break;
+				}
+			}
+
+			if (hasUnconnectedEdge) {
+				continue;
+			}
 		}
 		finalPolys.push_back(faces[i]);
 	}
