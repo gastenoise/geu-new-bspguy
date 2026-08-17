@@ -1,0 +1,66 @@
+name: Lint & Code Style
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'check'
+        type: choice
+        options:
+          - 'check'
+          - 'fix-and-commit'
+
+jobs:
+  cppcheck:
+    name: Cppcheck Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+      - name: Run Cppcheck on src/
+        run: |
+          cppcheck --enable=warning,performance,portability,style \
+                   --inconclusive \
+                   --std=c++20 \
+                   --suppress=missingIncludeSystem \
+                   --inline-suppr \
+                   -I src \
+                   -I imgui \
+                   -I fmt/include \
+                   src/
+
+  clang-format:
+    name: Clang-Format Check / Auto-fix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Clang-Format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+
+      - name: Format or Verify
+        run: |
+          find src -type f \( -name "*.cpp" -o -name "*.h" \) -exec clang-format -i {} +
+
+      - name: Verify Clean Diffs (Check Mode)
+        if: github.event.inputs.action == 'check'
+        run: |
+          git diff --exit-code || (echo "Code formatting differences found! Run with 'fix-and-commit' to auto-format." && exit 1)
+
+      - name: Commit & Push Fixes (Fix Mode)
+        if: github.event.inputs.action == 'fix-and-commit'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "style: apply clang-format fixes"
+            git push origin HEAD:${{ github.ref }}
+          else
+            echo "No formatting changes needed."
+          fi

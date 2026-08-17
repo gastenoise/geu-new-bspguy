@@ -1,0 +1,101 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version Tag (e.g. v1.1.0)'
+        required: true
+        default: 'v1.1.0'
+      is_prerelease:
+        description: 'Is Pre-release?'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Package Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build & Package
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release --parallel
+          cmake --install build --prefix dist/bspguy-revamped --config Release
+          Compress-Archive -Path dist/bspguy-revamped/* -DestinationPath "bspguy-revamped-windows-x64.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-package
+          path: bspguy-revamped-windows-x64.zip
+
+  build-linux:
+    name: Package Linux (x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libx11-dev libxrandr-dev \
+            libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libgl1-mesa-dev \
+            libglu1-mesa-dev libglfw3-dev libglew-dev
+
+      - name: Build & Package
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release --parallel
+          cmake --install build --prefix dist/bspguy-revamped --config Release
+          cd dist
+          tar -czvf ../bspguy-revamped-linux-x64.tar.gz bspguy-revamped/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-package
+          path: bspguy-revamped-linux-x64.tar.gz
+
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine Tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEASE_TAG=${{ github.event.inputs.version_tag }}" >> $GITHUB_OUTPUT
+            echo "PRERELEASE=${{ github.event.inputs.is_prerelease }}" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_TAG=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-packages
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
+          name: bspguy REVAMPED ${{ steps.tag.outputs.RELEASE_TAG }}
+          prerelease: ${{ steps.tag.outputs.PRERELEASE == 'true' }}
+          generate_release_notes: true
+          files: |
+            release-packages/bspguy-revamped-windows-x64.zip
+            release-packages/bspguy-revamped-linux-x64.tar.gz
