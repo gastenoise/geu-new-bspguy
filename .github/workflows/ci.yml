@@ -22,7 +22,6 @@ jobs:
           - os: windows-latest
             compiler: msvc
             build_type: Release
-            generator: "Visual Studio 17 2022"
             arch: x64
           - os: ubuntu-latest
             compiler: gcc
@@ -43,16 +42,21 @@ jobs:
 
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libx11-dev libxrandr-dev \
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libx11-dev libxrandr-dev \
             libxinerama-dev libxcursor-dev libxi-dev libxxf86vm-dev libgl1-mesa-dev \
-            libglu1-mesa-dev libglfw3-dev libglew-dev
+            libglu1-mesa-dev libglfw3-dev libglew-dev libxkbcommon-dev
 
       - name: Setup Clang Environment
         if: matrix.compiler == 'clang'
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get install -y clang
+          sudo apt-get install -y --no-install-recommends clang
           echo "CC=clang" >> $GITHUB_ENV
           echo "CXX=clang++" >> $GITHUB_ENV
 
@@ -60,7 +64,6 @@ jobs:
         if: runner.os == 'Windows'
         run: >
           cmake -S . -B build
-          -G "${{ matrix.generator }}"
           -A ${{ matrix.arch }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
