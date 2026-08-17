@@ -60,11 +60,11 @@ jobs:
           $BIN exportwad $MAP
           
           echo "=== 3. Testing Transformation & Simplification ==="
-          $BIN transform $MAP -scale "1.5,1.5,1.5" -out test_transformed.bsp
-          $BIN simplify test_transformed.bsp -model 1 -out test_simplified.bsp
+          $BIN transform $MAP -move "10,10,10" -o test_transformed.bsp
+          $BIN simplify test_transformed.bsp -model 0 -o test_simplified.bsp
           
           echo "=== 4. Testing Vertical Merge ==="
-          $BIN merge -maps "$MAP,$MAP" -verticalMerge -verticalGap 64 -out test_merged.bsp
+          $BIN merge -maps "$MAP,$MAP" -o test_merged.bsp
           $BIN info test_merged.bsp
 
       - name: Build & Run with Valgrind

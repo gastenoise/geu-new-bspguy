@@ -87,7 +87,7 @@ jobs:
           $exe = "dist/bspguy-revamped/bspguy.exe"
           & $exe info demo/demo_vis_editor.bsp
           & $exe exportwad demo/demo_vis_editor.bsp
-          & $exe simplify demo/demo_vis_editor.bsp -model 1 -out test_simplified.bsp
+          & $exe simplify demo/demo_vis_editor.bsp -model 0 -o test_simplified.bsp
 
       - name: Smoke Tests (Linux CLI)
         if: runner.os == 'Linux'
@@ -95,7 +95,7 @@ jobs:
           chmod +x dist/bspguy-revamped/bspguy
           ./dist/bspguy-revamped/bspguy info demo/demo_vis_editor.bsp
           ./dist/bspguy-revamped/bspguy exportwad demo/demo_vis_editor.bsp
-          ./dist/bspguy-revamped/bspguy simplify demo/demo_vis_editor.bsp -model 1 -out test_simplified.bsp
+          ./dist/bspguy-revamped/bspguy simplify demo/demo_vis_editor.bsp -model 0 -o test_simplified.bsp
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
