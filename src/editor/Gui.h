@@ -200,4 +200,5 @@ private:
 	void checkFaceErrors();
 };
 
+ImVec4 imguiColorFromConsole(unsigned int colors);
 int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip = false);
