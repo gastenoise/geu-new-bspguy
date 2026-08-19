@@ -1,6 +1,6 @@
-# Proposed Reordered Menu Structure (`geu-new-bspguy`)
+# Proposed Reordered Menu Structure (`revamped-newbspguy`)
 
-This document presents a complete, redesigned menu structure for `geu-new-bspguy`. The proposed hierarchy strictly follows standard 3D/CAD editor User Experience (UX) conventions (**File → Edit → View → Map → Tools → Create → Windows → Help**), logical workflow grouping, clean separation of experimental features, and context-sensitive ergonomics.
+This document presents a complete, redesigned menu structure for `revamped-newbspguy`. The proposed hierarchy strictly follows standard 3D/CAD editor User Experience (UX) conventions (**File → Edit → View → Map → Tools → Create → Windows → Help**), logical workflow grouping, clean separation of experimental features, and context-sensitive ergonomics.
 
 ---
 
@@ -225,7 +225,7 @@ Main Menu Bar
 * **Documentation & User Guide** `[F1]`
 * **Keyboard Shortcuts Cheat Sheet**
 * ─── *(Separator)* ───
-* **About geu-new-bspguy**
+* **About revamped-newbspguy**
 * ─── *(Separator)* ───
 * **Developer & Debug Mode** `[Toggle]` *(Enables (DEBUG) tools)*
 

@@ -244,7 +244,7 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini" DESTINATION .)
 # Custom target to mirror GitHub Release build locally
 add_custom_target(package_release
     COMMAND ${CMAKE_COMMAND} --build . --config Release
-    COMMAND ${CMAKE_COMMAND} --install . --prefix "${CMAKE_CURRENT_SOURCE_DIR}/dist/bspguy-revamped" --config Release
+    COMMAND ${CMAKE_COMMAND} --install . --prefix "${CMAKE_CURRENT_SOURCE_DIR}/dist/revamped-newbspguy" --config Release
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Building and creating release package in dist/bspguy-revamped (Release configuration)"
+    COMMENT "Building and creating release package in dist/revamped-newbspguy (Release configuration)"
 )

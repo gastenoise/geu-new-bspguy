@@ -1,4 +1,4 @@
-# Complete Original Menu Structure (`geu-new-bspguy`)
+# Complete Original Menu Structure (`revamped-newbspguy`)
 
 This document provides a comprehensive, end-to-end breakdown of all top-level main menu bar items, submenus, options, and viewport context menus in the application as extracted directly from the codebase (`src/editor/Gui.cpp`) and localized string definitions (`resources/languages/language.ini`).
 
