@@ -77,6 +77,10 @@ set(SOURCE_FILES
 	src/editor/Settings.h			src/editor/Settings.cpp
 	src/editor/Renderer.h			src/editor/Renderer.cpp
 	src/editor/Gui.h				src/editor/Gui.cpp
+	src/editor/gui/GuiMenuBar.cpp
+	src/editor/gui/GuiContextMenu.cpp
+	src/editor/gui/GuiWidgets.cpp
+	src/editor/gui/GuiDialogs.cpp
 	src/editor/BspRenderer.h		src/editor/BspRenderer.cpp
 	src/editor/PointEntRenderer.h	src/editor/PointEntRenderer.cpp
 	src/editor/Fgd.h				src/editor/Fgd.cpp
