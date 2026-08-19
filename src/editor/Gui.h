@@ -151,7 +151,20 @@ private:
 	bool pasteTextureNow = false;
 
 	void drawBspContexMenu();
+	void drawContextMenu_Entity();
+	void drawContextMenu_Face();
+	void drawContextMenu_Empty();
+
 	void drawMenuBar();
+	void drawMenu_File();
+	void drawMenu_Edit();
+	void drawMenu_View();
+	void drawMenu_Map();
+	void drawMenu_Tools();
+	void drawMenu_Create();
+	void drawMenu_Windows();
+	void drawMenu_Help();
+	void drawMenu_Debug();
 	void drawToolbar();
 	void drawFpsOverlay();
 	void drawStatusMessage();
@@ -187,4 +200,5 @@ private:
 	void checkFaceErrors();
 };
 
+ImVec4 imguiColorFromConsole(unsigned int colors);
 int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip = false);

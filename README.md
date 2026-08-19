@@ -8,7 +8,7 @@
 
 * **[bspguy - goldsrc map editor project](https://github.com/wootguy/bspguy)** - the original project and starting point.
 * **[newbspguy - improved fork by unrealkaraulov](https://github.com/UnrealKaraulov/newbspguy)** - an improved fork with several enhancements.
-* **[geu-new-bspguy - personal geu fork repo](https://github.com/gastenoise/geu-new-bspguy)** - this repository (named `geu-new-bspguy`) published under the display name **bspguy REVAMPED**.
+* **[revamped-newbspguy - personal fork repo](https://github.com/urgorri/revamped-newbspguy)** - this repository (named `revamped-newbspguy`) published under the display name **bspguy REVAMPED**.
 
 > Note: code, build files and some assets may still reference `bspguy` or `newbspguy`. This README clarifies lineage and the purpose of this fork.
 
@@ -54,7 +54,7 @@ This software is still experimental. The editor contains bugs and some operation
 
 ---
 
-# Changes introduced in this fork (geu-new-bspguy)
+# Changes introduced in this fork (revamped-newbspguy)
 
 These are the main technical changes and fixes added on top of the prior codebase.
 

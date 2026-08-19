@@ -78,13 +78,13 @@ jobs:
         run: cmake --build build --config ${{ matrix.build_type }} --parallel
 
       - name: Install / Stage Artifacts
-        run: cmake --install build --prefix dist/bspguy-revamped --config ${{ matrix.build_type }}
+        run: cmake --install build --prefix dist/revamped-newbspguy --config ${{ matrix.build_type }}
 
       - name: Smoke Tests (Windows CLI)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $exe = "dist/bspguy-revamped/bspguy.exe"
+          $exe = "dist/revamped-newbspguy/bspguy.exe"
           & $exe info demo/demo_vis_editor.bsp
           & $exe exportwad demo/demo_vis_editor.bsp
           & $exe simplify demo/demo_vis_editor.bsp -model 0 -o test_simplified.bsp
@@ -92,14 +92,14 @@ jobs:
       - name: Smoke Tests (Linux CLI)
         if: runner.os == 'Linux'
         run: |
-          chmod +x dist/bspguy-revamped/bspguy
-          ./dist/bspguy-revamped/bspguy info demo/demo_vis_editor.bsp
-          ./dist/bspguy-revamped/bspguy exportwad demo/demo_vis_editor.bsp
-          ./dist/bspguy-revamped/bspguy simplify demo/demo_vis_editor.bsp -model 0 -o test_simplified.bsp
+          chmod +x dist/revamped-newbspguy/bspguy
+          ./dist/revamped-newbspguy/bspguy info demo/demo_vis_editor.bsp
+          ./dist/revamped-newbspguy/bspguy exportwad demo/demo_vis_editor.bsp
+          ./dist/revamped-newbspguy/bspguy simplify demo/demo_vis_editor.bsp -model 0 -o test_simplified.bsp
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: bspguy-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
-          path: dist/bspguy-revamped/
+          path: dist/revamped-newbspguy/
           retention-days: 14

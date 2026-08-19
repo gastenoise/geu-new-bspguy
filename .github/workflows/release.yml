@@ -32,13 +32,13 @@ jobs:
         run: |
           cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release --parallel
-          cmake --install build --prefix dist/bspguy-revamped --config Release
-          Compress-Archive -Path dist/bspguy-revamped/* -DestinationPath "bspguy-revamped-windows-x64.zip" -Force
+          cmake --install build --prefix dist/revamped-newbspguy --config Release
+          Compress-Archive -Path dist/revamped-newbspguy/* -DestinationPath "revamped-newbspguy-windows-x64.zip" -Force
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-package
-          path: bspguy-revamped-windows-x64.zip
+          path: revamped-newbspguy-windows-x64.zip
 
   build-linux:
     name: Package Linux (x64)
@@ -62,14 +62,14 @@ jobs:
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release --parallel
-          cmake --install build --prefix dist/bspguy-revamped --config Release
+          cmake --install build --prefix dist/revamped-newbspguy --config Release
           cd dist
-          tar -czvf ../bspguy-revamped-linux-x64.tar.gz bspguy-revamped/
+          tar -czvf ../revamped-newbspguy-linux-x64.tar.gz revamped-newbspguy/
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-package
-          path: bspguy-revamped-linux-x64.tar.gz
+          path: revamped-newbspguy-linux-x64.tar.gz
 
   release:
     name: Create GitHub Release
@@ -96,9 +96,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
-          name: bspguy REVAMPED ${{ steps.tag.outputs.RELEASE_TAG }}
+          name: revamped-newbspguy ${{ steps.tag.outputs.RELEASE_TAG }}
           prerelease: ${{ steps.tag.outputs.PRERELEASE == 'true' }}
           generate_release_notes: true
           files: |
-            release-packages/bspguy-revamped-windows-x64.zip
-            release-packages/bspguy-revamped-linux-x64.tar.gz
+            release-packages/revamped-newbspguy-windows-x64.zip
+            release-packages/revamped-newbspguy-linux-x64.tar.gz
