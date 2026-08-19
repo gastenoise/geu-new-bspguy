@@ -1,9 +1,10 @@
-name: CI Multiplatform & Smoke Tests
+name: CI Multiplatform Build & Test
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
+    types: [ opened, synchronize, reopened ]
     branches: [ main, master ]
   workflow_dispatch:
 
