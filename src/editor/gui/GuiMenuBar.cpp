@@ -3862,10 +3862,6 @@ void Gui::drawMenu_Tools()
 				ImGui::EndMenu();
 			}
 
-			ImGui::EndMenu();
-		}
-
-
 			if (ImGui::BeginMenu("Additional tools"))
 			{
 				if (ImGui::BeginMenu("Delete OOB Data", !app->isLoading && app->getSelectedMap() && rend))
@@ -4221,6 +4217,7 @@ void Gui::drawMenu_Tools()
 
 		ImGui::EndMenu();
 	}
+}
 
 void Gui::drawMenu_Create()
 {
