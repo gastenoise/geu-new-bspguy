@@ -11691,6 +11691,15 @@ void Gui::drawAbout()
 			ImGui::EndTooltip();
 		}
 
+		static char url3[] = "https://github.com/urgorri/revamped-newbspguy";
+		ImGui::InputText((get_localized_string(LANG_0824) + "##3").c_str(), url3, strlen(url3), ImGuiInputTextFlags_ReadOnly);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted(url3);
+			ImGui::EndTooltip();
+		}
+
 		static char help1[] = "https://github.com/Qwertyus3D\nhttps://t.me/AKG6669\nhttps://hlfx.ru/forum/member.php?action=getinfo&userid=3\ntwhl community\netc";
 		ImGui::InputTextMultiline("Special thanks to:", help1, strlen(help1), ImVec2(0, 45), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
