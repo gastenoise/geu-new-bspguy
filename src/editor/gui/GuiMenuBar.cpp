@@ -523,8 +523,8 @@ void Gui::drawMenu_View()
 
 		if (ImGui::BeginMenu("Toggle Panels / Widgets"))
 		{
-			ImGui::MenuItem(get_localized_string(LANG_0596).c_str(), get_localized_string(LANG_0477).c_str(), &showKeyvalueWidget);
-			ImGui::MenuItem(get_localized_string(LANG_1160).c_str(), get_localized_string(LANG_1161).c_str(), &showTransformWidget);
+			ImGui::MenuItem(get_localized_string(LANG_0596).c_str(), NULL, &showKeyvalueWidget);
+			ImGui::MenuItem(get_localized_string(LANG_1160).c_str(), NULL, &showTransformWidget);
 			ImGui::MenuItem(get_localized_string(LANG_0597).c_str(), "", &showFaceEditWidget);
 			ImGui::MenuItem(get_localized_string(LANG_0598).c_str(), "", &showTextureBrowser);
 			ImGui::MenuItem(get_localized_string(LANG_0599).c_str(), "", &showLightmapEditorWidget);
@@ -534,7 +534,7 @@ void Gui::drawMenu_View()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem(get_localized_string(LANG_1095).c_str(), "Ctrl+G", &showGOTOWidget)) {}
+		if (ImGui::MenuItem(get_localized_string(LANG_1095).c_str(), NULL, &showGOTOWidget)) {}
 		if (ImGui::MenuItem(get_localized_string(LANG_0563).c_str(), NULL, &showLimitsWidget)) {}
 
 		ImGui::EndMenu();
