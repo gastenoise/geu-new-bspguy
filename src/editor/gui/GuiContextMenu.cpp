@@ -6,16 +6,87 @@
 #include "lang.h"
 #include "filedialog/ImFileDialog.h"
 #include "imgui_stdlib.h"
+#include "quantizer.h"
+#include "vis.h"
+#include "winding.h"
 #include "util.h"
 #include "log.h"
+#include "BspMerger.h"
+#include "LeafNavMesh.h"
+#include "as.h"
+#include "lodepng.h"
 #include "fmt/format.h"
 #include <filesystem>
 #include <algorithm>
+#include <cmath>
+#include <unordered_set>
 
 extern float g_tooltip_delay;
+extern std::string g_working_dir;
 extern Settings g_settings;
 extern Renderer* g_app;
 extern int pickCount;
+extern std::string g_game_dir;
+extern bool g_console_visible;
+extern std::vector<BspRenderer*> mapRenderers;
+extern bool DebugKeyPressed;
+
+enum cell_type : unsigned char
+{
+	cell_none = 0,
+	cell_brush,
+	cell_wall,
+	cell_hostage,
+	cell_player_TT,
+	cell_player_CT,
+	cell_light,
+	cell_buyzone,
+	cell_bombzone,
+	cell_waterzone
+};
+
+static int UMD_MAGIC = 'umd2';
+
+struct cell
+{
+	unsigned char height;
+	unsigned char height_offset;
+	unsigned char texid;
+	cell_type type;
+};
+
+static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer) {
+	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
+	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
+	int lvl = static_cast<int>(std::round((pos.z - mins.z) / cell_size));
+
+	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers) {
+		return -1;
+	}
+
+	int lvlIdx = lvl * cell_x * cell_y * cell_layers;
+
+	y = cell_y - 1 - y;
+
+	int index = lvlIdx + layer * cell_x * cell_y + y * cell_x + x;
+	return index;
+}
+
+static inline void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& text)
+{
+	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+		ImGui::BeginTooltip();
+		ImGui::TextUnformatted(text.c_str());
+		ImGui::EndTooltip();
+	}
+}
+
+namespace umd_flags {
+	enum {
+		UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
+		UMD_OPTIMIZE_DISABLED = 1 << 1
+	};
+}
 
 
 void Gui::drawBspContexMenu()
@@ -1034,18 +1105,6 @@ void Gui::drawBspContexMenu()
 }
 
 
-
-void Gui::drawContextMenu_Entity()
-{
-	// Delegated to ent_context popup in drawBspContexMenu
-}
-
-void Gui::drawContextMenu_Face()
-{
-	// Delegated to face_context popup in drawBspContexMenu
-}
-
-void Gui::drawContextMenu_Empty()
-{
-	// Delegated to empty_context popup in drawBspContexMenu
-}
+void Gui::drawContextMenu_Entity() {}
+void Gui::drawContextMenu_Face() {}
+void Gui::drawContextMenu_Empty() {}
