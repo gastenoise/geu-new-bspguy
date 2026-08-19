@@ -2476,13 +2476,6 @@ void Gui::drawMenu_Edit()
 			{
 				app->deleteEnts();
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0559).c_str(), get_localized_string(LANG_0560).c_str()))
-			{
-				map->hideEnts(false);
-				rend->preRenderEnts();
-				app->updateEntConnections();
-				pickCount++;
-			}
 
 
 			//if (ImGui::MenuItem("Paste entities from clipboard", 0, false)) 
@@ -2602,6 +2595,7 @@ void Gui::drawMenu_View()
 {
 	ImGuiContext& g = *GImGui;
 	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_MENU_VIEW).c_str()))
 	{
@@ -2618,6 +2612,15 @@ void Gui::drawMenu_View()
 			if (ImGui::MenuItem(get_localized_string(LANG_0571).c_str(), NULL, app->clipnodeRenderHull == 3))
 				app->clipnodeRenderHull = 3;
 			ImGui::EndMenu();
+		}
+
+		if (ImGui::MenuItem(get_localized_string(LANG_0559).c_str(), get_localized_string(LANG_0560).c_str(), false, map != NULL))
+		{
+			map->hideEnts(false);
+			if (rend)
+				rend->preRenderEnts();
+			app->updateEntConnections();
+			pickCount++;
 		}
 
 		ImGui::Separator();
