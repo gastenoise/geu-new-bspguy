@@ -66,7 +66,10 @@ void Gui::drawSettings()
 
 
 		ImGui::Dummy(ImVec2(0, 60));
-		if (ImGui::Button(get_localized_string(LANG_0710).c_str()))
+		ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+		bool clicked_1 = ImGui::Button(get_localized_string(LANG_0710).c_str());
+		ImGui::PopStyleColor(1);
+		if (clicked_1)
 		{
 			apply_settings_pressed = true;
 		}
@@ -154,7 +157,10 @@ void Gui::drawSettings()
 		if (settingsTab == 0)
 		{
 			ImGui::Text(get_localized_string(LANG_0713).c_str());
-			if (ImGui::Button("Auto detect fgd/wad"))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_2 = ImGui::Button("Auto detect fgd/wad");
+			ImGui::PopStyleColor(1);
+			if (clicked_2)
 			{
 				if (!dirExists(g_settings.gamedir))
 				{
@@ -195,7 +201,10 @@ void Gui::drawSettings()
 			}
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(delWidth);
-			if (ImGui::Button(get_localized_string(LANG_0715).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_3 = ImGui::Button(get_localized_string(LANG_0715).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_3)
 			{
 				ifd::FileDialog::Instance().Open("GameDir", "Select game dir", std::string(), false, g_settings.lastdir);
 			}
@@ -216,7 +225,10 @@ void Gui::drawSettings()
 			}
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(delWidth);
-			if (ImGui::Button(get_localized_string(LANG_0718).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_4 = ImGui::Button(get_localized_string(LANG_0718).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_4)
 			{
 				ifd::FileDialog::Instance().Open("WorkingDir", "Select working dir", std::string(), false, g_settings.lastdir);
 			}
@@ -357,7 +369,10 @@ void Gui::drawSettings()
 			}
 
 			ImGui::SetNextItemWidth(delWidth);
-			if (ImGui::Button("...##hlrad_path"))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_5 = ImGui::Button("...##hlrad_path");
+			ImGui::PopStyleColor(1);
+			if (clicked_5)
 			{
 				ifd::FileDialog::Instance().Open("radPath", "Select rad executable path", "*.*", false, g_settings.lastdir);
 			}
@@ -368,7 +383,10 @@ void Gui::drawSettings()
 
 			ImGui::Separator();
 
-			if (ImGui::Button(get_localized_string(LANG_0739).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_6 = ImGui::Button(get_localized_string(LANG_0739).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_6)
 			{
 				g_settings.loadDefaultSettings();;
 			}
@@ -402,7 +420,10 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				if (ImGui::Button(("...##fgdOpen" + std::to_string(i)).c_str()))
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+				bool clicked_7 = ImGui::Button(("...##fgdOpen" + std::to_string(i)).c_str());
+				ImGui::PopStyleColor(1);
+				if (clicked_7)
 				{
 					fgdSelected = (int)i;
 					ifd::FileDialog::Instance().Open("fgdOpen", "Select fgd path", "fgd file (*.fgd){.fgd},.*", false, g_settings.lastdir);
@@ -411,9 +432,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##del_fgd" + std::to_string(i)).c_str()))
 				{
 					g_settings.fgdPaths.erase(g_settings.fgdPaths.begin() + i);
@@ -421,7 +442,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0741).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_8 = ImGui::Button(get_localized_string(LANG_0741).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_8)
 			{
 				g_settings.fgdPaths.emplace_back(std::string(), true);
 			}
@@ -448,7 +472,10 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				if (ImGui::Button(("...##resOpen" + std::to_string(i)).c_str()))
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+				bool clicked_9 = ImGui::Button(("...##resOpen" + std::to_string(i)).c_str());
+				ImGui::PopStyleColor(1);
+				if (clicked_9)
 				{
 					resSelected = (int)i;
 					ifd::FileDialog::Instance().Open("resOpen", "Select fgd path", std::string(), false, g_settings.lastdir);
@@ -457,9 +484,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##del_res" + std::to_string(i)).c_str()))
 				{
 					g_settings.resPaths.erase(g_settings.resPaths.begin() + i);
@@ -468,7 +495,10 @@ void Gui::drawSettings()
 
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0742).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_10 = ImGui::Button(get_localized_string(LANG_0742).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_10)
 			{
 				g_settings.resPaths.emplace_back(std::string(), true);
 			}
@@ -519,9 +549,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##pointent" + std::to_string(i)).c_str()))
 				{
 					g_settings.conditionalPointEntTriggers.erase(g_settings.conditionalPointEntTriggers.begin() + i);
@@ -529,7 +559,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0750).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_11 = ImGui::Button(get_localized_string(LANG_0750).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_11)
 			{
 				g_settings.conditionalPointEntTriggers.emplace_back(std::string());
 			}
@@ -543,9 +576,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##entnohull" + std::to_string(i)).c_str()))
 				{
 					g_settings.entsThatNeverNeedAnyHulls.erase(g_settings.entsThatNeverNeedAnyHulls.begin() + i);
@@ -553,7 +586,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0752).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_12 = ImGui::Button(get_localized_string(LANG_0752).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_12)
 			{
 				g_settings.entsThatNeverNeedAnyHulls.emplace_back(std::string());
 			}
@@ -567,9 +603,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##entnocoll" + std::to_string(i)).c_str()))
 				{
 					g_settings.entsThatNeverNeedCollision.erase(g_settings.entsThatNeverNeedCollision.begin() + i);
@@ -577,7 +613,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0754).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_13 = ImGui::Button(get_localized_string(LANG_0754).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_13)
 			{
 				g_settings.entsThatNeverNeedCollision.emplace_back(std::string());
 			}
@@ -591,9 +630,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##entpass" + std::to_string(i)).c_str()))
 				{
 					g_settings.passableEnts.erase(g_settings.passableEnts.begin() + i);
@@ -601,7 +640,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0756).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_14 = ImGui::Button(get_localized_string(LANG_0756).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_14)
 			{
 				g_settings.passableEnts.emplace_back(std::string());
 			}
@@ -615,9 +657,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##entpltrigg" + std::to_string(i)).c_str()))
 				{
 					g_settings.playerOnlyTriggers.erase(g_settings.playerOnlyTriggers.begin() + i);
@@ -625,7 +667,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0758).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_15 = ImGui::Button(get_localized_string(LANG_0758).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_15)
 			{
 				g_settings.playerOnlyTriggers.emplace_back(std::string());
 			}
@@ -639,9 +684,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##entmonsterrigg" + std::to_string(i)).c_str()))
 				{
 					g_settings.monsterOnlyTriggers.erase(g_settings.monsterOnlyTriggers.begin() + i);
@@ -649,7 +694,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0760).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_16 = ImGui::Button(get_localized_string(LANG_0760).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_16)
 			{
 				g_settings.monsterOnlyTriggers.emplace_back(std::string());
 			}
@@ -726,7 +774,10 @@ void Gui::drawSettings()
 			static std::string newEngine = "engine-name";
 			ImGui::InputText("##engine-name", &newEngine);
 			ImGui::SameLine();
-			if (ImGui::Button("Add##NEW ENGINE"))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_17 = ImGui::Button("Add##NEW ENGINE");
+			ImGui::PopStyleColor(1);
+			if (clicked_17)
 			{
 				limitsMap[g_limits.engineName] = g_limits;
 				engForSelect = newEngine;
@@ -904,7 +955,10 @@ void Gui::drawSettings()
 				g_settings_changed = true;
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Reset##resetMapBoundCol")) {
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_18 = ImGui::Button("Reset##resetMapBoundCol");
+			ImGui::PopStyleColor(1);
+			if (clicked_18) {
 				g_settings.mapBoundaryColor = COLOR3(0, 255, 0);
 				g_settings_changed = true;
 			}
@@ -919,9 +973,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##transTex" + std::to_string(i)).c_str()))
 				{
 					g_settings.transparentTextures.erase(g_settings.transparentTextures.begin() + i);
@@ -929,7 +983,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0794).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_19 = ImGui::Button(get_localized_string(LANG_0794).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_19)
 			{
 				g_settings.transparentTextures.emplace_back(std::string());
 			}
@@ -944,9 +1001,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##transEnt" + std::to_string(i)).c_str()))
 				{
 					g_settings.transparentEntities.erase(g_settings.transparentEntities.begin() + i);
@@ -954,7 +1011,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0796).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_20 = ImGui::Button(get_localized_string(LANG_0796).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_20)
 			{
 				g_settings.transparentEntities.emplace_back(std::string());
 			}
@@ -970,9 +1030,9 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				ImGui::PushStyleColor(ImGuiCol_Button, COLOR_BLOOD_CRIMSON);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.65f, 0.12f, 0.22f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.28f, 1.0f));
 				if (ImGui::Button((" X ##invPitch" + std::to_string(i)).c_str()))
 				{
 					g_settings.entsNegativePitchPrefix.erase(g_settings.entsNegativePitchPrefix.begin() + i);
@@ -980,7 +1040,10 @@ void Gui::drawSettings()
 				ImGui::PopStyleColor(3);
 			}
 
-			if (ImGui::Button(get_localized_string(LANG_0798).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_21 = ImGui::Button(get_localized_string(LANG_0798).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_21)
 			{
 				g_settings.entsNegativePitchPrefix.emplace_back(std::string());
 			}
@@ -1198,7 +1261,10 @@ void Gui::drawMergeWindow()
 			ImGui::SetNextItemWidth(350);
 			ImGui::InputText(fmt::format(fmt::runtime("##inpath{}"), i).c_str(), &s);
 			ImGui::SameLine();
-			if (ImGui::Button((get_localized_string(LANG_0834) + "##" + std::to_string(i)).c_str()))
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_22 = ImGui::Button((get_localized_string(LANG_0834) + "##" + std::to_string(i)).c_str());
+			ImGui::PopStyleColor(1);
+			if (clicked_22)
 			{
 				select_path = (int)i;
 				ifd::FileDialog::Instance().Open("BspMergeDialog", "Opep bsp model", "BSP file (*.bsp){.bsp},.*", false, g_settings.lastdir);
@@ -1226,7 +1292,10 @@ void Gui::drawMergeWindow()
 		ImGui::Checkbox(get_localized_string(LANG_0832).c_str(), &NoScript);
 		ImGui::Checkbox("Skip lightstyles merging", &NoStyles);
 
-		if (ImGui::Button(get_localized_string(LANG_1122).c_str(), ImVec2(120, 0)))
+		ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+		bool clicked_23 = ImGui::Button(get_localized_string(LANG_1122).c_str(), ImVec2(120, 0));
+		ImGui::PopStyleColor(1);
+		if (clicked_23)
 		{
 			std::vector<Bsp*> maps;
 			std::vector<vec3> mapsOffsets;
@@ -1379,12 +1448,18 @@ void Gui::drawImportMapWidget()
 		ImGui::InputText(get_localized_string(LANG_0833).c_str(), &mapPath);
 		ImGui::SameLine();
 
-		if (ImGui::Button(get_localized_string(LANG_0834).c_str()))
+		ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+		bool clicked_24 = ImGui::Button(get_localized_string(LANG_0834).c_str());
+		ImGui::PopStyleColor(1);
+		if (clicked_24)
 		{
 			ifd::FileDialog::Instance().Open("BspOpenDialog", "Opep bsp model", "BSP file (*.bsp){.bsp},.*", false, g_settings.lastdir);
 		}
 
-		if (ImGui::Button(get_localized_string(LANG_0835).c_str(), ImVec2(120, 0)))
+		ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+		bool clicked_25 = ImGui::Button(get_localized_string(LANG_0835).c_str(), ImVec2(120, 0));
+		ImGui::PopStyleColor(1);
+		if (clicked_25)
 		{
 			fixupPath(mapPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
 			if (fileExists(mapPath))

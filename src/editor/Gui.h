@@ -10,6 +10,11 @@
 #include "qtools/rad.h"
 #include <GLFW/glfw3.h>
 
+constexpr ImVec4 COLOR_DEEP_OBSIDIAN    = ImVec4(0.043f, 0.047f, 0.063f, 1.000f);
+constexpr ImVec4 COLOR_BLOOD_CRIMSON    = ImVec4(0.545f, 0.078f, 0.165f, 1.000f);
+constexpr ImVec4 COLOR_NIGHTMARE_PURPLE = ImVec4(0.149f, 0.161f, 0.290f, 1.000f);
+
+
 class BspRenderer;
 
 struct ModelInfo
