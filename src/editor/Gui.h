@@ -62,6 +62,7 @@ public:
 	Gui(Renderer* app);
 
 	void init();
+	void setupTheme();
 	void draw();
 
 	void openContextMenu(bool empty);

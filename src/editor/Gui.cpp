@@ -105,7 +105,7 @@ void Gui::init()
 	imgui_io->IniFilename = !g_settings.save_windows ? NULL : iniPath.c_str();
 
 	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
+	setupTheme();
 	//ImGui::StyleColorsClassic();
 
 	// Setup Platform/Renderer bindings
@@ -1585,4 +1585,68 @@ void Gui::refresh()
 {
 	reloadLimits();
 	checkValidHulls();
+}
+void Gui::setupTheme() {
+    constexpr ImVec4 COLOR_DEEP_OBSIDIAN    = ImVec4(0.043f, 0.047f, 0.063f, 1.000f);
+    constexpr ImVec4 COLOR_BLOOD_CRIMSON    = ImVec4(0.545f, 0.078f, 0.165f, 1.000f);
+    constexpr ImVec4 COLOR_NIGHTMARE_PURPLE = ImVec4(0.149f, 0.161f, 0.290f, 1.000f);
+    constexpr ImVec4 COLOR_GARGOYLE_GREY    = ImVec4(0.431f, 0.478f, 0.525f, 1.000f);
+    constexpr ImVec4 COLOR_VELLUM_CREAM     = ImVec4(0.890f, 0.835f, 0.722f, 1.000f);
+
+    auto applyAlpha = [](const ImVec4& color, float alpha) { return ImVec4(color.x, color.y, color.z, alpha); };
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.Colors[ImGuiCol_Text] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
+    style.Colors[ImGuiCol_TextDisabled] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
+    style.Colors[ImGuiCol_WindowBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
+    style.Colors[ImGuiCol_ChildBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.94f);
+    style.Colors[ImGuiCol_PopupBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.96f);
+    style.Colors[ImGuiCol_Border] = applyAlpha(COLOR_GARGOYLE_GREY, 0.45f);
+    style.Colors[ImGuiCol_BorderShadow] = applyAlpha(ImVec4(0,0,0,0), 0.00f);
+    style.Colors[ImGuiCol_FrameBg] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.75f);
+    style.Colors[ImGuiCol_FrameBgHovered] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 1.00f);
+    style.Colors[ImGuiCol_FrameBgActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
+    style.Colors[ImGuiCol_TitleBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
+    style.Colors[ImGuiCol_TitleBgActive] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 1.00f);
+    style.Colors[ImGuiCol_TitleBgCollapsed] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.75f);
+    style.Colors[ImGuiCol_MenuBarBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
+    style.Colors[ImGuiCol_ScrollbarBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.60f);
+    style.Colors[ImGuiCol_ScrollbarGrab] = applyAlpha(COLOR_GARGOYLE_GREY, 0.50f);
+    style.Colors[ImGuiCol_ScrollbarGrabHovered] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
+    style.Colors[ImGuiCol_ScrollbarGrabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.90f);
+    style.Colors[ImGuiCol_CheckMark] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
+    style.Colors[ImGuiCol_SliderGrab] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
+    style.Colors[ImGuiCol_SliderGrabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+    style.Colors[ImGuiCol_Button] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.85f);
+    style.Colors[ImGuiCol_ButtonHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
+    style.Colors[ImGuiCol_ButtonActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+    style.Colors[ImGuiCol_Header] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.60f);
+    style.Colors[ImGuiCol_HeaderHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.65f);
+    style.Colors[ImGuiCol_HeaderActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.90f);
+    style.Colors[ImGuiCol_Separator] = applyAlpha(COLOR_GARGOYLE_GREY, 0.40f);
+    style.Colors[ImGuiCol_SeparatorHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.75f);
+    style.Colors[ImGuiCol_SeparatorActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+    style.Colors[ImGuiCol_ResizeGrip] = applyAlpha(COLOR_GARGOYLE_GREY, 0.30f);
+    style.Colors[ImGuiCol_ResizeGripHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
+    style.Colors[ImGuiCol_ResizeGripActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+    style.Colors[ImGuiCol_Tab] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.70f);
+    style.Colors[ImGuiCol_TabHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.75f);
+    style.Colors[ImGuiCol_TabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.95f);
+    style.Colors[ImGuiCol_TabUnfocused] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.40f);
+    style.Colors[ImGuiCol_TabUnfocusedActive] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.80f);
+    style.Colors[ImGuiCol_PlotLines] = applyAlpha(COLOR_GARGOYLE_GREY, 1.00f);
+    style.Colors[ImGuiCol_PlotLinesHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+    style.Colors[ImGuiCol_PlotHistogram] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.85f);
+    style.Colors[ImGuiCol_PlotHistogramHovered] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
+    style.Colors[ImGuiCol_TableHeaderBg] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.85f);
+    style.Colors[ImGuiCol_TableBorderStrong] = applyAlpha(COLOR_GARGOYLE_GREY, 0.60f);
+    style.Colors[ImGuiCol_TableBorderLight] = applyAlpha(COLOR_GARGOYLE_GREY, 0.30f);
+    style.Colors[ImGuiCol_TableRowBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.00f);
+    style.Colors[ImGuiCol_TableRowBgAlt] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.20f);
+    style.Colors[ImGuiCol_TextSelectedBg] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.45f);
+    style.Colors[ImGuiCol_DragDropTarget] = applyAlpha(COLOR_VELLUM_CREAM, 0.90f);
+    style.Colors[ImGuiCol_NavHighlight] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+    style.Colors[ImGuiCol_NavWindowingHighlight] = applyAlpha(COLOR_VELLUM_CREAM, 0.70f);
+    style.Colors[ImGuiCol_NavWindowingDimBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.60f);
+    style.Colors[ImGuiCol_ModalWindowDimBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.70f);
 }
