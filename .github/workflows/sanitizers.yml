@@ -1,0 +1,78 @@
+name: Memory & Undefined Behavior Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: 'Memory Analysis Tool'
+        required: true
+        default: 'asan-ubsan'
+        type: choice
+        options:
+          - 'asan-ubsan'
+          - 'valgrind'
+
+jobs:
+  audit:
+    name: Memory Audit (${{ github.event.inputs.tool }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake valgrind clang \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            libxxf86vm-dev libgl1-mesa-dev libglu1-mesa-dev libglfw3-dev libglew-dev libxkbcommon-dev
+
+      - name: Build with ASan/UBSan
+        if: github.event.inputs.tool == 'asan-ubsan'
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g"
+          cmake --build build --parallel
+          cmake --install build --prefix dist/revamped-newbspguy
+
+      - name: Run Sanitizer Stress Suite
+        if: github.event.inputs.tool == 'asan-ubsan'
+        env:
+          ASAN_OPTIONS: "detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1"
+          UBSAN_OPTIONS: "print_stacktrace=1:abort_on_error=1"
+        run: |
+          BIN="./dist/revamped-newbspguy/bspguy"
+          MAP="demo/demo_vis_editor.bsp"
+          
+          echo "=== 1. Testing Info ==="
+          $BIN info $MAP
+          
+          echo "=== 2. Testing Texture Export/Import ==="
+          $BIN exportwad $MAP
+          
+          echo "=== 3. Testing Transformation & Simplification ==="
+          $BIN transform $MAP -move "10,10,10" -o test_transformed.bsp
+          $BIN simplify test_transformed.bsp -model 0 -o test_simplified.bsp
+          
+          echo "=== 4. Testing Vertical Merge ==="
+          $BIN merge -maps "$MAP,$MAP" -o test_merged.bsp
+          $BIN info test_merged.bsp
+
+      - name: Build & Run with Valgrind
+        if: github.event.inputs.tool == 'valgrind'
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-g"
+          cmake --build build --parallel
+          cmake --install build --prefix dist/revamped-newbspguy
+          
+          valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 \
+            ./dist/revamped-newbspguy/bspguy info demo/demo_vis_editor.bsp

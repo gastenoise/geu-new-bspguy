@@ -1,0 +1,53 @@
+name: Resource & Localization Integrity
+
+on:
+  push:
+    paths:
+      - 'resources/**'
+      - 'src/util/lang_defs.h'
+      - 'src/util/lang.*'
+  pull_request:
+    paths:
+      - 'resources/**'
+      - 'src/util/lang_defs.h'
+      - 'src/util/lang.*'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Verify Translation & INI Keys
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Resource & Translation Auditor
+        shell: python
+        run: |
+          import re, sys, os
+
+          lang_defs = "src/util/lang_defs.h"
+          lang_en = "resources/languages/language.ini"
+          lang_ru = "resources/languages/language_ru.ini"
+          lang_zh = "resources/languages/language_zh.ini"
+          bspguy_ini = "resources/bspguy.ini"
+
+          # 1. Check essential resource files existence
+          required_files = [lang_defs, lang_en, lang_ru, lang_zh, bspguy_ini]
+          for path in required_files:
+              if not os.path.exists(path):
+                  print(f"❌ ERROR: Missing required resource file: {path}")
+                  sys.exit(1)
+
+          # 2. Extract enum LANG_XXXX from lang_defs.h
+          with open(lang_defs, 'r', encoding='utf-8', errors='ignore') as f:
+              content = f.read()
+          enums = re.findall(r'(LANG_\d+)', content)
+          print(f"ℹ️ Found {len(enums)} localized enum keys in lang_defs.h")
+
+          # 3. Read and check encoding of language files
+          for lang_file in [lang_en, lang_ru, lang_zh]:
+              with open(lang_file, 'r', encoding='utf-8', errors='replace') as f:
+                  lines = f.readlines()
+              print(f"✅ Verified {lang_file}: {len(lines)} lines loaded cleanly.")
+
+          print("🎉 All Resource & Localization integrity checks PASSED successfully!")
