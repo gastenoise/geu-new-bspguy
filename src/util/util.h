@@ -7,6 +7,9 @@ namespace fs = std::filesystem;
 #include <string>
 #include <string_view>
 #include <vector>
+#include <algorithm>
+#include <numeric>
+#include <execution>
 #include "mat4x4.h"
 #include <fstream>
 #include <cmath>
@@ -21,8 +24,6 @@ class Entity;
 class Bsp;
 
 extern std::string g_version_string;
-
-extern std::mutex g_mutex_list[10];
 
 #ifndef WIN32
 #define fopen_s(pFile, filename, mode) (*(pFile) = fopen((filename), (mode)), (*(pFile) != NULL ? 0 : errno))
@@ -74,6 +75,7 @@ bool dirExists(const std::string& dirName);
 bool createDir(const std::string& dirName);
 
 void removeDir(const std::string& dirName);
+void ClearTempDirectory();
 
 std::string toLowerCase(const std::string& s);
 
@@ -275,7 +277,9 @@ std::string flt_to_str(float f);
 
 float half_prefloat(unsigned short h);
 
+bool matchWildcard(const std::string& pattern, const std::string& text, bool caseSensitive = true);
 bool starts_with(const std::string& str, const std::string& prefix);
+bool istarts_with(const std::string& str, const std::string& prefix);
 bool starts_with(const std::wstring& str, const std::wstring& prefix);
 bool ends_with(const std::string& str, const std::string& suffix);
 bool ends_with(const std::wstring& str, const std::wstring& suffix);

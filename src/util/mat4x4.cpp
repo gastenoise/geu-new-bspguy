@@ -291,6 +291,23 @@ mat4x4 mat4x4::transpose()
 	return result;
 }
 
+float mat4x4::determinant() const
+{
+	return
+		m[12] * m[9] * m[6] * m[3] - m[8] * m[13] * m[6] * m[3] -
+		m[12] * m[5] * m[10] * m[3] + m[4] * m[13] * m[10] * m[3] +
+		m[8] * m[5] * m[14] * m[3] - m[4] * m[9] * m[14] * m[3] -
+		m[12] * m[9] * m[2] * m[7] + m[8] * m[13] * m[2] * m[7] +
+		m[12] * m[1] * m[10] * m[7] - m[0] * m[13] * m[10] * m[7] -
+		m[8] * m[1] * m[14] * m[7] + m[0] * m[9] * m[14] * m[7] +
+		m[12] * m[5] * m[2] * m[11] - m[4] * m[13] * m[2] * m[11] -
+		m[12] * m[1] * m[6] * m[11] + m[0] * m[13] * m[6] * m[11] +
+		m[4] * m[1] * m[14] * m[11] - m[0] * m[5] * m[14] * m[11] -
+		m[8] * m[5] * m[2] * m[15] + m[4] * m[9] * m[2] * m[15] +
+		m[8] * m[1] * m[6] * m[15] - m[0] * m[9] * m[6] * m[15] -
+		m[4] * m[1] * m[10] * m[15] + m[0] * m[5] * m[10] * m[15];
+}
+
 // http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
 mat4x4 mat4x4::invert(bool* result)
 {

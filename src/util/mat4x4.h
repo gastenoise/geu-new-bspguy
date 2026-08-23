@@ -34,6 +34,8 @@ struct mat4x4
 
 	mat4x4 invert(bool * result = NULL);
 
+	float determinant() const;
+
 	float& operator ()(int idx)
 	{
 		return m[idx];

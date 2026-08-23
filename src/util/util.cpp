@@ -1,4 +1,5 @@
-﻿#include "lang.h"
+#include "lang.h"
+#include <algorithm>
 #include "util.h"
 #include "Wad.h"
 #include "Settings.h"
@@ -7,6 +8,9 @@
 #include "log.h"
 
 #ifdef WIN32
+#ifdef APIENTRY
+#undef APIENTRY
+#endif
 #include <Windows.h>
 #include <Shlobj.h>
 #include <io.h>
@@ -29,7 +33,6 @@
 bool DebugKeyPressed = false;
 ProgressMeter g_progress = {};
 int g_render_flags;
-std::mutex g_mutex_list[10] = {};
 
 bool fileExists(const std::string& fileName)
 {
@@ -342,36 +345,36 @@ vec3 parseVector(const std::string& s)
 
 bool IsEntNotSupportAngles(const std::string& entname)
 {
-	if (entname == "func_wall" ||
-		entname == "func_wall_toggle" ||
-		entname == "func_illusionary" ||
-		entname == "spark_shower" ||
-		entname == "func_plat" ||
-		entname == "func_door" ||
-		entname == "momentary_door" ||
-		entname == "func_water" ||
-		entname == "func_conveyor" ||
-		entname == "func_rot_button" ||
-		entname == "func_button" ||
-		entname == "env_blood" ||
-		entname == "gibshooter" ||
-		entname == "trigger" ||
-		entname == "trigger_monsterjump" ||
-		entname == "trigger_hurt" ||
-		entname == "trigger_multiple" ||
-		entname == "trigger_push" ||
-		entname == "trigger_teleport" ||
-		entname == "func_bomb_target" ||
-		entname == "func_hostage_rescue" ||
-		entname == "func_vip_safetyzone" ||
-		entname == "func_escapezone" ||
-		entname == "trigger_autosave" ||
-		entname == "trigger_endsection" ||
-		entname == "trigger_gravity" ||
-		entname == "env_snow" ||
-		entname == "func_snow" ||
-		entname == "env_rain" ||
-		entname == "func_rain")
+	if (strcasecmp(entname.c_str(), "func_wall") == 0 ||
+		strcasecmp(entname.c_str(), "func_wall_toggle") == 0 ||
+		strcasecmp(entname.c_str(), "func_illusionary") == 0 ||
+		strcasecmp(entname.c_str(), "spark_shower") == 0 ||
+		strcasecmp(entname.c_str(), "func_plat") == 0 ||
+		strcasecmp(entname.c_str(), "func_door") == 0 ||
+		strcasecmp(entname.c_str(), "momentary_door") == 0 ||
+		strcasecmp(entname.c_str(), "func_water") == 0 ||
+		strcasecmp(entname.c_str(), "func_conveyor") == 0 ||
+		strcasecmp(entname.c_str(), "func_rot_button") == 0 ||
+		strcasecmp(entname.c_str(), "func_button") == 0 ||
+		strcasecmp(entname.c_str(), "env_blood") == 0 ||
+		strcasecmp(entname.c_str(), "gibshooter") == 0 ||
+		strcasecmp(entname.c_str(), "trigger") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_monsterjump") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_hurt") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_multiple") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_push") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_teleport") == 0 ||
+		strcasecmp(entname.c_str(), "func_bomb_target") == 0 ||
+		strcasecmp(entname.c_str(), "func_hostage_rescue") == 0 ||
+		strcasecmp(entname.c_str(), "func_vip_safetyzone") == 0 ||
+		strcasecmp(entname.c_str(), "func_escapezone") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_autosave") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_endsection") == 0 ||
+		strcasecmp(entname.c_str(), "trigger_gravity") == 0 ||
+		strcasecmp(entname.c_str(), "env_snow") == 0 ||
+		strcasecmp(entname.c_str(), "func_snow") == 0 ||
+		strcasecmp(entname.c_str(), "env_rain") == 0 ||
+		strcasecmp(entname.c_str(), "func_rain") == 0)
 		return true;
 	return false;
 }
@@ -1407,6 +1410,18 @@ void removeDir(const std::string& dirName)
 	fs::remove_all(dirName, err);
 }
 
+void ClearTempDirectory()
+{
+	if (g_working_dir.empty())
+		return;
+
+	std::string tempDir = g_working_dir + "temp/";
+	if (dirExists(tempDir))
+	{
+		removeDir(tempDir);
+	}
+}
+
 
 bool replaceAll(std::string& str, const std::string& from, const std::string& to)
 {
@@ -1854,43 +1869,43 @@ void FixupAllSystemPaths()
 	}
 
 	// first fix slashes and check if dir exists
-	fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+	std::string tempWorkDir = g_settings.workingdir;
+	fixupPath(tempWorkDir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 
-	if (!dirExists(g_settings.workingdir))
+	g_working_dir = "./bspguy_work/"; // Default fallback
+
+	if (!tempWorkDir.empty() && tempWorkDir != "./" && tempWorkDir != "/")
 	{
-		/*
-			fixup workingdir to relative
-		*/
-		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-
-		if (!dirExists("./" + g_settings.workingdir))
+		if (dirExists(tempWorkDir))
 		{
-			if (!dirExists(g_game_dir + g_settings.workingdir))
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not exits!\n", g_settings.workingdir);
-				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not exits!\n", g_game_dir + g_settings.workingdir);
-				print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "Using default path\n");
-			}
-			g_working_dir = g_game_dir + g_settings.workingdir;
-			try
-			{
-				if (!dirExists(g_working_dir))
-					createDir(g_working_dir);
-			}
-			catch (...)
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Error: Can't create workdir at {} !\n", g_settings.workingdir);
-				g_working_dir = "./";
-			}
+			g_working_dir = tempWorkDir;
+		}
+		else if (dirExists("./" + tempWorkDir))
+		{
+			g_working_dir = "./" + tempWorkDir;
+		}
+		else if (dirExists(g_game_dir + tempWorkDir))
+		{
+			g_working_dir = g_game_dir + tempWorkDir;
 		}
 		else
 		{
-			g_working_dir = "./" + g_settings.workingdir;
+			// Try to create it if it doesn't exist
+			if (createDir(tempWorkDir))
+			{
+				g_working_dir = tempWorkDir;
+			}
+			else
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not found and could not be created!\n", tempWorkDir);
+				print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "Using default path: {}\n", g_working_dir);
+			}
 		}
 	}
-	else
+
+	if (!dirExists(g_working_dir))
 	{
-		g_working_dir = g_settings.workingdir;
+		createDir(g_working_dir);
 	}
 
 	for (auto& s : g_settings.fgdPaths)
@@ -2065,6 +2080,14 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 			return retdir;
 		}
 	}
+
+	// fallback to current working directory if all else fails
+	retdir = "./";
+	if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
+	{
+		return retdir;
+	}
+
 	retdir = stripFileName(arg_0_dir);
 	fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	return retdir;
@@ -2168,6 +2191,15 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force
 	}
 
 	if (candidates.empty()) {
+		if (force) {
+			// Force a separation plane on the Z axis if none was found (e.g. maps overlap)
+			float midZ = (amax.z + bmin.z) * 0.5f;
+			if (bmin.z >= amin.z) {
+				return { {0, 0, 1}, midZ, PLANE_Z };
+			} else {
+				return { {0, 0, -1}, midZ, PLANE_Z };
+			}
+		}
 		separationPlane.nType = -1; // No separating axis
 		return separationPlane;
 	}
@@ -2283,7 +2315,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 	const COLOR4 color = points[0].c;
 	const float EPS_SQ = EPSILON * EPSILON;
 
-	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash> uniqueSet;
+	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash, vec3PairExactEqual> uniqueSet;
 	std::vector<std::pair<vec3, vec3>> segments;
 	uniqueSet.reserve(points.size() / 2);
 	segments.reserve(points.size() / 2);
@@ -2293,7 +2325,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 		const vec3& p2 = points[i + 1].pos;
 
 		vec3 diff = p2 - p1;
-		if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z < EPS_SQ)
+		if (diff.lengthSquared() < EPS_SQ)
 			continue;
 
 		std::pair<vec3, vec3> segForSet = (p1 < p2)
@@ -2328,7 +2360,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 		};
 		};
 
-	std::unordered_map<vec3, std::vector<std::pair<vec3, vec3>>, vec3Hash> dirGroups;
+	std::unordered_map<vec3, std::vector<std::pair<vec3, vec3>>, vec3Hash, vec3ExactEqual> dirGroups;
 
 	for (const auto& seg : segments) {
 		vec3 dir = seg.second - seg.first;
@@ -2343,84 +2375,55 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 	std::vector<std::pair<vec3, vec3>> mergedSegments;
 
 	for (auto& [canonicalDir, segs] : dirGroups) {
-		struct LineInfo {
-			vec3 basePoint;
-			vec3 direction;
-			std::vector<std::pair<float, float>> intervals;
-		};
-
-		std::vector<LineInfo> lines;
-
+		std::unordered_map<vec3, std::vector<std::pair<float, float>>, vec3Hash, vec3ExactEqual> lineGroups;
 		for (const auto& seg : segs) {
 			vec3 A = seg.first;
 			vec3 B = seg.second;
-			vec3 dir = B - A;
-			float lenSq = dir.lengthSquared();
 
-			if (lenSq < EPS_SQ) continue;
+			vec3 A_perp = A - canonicalDir * A.dot(canonicalDir);
+			constexpr float scale = 1000.0f;
+			A_perp.x = std::round(A_perp.x * scale) / scale;
+			A_perp.y = std::round(A_perp.y * scale) / scale;
+			A_perp.z = std::round(A_perp.z * scale) / scale;
 
-			vec3 dirNorm = dir * (1.0f / std::sqrt(lenSq));
-
-			bool found = false;
-			for (auto& line : lines) {
-				vec3 toA = A - line.basePoint;
-				vec3 toB = B - line.basePoint;
-
-				vec3 crossA = line.direction.cross(toA);
-				vec3 crossB = line.direction.cross(toB);
-
-				if (crossA.lengthSquared() < EPS_SQ && crossB.lengthSquared() < EPS_SQ) {
-					float tA = toA.dot(line.direction);
-					float tB = toB.dot(line.direction);
-
-					line.intervals.emplace_back(std::min(tA, tB), std::max(tA, tB));
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
-				LineInfo newLine;
-				newLine.basePoint = A;
-				newLine.direction = dirNorm;
-				newLine.intervals.emplace_back(0.0f, std::sqrt(lenSq));
-				lines.push_back(newLine);
-			}
+			float tA = A.dot(canonicalDir);
+			float tB = B.dot(canonicalDir);
+			lineGroups[A_perp].push_back({ std::min(tA, tB), std::max(tA, tB) });
 		}
 
-		for (auto& line : lines) {
-			if (line.intervals.empty()) continue;
-			std::sort(line.intervals.begin(), line.intervals.end());
+		for (auto& [base_perp, intervals] : lineGroups) {
+			if (intervals.empty()) continue;
+			std::sort(intervals.begin(), intervals.end());
 
-			float curStart = line.intervals[0].first;
-			float curEnd = line.intervals[0].second;
+			float curStart = intervals[0].first;
+			float curEnd = intervals[0].second;
 
-			for (size_t i = 1; i < line.intervals.size(); ++i) {
-				if (line.intervals[i].first <= curEnd + EPSILON) {
-					curEnd = std::max(curEnd, line.intervals[i].second);
+			for (size_t i = 1; i < intervals.size(); ++i) {
+				if (intervals[i].first <= curEnd + 0.01f) {
+					curEnd = std::max(curEnd, intervals[i].second);
 				}
 				else {
-					if (curEnd - curStart > EPSILON) {
+					if (curEnd - curStart > 0.01f) {
 						mergedSegments.emplace_back(
-							line.basePoint + line.direction * curStart,
-							line.basePoint + line.direction * curEnd
+							base_perp + canonicalDir * curStart,
+							base_perp + canonicalDir * curEnd
 						);
 					}
-					curStart = line.intervals[i].first;
-					curEnd = line.intervals[i].second;
+					curStart = intervals[i].first;
+					curEnd = intervals[i].second;
 				}
 			}
 
-			if (curEnd - curStart > EPSILON) {
+			if (curEnd - curStart > 0.01f) {
 				mergedSegments.emplace_back(
-					line.basePoint + line.direction * curStart,
-					line.basePoint + line.direction * curEnd
+					base_perp + canonicalDir * curStart,
+					base_perp + canonicalDir * curEnd
 				);
 			}
 		}
 	}
 
-	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash> finalCheck;
+	std::unordered_set<std::pair<vec3, vec3>, vec3PairHash, vec3PairExactEqual> finalCheck;
 	std::vector<cVert> result;
 	result.reserve(mergedSegments.size() * 2);
 
@@ -2447,7 +2450,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 	return result;
 }
 
-void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
+void removeColinearPoints(std::vector<vec3>& verts, float /*epsilon*/) {
 
 	for (size_t i1 = 0; i1 < verts.size(); i1++)
 	{
@@ -3110,8 +3113,53 @@ float half_prefloat(unsigned short h)
 }
 
 
+bool matchWildcard(const std::string& pattern, const std::string& text, bool caseSensitive) {
+	if (pattern == "*") return true;
+
+	std::string p = caseSensitive ? pattern : toLowerCase(pattern);
+	std::string t = caseSensitive ? text : toLowerCase(text);
+
+	if (p.empty()) return t.empty();
+
+	size_t n = t.size();
+	size_t m = p.size();
+
+	// Optimized wildcard matching using two rows (prev and curr) to save space
+	std::vector<bool> dp(m + 1, false);
+	dp[0] = true;
+
+	for (size_t j = 1; j <= m; j++) {
+		if (p[j - 1] == '*') {
+			dp[j] = dp[j - 1];
+		}
+	}
+
+	for (size_t i = 1; i <= n; i++) {
+		bool prev_diag = dp[0];
+		dp[0] = false;
+		for (size_t j = 1; j <= m; j++) {
+			bool next_prev_diag = dp[j];
+			if (p[j - 1] == '*') {
+				dp[j] = dp[j] || dp[j - 1];
+			}
+			else if (p[j - 1] == t[i - 1]) {
+				dp[j] = prev_diag;
+			}
+			else {
+				dp[j] = false;
+			}
+			prev_diag = next_prev_diag;
+		}
+	}
+
+	return dp[m];
+}
+
 bool starts_with(const std::string& str, const std::string& prefix) {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+}
+bool istarts_with(const std::string& str, const std::string& prefix) {
+	return str.size() >= prefix.size() && strncasecmp(str.c_str(), prefix.c_str(), prefix.size()) == 0;
 }
 bool starts_with(const std::wstring& str, const std::wstring& prefix) {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;

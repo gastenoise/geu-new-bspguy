@@ -569,7 +569,7 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 	return outVerts;
 }
 
-bool Polygon3D::intersects(const Polygon3D& otherPoly) const 
+bool Polygon3D::intersects(const Polygon3D& /*otherPoly*/) const
 {
 	return false;
 }
