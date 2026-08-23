@@ -29,6 +29,8 @@ extern bool g_console_visible;
 void showConsoleWindow(bool show);
 void set_console_colors(unsigned int colors = DEFAULT_CONSOLE_COLOR);
 
+#include "MutexManager.h"
+
 template<class ...Args>
 void print_log(unsigned int colors, const std::string& format, Args ...args) 
 {
@@ -37,12 +39,13 @@ void print_log(unsigned int colors, const std::string& format, Args ...args)
 	if (!line.size())
 		return;
 
-	g_mutex_list[5].lock();
-	g_console_log_buffer.push_back(line);
-	g_console_color_buffer.push_back(colors);
-	g_mutex_list[5].unlock();
+	{
+		std::lock_guard<std::mutex> lockQueue(Sync::LogQueue);
+		g_console_log_buffer.push_back(line);
+		g_console_color_buffer.push_back(colors);
+	}
 
-	g_mutex_list[0].lock();
+	std::lock_guard<std::mutex> lockConsole(Sync::LogConsole);
 
 	//replaceAll(line, " ", "+");
 	auto newline = ends_with(line,'\n');
@@ -99,7 +102,6 @@ void print_log(unsigned int colors, const std::string& format, Args ...args)
 			}
 		}
 	}
-	g_mutex_list[0].unlock();
 }
 
 template<class ...Args>

@@ -16,6 +16,8 @@
 #include "as.h"
 #include "lodepng.h"
 #include "fmt/format.h"
+#include "MutexManager.h"
+#include "GuiCommandPalette.h"
 #include <filesystem>
 #include <algorithm>
 #include <cmath>
@@ -1355,6 +1357,53 @@ void Gui::drawMenu_File()
 					ImGui::EndMenu();
 				}
 
+				if (ImGui::BeginMenu("Export Selected Faces as BSP...", map && !map->is_mdl_model && !app->pickInfo.selectedFaces.empty()))
+				{
+					std::string timestamp = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+					std::string export_path = g_working_dir + map->bsp_name + "_faces_" + timestamp + ".bsp";
+
+					if (ImGui::BeginMenu(get_localized_string(LANG_1077).c_str()))
+					{
+						if (ImGui::MenuItem(get_localized_string(LANG_1154).c_str()))
+						{
+							ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 0, false);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_1155).c_str()))
+						{
+							ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 2, false);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_1156).c_str()))
+						{
+							ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 1, false);
+						}
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::BeginMenu(get_localized_string(LANG_1078).c_str()))
+					{
+						if (ImGui::MenuItem(get_localized_string(LANG_1173).c_str()))
+						{
+							ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 0, true);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_1174).c_str()))
+						{
+							ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 2, true);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_1175).c_str()))
+						{
+							ExportFaceModel(map, export_path, app->pickInfo.selectedFaces, 1, true);
+						}
+						ImGui::EndMenu();
+					}
+
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::MenuItem("Render Map Overview Screenshot...", 0, false, map != nullptr))
+				{
+					showOverviewWidget = true;
+				}
+
 				if (ImGui::BeginMenu(get_localized_string(LANG_0542).c_str(), map && !map->is_mdl_model))
 				{
 					std::string hash = "##1";
@@ -2133,21 +2182,22 @@ void Gui::drawMenu_File()
 					createDir(g_working_dir + "dumped_textures/");
 					createDir(dumpPath);
 
-					g_mutex_list[4].lock();
-					if (g_all_Textures.size() && rend)
 					{
-						for (const auto& tex : g_all_Textures)
+						std::lock_guard<std::mutex> lock(Sync::TexturesList);
+						if (g_all_Textures.size() && rend)
 						{
-							if (tex != missingTex)
+							for (const auto& tex : g_all_Textures)
 							{
-								if (tex->format == GL_RGBA)
-									lodepng_encode32_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
-								else
-									lodepng_encode24_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
+								if (tex != missingTex)
+								{
+									if (tex->format == GL_RGBA)
+										lodepng_encode32_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
+									else
+										lodepng_encode24_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
+								}
 							}
 						}
 					}
-					g_mutex_list[4].unlock();
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -2469,6 +2519,16 @@ void Gui::drawMenu_Edit()
 				{
 					app->pasteEnt(false, true);
 				}
+				if (ImGui::MenuItem("Paste at Selected Entity Origin", 0, false, app->hasCopiedEnt() && app->pickInfo.selectedEnts.size() > 0))
+				{
+					vec3 pivot = vec3();
+					for (int i : app->pickInfo.selectedEnts)
+					{
+						pivot += map->getEntOrigin(map->ents[i]);
+					}
+					pivot /= (float)app->pickInfo.selectedEnts.size();
+					app->pasteEntAtOrigin(pivot);
+				}
 
 				ImGui::EndMenu();
 			}
@@ -2477,23 +2537,44 @@ void Gui::drawMenu_Edit()
 				app->deleteEnts();
 			}
 
-
-			//if (ImGui::MenuItem("Paste entities from clipboard", 0, false)) 
-			//{
-			//	const char* clipBoardText = ImGui::GetClipboardText();
-			//	if (clipBoardText && clipBoardText[0] == '{')
-			//	{
-			//		app->pasteEntsFromText(clipBoardText);
-			//	}
-			//}
-
-			//IMGUI_TOOLTIP(g, "Creates entities from text data. You can use this to transfer entities "
-			//	"from one bspguy window to another, or paste from .ent file text. Copy any entity "
-			//	"in the viewer then paste to a text editor to see the format of the text data.");
-
+			if (ImGui::BeginMenu("Select"))
+			{
+				if (ImGui::MenuItem("Select All", "Ctrl+A"))
+				{
+					if (app->pickMode == PICK_OBJECT)
+					{
+						app->pickInfo.selectedEnts.clear();
+						for (size_t i = 1; i < map->ents.size(); i++)
+						{
+							app->pickInfo.AddSelectedEnt((int)i);
+						}
+					}
+				}
+				if (ImGui::MenuItem("Deselect All", "Esc"))
+				{
+					app->deselectFaces();
+					app->deselectObject();
+				}
+				if (ImGui::MenuItem("Faces with Same Texture", 0, false, map && app->pickInfo.selectedFaces.size() > 0))
+				{
+					BSPFACE32& selface = map->faces[app->pickInfo.selectedFaces[0]];
+					BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
+					app->deselectFaces();
+					for (int i = 0; i < map->faceCount; i++)
+					{
+						BSPFACE32& face = map->faces[i];
+						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+						if (texinfo.iMiptex == seltexinfo.iMiptex)
+						{
+							map->getBspRender()->highlightFace(i, 1);
+							app->pickInfo.selectedFaces.push_back(i);
+						}
+					}
+				}
+				ImGui::EndMenu();
+			}
 
 			ImGui::Separator();
-
 
 			bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
 
@@ -2549,20 +2630,76 @@ void Gui::drawMenu_Edit()
 				ImGui::EndDisabled();
 			}
 
-			/*if (ImGui::MenuItem("ADD TO WORLDSPAWN!", 0, false, !app->isLoading && allowDuplicate))
+			bool IsValidForMerge = false;
+			std::vector<Entity*> toMerge;
+			if (app->pickInfo.selectedEnts.size() > 1)
 			{
-				print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-				for (auto& ent : app->pickInfo.selectedEnts)
+				IsValidForMerge = true;
+				for (auto tmpentIdx : app->pickInfo.selectedEnts)
 				{
-					if (map->ents[ent]->isBspModel())
+					if (tmpentIdx < 0 || tmpentIdx >= (int)map->ents.size())
 					{
-						map->add_model_to_worldspawn(map->ents[ent]->getBspModelIdx());
-						map->ents[ent]->removeKeyvalue("model");
+						IsValidForMerge = false;
+						break;
+					}
+					Entity* e = map->ents[tmpentIdx];
+					if (!e->isBspModel() || e->isWorldSpawn())
+					{
+						IsValidForMerge = false;
+						break;
+					}
+					toMerge.push_back(e);
+				}
+			}
+
+			if (ImGui::MenuItem("Merge Selected Models (WIP)", 0, false, !app->isLoading && IsValidForMerge))
+			{
+				std::vector<Entity*> toErasePtrs;
+				while (toMerge.size() > 1)
+				{
+					Entity* e1 = toMerge[toMerge.size() - 1];
+					Entity* e2 = toMerge[toMerge.size() - 2];
+					int newmodelid = map->merge_two_models_ents(e1, e2);
+					if (newmodelid < 0)
+					{
+						print_log(PRINT_RED, "Merge failed for models {} and {}\n", e1->getBspModelIdx(), e2->getBspModelIdx());
+						break;
+					}
+					e2->setOrAddKeyvalue("model", "*" + std::to_string(newmodelid));
+					e1->removeKeyvalue("model");
+					rend->refreshModel(newmodelid);
+					rend->refreshModelClipnodes(newmodelid);
+					toErasePtrs.push_back(e1);
+					toMerge.pop_back();
+				}
+
+				for (Entity* delent : toErasePtrs)
+				{
+					auto it = std::find(map->ents.begin(), map->ents.end(), delent);
+					if (it != map->ents.end())
+					{
+						map->ents.erase(it);
+						delete delent;
 					}
 				}
+
+				map->update_ent_lump();
+				map->update_lump_pointers();
+				map->save_undo_lightmaps();
+				map->remove_unused_model_structures();
+
+				g_app->pickInfo.selectedEnts.clear();
 				rend->loadLightmaps();
+				rend->pushUndoState("MERGE BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
 				rend->preRenderEnts();
-			}*/
+			}
+
+			if (ImGui::MenuItem("Split Face", "F", false, !app->isLoading && app->pickMode != PICK_OBJECT))
+			{
+				app->splitModelFace();
+			}
+
+			ImGui::Separator();
 
 			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_1088).c_str(), false, nonWorldspawnEntSelected))
 			{
@@ -2599,6 +2736,12 @@ void Gui::drawMenu_View()
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_MENU_VIEW).c_str()))
 	{
+		if (ImGui::MenuItem("Command Palette...", "Ctrl+K"))
+		{
+			GuiCommandPalette::getInstance().open();
+		}
+		ImGui::Separator();
+
 		if (ImGui::BeginMenu(get_localized_string(LANG_0566).c_str(), map))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_0567).c_str(), NULL, app->clipnodeRenderHull == -1))
@@ -3552,6 +3695,22 @@ void Gui::drawMenu_Tools()
 
 			if (ImGui::BeginMenu(get_localized_string(LANG_0572).c_str(), !app->isLoading && map))
 			{
+				if (ImGui::MenuItem("Fix Transparent Rendering"))
+				{
+					rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
+					for (int i = 0; i < map->faceCount; i++)
+					{
+						BSPFACE32& face = map->faces[i];
+						if (face.iTextureInfo < map->texinfoCount)
+						{
+							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+							map->fix_transparency(texinfo.iMiptex);
+						}
+					}
+					rend->reuploadTextures();
+					rend->preRenderFaces();
+					pickCount++;
+				}
 				if (ImGui::MenuItem("Missing entities classes"))
 				{
 					for (auto& ent : map->ents)

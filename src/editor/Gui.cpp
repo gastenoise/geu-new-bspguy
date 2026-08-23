@@ -20,8 +20,9 @@
 #include <unordered_set>
 #include <algorithm>
 #include "LeafNavMesh.h"
-
 #include "as.h"
+#include "gui/ActionRegistry.h"
+#include "gui/GuiCommandPalette.h"
 float g_tooltip_delay = 0.6f; // time in seconds before showing a IMGUI_TOOLTIP
 
 bool filterNeeded = true;
@@ -154,6 +155,8 @@ void Gui::init()
 	faceIconTexture->upload();
 	leafIconTexture = loadIconHelper("./pictures/leaf.png", "leafIcon");
 	leafIconTexture->upload();
+
+	RegisterAllAppActions(this, app);
 }
 
 ImVec4 imguiColorFromConsole(unsigned int colors)
@@ -177,6 +180,7 @@ void Gui::draw()
 	drawFpsOverlay();
 	drawToolbar();
 	drawStatusMessage();
+	drawStatusBar();
 
 	if (showLogWidget)
 	{
@@ -290,6 +294,8 @@ void Gui::draw()
 
 		drawBspContexMenu();
 	}
+
+	GuiCommandPalette::getInstance().draw(this);
 
 	app->anyPopupOpened = imgui_io->WantCaptureMouse;
 

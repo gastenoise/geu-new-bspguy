@@ -25,8 +25,6 @@ class Bsp;
 
 extern std::string g_version_string;
 
-extern std::mutex g_mutex_list[10];
-
 #ifndef WIN32
 #define fopen_s(pFile, filename, mode) (*(pFile) = fopen((filename), (mode)), (*(pFile) != NULL ? 0 : errno))
 #endif

@@ -81,6 +81,12 @@ set(SOURCE_FILES
 	src/editor/gui/GuiContextMenu.cpp
 	src/editor/gui/GuiWidgets.cpp
 	src/editor/gui/GuiDialogs.cpp
+	src/editor/gui/GuiStatusBar.cpp
+	src/editor/gui/widgets/GuiWidgetLog.cpp
+	src/editor/gui/widgets/GuiWidgetLimits.cpp
+	src/editor/gui/widgets/GuiWidgetEntityReport.cpp
+	src/editor/gui/ActionRegistry.h		src/editor/gui/ActionRegistry.cpp	src/editor/gui/ActionRegistryInit.cpp
+	src/editor/gui/GuiCommandPalette.h	src/editor/gui/GuiCommandPalette.cpp
 	src/editor/BspRenderer.h		src/editor/BspRenderer.cpp
 	src/editor/PointEntRenderer.h	src/editor/PointEntRenderer.cpp
 	src/editor/Fgd.h				src/editor/Fgd.cpp
@@ -101,6 +107,7 @@ set(SOURCE_FILES
 	src/util/lang_defs.h
 	src/util/lang.h					src/util/lang.cpp
 	src/util/log.h					src/util/log.cpp
+	src/util/MutexManager.h			src/util/MutexManager.cpp
 	
 	# nav
 	src/nav/LeafNavMesh.h			src/nav/LeafNavMesh.cpp

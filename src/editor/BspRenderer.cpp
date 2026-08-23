@@ -14,6 +14,7 @@
 #include "Polygon3D.h"
 #include "util.h"
 #include "log.h"
+#include "MutexManager.h"
 
 #include <execution>
 #include <algorithm>
@@ -220,10 +221,11 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 	renderClipnodes.clear();
 
 	faceMaths.clear();
-	g_mutex_list[2].lock();
-	nodesBufferCache.clear();
-	clipnodesBufferCache.clear();
-	g_mutex_list[2].unlock();
+	{
+		std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+		nodesBufferCache.clear();
+		clipnodesBufferCache.clear();
+	}
 	clearDrawCache();
 
 	reuploadTextures();
@@ -573,10 +575,11 @@ void BspRenderer::reloadClipnodes()
 
 		deleteRenderClipnodes();
 
-		g_mutex_list[2].lock();
-		clipnodesBufferCache.clear();
-		nodesBufferCache.clear();
-		g_mutex_list[2].unlock();
+		{
+			std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+			clipnodesBufferCache.clear();
+			nodesBufferCache.clear();
+		}
 
 		clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
 	}
@@ -1300,16 +1303,17 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
 	{
 		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
-		g_mutex_list[2].lock();
-		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
-			clipnodesBufferCache.erase(nodeIdx);
+			std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+			if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+			{
+				clipnodesBufferCache.erase(nodeIdx);
+			}
+			else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+			{
+				nodesBufferCache.erase(nodeIdx);
+			}
 		}
-		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
-		{
-			nodesBufferCache.erase(nodeIdx);
-		}
-		g_mutex_list[2].unlock();
 	}
 
 	deleteRenderModelClipnodes(&renderClipnodes[modelIdx]);
@@ -1321,10 +1325,11 @@ void BspRenderer::loadClipnodes()
 {
 	if (!map)
 		return;
-	g_mutex_list[2].lock();
-	clipnodesBufferCache.clear();
-	nodesBufferCache.clear();
-	g_mutex_list[2].unlock();
+	{
+		std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+		clipnodesBufferCache.clear();
+		nodesBufferCache.clear();
+	}
 
 	while ((int)renderClipnodes.size() < map->modelCount)
 	{
@@ -1648,16 +1653,17 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
 	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
-	g_mutex_list[2].lock();
-	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 	{
-		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
+		std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+		{
+			oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
+		}
+		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+		{
+			oldHullIdxStruct = nodesBufferCache[nodeIdx];
+		}
 	}
-	else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
-	{
-		oldHullIdxStruct = nodesBufferCache[nodeIdx];
-	}
-	g_mutex_list[2].unlock();
 
 	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
 	{
@@ -1866,16 +1872,17 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	curHullIdxStruct.hullIdx = hullIdx;
 	curHullIdxStruct.modelIdx = modelIdx;
 
-	g_mutex_list[2].lock();
-	if (hullIdx == 0)
 	{
-		clipnodesBufferCache[nodeIdx] = curHullIdxStruct;
+		std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+		if (hullIdx == 0)
+		{
+			clipnodesBufferCache[nodeIdx] = curHullIdxStruct;
+		}
+		else
+		{
+			nodesBufferCache[nodeIdx] = curHullIdxStruct;
+		}
 	}
-	else
-	{
-		nodesBufferCache[nodeIdx] = curHullIdxStruct;
-	}
-	g_mutex_list[2].unlock();
 }
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
@@ -1886,16 +1893,17 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
 	{
 		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
-		g_mutex_list[2].lock();
-		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
-			clipnodesBufferCache.erase(nodeIdx);
+			std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+			if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+			{
+				clipnodesBufferCache.erase(nodeIdx);
+			}
+			else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+			{
+				nodesBufferCache.erase(nodeIdx);
+			}
 		}
-		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
-		{
-			nodesBufferCache.erase(nodeIdx);
-		}
-		g_mutex_list[2].unlock();
 	}
 
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
@@ -2512,10 +2520,12 @@ BspRenderer::~BspRenderer()
 	deleteRenderFaces();
 	deleteRenderClipnodes();
 	deleteFaceMaths();
-	g_mutex_list[2].lock();
-	clipnodesBufferCache.clear();
-	nodesBufferCache.clear();
-	g_mutex_list[2].unlock();
+	{
+		std::lock_guard<std::mutex> lock(Sync::Clipnodes);
+		clipnodesBufferCache.clear();
+		nodesBufferCache.clear();
+	}
+	clearDrawCache();
 
 	if (g_app->SelectedMap == map)
 		g_app->selectMap(NULL);

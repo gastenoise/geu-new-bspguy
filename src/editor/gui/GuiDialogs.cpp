@@ -16,6 +16,7 @@
 #include "as.h"
 #include "lodepng.h"
 #include "fmt/format.h"
+#include "MutexManager.h"
 #include <filesystem>
 #include <algorithm>
 #include <cmath>
@@ -840,17 +841,18 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox(get_localized_string(LANG_1205).c_str(), &renderTexturesFilter))
 			{
 				g_render_flags ^= RENDER_TEXTURES_NOFILTER;
-				g_mutex_list[4].lock();
-				for (auto& tex : g_all_Textures)
 				{
-					bool filternoneed = g_render_flags & RENDER_TEXTURES_NOFILTER;
-					if (tex->type >= 0 && tex->type != Texture::TYPE_LIGHTMAP && tex->type != Texture::TYPE_LIGHTMAP_NOFILTER)
+					std::lock_guard<std::mutex> lock(Sync::TexturesList);
+					for (auto& tex : g_all_Textures)
 					{
-						tex->farFilter = tex->nearFilter = !filternoneed ? GL_LINEAR : GL_NEAREST;
-						tex->upload(tex->type);
+						bool filternoneed = g_render_flags & RENDER_TEXTURES_NOFILTER;
+						if (tex->type >= 0 && tex->type != Texture::TYPE_LIGHTMAP && tex->type != Texture::TYPE_LIGHTMAP_NOFILTER)
+						{
+							tex->farFilter = tex->nearFilter = !filternoneed ? GL_LINEAR : GL_NEAREST;
+							tex->upload(tex->type);
+						}
 					}
 				}
-				g_mutex_list[4].unlock();
 			}
 			if (ImGui::Checkbox(get_localized_string(LANG_0781).c_str(), &renderLightmaps))
 			{
@@ -859,15 +861,16 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox(get_localized_string(LANG_1206).c_str(), &renderLightmapsFilter))
 			{
 				g_render_flags ^= RENDER_LIGHTMAPS_NOFILTER;
-				g_mutex_list[4].lock();
-				for (auto& tex : g_all_Textures)
 				{
-					if (tex->type == Texture::TYPE_LIGHTMAP)
+					std::lock_guard<std::mutex> lock(Sync::TexturesList);
+					for (auto& tex : g_all_Textures)
 					{
-						tex->upload(tex->type);
+						if (tex->type == Texture::TYPE_LIGHTMAP)
+						{
+							tex->upload(tex->type);
+						}
 					}
 				}
-				g_mutex_list[4].unlock();
 			}
 			if (ImGui::Checkbox(get_localized_string(LANG_0782).c_str(), &renderWireframe))
 			{

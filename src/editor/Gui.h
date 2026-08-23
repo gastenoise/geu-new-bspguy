@@ -174,6 +174,7 @@ private:
 	void drawToolbar();
 	void drawFpsOverlay();
 	void drawStatusMessage();
+	void drawStatusBar();
 	void drawDebugWidget();
 	void drawTextureBrowser();
 	void drawOverviewWidget();
