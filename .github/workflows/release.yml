@@ -3,15 +3,19 @@ name: Publish Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*'
   workflow_dispatch:
     inputs:
       version_tag:
-        description: 'Version Tag (e.g. v1.1.0)'
+        description: 'Version Tag to release (e.g. v1.0 or v1.0.0)'
         required: true
-        default: 'v1.1.0'
+        default: 'v1.0'
+      release_title:
+        description: 'Release Title (leave empty for default title)'
+        required: false
+        default: ''
       is_prerelease:
-        description: 'Is Pre-release?'
+        description: 'Mark as Pre-release?'
         type: boolean
         default: false
 
@@ -23,7 +27,8 @@ jobs:
     name: Package Windows (x64)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -35,20 +40,23 @@ jobs:
           cmake --install build --prefix dist/revamped-newbspguy --config Release
           Compress-Archive -Path dist/revamped-newbspguy/* -DestinationPath "revamped-newbspguy-windows-x64.zip" -Force
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: windows-package
           path: revamped-newbspguy-windows-x64.zip
+          retention-days: 1
 
   build-linux:
     name: Package Linux (x64)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install dependencies
+      - name: Install Linux Dependencies
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -66,39 +74,50 @@ jobs:
           cd dist
           tar -czvf ../revamped-newbspguy-linux-x64.tar.gz revamped-newbspguy/
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: linux-package
           path: revamped-newbspguy-linux-x64.tar.gz
+          retention-days: 1
 
   release:
     name: Create GitHub Release
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
-      - name: Determine Tag
+      - name: Determine Tag & Name
         id: tag
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "RELEASE_TAG=${{ github.event.inputs.version_tag }}" >> $GITHUB_OUTPUT
             echo "PRERELEASE=${{ github.event.inputs.is_prerelease }}" >> $GITHUB_OUTPUT
+            if [ -n "${{ github.event.inputs.release_title }}" ]; then
+              echo "RELEASE_NAME=${{ github.event.inputs.release_title }}" >> $GITHUB_OUTPUT
+            else
+              echo "RELEASE_NAME=revamped-newbspguy ${{ github.event.inputs.version_tag }}" >> $GITHUB_OUTPUT
+            fi
           else
             echo "RELEASE_TAG=${{ github.ref_name }}" >> $GITHUB_OUTPUT
             echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+            echo "RELEASE_NAME=revamped-newbspguy ${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 
-      - uses: actions/download-artifact@v4
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
         with:
           path: release-packages
           merge-multiple: true
 
-      - name: Create Release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
-          name: revamped-newbspguy ${{ steps.tag.outputs.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.tag.outputs.RELEASE_NAME }}
           prerelease: ${{ steps.tag.outputs.PRERELEASE == 'true' }}
           generate_release_notes: true
+          make_latest: ${{ steps.tag.outputs.PRERELEASE != 'true' }}
           files: |
             release-packages/revamped-newbspguy-windows-x64.zip
             release-packages/revamped-newbspguy-linux-x64.tar.gz
