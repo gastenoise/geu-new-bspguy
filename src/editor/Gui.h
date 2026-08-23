@@ -10,6 +10,11 @@
 #include "qtools/rad.h"
 #include <GLFW/glfw3.h>
 
+constexpr ImVec4 COLOR_DEEP_OBSIDIAN    = ImVec4(0.043f, 0.047f, 0.063f, 1.000f);
+constexpr ImVec4 COLOR_BLOOD_CRIMSON    = ImVec4(0.545f, 0.078f, 0.165f, 1.000f);
+constexpr ImVec4 COLOR_NIGHTMARE_PURPLE = ImVec4(0.149f, 0.161f, 0.290f, 1.000f);
+
+
 class BspRenderer;
 
 struct ModelInfo
@@ -30,6 +35,14 @@ struct StatInfo
 	std::string fullness;
 	float progress;
 	ImVec4 color;
+};
+
+struct TextureStyle
+{
+	float scaleX, scaleY;
+	float shiftX, shiftY;
+	float rotateX, rotateY;
+	bool valid = false;
 };
 
 class Renderer;
@@ -54,11 +67,14 @@ public:
 	Gui(Renderer* app);
 
 	void init();
+	void setupTheme();
 	void draw();
 
 	void openContextMenu(bool empty);
 	void copyTexture();
 	void pasteTexture();
+	void copyStyle();
+	void pasteStyle();
 	void copyLightmap();
 	void pasteLightmap();
 	void refresh();
@@ -85,8 +101,18 @@ public:
 	bool showGOTOWidget = false;
 	bool showTextureBrowser = false;
 	bool showOverviewWidget = false;
+	bool orthoMode = true;
+	bool wasInOverview = false;
+	vec3 oldCameraOrigin;
+	vec3 oldCameraAngles;
 	bool reloadSettings = true;
 	bool openSavedTabs = false;
+	bool allowExternalTextures = false;
+
+	bool manualMode = false;
+	bool applyFaceChanges = false;
+	bool entityListChanged = true;
+	bool limitsInvalidated = true;
 
 private:
 	ImGuiIO* imgui_io = NULL;
@@ -117,17 +143,38 @@ private:
 
 	int guiHoverAxis; // axis being hovered in the transform menu
 
+	int lastMAX_FILTERS = 0;
+	std::vector<std::string> lastKeyFilters, lastValueFilters;
+	std::vector<int> lastOpFilters;
+	std::vector<int> lastLogicFilters;
+
 	int openEmptyContext = -2; // open context menu for rightclicking world/void
 
 	int copiedMiptex = -1;
+	TextureStyle copiedStyle;
 	LIGHTMAP copiedLightmap = LIGHTMAP();
+	std::vector<COLOR3> copiedLightmapData;
 	bool pasteTextureNow = false;
 
 	void drawBspContexMenu();
+	void drawContextMenu_Entity();
+	void drawContextMenu_Face();
+	void drawContextMenu_Empty();
+
 	void drawMenuBar();
+	void drawMenu_File();
+	void drawMenu_Edit();
+	void drawMenu_View();
+	void drawMenu_Map();
+	void drawMenu_Tools();
+	void drawMenu_Create();
+	void drawMenu_Windows();
+	void drawMenu_Help();
+	void drawMenu_Debug();
 	void drawToolbar();
 	void drawFpsOverlay();
 	void drawStatusMessage();
+	void drawStatusBar();
 	void drawDebugWidget();
 	void drawTextureBrowser();
 	void drawOverviewWidget();
@@ -155,8 +202,10 @@ private:
 	void checkValidHulls();
 	void reloadLimits();
 	void ExportOneBigLightmap(Bsp* map);
+	void ExportFaceModel(Bsp* src_map, const std::string& export_path, const std::vector<int>& faceIdxs, int ExportType, bool movemodel);
 	void loadFonts();
 	void checkFaceErrors();
 };
 
+ImVec4 imguiColorFromConsole(unsigned int colors);
 int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip = false);
