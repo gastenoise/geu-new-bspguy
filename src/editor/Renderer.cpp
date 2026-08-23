@@ -10,11 +10,18 @@
 #include "util.h"
 #include "log.h"
 
+#ifdef WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <Windows.h>
+#include <GLFW/glfw3native.h>
+#endif
+
 #include <chrono>
 #include <execution>
 #include "NavMesh.h"
 #include "LeafNavMesh.h"
 #include "Settings.h"
+#include "gui/GuiCommandPalette.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -41,6 +48,7 @@ int ortho_tga_w = 1024;
 int ortho_tga_h = 768;
 bool ortho_save_tga = false;
 bool ortho_save_bmp = false;
+bool ortho_save_png_full = false;
 
 // for screenmaker cmd
 int make_screenshot = 0;
@@ -77,7 +85,7 @@ void error_callback(int error, const char* description)
 	print_log(get_localized_string(LANG_0895), error, description);
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
@@ -90,9 +98,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	g_app->pressed[key] = action != GLFW_RELEASE;
 }
 
-static bool g_settings_changed = false;
+bool g_settings_changed = false;
 
-void drop_callback(GLFWwindow* window, int count, const char** paths)
+void drop_callback(GLFWwindow* /*window*/, int count, const char** paths)
 {
 	if (!g_app->isLoading && count > 0 && paths[0] && paths[0][0] != '\0')
 	{
@@ -117,7 +125,7 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 	}
 }
 
-void window_size_callback(GLFWwindow* window, int width, int height)
+void window_size_callback(GLFWwindow* /*window*/, int width, int height)
 {
 	if (g_settings.maximized || width == 0 || height == 0
 		|| (g_settings.windowWidth == width && g_settings.windowHeight == height))
@@ -129,7 +137,7 @@ void window_size_callback(GLFWwindow* window, int width, int height)
 	g_settings_changed = true;
 }
 
-void window_pos_callback(GLFWwindow* window, int x, int y)
+void window_pos_callback(GLFWwindow* /*window*/, int x, int y)
 {
 	if (g_settings.windowX != x || g_settings.windowY != y)
 	{
@@ -139,7 +147,7 @@ void window_pos_callback(GLFWwindow* window, int x, int y)
 	}
 }
 
-void window_maximize_callback(GLFWwindow* window, int maximized)
+void window_maximize_callback(GLFWwindow* /*window*/, int maximized)
 {
 	bool maximize = maximized == GLFW_TRUE;
 
@@ -150,24 +158,24 @@ void window_maximize_callback(GLFWwindow* window, int maximized)
 	}
 }
 
-void window_minimize_callback(GLFWwindow* window, int iconified)
+void window_minimize_callback(GLFWwindow* /*window*/, int iconified)
 {
 	g_app->is_minimized = iconified == GLFW_TRUE;
 }
 
-void window_focus_callback(GLFWwindow* window, int focused)
+void window_focus_callback(GLFWwindow* /*window*/, int focused)
 {
 	g_app->is_focused = focused == GLFW_TRUE;
 }
 
-void window_close_callback(GLFWwindow* window)
+void window_close_callback(GLFWwindow* /*window*/)
 {
 	g_app->is_closing = true;
 }
 
 int g_scroll = 0;
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
 {
 	g_scroll += (int)round(yoffset);
 }
@@ -214,6 +222,16 @@ Renderer::Renderer()
 		return;
 	}
 
+#ifdef WIN32
+	HWND hwnd = glfwGetWin32Window(window);
+	HICON hIcon = (HICON)LoadImageA(GetModuleHandleA(NULL), MAKEINTRESOURCEA(1), IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_SHARED);
+	if (hIcon)
+	{
+		SendMessageA(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+		SendMessageA(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	}
+#endif
+
 	glfwMakeContextCurrent(window);
 	glfwSetDropCallback(window, drop_callback);
 	glfwSetKeyCallback(window, key_callback);
@@ -238,56 +256,37 @@ Renderer::Renderer()
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
 	glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
 
-	unsigned char* img_dat = NULL;
-	unsigned int w, h;
+	//unsigned char* img_dat = NULL;
+	//unsigned int w, h;
 
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/missing.png");
-	missingTex_rgba = new Texture(w, h, img_dat, "missing", true);
-	img_dat = NULL;
+	auto loadTexHelper = [&](const char* path, const char* name, bool rgba) {
+		unsigned char* img_malloc = NULL;
+		unsigned int width, height;
+		unsigned int bpp = rgba ? 4 : 3;
+		if (rgba) lodepng_decode32_file(&img_malloc, &width, &height, path);
+		else lodepng_decode24_file(&img_malloc, &width, &height, path);
 
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
-	aaatriggerTex_rgba = new Texture(w, h, img_dat, "aaatrigger", true);
-	img_dat = NULL;
+		unsigned char* img_new = NULL;
+		if (img_malloc) {
+			img_new = new unsigned char[width * height * bpp];
+			memcpy(img_new, img_malloc, width * height * bpp);
+			free(img_malloc);
+		}
+		return new Texture(width, height, img_new, name, rgba, true);
+	};
 
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
-	aaatriggerTex = new Texture(w, h, img_dat, "aaatrigger");
-	img_dat = NULL;
-
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/sky.png");
-	skyTex_rgba = new Texture(w, h, img_dat, "sky", true);
-	img_dat = NULL;
-
-	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/clip.png");
-	clipTex_rgba = new Texture(w, h, img_dat, "clip", true);
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/missing.png");
-	missingTex = new Texture(w, h, img_dat, "missing_rgb");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/white.png");
-	whiteTex = new Texture(w, h, img_dat, "white");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/grey.png");
-	greyTex = new Texture(w, h, img_dat, "grey");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/red.png");
-	redTex = new Texture(w, h, img_dat, "red");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/yellow.png");
-	yellowTex = new Texture(w, h, img_dat, "yellow");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/black.png");
-	blackTex = new Texture(w, h, img_dat, "black");
-	img_dat = NULL;
-
-	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/blue.png");
-	blueTex = new Texture(w, h, img_dat, "blue");
-	img_dat = NULL;
+	missingTex_rgba = loadTexHelper("./pictures/missing.png", "missing", true);
+	aaatriggerTex_rgba = loadTexHelper("./pictures/aaatrigger.png", "aaatrigger", true);
+	aaatriggerTex = loadTexHelper("./pictures/aaatrigger.png", "aaatrigger", false);
+	skyTex_rgba = loadTexHelper("./pictures/sky.png", "sky", true);
+	clipTex_rgba = loadTexHelper("./pictures/clip.png", "clip", true);
+	missingTex = loadTexHelper("./pictures/missing.png", "missing_rgb", false);
+	whiteTex = loadTexHelper("./pictures/white.png", "white", false);
+	greyTex = loadTexHelper("./pictures/grey.png", "grey", false);
+	redTex = loadTexHelper("./pictures/red.png", "red", false);
+	yellowTex = loadTexHelper("./pictures/yellow.png", "yellow", false);
+	blackTex = loadTexHelper("./pictures/black.png", "black", false);
+	blueTex = loadTexHelper("./pictures/blue.png", "blue", false);
 
 	missingTex_rgba->upload();
 	aaatriggerTex_rgba->upload();
@@ -378,6 +377,7 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {
 	print_log(get_localized_string(LANG_0901));
+	ClearTempDirectory();
 	glfwTerminate();
 }
 
@@ -417,12 +417,12 @@ void Renderer::renderLoop()
 
 	{
 		line_verts = new cVert[2];
-		lineBuf = new VertexBuffer(colorShader, line_verts, 2, GL_LINES, true);
+		lineBuf = new VertexBuffer(colorShader, line_verts, 2, GL_LINES, false);
 	}
 
 	{
 		plane_verts = new cQuad(cVert(), cVert(), cVert(), cVert());
-		planeBuf = new VertexBuffer(colorShader, plane_verts, 6, GL_TRIANGLES, true);
+		planeBuf = new VertexBuffer(colorShader, plane_verts, 6, GL_TRIANGLES, false);
 	}
 
 	{
@@ -551,15 +551,27 @@ void Renderer::renderLoop()
 			GLuint fbo = NULL, texture, rbo;
 
 
-			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
+			if (ortho_save_tga || ortho_save_bmp || ortho_save_png_full || (make_screenshot && !isLoading))
 			{
-				glEnable(GL_MULTISAMPLE);
-				glEnable(GL_LINE_SMOOTH);
-				glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-				glEnable(GL_POLYGON_SMOOTH);
-				glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-				glEnable(GL_POINT_SMOOTH);
-				glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+				int captureW = ortho_tga_w;
+				int captureH = ortho_tga_h;
+
+				if (ortho_save_png_full)
+				{
+					captureW = windowWidth;
+					captureH = windowHeight;
+				}
+
+				if (!ortho_save_png_full)
+				{
+					glEnable(GL_MULTISAMPLE);
+					glEnable(GL_LINE_SMOOTH);
+					glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+					glEnable(GL_POLYGON_SMOOTH);
+					glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+					glEnable(GL_POINT_SMOOTH);
+					glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+				}
 
 				glHint(GL_FRAGMENT_SHADER_DERIVATIVE_HINT, GL_NICEST);
 				
@@ -579,7 +591,7 @@ void Renderer::renderLoop()
 #ifdef GL_UNPACK_ROW_LENGTH 
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ortho_tga_w, ortho_tga_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, captureW, captureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glBindTexture(GL_TEXTURE_2D, 0);
@@ -587,7 +599,7 @@ void Renderer::renderLoop()
 
 				glGenRenderbuffers(1, &rbo);
 				glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, ortho_tga_w, ortho_tga_h);
+				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, captureW, captureH);
 				glBindRenderbuffer(GL_RENDERBUFFER, 0);
 				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
@@ -752,6 +764,10 @@ void Renderer::renderLoop()
 				{
 					setupFakeOrthoView(ortho_tga_w, ortho_tga_h, ortho_mins, ortho_maxs);
 				}
+				else if (ortho_save_png_full)
+				{
+					setupFakeOrthoView(windowWidth, windowHeight, ortho_mins, ortho_maxs);
+				}
 				else
 				{
 					setupFakeOrthoView(0, 0, ortho_mins, ortho_maxs);
@@ -770,11 +786,12 @@ void Renderer::renderLoop()
 			}
 
 			// Disable smoothing during overview capture to prevent wireframe artifacts
-			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
+			if (ortho_save_tga || ortho_save_bmp || ortho_save_png_full || (make_screenshot && !isLoading))
 			{
 				glDisable(GL_LINE_SMOOTH);
 				glDisable(GL_POLYGON_SMOOTH);
 				glDisable(GL_POINT_SMOOTH);
+				glDisable(GL_MULTISAMPLE);
 			}
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1028,19 +1045,30 @@ void Renderer::renderLoop()
 						matmodel.loadIdentity();
 						mat_upload();
 						vec3 offset = SelectedMap->getBspRender()->mapOffset;
-						vec3 p1 = offset + vec3(-10240.0f, 0.0f, 0.0f);
-						vec3 p2 = offset + vec3(10240.0f, 0.0f, 0.0f);
-						drawLine(p1, p2, { 128, 128, 255, 255 });
-						vec3 p3 = offset + vec3(0.0f, -10240.0f, 0.0f);
-						vec3 p4 = offset + vec3(0.0f, 10240.0f, 0.0f);
-						drawLine(p3, p4, { 0, 0, 255, 255 });
-						vec3 p5 = offset + vec3(0.0f, 0.0f, -10240.0f);
-						vec3 p6 = offset + vec3(0.0f, 0.0f, 10240.0f);
-						drawLine(p5, p6, { 0, 255, 0, 255 });
+						float limit = g_limits.maxMapBoundary;
+
+						cVert origin_verts[6];
+						// X axis - Purple
+						origin_verts[0] = cVert((offset + vec3(-limit, 0.0f, 0.0f)).flip(), moveAxes.dimColor[0]);
+						origin_verts[1] = cVert((offset + vec3(limit, 0.0f, 0.0f)).flip(), moveAxes.dimColor[0]);
+						// Y axis - Blue
+						origin_verts[2] = cVert((offset + vec3(0.0f, -limit, 0.0f)).flip(), moveAxes.dimColor[1]);
+						origin_verts[3] = cVert((offset + vec3(0.0f, limit, 0.0f)).flip(), moveAxes.dimColor[1]);
+						// Z axis - Green
+						origin_verts[4] = cVert((offset + vec3(0.0f, 0.0f, -limit)).flip(), moveAxes.dimColor[2]);
+						origin_verts[5] = cVert((offset + vec3(0.0f, 0.0f, limit)).flip(), moveAxes.dimColor[2]);
+
+						VertexBuffer originBuf(colorShader, origin_verts, 6, GL_LINES, false);
+						originBuf.drawFull();
 					}
 
 					if (g_render_flags & RENDER_MAP_BOUNDARY) {
-						drawBox(SelectedMap->ents[0]->origin * -1, g_limits.maxMapBoundary * 2, COLOR4(0, 255, 0, 64));
+						vec3 center = SelectedMap->ents[0]->origin * -1 + SelectedMap->getBspRender()->mapOffset;
+						float width = g_limits.maxMapBoundary * 2;
+						drawBox(center, width, COLOR4(g_settings.mapBoundaryColor, 64));
+						glLineWidth(2.5f);
+						drawBoxWireframe(center - vec3(width * 0.5f, width * 0.5f, width * 0.5f), center + vec3(width * 0.5f, width * 0.5f, width * 0.5f), COLOR4(100, 100, 100, 255));
+						glLineWidth(1.3f);
 					}
 
 					if (hasCullbox) {
@@ -1349,24 +1377,34 @@ void Renderer::renderLoop()
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
 
-			if (fbo && (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading)))
+			if (fbo && (ortho_save_tga || ortho_save_bmp || ortho_save_png_full || (make_screenshot && !isLoading)))
 			{
-				std::vector<uint8_t> pixels(3 * ortho_tga_w * ortho_tga_h);
-				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-				glReadPixels(0, 0, ortho_tga_w, ortho_tga_h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				int captureW = ortho_tga_w;
+				int captureH = ortho_tga_h;
 
-				for (int line = 0; line != ortho_tga_h / 2; ++line) {
-					std::swap_ranges(pixels.begin() + 3 * ortho_tga_w * line,
-						pixels.begin() + 3 * ortho_tga_w * (line + 1),
-						pixels.begin() + 3 * ortho_tga_w * (ortho_tga_h - line - 1));
+				if (ortho_save_png_full)
+				{
+					captureW = windowWidth;
+					captureH = windowHeight;
 				}
 
-				if (ortho_save_tga || (make_screenshot && !isLoading))
+				std::vector<uint8_t> pixels(3 * captureW * captureH);
+				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+				glReadPixels(0, 0, captureW, captureH, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				for (int line = 0; line != captureH / 2; ++line) {
+					std::swap_ranges(pixels.begin() + 3 * captureW * line,
+						pixels.begin() + 3 * captureW * (line + 1),
+						pixels.begin() + 3 * captureW * (captureH - line - 1));
+				}
+
+				if (ortho_save_tga || ortho_save_png_full || (make_screenshot && !isLoading))
 				{
 					if (make_screenshot)
 					{
-						std::string screenPath = g_working_dir;
+						std::string screenPath = g_working_dir + "screenshots/";
+						createDir(g_working_dir + "screenshots/");
 
 
 						if (make_screenshot_dir.size() && dirExists(make_screenshot_dir))
@@ -1390,8 +1428,20 @@ void Renderer::renderLoop()
 					}
 					else
 					{
-						stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
-						print_log("Saved to {} file!\n", (g_working_dir + "overview.tga"));
+						std::string overPath = g_working_dir + "overviews/";
+						createDir(overPath);
+						if (ortho_save_png_full)
+						{
+							std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + "_full.png") : "overview_full.png");
+							stbi_write_png(finalPath.c_str(), captureW, captureH, 3, pixels.data(), captureW * 3);
+							print_log("Saved to {} file!\n", finalPath);
+						}
+						else
+						{
+							std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga");
+							stbi_write_tga(finalPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+							print_log("Saved to {} file!\n", finalPath);
+						}
 					}
 				}
 				else
@@ -1438,9 +1488,12 @@ void Renderer::renderLoop()
 					}
 
 
-					WriteBMP_PAL(g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp"), indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
+					std::string overPath = g_working_dir + "overviews/";
+					createDir(overPath);
+					std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp");
+					WriteBMP_PAL(finalPath, indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
 
-					print_log("Saved to {} file!\n", (g_working_dir + "overview.bmp").c_str());
+					print_log("Saved to {} file!\n", finalPath.c_str());
 				}
 
 
@@ -1450,8 +1503,7 @@ void Renderer::renderLoop()
 				glDeleteRenderbuffers(1, &rbo);
 				ortho_save_tga = false;
 				ortho_save_bmp = false;
-				ortho_overview = 0; // Reset overview mode
-				g_render_flags |= RENDER_WIREFRAME; // Re-enable wireframe after BMP save
+				ortho_save_png_full = false;
 				
 				// Disable smoothing settings that were enabled for overview capture
 				glDisable(GL_LINE_SMOOTH);
@@ -1525,7 +1577,7 @@ void Renderer::renderLoop()
 
 			oldTime = curTime;
 
-			if (is_closing)
+			if (is_closing || glfwWindowShouldClose(window))
 			{
 				if (g_settings_changed)
 				{
@@ -1534,6 +1586,7 @@ void Renderer::renderLoop()
 				}
 
 				print_log(get_localized_string(LANG_0901));
+				ClearTempDirectory();
 
 #ifdef MINGW 
 				std::set_terminate(NULL);
@@ -1620,6 +1673,7 @@ void Renderer::saveGuiSettings()
 	g_settings.fontSize = gui->fontSize;
 	g_settings.moveSpeed = moveSpeed;
 	g_settings.rotSpeed = rotationSpeed;
+	g_settings.grid_snap_level = gridSnapLevel;
 }
 
 void Renderer::loadGuiSettings()
@@ -1648,6 +1702,8 @@ void Renderer::loadGuiSettings()
 	gui->fontSize = g_settings.fontSize;
 	rotationSpeed = g_settings.rotSpeed;
 	moveSpeed = g_settings.moveSpeed;
+	gridSnapLevel = g_settings.grid_snap_level;
+	updateGridSnap();
 
 	gui->shouldReloadFonts = true;
 	gui->settingLoaded = true;
@@ -1953,11 +2009,6 @@ void Renderer::controls()
 			cameraPickingControls();
 		}
 
-		if (!gui->imgui_io->WantCaptureKeyboard)
-		{
-			shortcutControls();
-			globalShortcutControls();
-		}
 	}
 	else
 	{
@@ -1967,6 +2018,12 @@ void Renderer::controls()
 			oldLeftMouse = GLFW_PRESS;
 			cameraPickingControls();
 		}
+	}
+
+	if (is_focused && !gui->imgui_io->WantTextInput)
+	{
+		shortcutControls();
+		globalShortcutControls();
 	}
 
 	oldScroll = g_scroll;
@@ -2427,7 +2484,7 @@ void Renderer::moveGrabbedEnt()
 			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
 			ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
-			map->getBspRender()->refreshEnt((int)i);
+			map->getBspRender()->refreshEnt((int)i, Entity_RefreshAnglesOrigin);
 			updateEntConnectionPositions();
 		}
 	}
@@ -2484,6 +2541,10 @@ void Renderer::shortcutControls()
 	if (anyCtrlPressed && pressed[GLFW_KEY_M] && !oldPressed[GLFW_KEY_M])
 	{
 		gui->showTransformWidget = !gui->showTransformWidget;
+	}
+	if (anyCtrlPressed && pressed[GLFW_KEY_K] && !oldPressed[GLFW_KEY_K])
+	{
+		GuiCommandPalette::getInstance().toggle();
 	}
 	if (anyCtrlPressed && pressed[GLFW_KEY_G] && !oldPressed[GLFW_KEY_G])
 	{
@@ -2596,6 +2657,7 @@ void Renderer::pickObject()
 			for (auto idx : pickInfo.selectedFaces)
 			{
 				map->getBspRender()->highlightFace(idx, 0);
+				map->getBspRender()->updateFaceUVs(idx);
 			}
 			pickInfo.selectedFaces.clear();
 		}
@@ -2619,6 +2681,7 @@ void Renderer::pickObject()
 				{
 					last_face_idx = (int)tmpPickInfo.selectedFaces[0];
 					map->getBspRender()->highlightFace(last_face_idx, 0);
+					map->getBspRender()->updateFaceUVs(last_face_idx);
 					pickInfo.selectedFaces.erase(it);
 					facePickTime = -1.0f;
 				}
@@ -2755,7 +2818,7 @@ bool Renderer::transformAxisControls()
 
 								tmpEnt->setOrAddKeyvalue("origin", (rounded - ent_offset).toKeyvalueString());
 
-								map->getBspRender()->refreshEnt((int)tmpentIdx);
+								map->getBspRender()->refreshEnt((int)tmpentIdx, Entity_RefreshAnglesOrigin);
 
 								updateEntConnectionPositions();
 							}
@@ -2763,9 +2826,6 @@ bool Renderer::transformAxisControls()
 						else
 						{
 							deltaMoveOffset += delta;
-							/*vertPickCount++;
-							map->move(delta, modelIdx, true, false, false);
-							updateEntConnectionPositions();*/
 						}
 					}
 					else if (transformTarget == TRANSFORM_ORIGIN)
@@ -2780,7 +2840,7 @@ bool Renderer::transformAxisControls()
 								vec3 neworigin = map->models[tmpmdlidx].vOrigin + delta;
 								map->models[tmpmdlidx].vOrigin = neworigin;
 								//map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
-								map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);
+								map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i], Entity_RefreshAnglesOrigin);
 							}
 
 							vertPickCount++;
@@ -2843,22 +2903,26 @@ bool Renderer::transformAxisControls()
 					else
 					{
 						saveTranformResult = false;
-						vec3 neworigin = gridSnappingEnabled ? snapToGrid(deltaMoveOffset) : deltaMoveOffset;
-						if (!neworigin.IsZero())
+						vec3 moveDelta = gridSnappingEnabled ? snapToGrid(deltaMoveOffset) : deltaMoveOffset;
+						if (!moveDelta.IsZero())
 						{
-							map->move(neworigin, modelIdx, true, false, false);
+							map->move(moveDelta, modelIdx, true, false, false);
+							deltaMoveOffset = vec3();
+							map->resize_all_lightmaps();
+
+							applyTransform(map, true);
+							map->regenerate_clipnodes(modelIdx, -1);
+
+							map->getBspRender()->refreshEnt((int)entIdx[0]);
+							map->getBspRender()->refreshModel(modelIdx);
+							map->getBspRender()->refreshModelClipnodes(modelIdx);
+							updateEntConnectionPositions();
+							map->getBspRender()->pushUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 						}
-						deltaMoveOffset = vec3();
-						map->resize_all_lightmaps();
-
-						applyTransform(map, true);
-						map->regenerate_clipnodes(modelIdx, -1);
-
-						map->getBspRender()->refreshEnt((int)entIdx[0]);
-						map->getBspRender()->refreshModel(modelIdx);
-						map->getBspRender()->refreshModelClipnodes(modelIdx);
-						updateEntConnectionPositions();
-						map->getBspRender()->pushUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
+						else
+						{
+							deltaMoveOffset = vec3();
+						}
 					}
 				}
 				else if (transformTarget == TRANSFORM_ORIGIN)
@@ -3284,6 +3348,7 @@ void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
 	line_verts[1].c = color;
 
 	lineBuf->reupload();
+	lineBuf->frameId = -1;
 	lineBuf->drawFull();
 }
 
@@ -3295,6 +3360,7 @@ void Renderer::drawLine2D(vec2 start, vec2 end, COLOR4 color) {
 	line_verts[1].c = color;
 
 	lineBuf->reupload();
+	lineBuf->frameId = -1;
 	lineBuf->drawFull();
 }
 
@@ -3307,11 +3373,49 @@ void Renderer::drawBox(vec3 center, float width, COLOR4 color) {
 	buffer.drawFull();
 }
 
-void Renderer::drawBox(vec3 mins, vec3 maxs, COLOR4 color) {
-	mins = vec3(mins.x, mins.z, -mins.y);
-	maxs = vec3(maxs.x, maxs.z, -maxs.y);
+void Renderer::drawBoxWireframe(vec3 mins, vec3 maxs, COLOR4 color) {
+	vec3 flippedMins = vec3(mins.x, mins.z, -mins.y);
+	vec3 flippedMaxs = vec3(maxs.x, maxs.z, -maxs.y);
 
-	cCube cube(mins, maxs, color);
+	vec3 v[8];
+	v[0] = vec3(flippedMins.x, flippedMins.y, flippedMins.z);
+	v[1] = vec3(flippedMaxs.x, flippedMins.y, flippedMins.z);
+	v[2] = vec3(flippedMaxs.x, flippedMaxs.y, flippedMins.z);
+	v[3] = vec3(flippedMins.x, flippedMaxs.y, flippedMins.z);
+	v[4] = vec3(flippedMins.x, flippedMins.y, flippedMaxs.z);
+	v[5] = vec3(flippedMaxs.x, flippedMins.y, flippedMaxs.z);
+	v[6] = vec3(flippedMaxs.x, flippedMaxs.y, flippedMaxs.z);
+	v[7] = vec3(flippedMins.x, flippedMaxs.y, flippedMaxs.z);
+
+	cVert verts[24];
+	// Bottom
+	verts[0] = cVert(v[0], color); verts[1] = cVert(v[1], color);
+	verts[2] = cVert(v[1], color); verts[3] = cVert(v[2], color);
+	verts[4] = cVert(v[2], color); verts[5] = cVert(v[3], color);
+	verts[6] = cVert(v[3], color); verts[7] = cVert(v[0], color);
+	// Top
+	verts[8] = cVert(v[4], color); verts[9] = cVert(v[5], color);
+	verts[10] = cVert(v[5], color); verts[11] = cVert(v[6], color);
+	verts[12] = cVert(v[6], color); verts[13] = cVert(v[7], color);
+	verts[14] = cVert(v[7], color); verts[15] = cVert(v[4], color);
+	// Sides
+	verts[16] = cVert(v[0], color); verts[17] = cVert(v[4], color);
+	verts[18] = cVert(v[1], color); verts[19] = cVert(v[5], color);
+	verts[20] = cVert(v[2], color); verts[21] = cVert(v[6], color);
+	verts[22] = cVert(v[3], color); verts[23] = cVert(v[7], color);
+
+	VertexBuffer buffer(g_app->colorShader, verts, 24, GL_LINES, false);
+	buffer.drawFull();
+}
+
+void Renderer::drawBox(vec3 mins, vec3 maxs, COLOR4 color) {
+	vec3 flippedMins = vec3(mins.x, mins.z, -mins.y);
+	vec3 flippedMaxs = vec3(maxs.x, maxs.z, -maxs.y);
+
+	vec3 realMins = vec3(std::min(flippedMins.x, flippedMaxs.x), std::min(flippedMins.y, flippedMaxs.y), std::min(flippedMins.z, flippedMaxs.z));
+	vec3 realMaxs = vec3(std::max(flippedMins.x, flippedMaxs.x), std::max(flippedMins.y, flippedMaxs.y), std::max(flippedMins.z, flippedMaxs.z));
+
+	cCube cube(realMins, realMaxs, color);
 
 	VertexBuffer buffer(g_app->colorShader, &cube, 6 * 6, GL_TRIANGLES, false);
 	buffer.drawFull();
@@ -3390,6 +3494,7 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 	plane_verts->v4 = topRightVert;
 
 	planeBuf->reupload();
+	planeBuf->frameId = -1;
 	planeBuf->drawFull();
 }
 
@@ -3985,6 +4090,11 @@ void Renderer::updateEntConnectionPositions()
 		Entity* ent = SelectedMap->ents[entIdx[0]];
 		vec3 pos = SelectedMap->getEntOrigin(ent).flip();
 
+		if (transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_OBJECT && !moveOrigin && ent->isBspModel())
+		{
+			pos += deltaMoveOffset.flip();
+		}
+
 		cVert* verts = (cVert*)entConnections->getData();
 		for (int i = 0; i < entConnections->numVerts; i += 2)
 		{
@@ -3997,21 +4107,16 @@ void Renderer::updateEntConnectionPositions()
 }
 
 void Renderer::updateCullBox() {
-	if (!mapRenderers.size()) {
-		hasCullbox = false;
-		return;
-	}
-
-	Bsp* map = mapRenderers[0]->map;
-
 	cullMins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	cullMaxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	int findCount = 0;
-	for (Entity* ent : map->ents) {
-		if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
-			expandBoundingBox(ent->origin, cullMins, cullMaxs);
-			findCount++;
+	for (auto& rend : mapRenderers) {
+		for (Entity* ent : rend->map->ents) {
+			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
+				expandBoundingBox(ent->origin + rend->mapOffset, cullMins, cullMaxs);
+				findCount++;
+			}
 		}
 	}
 
@@ -4161,7 +4266,7 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, flo
 	scaleSelectedObject(map, modelIdx, dir, vec3());
 }
 
-void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool logging)
+void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool /*logging*/)
 {
 	bool scaleFromOrigin = std::fabs(fromDir.x) < EPSILON && std::fabs(fromDir.y) < EPSILON && std::fabs(fromDir.z) < EPSILON;
 
@@ -4617,6 +4722,17 @@ void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, floa
 	updateSelectionSize(map, modelIdx);
 }
 
+void Renderer::updateGridSnap()
+{
+	const float element_values[] = { 0.00001f, 0.01f, 0.1f, 0.5f, 1.f, 2.f, 4.f, 8.f, 16.f, 32.f, 64.f };
+	const int grid_snap_modes = sizeof(element_values) / sizeof(float);
+	if (gridSnapLevel >= 0 && gridSnapLevel < grid_snap_modes)
+	{
+		gridSnappingEnabled = gridSnapLevel != 0;
+		snapSize = element_values[gridSnapLevel];
+	}
+}
+
 vec3 Renderer::snapToGrid(vec3 pos)
 {
 	return pos.snap(snapSize);
@@ -4654,8 +4770,10 @@ void Renderer::cutEnt()
 
 			if (map->ents[ents[i]]->getBspModelIdx() > 0)
 			{
-				removeFile(g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp");
-				ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+				std::string tempPath = g_working_dir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
+				createDir(g_working_dir + "temp/");
+				removeFile(tempPath);
+				ExportModel(map, tempPath, map->ents[ents[i]]->getBspModelIdx(), 2, true);
 			}
 		}
 		ImGui::SetClipboardText(ss.str().c_str());
@@ -4685,7 +4803,9 @@ void Renderer::copyEnt()
 		ss << map->ents[ents[i]]->serialize();
 		if (map->ents[ents[i]]->getBspModelIdx() > 0)
 		{
-			ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+			std::string tempPath = g_working_dir + "temp/copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp";
+			createDir(g_working_dir + "temp/");
+			ExportModel(map, tempPath, map->ents[ents[i]]->getBspModelIdx(), 2, true);
 		}
 	}
 
@@ -4724,7 +4844,8 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	{
 		if (copiedEnts[i]->getBspModelIdxForce() > 0 && copyModel)
 		{
-			int mdlIdx = ImportModel(map, g_working_dir + "copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp");
+			std::string tempPath = g_working_dir + "temp/copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp";
+			int mdlIdx = ImportModel(map, tempPath);
 			if (mdlIdx > 0)
 			{
 				copiedEnts[i]->setOrAddKeyvalue("model", "*" + std::to_string(mdlIdx));
@@ -4752,10 +4873,62 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	}
 
 	if (copiedEnts.size())
+	{
+		gui->entityListChanged = true;
 		rend->pushUndoState("Paste Entity", FL_ENTITIES);
+	}
 }
 
-void Renderer::pasteEntsFromText(std::string text)
+void Renderer::pasteEntAtOrigin(vec3 origin)
+{
+	auto clipboardText = ImGui::GetClipboardText();
+	if (!clipboardText)
+		return;
+
+	Bsp* map = SelectedMap;
+	if (!map)
+	{
+		print_log(get_localized_string(LANG_0925));
+		return;
+	}
+
+	BspRenderer* rend = map->getBspRender();
+	std::vector<Entity*> copiedEnts{};
+
+	try
+	{
+		copiedEnts = load_ents(clipboardText, map->bsp_name);
+	}
+	catch (...)
+	{
+	}
+
+	clearSelection();
+	selectMap(map);
+
+	if (copiedEnts.size() > 0)
+	{
+		vec3 baseOrigin = copiedEnts[0]->origin;
+
+		for (size_t i = 0; i < copiedEnts.size(); i++)
+		{
+			vec3 entOrigin = copiedEnts[i]->origin;
+			vec3 offset = entOrigin - baseOrigin;
+			vec3 newOri = origin + offset;
+
+			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
+			copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
+			copiedEnts[i]->origin = rounded;
+
+			map->ents.push_back(copiedEnts[i]);
+			selectEnt(map, (int)map->ents.size() - 1, true);
+		}
+		rend->pushUndoState("Paste Entity at Origin", FL_ENTITIES);
+		rend->preRenderEnts();
+	}
+}
+
+void Renderer::pasteEntsFromText(std::string /*text*/)
 {
 	auto clipboardText = ImGui::GetClipboardText();
 	if (!clipboardText)
@@ -4848,12 +5021,13 @@ void Renderer::deleteEnts()
 			reloadBspModels();
 		}
 
-		map->update_ent_lump();
 		pickInfo.selectedEnts.clear();
 		pickCount++;
 		filterNeeded = true;
-		map->getBspRender()->preRenderEnts();
+		gui->entityListChanged = true;
+		// pushUndoState with FL_ENTITIES will call update_ent_lump() and preRenderEnts()
 		map->getBspRender()->pushUndoState("Delete ents", FL_ENTITIES);
+		updateCullBox();
 	}
 }
 
@@ -4899,6 +5073,7 @@ void Renderer::deselectFaces()
 	for (auto faceIdx : pickInfo.selectedFaces)
 	{
 		map->getBspRender()->highlightFace(faceIdx, 0);
+		map->getBspRender()->updateFaceUVs(faceIdx);
 	}
 
 	pickInfo.selectedFaces.clear();
@@ -4946,7 +5121,7 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 		pickInfo.selectedEnts.clear();
 	}
 
-	if (add)
+	if (add && !pickInfo.selectedEnts.empty() && pickInfo.selectedEnts[0] >= 0 && pickInfo.selectedEnts[0] < (int)map->ents.size())
 	{
 		int modelIdx = map->ents[pickInfo.selectedEnts[0]]->getBspModelIdx();
 		if (modelIdx > 0)
@@ -5093,6 +5268,7 @@ void Renderer::updateEnts()
 		g_app->updateEntConnections();
 		g_app->updateEntConnectionPositions();
 	}
+	updateCullBox();
 }
 
 bool Renderer::isEntTransparent(const char* classname)
@@ -5192,7 +5368,7 @@ void Renderer::merge(std::string fpath)
 	maps.push_back(map2);
 
 	BspMerger merger;
-	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true, false);
+	mergeResult = merger.merge(maps, thismap->bsp_name, true, true, false, {vec3(0, 0, 0), vec3(0, 0, 512.0f)});
 
 	if (!mergeResult.map || !mergeResult.map->bsp_valid) {
 		delete map2;
@@ -5223,4 +5399,85 @@ bool Renderer::hasCopiedEnt()
 		return true;
 	}
 	return false;
+}
+void Renderer::selectBoxEntities() {
+	Bsp* map = SelectedMap;
+	if (!map || !hasCullbox)
+		return;
+
+	vec3 mapOffset = map->getBspRender()->mapOffset;
+
+	for (size_t i = 1; i < map->ents.size(); i++) {
+		vec3 v = map->ents[i]->origin;
+		int modelIdx = map->ents[i]->getBspModelIdx();
+
+		bool isInside = false;
+		bool isCullEnt = map->ents[i]->hasKey("classname") && map->ents[i]->keyvalues["classname"] == "cull";
+		if (isCullEnt)
+			continue;
+
+		if (modelIdx != -1) {
+			vec3 mins, maxs;
+			map->get_model_vertex_bounds(modelIdx, mins, maxs);
+			mins += v + mapOffset;
+			maxs += v + mapOffset;
+			if (boxesIntersect(mins, maxs, cullMins, cullMaxs)) {
+				isInside = true;
+			}
+		}
+		else {
+			if (pointInBox(v + mapOffset, cullMins, cullMaxs)) {
+				isInside = true;
+			}
+		}
+
+		if (isInside) {
+			if (!pickInfo.IsSelectedEnt((int)i)) {
+				pickInfo.AddSelectedEnt((int)i);
+			}
+		}
+	}
+}
+
+void Renderer::selectBoxFaces() {
+	Bsp* map = SelectedMap;
+	if (!map || !hasCullbox)
+		return;
+
+	pickMode = PICK_FACE;
+
+	vec3 mapOffset = map->getBspRender()->mapOffset;
+	BSPMODEL& worldmodel = map->models[0];
+
+	for (int i = 0; i < worldmodel.nFaces; i++) {
+		int faceIdx = worldmodel.iFirstFace + i;
+		BSPFACE32& face = map->faces[faceIdx];
+
+		bool isInside = false;
+		for (int e = 0; e < face.nEdges; e++) {
+			int edgeIdx = map->surfedges[face.iFirstEdge + e];
+			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
+			int vertIdx = edgeIdx >= 0 ? edge.iVertex[0] : edge.iVertex[1];
+
+			vec3 v = map->verts[vertIdx];
+
+			if (pointInBox(v + mapOffset, cullMins, cullMaxs)) {
+				isInside = true;
+				break;
+			}
+		}
+
+		if (isInside) {
+			bool alreadySelected = false;
+			for (int selectedFace : pickInfo.selectedFaces) {
+				if (selectedFace == faceIdx) {
+					alreadySelected = true;
+					break;
+				}
+			}
+			if (!alreadySelected) {
+				selectFace(map, faceIdx, true);
+			}
+		}
+	}
 }

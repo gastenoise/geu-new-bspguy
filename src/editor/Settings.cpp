@@ -2,10 +2,11 @@
 #include "Settings.h"
 #include "Renderer.h"
 #include "log.h"
+#include "MutexManager.h"
 
 std::string g_settings_path = "./bspguy.ini";
 std::string g_game_dir = "/";
-std::string g_working_dir = "./";
+std::string g_working_dir = "./bspguy_work/";
 std::string g_startup_dir = "";
 
 
@@ -72,6 +73,9 @@ void Settings::loadDefaultSettings()
 	fov = 75.0f;
 	zfar = 262144.0f;
 	rotSpeed = 5.0f;
+	grid_snap_level = 1;
+
+	mapBoundaryColor = COLOR3(0, 255, 0);
 
 	rad_path = "hlrad.exe";
 	rad_options = "\"{map_path}\"";
@@ -365,6 +369,15 @@ void Settings::loadSettings()
 	g_settings.fov = settings_ini->Get<float>("GRAPHICS", "fov", 60.0f);
 	g_settings.zfar = settings_ini->Get<float>("GRAPHICS", "zfar", 1000.0f);
 	g_settings.render_flags = settings_ini->Get<int>("GRAPHICS", "renders_flags", 0);
+
+	std::string mapBoundColStr = settings_ini->Get<std::string>("GRAPHICS", "map_boundary_color", "0 255 0");
+	std::vector<std::string> mapBoundColParts = splitString(mapBoundColStr, " ");
+	if (mapBoundColParts.size() == 3) {
+		g_settings.mapBoundaryColor.r = (unsigned char)atoi(mapBoundColParts[0].c_str());
+		g_settings.mapBoundaryColor.g = (unsigned char)atoi(mapBoundColParts[1].c_str());
+		g_settings.mapBoundaryColor.b = (unsigned char)atoi(mapBoundColParts[2].c_str());
+	}
+
 	g_settings.fontSize = settings_ini->Get<float>("GRAPHICS", "font_size", 22.0f);
 	g_settings.fpslimit = settings_ini->Get<int>("GRAPHICS", "fpslimit", 60);
 
@@ -381,6 +394,7 @@ void Settings::loadSettings()
 	}
 
 	g_settings.moveSpeed = settings_ini->Get<float>("INPUT", "move_speed", 500.0f);
+	g_settings.grid_snap_level = settings_ini->Get<int>("INPUT", "grid_snap_level", 1);
 
 	if (g_settings.moveSpeed < 100) {
 		print_log(get_localized_string(LANG_0927));
@@ -662,7 +676,7 @@ void Settings::loadSettings()
 
 void Settings::saveSettings(std::string path) 
 {
-	std::lock_guard<std::mutex> lock(g_mutex_list[7]);
+	std::lock_guard<std::mutex> lock(Sync::Settings);
 
 	removeFile(path);
 
@@ -710,6 +724,7 @@ void Settings::saveSettings(std::string path)
 	iniData << "fov=" << g_settings.fov << "\n";
 	iniData << "zfar=" << g_settings.zfar << "\n";
 	iniData << "renders_flags=" << g_settings.render_flags << "\n";
+	iniData << "map_boundary_color=" << (int)g_settings.mapBoundaryColor.r << " " << (int)g_settings.mapBoundaryColor.g << " " << (int)g_settings.mapBoundaryColor.b << "\n";
 	iniData << "font_size=" << g_settings.fontSize << "\n";
 	iniData << "fpslimit=" << g_settings.fpslimit << "\n\n";
 
@@ -720,7 +735,8 @@ void Settings::saveSettings(std::string path)
 
 	iniData << "[INPUT]\n";
 	iniData << "move_speed=" << g_settings.moveSpeed << "\n";
-	iniData << "rot_speed=" << g_settings.rotSpeed << "\n\n";
+	iniData << "rot_speed=" << g_settings.rotSpeed << "\n";
+	iniData << "grid_snap_level=" << g_settings.grid_snap_level << "\n\n";
 
 	iniData << "[PATHS]\n";
 	iniData << "gamedir=" << g_settings.gamedir << "\n";

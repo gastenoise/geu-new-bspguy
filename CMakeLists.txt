@@ -3,10 +3,18 @@ cmake_minimum_required (VERSION 3.28)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
+set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
+set(AS_DISABLE_INSTALL ON CACHE BOOL "" FORCE)
 set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
 project(bspguy LANGUAGES C CXX)
 
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(fmt)
 add_subdirectory(glfw)
@@ -38,6 +46,7 @@ set(SOURCE_FILES
 
 	# command line
 	src/cli/CommandLine.h			src/cli/CommandLine.cpp
+	src/cli/EntityQuery.h			src/cli/EntityQuery.cpp
 	src/cli/ProgressMeter.h			src/cli/ProgressMeter.cpp
 
 	# BSP and related structures
@@ -68,6 +77,16 @@ set(SOURCE_FILES
 	src/editor/Settings.h			src/editor/Settings.cpp
 	src/editor/Renderer.h			src/editor/Renderer.cpp
 	src/editor/Gui.h				src/editor/Gui.cpp
+	src/editor/gui/GuiMenuBar.cpp
+	src/editor/gui/GuiContextMenu.cpp
+	src/editor/gui/GuiWidgets.cpp
+	src/editor/gui/GuiDialogs.cpp
+	src/editor/gui/GuiStatusBar.cpp
+	src/editor/gui/widgets/GuiWidgetLog.cpp
+	src/editor/gui/widgets/GuiWidgetLimits.cpp
+	src/editor/gui/widgets/GuiWidgetEntityReport.cpp
+	src/editor/gui/ActionRegistry.h		src/editor/gui/ActionRegistry.cpp	src/editor/gui/ActionRegistryInit.cpp
+	src/editor/gui/GuiCommandPalette.h	src/editor/gui/GuiCommandPalette.cpp
 	src/editor/BspRenderer.h		src/editor/BspRenderer.cpp
 	src/editor/PointEntRenderer.h	src/editor/PointEntRenderer.cpp
 	src/editor/Fgd.h				src/editor/Fgd.cpp
@@ -88,6 +107,7 @@ set(SOURCE_FILES
 	src/util/lang_defs.h
 	src/util/lang.h					src/util/lang.cpp
 	src/util/log.h					src/util/log.cpp
+	src/util/MutexManager.h			src/util/MutexManager.cpp
 	
 	# nav
 	src/nav/LeafNavMesh.h			src/nav/LeafNavMesh.cpp
@@ -140,9 +160,43 @@ set(SOURCE_FILES
 	src/util/as.h					src/util/as.cpp
 )
 
+if(WIN32)
+	list(APPEND SOURCE_FILES src/res/bspguy.rc)
+endif()
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
-if(NOT MSVC)
+if(MSVC)
+	add_definitions(-DWIN32 -D_WINDOWS -DGLEW_STATIC -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		target_link_libraries(${PROJECT_NAME} fmt::fmt glfw angelscript opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32s.lib)
+	else()
+		target_link_libraries(${PROJECT_NAME} fmt::fmt glfw angelscript opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/Win32/glew32s.lib)
+	endif()
+
+	target_compile_options(${PROJECT_NAME} PRIVATE /utf-8 /MP /W4 /wd4244 /wd4018 /std:c++20 /EHsc)
+
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/fonts"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/languages"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/languages"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/palettes"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/palettes"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/pictures"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/pictures"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/scripts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/scripts"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/bspguy.ini")
+else()
 	add_definitions(-DNDEBUG)
 	if(WIN32)
 		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -155,10 +209,8 @@ if(NOT MSVC)
 	else()
 		target_link_libraries(${PROJECT_NAME} GL GLU fmt::fmt glfw angelscript Xxf86vm Xrandr pthread Xi GLEW stdc++fs )
 	endif()
-	set(CMAKE_CXX_STANDARD 20)
-	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(PICO_ENABLE_CXX_EXCEPTIONS 1)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++2a -g0 -O3 -fno-stack-protector -w -Wfatal-errors\
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g0 -O3 -fno-stack-protector -w -Wfatal-errors\
 	-fcf-protection=none -ffunction-sections -fdata-sections -mtune=generic -fpermissive -fno-sized-deallocation\
 	-Wno-delete-non-virtual-dtor -Wno-invalid-offsetof -Wno-unused-variable -Wno-unused-value -Wno-unused-result\
 	-Wno-unused-function -Wno-write-strings -Wno-switch -Wno-enum-compare -Wno-sign-compare -Wno-format\
@@ -169,6 +221,41 @@ if(NOT MSVC)
 	-Wno-unused-result -Wno-unused-function -Wno-write-strings -Wno-switch -Wno-enum-compare -Wno-sign-compare\
 	-Wno-format -Wno-ignored-attributes -Wno-strict-aliasing -fno-plt -fno-devirtualize -Wno-unused-local-typedefs\
 	-Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-class-memaccess")
-else()
-	message(FATAL_ERROR "Use vs-project/bspguy.sln for Visual Studio")
+
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/fonts"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/languages"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/languages"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/palettes"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/palettes"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/pictures"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/pictures"
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/scripts"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/scripts"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini"
+		"$<TARGET_FILE_DIR:${PROJECT_NAME}>/bspguy.ini")
 endif()
+
+# Installation rules
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/fonts" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/languages" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/palettes" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/pictures" DESTINATION .)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources/scripts" DESTINATION .)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/resources/bspguy.ini" DESTINATION .)
+
+# Custom target to mirror GitHub Release build locally
+add_custom_target(package_release
+    COMMAND ${CMAKE_COMMAND} --build . --config Release
+    COMMAND ${CMAKE_COMMAND} --install . --prefix "${CMAKE_CURRENT_SOURCE_DIR}/dist/revamped-newbspguy" --config Release
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Building and creating release package in dist/revamped-newbspguy (Release configuration)"
+)

@@ -34,7 +34,8 @@ enum RenderFlags : unsigned int
 	RENDER_MODELS_ANIMATED = 1 << 13,
 	RENDER_SELECTED_AT_TOP = 1 << 14,
 	RENDER_TEXTURES_NOFILTER = 1 << 15,
-	RENDER_MAP_BOUNDARY = 1 << 16
+	RENDER_MAP_BOUNDARY = 1 << 16,
+	RENDER_LIGHTMAPS_NOFILTER = 1 << 17
 };
 
 struct PathToggleStruct 
@@ -64,7 +65,9 @@ struct Settings
 	int fpslimit;
 	int settings_tab;
 	int render_flags;
+	int grid_snap_level;
 
+	COLOR3 mapBoundaryColor;
 
 	float fov;
 	float zfar;

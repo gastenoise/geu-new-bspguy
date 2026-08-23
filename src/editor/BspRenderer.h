@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #include "Bsp.h"
 #include "Texture.h"
 #include "ShaderProgram.h"
@@ -45,6 +44,7 @@ struct FaceMath
 	vec3 normal;
 	float fdist;
 	std::vector<vec2> localVerts;
+	vec2 localMins, localMaxs;
 	vec3 center;
 	FaceMath()
 	{
@@ -70,10 +70,12 @@ struct RenderEnt
 	StudioModel* mdl;
 	Sprite* spr;
 	std::string mdlFileName;
+	bool isTransparentByList;
 	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
 	{
 		isDuplicateModel = false;
 		needAngles = false;
+		isTransparentByList = false;
 		modelIdx = 0;
 		pointEntCube = NULL;
 		mdl = NULL;
@@ -91,10 +93,11 @@ struct RenderGroup
 	VertexBuffer* buffer;
 	bool transparent;
 	bool special;
+	bool isTransparentByList;
 	RenderGroup()
 	{
 		buffer = NULL;
-		transparent = special = false;
+		transparent = special = isTransparentByList = false;
 		textures.clear();
 		frameid = 0;
 		frametime = 0.0f;
@@ -104,6 +107,7 @@ struct RenderGroup
 		}
 	}
 };
+
 
 struct RenderFace
 {
@@ -250,7 +254,7 @@ public:
 	bool isFinishedLoading();
 
 	void highlightFace(int faceIdx, int highlight, bool reupload = true);
-	void updateFaceUVs(int faceIdx);
+	void updateFaceUVs(int faceIdx, const BSPTEXTUREINFO* overrideTexInfo = nullptr, bool reupload = true);
 	unsigned int getFaceTextureId(int faceIdx);
 
 	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);

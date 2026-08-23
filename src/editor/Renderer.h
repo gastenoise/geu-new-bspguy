@@ -64,6 +64,7 @@ extern int ortho_tga_w;
 extern int ortho_tga_h;
 extern bool ortho_save_tga;
 extern bool ortho_save_bmp;
+extern bool ortho_save_png_full;
 
 extern int make_screenshot;
 extern int make_screenshot_target;
@@ -93,6 +94,7 @@ extern int vertPickCount;
 
 extern int g_drawFrameId;
 
+extern bool g_settings_changed;
 
 extern std::vector<BspRenderer*> mapRenderers;
 
@@ -139,7 +141,6 @@ public:
 	Fgd* fgd = NULL;
 
 	bool hideGui = false;
-	bool isFocused = false;
 	bool isHovered = false;
 	bool isIconified = false;
 	
@@ -333,6 +334,7 @@ public:
 	void drawLine2D(vec2 start, vec2 end, COLOR4 color);
 	void drawBox(vec3 center, float width, COLOR4 color);
 	void drawBox(vec3 mins, vec3 maxs, COLOR4 color);
+	void drawBoxWireframe(vec3 mins, vec3 maxs, COLOR4 color);
 	void drawPolygon3D(Polygon3D& poly, COLOR4 color);
 	float drawPolygon2D(Polygon3D poly, vec2 pos, vec2 maxSz, COLOR4 color); // returns render scale
 	void drawBox2D(vec2 center, float width, COLOR4 color);
@@ -351,6 +353,7 @@ public:
 	void moveSelectedVerts(const vec3& delta);
 	bool splitModelFace();
 	void updateCullBox();
+	void updateGridSnap();
 
 	vec3 snapToGrid(vec3 pos);
 
@@ -358,6 +361,7 @@ public:
 	void cutEnt();
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin, bool copyModel = false);
+	void pasteEntAtOrigin(vec3 origin);
 	void pasteEntsFromText(std::string text);
 	void deleteEnts();
 	void scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, float z);
@@ -367,6 +371,8 @@ public:
 	void selectFace(Bsp* map, int face, bool add = false);
 	void deselectFaces();
 	void selectEnt(Bsp* map, int entIdx, bool add = false);
+	void selectBoxEntities();
+	void selectBoxFaces();
 	void goToEnt(Bsp* map, int entIdx);
 	void goToCoords(float x, float y, float z);
 	void goToCoords(const vec3& pos);
