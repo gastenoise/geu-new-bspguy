@@ -13,6 +13,7 @@
 #include "quantizer.h"
 #include "Wad.h"
 #include "Clipper.h"
+#include "MutexManager.h"
 
 #include "JACK_jmf.h"
 #include "XASH_csm.h"
@@ -8573,9 +8574,10 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 					std::string tmpTexName = stripExt(basename(file));
 
 					WADTEX tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-					g_mutex_list[1].lock();
-					textureList.push_back(tmpWadTex);
-					g_mutex_list[1].unlock();
+					{
+						std::lock_guard<std::mutex> lock(Sync::BspOps);
+						textureList.push_back(tmpWadTex);
+					}
 					free(image_bytes);
 				}
 			});

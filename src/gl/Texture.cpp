@@ -6,6 +6,7 @@
 #include "log.h"
 #include "Settings.h"
 #include "Renderer.h"
+#include "MutexManager.h"
 
 std::vector<Texture*> g_all_Textures;
 
@@ -44,7 +45,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
     {
         this->transparentMode = 2;
     }
-    std::lock_guard<std::mutex> lock(g_mutex_list[4]);
+    std::lock_guard<std::mutex> lock(Sync::TexturesList);
     g_all_Textures.push_back(this);
 }
 
@@ -58,7 +59,7 @@ Texture::~Texture()
     if (tex_owndata && data != NULL)
         delete[] data;
 
-    std::lock_guard<std::mutex> lock(g_mutex_list[4]);
+    std::lock_guard<std::mutex> lock(Sync::TexturesList);
     auto it = std::remove(g_all_Textures.begin(), g_all_Textures.end(), this);
     if (it != g_all_Textures.end())
     {

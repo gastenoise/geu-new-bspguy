@@ -2,6 +2,7 @@
 #include "Settings.h"
 #include "Renderer.h"
 #include "log.h"
+#include "MutexManager.h"
 
 std::string g_settings_path = "./bspguy.ini";
 std::string g_game_dir = "/";
@@ -675,7 +676,7 @@ void Settings::loadSettings()
 
 void Settings::saveSettings(std::string path) 
 {
-	std::lock_guard<std::mutex> lock(g_mutex_list[7]);
+	std::lock_guard<std::mutex> lock(Sync::Settings);
 
 	removeFile(path);
 

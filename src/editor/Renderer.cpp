@@ -21,6 +21,7 @@
 #include "NavMesh.h"
 #include "LeafNavMesh.h"
 #include "Settings.h"
+#include "gui/GuiCommandPalette.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -2540,6 +2541,10 @@ void Renderer::shortcutControls()
 	if (anyCtrlPressed && pressed[GLFW_KEY_M] && !oldPressed[GLFW_KEY_M])
 	{
 		gui->showTransformWidget = !gui->showTransformWidget;
+	}
+	if (anyCtrlPressed && pressed[GLFW_KEY_K] && !oldPressed[GLFW_KEY_K])
+	{
+		GuiCommandPalette::getInstance().toggle();
 	}
 	if (anyCtrlPressed && pressed[GLFW_KEY_G] && !oldPressed[GLFW_KEY_G])
 	{

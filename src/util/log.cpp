@@ -28,19 +28,20 @@ void FlushConsoleLog(bool wait)
 	std::thread t
 	([]()
 		{
-			if (g_mutex_list[6].try_lock())
+			if (Sync::LogFlush.try_lock())
 			{
+				std::unique_lock<std::mutex> flushLock(Sync::LogFlush, std::adopt_lock);
 				// copy for real async ?
 				std::vector<std::string> tmp_log_buffer;
 				std::vector<unsigned int> tmp_color_buffer;
 
-				g_mutex_list[5].lock();
-				tmp_log_buffer = g_console_log_buffer;
-				tmp_color_buffer = g_console_color_buffer;
-				g_console_log_buffer.clear();
-				g_console_color_buffer.clear();
-				g_mutex_list[5].unlock();
-				
+				{
+					std::lock_guard<std::mutex> queueLock(Sync::LogQueue);
+					tmp_log_buffer = g_console_log_buffer;
+					tmp_color_buffer = g_console_color_buffer;
+					g_console_log_buffer.clear();
+					g_console_color_buffer.clear();
+				}
 
 				for (size_t i = 0; i < tmp_log_buffer.size(); i++)
 				{
@@ -63,10 +64,6 @@ void FlushConsoleLog(bool wait)
 					set_console_colors(color);
 					std::cout << str;
 				}
-
-
-
-				g_mutex_list[6].unlock();
 			}
 		}
 	);

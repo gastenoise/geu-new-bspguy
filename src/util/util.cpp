@@ -1,4 +1,4 @@
-﻿#include "lang.h"
+#include "lang.h"
 #include <algorithm>
 #include "util.h"
 #include "Wad.h"
@@ -33,7 +33,6 @@
 bool DebugKeyPressed = false;
 ProgressMeter g_progress = {};
 int g_render_flags;
-std::mutex g_mutex_list[10] = {};
 
 bool fileExists(const std::string& fileName)
 {
