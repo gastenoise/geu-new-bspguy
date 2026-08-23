@@ -5,6 +5,7 @@
 
 #ifdef WIN32
 #define strcasecmp _stricmp
+#define strncasecmp _strnicmp
 #endif
 
 #define MAXTEXTURENAME 16

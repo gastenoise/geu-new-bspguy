@@ -2,9 +2,10 @@
 #include "BspMerger.h"
 #include "vis.h"
 #include "log.h"
+#include "util.h"
 
 
-MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles)
+MergeResult BspMerger::merge(std::vector<Bsp*> maps, const std::string& output_name, bool noripent, bool noscript, bool nomergestyles, std::vector<vec3> overlapGaps)
 {
 	MergeResult result;
 	result.fpath = "";
@@ -129,7 +130,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 	}
 
 
-	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap, nomove, result);
+	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, result, overlapGaps);
 
 
 	print_log(get_localized_string(LANG_0220));
@@ -267,15 +268,20 @@ void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
 	merge(*dst.map, *src.map);
 }
 
-std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result)
+std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, MergeResult& result, std::vector<vec3> overlapGaps)
 {
 	std::vector<MAPBLOCK> blocks;
 
 	std::vector<std::vector<std::vector<MAPBLOCK>>> orderedBlocks;
 
-	vec3 maxDims = vec3();
 	for (size_t i = 0; i < maps.size(); i++)
 	{
+		// apply any existing transform move stored in worldspawn before anything else
+		if (maps[i]->ents[0]->hasKey("origin")) {
+			maps[i]->move(parseVector(maps[i]->ents[0]->keyvalues["origin"]));
+			maps[i]->ents[0]->removeKeyvalue("origin");
+		}
+
 		MAPBLOCK block;
 		maps[i]->get_bounding_box(block.mins, block.maxs);
 
@@ -283,129 +289,26 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 		block.offset = vec3();
 		block.map = maps[i];
 
-
-		if (block.size.x > maxDims.x)
-		{
-			maxDims.x = block.size.x;
-		}
-		if (block.size.y > maxDims.y)
-		{
-			maxDims.y = block.size.y;
-		}
-		if (block.size.z > maxDims.z)
-		{
-			maxDims.z = block.size.z;
-		}
-
 		blocks.push_back(block);
 	}
 
-	bool noOverlap = true;
-	for (size_t i = 0; i < blocks.size() && noOverlap; i++) {
-		for (size_t k = 0; k < blocks.size(); k++) {
-			if (i != k && blocks[i].intersects(blocks[k])) {
-				noOverlap = false;
+	for (size_t i = 0; i < blocks.size(); i++)
+	{
+		MAPBLOCK& block = blocks[i];
 
-				if (nomove) {
-					print_log("Merge aborted because the maps overlap.\n");
-					blocks[i].suggest_intersection_fix(blocks[k], result);
-				}
-
-				break;
-			}
+		if (i < overlapGaps.size()) {
+			block.offset = overlapGaps[i];
 		}
-	}
+		else {
+			block.offset = vec3();
+		}
 
-	if (noOverlap) {
-		if (!nomove)
-			print_log("Maps do not overlap. They will be merged without moving.\n");
-
-		std::vector<std::vector<MAPBLOCK>> col;
 		std::vector<MAPBLOCK> row;
-		for (const MAPBLOCK& block : blocks) {
-			row.push_back(block);
-			if (block.map->ents[0]->hasKey("origin")) {
-				// apply the transform move in the GUI
-				block.map->move(block.map->ents[0]->origin);
-				block.map->ents[0]->removeKeyvalue("origin");
-			}
-		}
+		row.push_back(block);
+		std::vector<std::vector<MAPBLOCK>> col;
 		col.push_back(row);
 		orderedBlocks.push_back(col);
-
-		return orderedBlocks;
 	}
-
-	if (nomove) {
-		return orderedBlocks;
-	}
-
-	maxDims += gap;
-
-	float maxMapsPerRow = (g_limits.fltMaxCoord * 2.0f) / maxDims.x;
-	float maxMapsPerCol = (g_limits.fltMaxCoord * 2.0f) / maxDims.y;
-	float maxMapsPerLayer = (g_limits.fltMaxCoord * 2.0f) / maxDims.z;
-
-	float idealMapsPerAxis = (float)floor(pow(maps.size(), 1.0f / 3.0f));
-
-	if (idealMapsPerAxis * idealMapsPerAxis * idealMapsPerAxis < (float)maps.size())
-	{
-		idealMapsPerAxis += 1.0f;
-	}
-
-	if (maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer < (float)maps.size())
-	{
-		print_log(get_localized_string(LANG_0225));
-		return orderedBlocks;
-	}
-
-	vec3 mergedMapSize = maxDims * idealMapsPerAxis;
-	vec3 mergedMapMin = mergedMapSize * -0.5f;
-	vec3 mergedMapMax = mergedMapMin + mergedMapSize;
-
-	print_log(get_localized_string(LANG_0226), maxDims.x, maxDims.y, maxDims.z);
-	print_log(get_localized_string(LANG_0227), maxMapsPerRow, maxMapsPerCol, maxMapsPerLayer, maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
-
-	float actualWidth = std::min(idealMapsPerAxis, (float)maps.size());
-	float actualLength = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / idealMapsPerAxis));
-	float actualHeight = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / (idealMapsPerAxis * idealMapsPerAxis)));
-	print_log(get_localized_string(LANG_0228), actualWidth, actualLength, actualHeight);
-
-	print_log("Merged map bounds: min=({:.0f},{:.0f}, {:.0f})\n"
-		"                   max=({:.0f}, {:.0f},{:.0f})\n",
-		mergedMapMin.x, mergedMapMin.y, mergedMapMin.z,
-		mergedMapMax.x, mergedMapMax.y, mergedMapMax.z);
-
-	vec3 targetMins = mergedMapMin;
-	size_t blockIdx = 0;
-	for (int z = 0; (float)z < idealMapsPerAxis && blockIdx < blocks.size(); z++)
-	{
-		targetMins.y = mergedMapMin.y;
-		std::vector<std::vector<MAPBLOCK>> col;
-		for (int y = 0; (float)y < idealMapsPerAxis && blockIdx < blocks.size(); y++)
-		{
-			targetMins.x = mergedMapMin.x;
-			std::vector<MAPBLOCK> row;
-			for (int x = 0; (float)x < idealMapsPerAxis && blockIdx < blocks.size(); x++)
-			{
-				MAPBLOCK& block = blocks[blockIdx];
-
-				block.offset = targetMins - block.mins;
-				//print_log(get_localized_string(LANG_0229),blockIdx,targetMins.x,targetMins.y,targetMins.z);
-				//print_log(get_localized_string(LANG_0230),block.map->name,block.offset.x,block.offset.y,block.offset.z);
-
-				row.push_back(block);
-
-				blockIdx++;
-				targetMins.x += maxDims.x;
-			}
-			col.push_back(row);
-			targetMins.y += maxDims.y;
-		}
-		orderedBlocks.push_back(col);
-		targetMins.z += maxDims.z;
-	}
-
 	return orderedBlocks;
 }
 
@@ -988,7 +891,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	mergedMap->update_ent_lump();
 
-	if (!noscript)
+	if (!noscript && !output_name.empty())
 	{
 		mergedMap->export_entities(output_name + ".ent");
 	}
@@ -1061,9 +964,16 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 	BSPPLANE separationPlane = separate_plane(mapA, mapB);
 	if (separationPlane.nType == -1 && !modelMerge)
 	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0236));
-		FlushConsoleLog(true);
-		return false;
+		// Force a separation plane if maps are merged vertically or otherwise known to be separable
+		separationPlane = getSeparatePlane(mapA.models[0].nMins, mapA.models[0].nMaxs,
+										  mapB.models[0].nMins, mapB.models[0].nMaxs, true);
+
+		if (separationPlane.nType == -1)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0236));
+			FlushConsoleLog(true);
+			return false;
+		}
 	}
 	thisWorldLeafCount = mapA.models[0].nVisLeafs; // excludes solid leaf 0
 	otherWorldLeafCount = mapB.models[0].nVisLeafs; // excluding solid leaf 0
@@ -1938,17 +1848,17 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	g_progress.tick();
 
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
-	memset(decompressedVis, 0xFF, decompressedVisSize);
+	memset(decompressedVis, 0, decompressedVisSize);
 
 	// decompress this map's world leaves
 	// model leaves don't need to be decompressed because the game ignores VIS for them.
 	decompress_vis_lump(&mapA, allLeaves, mapA.visdata, decompressedVis,
-		thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_VISIBILITY].nLength, mapA.visDataLength);
+		thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_LEAVES].nLength, mapA.visDataLength);
 
 	// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
 	unsigned char* decompressedOtherVis = decompressedVis + thisWorldLeafCount * newVisRowSize;
 	decompress_vis_lump(&mapB, allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
-		otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_VISIBILITY].nLength, mapB.visDataLength);
+		otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_LEAVES].nLength, mapB.visDataLength);
 
 	// shift mapB's world leaves after mapA's world leaves
 
@@ -1959,9 +1869,9 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-
 	if (overflows > 0)
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0993), overflows);
+
 
 
 	// recompress the combined vis data

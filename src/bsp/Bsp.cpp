@@ -1,5 +1,4 @@
 #include "Bsp.h"
-#include "lang.h"
 #include "util.h"
 #include "log.h"
 #include "lodepng.h"
@@ -14,6 +13,7 @@
 #include "quantizer.h"
 #include "Wad.h"
 #include "Clipper.h"
+#include "MutexManager.h"
 
 #include "JACK_jmf.h"
 #include "XASH_csm.h"
@@ -21,6 +21,7 @@
 #include <deque>
 #include <execution>
 #include <stack>
+#include <numeric>
 
 vec3 default_hull_extents[MAX_MAP_HULLS] = {
 	vec3(0.0f,  0.0f,  0.0f),	// hull 0
@@ -263,7 +264,7 @@ Bsp::Bsp(std::string fpath)
 		entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
 	}
 	else {
-		entFilePath = g_working_dir + (bsp_name + ".ent");
+		entFilePath = g_working_dir + "exported_entities/" + (bsp_name + ".ent");
 	}
 
 	if (g_settings.auto_import_ent && fileExists(entFilePath))
@@ -1031,30 +1032,70 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		g_progress.update("Moving structures", (int)ents.size() - 1);
 	}
 
-	BSPMODEL& target = models[modelIdx];
-
 	// all ents should be moved if the world is being moved
 	bool movingWorld = modelIdx == 0 && !onlyModel;
 
-	// Submodels don't use leaves like the world model does. Only the contents of a leaf matters
-	// for submodels. All other data is ignored. bspguy will reuse world leaves in submodels to 
-	// save space, which means moving leaves for those models would likely break something else.
-	// So, don't move leaves for submodels.
-	// bool dontMoveLeaves = !movingWorld;
+	std::set<int> modelsWithOrigin;
+	if (movingWorld)
+	{
+		for (auto& ent : ents)
+		{
+			int mIdx = ent->getBspModelIdx();
+			if (mIdx > 0 && mIdx < modelCount && ent->hasKey("origin"))
+			{
+				modelsWithOrigin.insert(mIdx);
+			}
+		}
+	}
 
-	if (!forceMove && does_model_use_shared_structures(modelIdx))
-		split_shared_model_structures(modelIdx);
-
+	if (!forceMove)
+	{
+		if (movingWorld)
+		{
+			for (int i = 0; i < modelCount; i++)
+			{
+				if (i > 0 && modelsWithOrigin.count(i))
+					continue;
+				if (does_model_use_shared_structures(i))
+					split_shared_model_structures(i);
+			}
+		}
+		else
+		{
+			if (does_model_use_shared_structures(modelIdx))
+				split_shared_model_structures(modelIdx);
+		}
+	}
 
 	if (movingWorld)
 	{
+		std::set<int> updatedModels;
 		for (size_t i = 1; i < ents.size(); i++)
 		{ // don't move the world entity
 			if (logged)
 				g_progress.tick();
 
-			vec3 ori = ents[i]->origin;
-			ori += offset;
+			int mIdx = ents[i]->getBspModelIdx();
+			if (mIdx > 0 && mIdx < modelCount)
+			{
+				if (ents[i]->hasKey("origin"))
+				{
+					// Brush entity with origin: move origin key and vOrigin.
+					// Geometry will NOT be moved to avoid double-offsetting in-game.
+					ents[i]->origin += offset;
+					ents[i]->setOrAddKeyvalue("origin", ents[i]->origin.toKeyvalueString());
+					if (updatedModels.find(mIdx) == updatedModels.end())
+					{
+						models[mIdx].vOrigin += offset;
+						updatedModels.insert(mIdx);
+					}
+				}
+				// else: Brush without origin: geometry will be moved.
+				continue;
+			}
+
+			// Point entity: update origin keyvalue.
+			ents[i]->origin += offset;
 
 			if (ents[i]->hasKey("spawnorigin"))
 			{
@@ -1067,26 +1108,54 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 				}
 			}
 
-			ents[i]->setOrAddKeyvalue("origin", ori.toKeyvalueString());
+			ents[i]->setOrAddKeyvalue("origin", ents[i]->origin.toKeyvalueString());
+		}
+
+		for (int i = 0; i < modelCount; i++)
+		{
+			if (i > 0 && modelsWithOrigin.count(i))
+				continue;
+
+			models[i].vOrigin += offset;
+			models[i].nMins += offset;
+			models[i].nMaxs += offset;
 		}
 
 		update_ent_lump();
 	}
+	else
+	{
+		models[modelIdx].vOrigin += offset;
+		models[modelIdx].nMins += offset;
+		models[modelIdx].nMaxs += offset;
+	}
 
-	target.nMins += offset;
-	target.nMaxs += offset;
-	if (std::fabs(target.nMins.x) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMins.y) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMins.z) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMaxs.x) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMaxs.y) > g_limits.fltMaxCoord ||
-		std::fabs(target.nMaxs.z) > g_limits.fltMaxCoord)
+	if (std::fabs(models[modelIdx].nMins.x) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMins.y) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMins.z) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMaxs.x) > g_limits.fltMaxCoord ||
+		std::fabs(models[modelIdx].nMaxs.y) > g_limits.fltMaxCoord ||
+		// Wait, if movingWorld is true, modelIdx is 0. If it's a submodel, it's modelIdx.
+		// For movingWorld, it might be better to check model 0's bounds.
+		std::fabs(models[modelIdx].nMaxs.z) > g_limits.fltMaxCoord)
 	{
 		print_log(get_localized_string(LANG_0049));
 	}
 
 	STRUCTUSAGE shouldBeMoved(this);
-	mark_model_structures(modelIdx, &shouldBeMoved, false /*dontMoveLeaves*/);
+	if (movingWorld)
+	{
+		for (int i = 0; i < modelCount; i++)
+		{
+			if (i > 0 && modelsWithOrigin.count(i))
+				continue;
+			mark_model_structures(i, &shouldBeMoved, false);
+		}
+	}
+	else
+	{
+		mark_model_structures(modelIdx, &shouldBeMoved, false /*dontMoveLeaves*/);
+	}
 
 	for (int i = 0; i < nodeCount; i++)
 	{
@@ -1199,6 +1268,156 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	}
 
 	return true;
+}
+
+void Bsp::transform(int modelIdx, mat4x4 matrix, vec3 center, bool logged)
+{
+	if (modelIdx < 0 || modelIdx >= modelCount)
+		return;
+
+	if (logged)
+	{
+		save_undo_lightmaps();
+		g_progress.update("Transforming structures", 1);
+	}
+
+	if (does_model_use_shared_structures(modelIdx))
+		split_shared_model_structures(modelIdx);
+
+	STRUCTUSAGE usage(this);
+	mark_model_structures(modelIdx, &usage, false);
+
+	bool mirrored = matrix.determinant() < 0.0f;
+
+	for (int i = 0; i < vertCount; i++)
+	{
+		if (usage.verts[i])
+		{
+			vec3& v = verts[i];
+			vec4 v4(v - center, 1.0f);
+			v = (matrix * v4).xyz() + center;
+		}
+	}
+
+	std::vector<bool> planeFlipped(planeCount, false);
+	for (int i = 0; i < planeCount; i++)
+	{
+		if (usage.planes[i])
+		{
+			BSPPLANE& p = planes[i];
+			vec3 origin = p.vNormal * p.fDist;
+			vec4 v4(origin - center, 1.0f);
+			vec3 newOrigin = (matrix * v4).xyz() + center;
+			vec4 n4(p.vNormal, 0.0f);
+			p.vNormal = (matrix * n4).xyz().normalize();
+			p.fDist = dotProduct(p.vNormal, newOrigin);
+			planeFlipped[i] = p.update_plane(true);
+		}
+	}
+
+	for (int i = 0; i < texinfoCount; i++)
+	{
+		if (usage.texInfo[i])
+		{
+			BSPTEXTUREINFO& info = texinfos[i];
+			vec4 s4(info.vS, 0.0f);
+			vec4 t4(info.vT, 0.0f);
+			vec3 oldS = info.vS;
+			vec3 oldT = info.vT;
+			info.vS = (matrix * s4).xyz();
+			info.vT = (matrix * t4).xyz();
+
+			// Adjust shifts to keep texture alignment
+			float u = dotProduct(oldS, center) + info.shiftS;
+			float v = dotProduct(oldT, center) + info.shiftT;
+			info.shiftS = u - dotProduct(info.vS, center);
+			info.shiftT = v - dotProduct(info.vT, center);
+		}
+	}
+
+	for (int i = 0; i < faceCount; i++)
+	{
+		if (usage.faces[i])
+		{
+			BSPFACE32& face = faces[i];
+			if (mirrored)
+			{
+				std::vector<int> edges_idx;
+				for (int e = 0; e < face.nEdges; e++)
+				{
+					edges_idx.push_back(surfedges[face.iFirstEdge + e]);
+				}
+				std::reverse(edges_idx.begin(), edges_idx.end());
+				for (int e = 0; e < face.nEdges; e++)
+				{
+					surfedges[face.iFirstEdge + e] = -edges_idx[e];
+				}
+			}
+			if (planeFlipped[face.iPlane])
+			{
+				face.nPlaneSide = !face.nPlaneSide;
+			}
+		}
+	}
+
+	for (int i = 0; i < nodeCount; i++)
+	{
+		if (usage.nodes[i])
+		{
+			BSPNODE32& node = nodes[i];
+			vec4 vmin(node.nMins.x - center.x, node.nMins.y - center.y, node.nMins.z - center.z, 1.0f);
+			vec4 vmax(node.nMaxs.x - center.x, node.nMaxs.y - center.y, node.nMaxs.z - center.z, 1.0f);
+			vec3 v1 = (matrix * vmin).xyz() + center;
+			vec3 v2 = (matrix * vmax).xyz() + center;
+			node.nMins = vec3(std::min(v1.x, v2.x), std::min(v1.y, v2.y), std::min(v1.z, v2.z));
+			node.nMaxs = vec3(std::max(v1.x, v2.x), std::max(v1.y, v2.y), std::max(v1.z, v2.z));
+
+			if (planeFlipped[node.iPlane])
+			{
+				std::swap(node.iChildren[0], node.iChildren[1]);
+			}
+		}
+	}
+
+	for (int i = 0; i < clipnodeCount; i++)
+	{
+		if (usage.clipnodes[i])
+		{
+			if (planeFlipped[clipnodes[i].iPlane])
+			{
+				std::swap(clipnodes[i].iChildren[0], clipnodes[i].iChildren[1]);
+			}
+		}
+	}
+
+	for (int i = 0; i < leafCount; i++)
+	{
+		if (usage.leaves[i])
+		{
+			BSPLEAF32& leaf = leaves[i];
+			vec4 vmin(leaf.nMins.x - center.x, leaf.nMins.y - center.y, leaf.nMins.z - center.z, 1.0f);
+			vec4 vmax(leaf.nMaxs.x - center.x, leaf.nMaxs.y - center.y, leaf.nMaxs.z - center.z, 1.0f);
+			vec3 v1 = (matrix * vmin).xyz() + center;
+			vec3 v2 = (matrix * vmax).xyz() + center;
+			leaf.nMins = vec3(std::min(v1.x, v2.x), std::min(v1.y, v2.y), std::min(v1.z, v2.z));
+			leaf.nMaxs = vec3(std::max(v1.x, v2.x), std::max(v1.y, v2.y), std::max(v1.z, v2.z));
+		}
+	}
+
+	BSPMODEL& model = models[modelIdx];
+	vec4 mins4(model.nMins - center, 1.0f);
+	vec4 maxs4(model.nMaxs - center, 1.0f);
+	vec3 newMins = (matrix * mins4).xyz() + center;
+	vec3 newMaxs = (matrix * maxs4).xyz() + center;
+	model.nMins = vec3(std::min(newMins.x, newMaxs.x), std::min(newMins.y, newMaxs.y), std::min(newMins.z, newMaxs.z));
+	model.nMaxs = vec3(std::max(newMins.x, newMaxs.x), std::max(newMins.y, newMaxs.y), std::max(newMins.z, newMaxs.z));
+
+	if (logged)
+	{
+		resize_all_lightmaps();
+		g_progress.clear();
+		g_progress = ProgressMeter();
+	}
 }
 
 void Bsp::move_texinfo(BSPTEXTUREINFO& info, vec3 offset)
@@ -1608,53 +1827,82 @@ LumpState Bsp::duplicate_lumps(unsigned int targets)
 	return state;
 }
 
-int Bsp::delete_embedded_textures()
+int Bsp::unembed_textures(std::vector<int> texIndices)
 {
-	unsigned int headerSz = (textureCount + 1) * sizeof(int);
-	unsigned int newTexDataSize = headerSz + (textureCount * sizeof(BSPMIPTEX));
+	if (texIndices.empty())
+		return 0;
 
-	unsigned char* newTextureData = new unsigned char[newTexDataSize + sizeof(int)];
-	memset(newTextureData, 0, newTexDataSize);
+	std::set<int> toUnembed(texIndices.begin(), texIndices.end());
 
-	int* header = (int*)newTextureData;
-	int offset = headerSz;
-
-	int numRemoved = 0;
+	int totalSize = 4;
 	for (int i = 0; i < textureCount; i++)
 	{
-		int oldoffset = ((int*)textures)[i + 1];
-		if (oldoffset < 0)
+		if (toUnembed.count(i))
 		{
-			numRemoved++;
+			totalSize += sizeof(BSPMIPTEX) + sizeof(int);
+		}
+		else
+		{
+			totalSize += getBspTextureSize(i) + sizeof(int);
+		}
+	}
+
+	totalSize = (totalSize + 3) & ~3; // 4 bytes align
+
+	unsigned char* newTextureData = new unsigned char[totalSize + sizeof(int)];
+	memset(newTextureData, 0, totalSize);
+
+	int* texHeader = (int*)newTextureData;
+	texHeader[0] = textureCount;
+
+	int newOffset = (textureCount + 1) * sizeof(int);
+	int numRemoved = 0;
+
+	for (int i = 0; i < textureCount; i++)
+	{
+		int oldOffset = ((int*)textures)[i + 1];
+		if (oldOffset < 0)
+		{
+			texHeader[i + 1] = -1;
 			continue;
 		}
 
-		header[0]++;
+		BSPMIPTEX* oldMip = (BSPMIPTEX*)(textures + oldOffset);
+		BSPMIPTEX* newMip = (BSPMIPTEX*)(newTextureData + newOffset);
 
-		BSPMIPTEX* oldMip = (BSPMIPTEX*)(textures + oldoffset);
-
-		if (oldMip->nOffsets[0] + oldMip->nOffsets[1] +
-			oldMip->nOffsets[2] + oldMip->nOffsets[3] > 0)
+		if (toUnembed.count(i))
 		{
-			numRemoved++;
+			if (oldMip->nOffsets[0] > 0)
+				numRemoved++;
+			memcpy(newMip, oldMip, sizeof(BSPMIPTEX));
+			newMip->nOffsets[0] = newMip->nOffsets[1] =
+				newMip->nOffsets[2] = newMip->nOffsets[3] = 0;
+			texHeader[i + 1] = newOffset;
+			newOffset += sizeof(BSPMIPTEX);
 		}
-
-		BSPMIPTEX* newMip = (BSPMIPTEX*)(newTextureData + offset);
-
-		memcpy(newMip, oldMip, sizeof(BSPMIPTEX));
-
-		newMip->nOffsets[0] = newMip->nOffsets[1] =
-			newMip->nOffsets[2] = newMip->nOffsets[3] = 0;
-
-		header[1 + i] = offset;
-		offset += sizeof(BSPMIPTEX);
+		else
+		{
+			int sz = getBspTextureSize(i);
+			memcpy(newTextureData + newOffset, textures + oldOffset, sz);
+			texHeader[i + 1] = newOffset;
+			newOffset += sz;
+		}
 	}
 
-	replace_lump(LUMP_TEXTURES, newTextureData, newTexDataSize);
+	replace_lump(LUMP_TEXTURES, newTextureData, totalSize);
 	delete[] newTextureData;
 
-	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
+	return numRemoved;
+}
 
+int Bsp::delete_embedded_textures()
+{
+	std::vector<int> allIndices;
+	for (int i = 0; i < textureCount; i++)
+		allIndices.push_back(i);
+
+	int numRemoved = unembed_textures(allIndices);
+	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 	return numRemoved;
 }
 
@@ -2312,7 +2560,10 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 
 	for (unsigned int i = 0; i < newCounts.markSurfs; i++)
 	{
-		marksurfs[i] = remap.faces[marksurfs[i]];
+		if (marksurfs[i] >= 0 && marksurfs[i] < (int)remap.faces.size())
+			marksurfs[i] = remap.faces[marksurfs[i]];
+		else
+			marksurfs[i] = 0;
 
 		if (!(target & CLEAN_LEAVES))
 		{
@@ -2366,7 +2617,15 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	{
 		nodes[i].iPlane = remap.planes[nodes[i].iPlane];
 		if (nodes[i].nFaces > 0)
-			nodes[i].iFirstFace = remap.faces[nodes[i].iFirstFace];
+		{
+			if (nodes[i].iFirstFace >= 0 && nodes[i].iFirstFace < (int)remap.faces.size())
+				nodes[i].iFirstFace = remap.faces[nodes[i].iFirstFace];
+			else
+			{
+				nodes[i].iFirstFace = 0;
+				nodes[i].nFaces = 0;
+			}
+		}
 		for (int k = 0; k < 2; k++)
 		{
 			if (nodes[i].iChildren[k] >= 0)
@@ -2396,7 +2655,18 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	for (int i = 0; i < modelCount; i++)
 	{
 		if (models[i].nFaces > 0)
-			models[i].iFirstFace = remap.faces[models[i].iFirstFace];
+		{
+			if (models[i].iFirstFace >= 0 && models[i].iFirstFace < (int)remap.faces.size())
+				models[i].iFirstFace = remap.faces[models[i].iFirstFace];
+			else
+			{
+				models[i].iFirstFace = 0;
+				models[i].nFaces = 0;
+			}
+		}
+		else
+			models[i].iFirstFace = 0;
+
 		if (models[i].iHeadnodes[0] >= 0)
 			models[i].iHeadnodes[0] = remap.nodes[models[i].iHeadnodes[0]];
 		for (int k = 1; k < MAX_MAP_HULLS; k++)
@@ -3157,7 +3427,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 
 
 void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes) {
+	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect) {
 	BSPNODE32& node = nodes[iNode];
 
 	if (node.iPlane < 0) {
@@ -3176,12 +3446,12 @@ void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 
 		if (node.iChildren[i] >= 0) {
 			delete_box_nodes(node.iChildren[i], &node.iChildren[i], clipOrder, clipMins, clipMaxs,
-				oobHistory, isFirstPass, removedNodes);
-			if (node.iChildren[i] >= 0) {
+				oobHistory, isFirstPass, removedNodes, redirect);
+			if (node.iChildren[i] >= 0 || (oobHistory && node.iChildren[i] == redirect)) {
 				isoob = false; // children weren't empty, so this node isn't empty either
 			}
 		}
-		else if (isFirstPass) {
+		else {
 			std::vector<BSPPLANE> cuts;
 			for (int k = (int)clipOrder.size() - 1; k >= 0; k--) {
 				cuts.push_back(clipOrder[k]);
@@ -3190,14 +3460,34 @@ void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 			Clipper clipper;
 			CMesh nodeVolume = clipper.clip(cuts);
 
+			vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
+			vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+			bool anyVisible = false;
+
 			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
+				expandBoundingBox(v, mins, maxs);
+				anyVisible = true;
+			}
 
-				if (!pointInBox(v, clipMins, clipMaxs)) {
-					isoob = false; // node can't be empty if both children aren't oob
+			bool leafInsideBox = anyVisible && (mins.x >= clipMins.x && maxs.x <= clipMaxs.x &&
+				mins.y >= clipMins.y && maxs.y <= clipMaxs.y &&
+				mins.z >= clipMins.z && maxs.z <= clipMaxs.z);
+
+			if (isFirstPass) {
+				if (!leafInsideBox) {
+					isoob = false;
 				}
+			}
+			else if (leafInsideBox) {
+				// unlinking leaves in Hull 0 is risky because it shares leaves with the whole world.
+				// However, if redirect is CONTENTS_SOLID, we are effectively removing air.
+				// Since this is currently called with CONTENTS_SOLID in delete_box_data, we'll keep it.
+				// But we should probably not unlink Hull 0 leaves in delete_faces_and_collision.
+				node.iChildren[i] = redirect;
+				removedNodes++;
 			}
 		}
 
@@ -3205,22 +3495,18 @@ void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 	}
 
 	if (isFirstPass) {
-		// only check if each node is ever considered in bounds, after considering all branches.
-		// don't remove anything until the entire tree has been scanned
-
 		if (!isoob) {
 			oobHistory[iNode] = false;
 		}
 	}
 	else if (parentBranch && isoob) {
-		// we know which nodes are OOB now, so it's safe to unlink this node from the paranet
-		*parentBranch = CONTENTS_SOLID;
+		*parentBranch = redirect;
 		removedNodes++;
 	}
 }
 
 void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes) {
+	vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect) {
 	BSPCLIPNODE32& node = clipnodes[iNode];
 
 	if (node.iPlane < 0) {
@@ -3239,12 +3525,12 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 
 		if (node.iChildren[i] >= 0) {
 			delete_box_clipnodes(node.iChildren[i], &node.iChildren[i], clipOrder, clipMins, clipMaxs,
-				oobHistory, isFirstPass, removedNodes);
-			if (node.iChildren[i] >= 0) {
+				oobHistory, isFirstPass, removedNodes, redirect);
+			if (node.iChildren[i] >= 0 || (oobHistory && node.iChildren[i] == redirect)) {
 				isoob = false; // children weren't empty, so this node isn't empty either
 			}
 		}
-		else if (isFirstPass) {
+		else {
 			std::vector<BSPPLANE> cuts;
 			for (int k = (int)clipOrder.size() - 1; k >= 0; k--) {
 				cuts.push_back(clipOrder[k]);
@@ -3255,17 +3541,28 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 
 			vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
 			vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+			bool anyVisible = false;
 
 			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
-
 				expandBoundingBox(v, mins, maxs);
+				anyVisible = true;
 			}
 
-			if (!boxesIntersect(mins, maxs, clipMins, clipMaxs)) {
-				isoob = false; // node can't be empty if both children aren't in the clip box
+			bool leafInsideBox = anyVisible && (mins.x >= clipMins.x && maxs.x <= clipMaxs.x &&
+				mins.y >= clipMins.y && maxs.y <= clipMaxs.y &&
+				mins.z >= clipMins.z && maxs.z <= clipMaxs.z);
+
+			if (isFirstPass) {
+				if (!leafInsideBox) {
+					isoob = false;
+				}
+			}
+			else if (leafInsideBox) {
+				node.iChildren[i] = redirect;
+				removedNodes++;
 			}
 		}
 
@@ -3273,17 +3570,137 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 	}
 
 	if (isFirstPass) {
-		// only check if each node is ever considered in bounds, after considering all branches.
-		// don't remove anything until the entire tree has been scanned
-
 		if (!isoob) {
 			oobHistory[iNode] = false;
 		}
 	}
 	else if (parentBranch && isoob) {
-		// we know which nodes are OOB now, so it's safe to unlink this node from the paranet
-		*parentBranch = CONTENTS_SOLID;
+		*parentBranch = redirect;
 		removedNodes++;
+	}
+}
+
+int Bsp::delete_box_nodes_fast(int iNode, vec3 clipMins, vec3 clipMaxs, int redirect) {
+	if (iNode < 0)
+		return iNode;
+
+	BSPNODE32& node = nodes[iNode];
+
+	if (node.nMins.x > clipMaxs.x || node.nMaxs.x < clipMins.x ||
+		node.nMins.y > clipMaxs.y || node.nMaxs.y < clipMins.y ||
+		node.nMins.z > clipMaxs.z || node.nMaxs.z < clipMins.z) {
+		return iNode;
+	}
+
+	if (node.nMins.x >= clipMins.x && node.nMaxs.x <= clipMaxs.x &&
+		node.nMins.y >= clipMins.y && node.nMaxs.y <= clipMaxs.y &&
+		node.nMins.z >= clipMins.z && node.nMaxs.z <= clipMaxs.z) {
+		return redirect;
+	}
+
+	for (int i = 0; i < 2; i++) {
+		node.iChildren[i] = delete_box_nodes_fast(node.iChildren[i], clipMins, clipMaxs, redirect);
+	}
+
+	if (node.iChildren[0] < 0 && node.iChildren[0] == node.iChildren[1]) {
+		return node.iChildren[0];
+	}
+
+	return iNode;
+}
+
+int Bsp::delete_box_clipnodes_fast(int iNode, std::vector<BSPPLANE>& clipOrder,
+	vec3 clipMins, vec3 clipMaxs, int redirect) {
+	if (iNode < 0) {
+		std::vector<BSPPLANE> cuts;
+		for (int k = (int)clipOrder.size() - 1; k >= 0; k--) {
+			cuts.push_back(clipOrder[k]);
+		}
+
+		Clipper clipper;
+		CMesh nodeVolume = clipper.clip(cuts);
+
+		vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
+		vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		bool anyVisible = false;
+
+		for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
+			if (!nodeVolume.verts[k].visible)
+				continue;
+			vec3 v = nodeVolume.verts[k].pos;
+			expandBoundingBox(v, mins, maxs);
+			anyVisible = true;
+		}
+
+		if (anyVisible && (mins.x >= clipMins.x - 0.01f && maxs.x <= clipMaxs.x + 0.01f &&
+			mins.y >= clipMins.y - 0.01f && maxs.y <= clipMaxs.y + 0.01f &&
+			mins.z >= clipMins.z - 0.01f && maxs.z <= clipMaxs.z + 0.01f)) {
+			return redirect;
+		}
+		return iNode;
+	}
+
+	BSPCLIPNODE32& node = clipnodes[iNode];
+
+	for (int i = 0; i < 2; i++) {
+		BSPPLANE plane = planes[node.iPlane];
+		if (i != 0) {
+			plane.vNormal = plane.vNormal.invert();
+			plane.fDist = -plane.fDist;
+		}
+
+		bool box_behind = true;
+		for (int k = 0; k < 8; k++) {
+			vec3 corner = vec3(
+				(k & 1) ? clipMaxs.x : clipMins.x,
+				(k & 2) ? clipMaxs.y : clipMins.y,
+				(k & 4) ? clipMaxs.z : clipMins.z
+			);
+			if (dotProduct(plane.vNormal, corner) - plane.fDist > 0.01f) {
+				box_behind = false;
+				break;
+			}
+		}
+
+		if (box_behind) continue;
+
+		clipOrder.push_back(plane);
+		node.iChildren[i] = delete_box_clipnodes_fast(node.iChildren[i], clipOrder, clipMins, clipMaxs, redirect);
+		clipOrder.pop_back();
+	}
+
+	if (node.iChildren[0] < 0 && node.iChildren[0] == node.iChildren[1]) {
+		return node.iChildren[0];
+	}
+
+	return iNode;
+}
+
+void Bsp::delete_hull_in_box(int hullIdx, vec3 clipMins, vec3 clipMaxs, int redirect) {
+	BSPMODEL& worldmodel = models[0];
+
+	if (hullIdx < 0 || hullIdx >= MAX_MAP_HULLS)
+		return;
+
+	if (hullIdx == 0) {
+		int realRedirect = redirect;
+		if (redirect == CONTENTS_EMPTY) {
+			realRedirect = ~(create_leaf(CONTENTS_EMPTY));
+		}
+		else if (redirect == CONTENTS_SOLID) {
+			realRedirect = ~(create_leaf(CONTENTS_SOLID));
+		}
+		worldmodel.iHeadnodes[0] = delete_box_nodes_fast(worldmodel.iHeadnodes[0], clipMins, clipMaxs, realRedirect);
+	}
+	else {
+		std::vector<BSPPLANE> clipOrder;
+		worldmodel.iHeadnodes[hullIdx] = delete_box_clipnodes_fast(worldmodel.iHeadnodes[hullIdx], clipOrder, clipMins, clipMaxs, redirect);
+	}
+}
+
+void Bsp::delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect) {
+	for (int i = 1; i < MAX_MAP_HULLS; i++) {
+		delete_hull_in_box(i, clipMins, clipMaxs, redirect);
 	}
 }
 
@@ -4587,10 +5004,13 @@ void Bsp::write(const std::string& path)
 	if (g_settings.savebackup)
 	{
 		std::vector<unsigned char> oldData;
-		if (!fileExists(path + ".bak") && readFile(path, oldData))
+		std::string backupDir = g_working_dir + "backup/";
+		createDir(backupDir);
+		std::string backupPath = backupDir + basename(path) + ".bak";
+		if (!fileExists(backupPath) && readFile(path, oldData))
 		{
-			writeFile(path + ".bak", oldData);
-			print_log(get_localized_string(LANG_0074), path + ".bak");
+			writeFile(backupPath, oldData);
+			print_log(get_localized_string(LANG_0074), backupPath);
 		}
 	}
 
@@ -4633,13 +5053,14 @@ void Bsp::write(const std::string& path)
 
 	if (target_save_texture_has_pal != is_texture_has_pal)
 	{
-		createDir(g_working_dir);
-		removeFile(g_working_dir + "temp.wad");
-		if (ExportEmbeddedWad(g_working_dir + "temp.wad"))
+		createDir(g_working_dir + "temp/");
+		std::string tempWad = g_working_dir + "temp/temp.wad";
+		removeFile(tempWad);
+		if (ExportEmbeddedWad(tempWad))
 		{
 			is_texture_has_pal = target_save_texture_has_pal;
-			ImportWad(g_working_dir + "temp.wad");
-			removeFile(g_working_dir + "temp.wad");
+			ImportWad(tempWad);
+			removeFile(tempWad);
 		}
 	}
 
@@ -6411,16 +6832,6 @@ bool Bsp::validate()
 			renderer->preRenderFaces();
 		}
 	}
-	if (leaves)
-	{
-		unsigned int newVisRowSize = ((leafCount + 63) & ~63) >> 3;
-		int decompressedVisSize = leafCount * newVisRowSize;
-		unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
-		memset(decompressedVis, 0xFF, decompressedVisSize);
-		decompress_vis_lump(this, leaves, visdata, decompressedVis,
-			models[0].nVisLeafs, leafCount - 1, leafCount - 1, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
-		delete[] decompressedVis;
-	}
 	return isValid;
 }
 
@@ -7133,7 +7544,7 @@ bool Bsp::is_leaf_visible(int ileaf, vec3 pos) {
 	return isVisible;
 }
 
-bool Bsp::is_face_visible(int faceIdx, vec3 pos, vec3 angles) {
+bool Bsp::is_face_visible(int faceIdx, vec3 /*pos*/, vec3 /*angles*/) {
 	BSPFACE32& face = faces[faceIdx];
 	BSPPLANE& plane = planes[face.iPlane];
 	vec3 normal = plane.vNormal;
@@ -7191,7 +7602,7 @@ int Bsp::count_visible_polys(vec3 pos, vec3 angles) {
 
 void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 {
-	if (iFace > faceCount)
+	if (iFace < 0 || iFace >= faceCount)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0144));
 		return;
@@ -7201,23 +7612,34 @@ void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 
 	for (int e = 0; e < face.nEdges; e++)
 	{
-		int edgeIdx = surfedges[face.iFirstEdge + e];
-		BSPEDGE32& edge = edges[abs(edgeIdx)];
+		int sIdx = face.iFirstEdge + e;
+		if (sIdx < 0 || sIdx >= surfedgeCount) continue;
+		int edgeIdx = surfedges[sIdx];
+		int aEdgeIdx = abs(edgeIdx);
+		if (aEdgeIdx < 0 || aEdgeIdx >= edgeCount) continue;
+
+		BSPEDGE32& edge = edges[aEdgeIdx];
 		int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 
-		usage->surfEdges[face.iFirstEdge + e] = true;
-		usage->edges[abs(edgeIdx)] = true;
-		usage->verts[vertIdx] = true;
+		usage->surfEdges[sIdx] = true;
+		usage->edges[aEdgeIdx] = true;
+		if (vertIdx >= 0 && vertIdx < vertCount)
+			usage->verts[vertIdx] = true;
 	}
 
-	usage->texInfo[face.iTextureInfo] = true;
-	usage->planes[face.iPlane] = true;
-	usage->textures[texinfos[face.iTextureInfo].iMiptex] = true;
+	if (face.iTextureInfo >= 0 && face.iTextureInfo < texinfoCount) {
+		usage->texInfo[face.iTextureInfo] = true;
+		int mip = texinfos[face.iTextureInfo].iMiptex;
+		if (mip >= 0 && mip < textureCount)
+			usage->textures[mip] = true;
+	}
+	if (face.iPlane >= 0 && face.iPlane < planeCount)
+		usage->planes[face.iPlane] = true;
 }
 
 void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 {
-	if (iNode > nodeCount)
+	if (iNode < 0 || iNode >= nodeCount)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0145));
 		return;
@@ -7225,7 +7647,8 @@ void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 	BSPNODE32& node = nodes[iNode];
 
 	usage->nodes[iNode] = true;
-	usage->planes[node.iPlane] = true;
+	if (node.iPlane >= 0 && node.iPlane < planeCount)
+		usage->planes[node.iPlane] = true;
 
 	for (int i = 0; i < node.nFaces; i++)
 	{
@@ -7240,21 +7663,26 @@ void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 		}
 		else if (!skipLeaves)
 		{
-			BSPLEAF32& leaf = leaves[~node.iChildren[i]];
-			for (int n = 0; n < leaf.nMarkSurfaces; n++)
-			{
-				usage->markSurfs[leaf.iFirstMarkSurface + n] = true;
-				mark_face_structures(marksurfs[leaf.iFirstMarkSurface + n], usage);
+			int leafIdx = ~node.iChildren[i];
+			if (leafIdx >= 0 && leafIdx < leafCount) {
+				BSPLEAF32& leaf = leaves[leafIdx];
+				for (int n = 0; n < leaf.nMarkSurfaces; n++)
+				{
+					int msIdx = leaf.iFirstMarkSurface + n;
+					if (msIdx >= 0 && msIdx < marksurfCount) {
+						usage->markSurfs[msIdx] = true;
+						mark_face_structures(marksurfs[msIdx], usage);
+					}
+				}
+				usage->leaves[leafIdx] = true;
 			}
-
-			usage->leaves[~node.iChildren[i]] = true;
 		}
 	}
 }
 
 void Bsp::mark_clipnode_structures(int iNode, STRUCTUSAGE* usage)
 {
-	if (iNode > clipnodeCount)
+	if (iNode < 0 || iNode >= clipnodeCount)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0146));
 		return;
@@ -7262,7 +7690,8 @@ void Bsp::mark_clipnode_structures(int iNode, STRUCTUSAGE* usage)
 	BSPCLIPNODE32& node = clipnodes[iNode];
 
 	usage->clipnodes[iNode] = true;
-	usage->planes[node.iPlane] = true;
+	if (node.iPlane >= 0 && node.iPlane < planeCount)
+		usage->planes[node.iPlane] = true;
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -7728,6 +8157,8 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	{
 		COLOR3* src = (COLOR3*)data;
 
+		bool isTransparent = name[0] == '{';
+
 		// If custom pal || quake || force quake
 		if (!is_texture_has_pal || force_custompal)
 		{
@@ -7756,25 +8187,45 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			for (int x = 0; x < width; x++)
 			{
 				int paletteIdx = -1;
-				for (int k = 0; k < colorCount; k++)
+
+				if (isTransparent && src->r == 0 && src->g == 0 && src->b == 255)
 				{
-					if (*src == palette[k])
-					{
-						paletteIdx = k;
-						break;
-					}
+					palette[255] = COLOR3(0, 0, 255);
+					paletteIdx = 255;
+					if (colorCount <= 255)
+						colorCount = 256;
 				}
-				if (paletteIdx == -1)
+				else
 				{
-					if (colorCount >= 256)
+					for (int k = 0; k < colorCount; k++)
 					{
-						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0167));
-						delete[] mip[0];
-						return -1;
+						if (isTransparent && k == 255)
+							continue;
+						if (*src == palette[k])
+						{
+							paletteIdx = k;
+							break;
+						}
 					}
-					palette[colorCount] = *src;
-					paletteIdx = colorCount;
-					colorCount++;
+					if (paletteIdx == -1)
+					{
+						int targetIdx = colorCount;
+						if (isTransparent && targetIdx == 255)
+						{
+							targetIdx = 256; // Skip 255 if it's reserved
+						}
+
+						if (targetIdx >= 256)
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0167));
+							delete[] mip[0];
+							return -1;
+						}
+						palette[targetIdx] = *src;
+						paletteIdx = targetIdx;
+						if (targetIdx >= colorCount)
+							colorCount = targetIdx + 1;
+					}
 				}
 
 				mip[0][y * width + x] = (unsigned char)paletteIdx;
@@ -7796,12 +8247,22 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				for (int x = 0; x < mipWidth; x++)
 				{
 					int paletteIdx = -1;
-					for (int k = 0; k < colorCount; k++)
+
+					if (isTransparent && src->r == 0 && src->g == 0 && src->b == 255)
 					{
-						if (*src == palette[k])
+						paletteIdx = 255;
+					}
+					else
+					{
+						for (int k = 0; k < colorCount; k++)
 						{
-							paletteIdx = k;
-							break;
+							if (isTransparent && k == 255)
+								continue;
+							if (*src == palette[k])
+							{
+								paletteIdx = k;
+								break;
+							}
 						}
 					}
 
@@ -8010,7 +8471,11 @@ bool Bsp::export_wad_to_pngs(const std::string& wadpath, const std::string& targ
 					print_log(get_localized_string(LANG_0346), texture.szName, basename(wad->filename));
 					COLOR4* texturedata = ConvertWadTexToRGBA(texture);
 
-					lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture.szName) + ".png").c_str()
+					std::string exportPath = g_working_dir + "exported_wads/pngs/" + basename(wad->filename) + "/";
+					createDir(g_working_dir + "exported_wads/");
+					createDir(g_working_dir + "exported_wads/pngs/");
+					createDir(exportPath);
+					lodepng_encode32_file((exportPath + std::string(texture.szName) + ".png").c_str()
 						, (unsigned char*)texturedata, texture.nWidth, texture.nHeight);
 					delete texturedata;
 				}
@@ -8066,11 +8531,15 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 		std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
 			{
 				print_log(get_localized_string(LANG_0352), basename(file), basename(wadpath));
-				COLOR4* image_bytes = NULL;
+				unsigned char* img_malloc = NULL;
 				unsigned int w2, h2;
-				auto error = lodepng_decode32_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str());
-				if (error == 0 && image_bytes)
+				auto error = lodepng_decode32_file(&img_malloc, &w2, &h2, file.c_str());
+				if (error == 0 && img_malloc)
 				{
+					COLOR4* image_bytes = new COLOR4[w2 * h2];
+					memcpy(image_bytes, img_malloc, w2 * h2 * 4);
+					free(img_malloc);
+
 					COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
 					for (unsigned int i = 0; i < w2 * h2; i++)
 					{
@@ -8105,9 +8574,10 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 					std::string tmpTexName = stripExt(basename(file));
 
 					WADTEX tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-					g_mutex_list[1].lock();
-					textureList.push_back(tmpWadTex);
-					g_mutex_list[1].unlock();
+					{
+						std::lock_guard<std::mutex> lock(Sync::BspOps);
+						textureList.push_back(tmpWadTex);
+					}
 					free(image_bytes);
 				}
 			});
@@ -9069,7 +9539,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
-		if (usage.planes[i])
+		if (usage.planes[i] && i < (int)remap.planes.size())
 		{
 			remap.planes[i] = targetMap->planeCount + (int)newPlanes.size();
 			newPlanes.push_back(this->planes[i]);
@@ -9078,7 +9548,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.verts; i++)
 	{
-		if (usage.verts[i])
+		if (usage.verts[i] && i < (int)remap.verts.size())
 		{
 			remap.verts[i] = targetMap->vertCount + (int)newVerts.size();
 			newVerts.push_back(this->verts[i]);
@@ -9087,27 +9557,35 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.edges; i++)
 	{
-		if (usage.edges[i])
+		if (usage.edges[i] && i < (int)remap.edges.size())
 		{
 			remap.edges[i] = targetMap->edgeCount + (int)newEdges.size();
 
 			BSPEDGE32 edge = this->edges[i];
-			for (int k = 0; k < 2; k++)
-				edge.iVertex[k] = remap.verts[edge.iVertex[k]];
+			for (int k = 0; k < 2; k++) {
+				if (edge.iVertex[k] >= 0 && edge.iVertex[k] < (int)remap.verts.size())
+					edge.iVertex[k] = remap.verts[edge.iVertex[k]];
+			}
 			newEdges.push_back(edge);
 		}
 	}
 
 	for (unsigned int i = 0; i < usage.count.surfEdges; i++)
 	{
-		if (usage.surfEdges[i])
+		if (usage.surfEdges[i] && i < (int)remap.surfEdges.size())
 		{
 			remap.surfEdges[i] = targetMap->surfedgeCount + (int)newSurfedges.size();
 
-			int surfedge = remap.edges[abs(this->surfedges[i])];
-			if (surfedges[i] < 0)
-				surfedge = -surfedge;
-			newSurfedges.push_back(surfedge);
+			int edgeIdx = abs(this->surfedges[i]);
+			if (edgeIdx < (int)remap.edges.size()) {
+				int surfedge = remap.edges[edgeIdx];
+				if (this->surfedges[i] < 0)
+					surfedge = -surfedge;
+				newSurfedges.push_back(surfedge);
+			}
+			else {
+				newSurfedges.push_back(0);
+			}
 		}
 	}
 
@@ -9116,10 +9594,10 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.texInfos; i++)
 	{
-		if (usage.texInfo[i])
+		if (usage.texInfo[i] && i < (int)remap.texInfo.size())
 		{
 			BSPTEXTUREINFO texinfo = texinfos[i];
-			if (texinfo.iMiptex >= 0)
+			if (texinfo.iMiptex >= 0 && texinfo.iMiptex < textureCount)
 			{
 				int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
 				if (texOffset >= 0 && !usedmips.count(texinfo.iMiptex))
@@ -9156,14 +9634,17 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	int lightmapAppendSz = 0;
 	for (unsigned int i = 0; i < usage.count.faces; i++)
 	{
-		if (usage.faces[i])
+		if (usage.faces[i] && i < (int)remap.faces.size())
 		{
 			remap.faces[i] = targetMap->faceCount + (int)newFaces.size();
 
 			BSPFACE32 face = faces[i];
-			face.iFirstEdge = remap.surfEdges[face.iFirstEdge];
-			face.iPlane = remap.planes[face.iPlane];
-			face.iTextureInfo = remap.texInfo[face.iTextureInfo];
+			if (face.iFirstEdge >= 0 && face.iFirstEdge < (int)remap.surfEdges.size())
+				face.iFirstEdge = remap.surfEdges[face.iFirstEdge];
+			if (face.iPlane >= 0 && face.iPlane < (int)remap.planes.size())
+				face.iPlane = remap.planes[face.iPlane];
+			if (face.iTextureInfo >= 0 && face.iTextureInfo < (int)remap.texInfo.size())
+				face.iTextureInfo = remap.texInfo[face.iTextureInfo];
 
 			// TODO: Check if face even has lighting
 			int size[2];
@@ -9198,23 +9679,25 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	{
 		for (unsigned int i = 0; i < usage.count.markSurfs; i++)
 		{
-			if (usage.markSurfs[i])
+			if (usage.markSurfs[i] && i < (int)remap.markSurfs.size())
 			{
 				remap.markSurfs[i] = targetMap->marksurfCount + (int)newMarkSurfs.size();
-				int marksurf = remap.faces[this->marksurfs[i]];
+				int msFaceIdx = this->marksurfs[i];
+				int marksurf = (msFaceIdx >= 0 && msFaceIdx < (int)remap.faces.size()) ? remap.faces[msFaceIdx] : 0;
 				newMarkSurfs.push_back(marksurf);
 			}
 		}
 
 		for (unsigned int i = 0; i < usage.count.leaves; i++)
 		{
-			if (usage.leaves[i])
+			if (usage.leaves[i] && i < (int)remap.leaves.size())
 			{
 				remap.leaves[i] = targetMap->leafCount + (int)newLeafs.size();
 				BSPLEAF32 leaf = this->leaves[i];
 				// no visdata at this time
 				leaf.nVisOffset = -1;
-				leaf.iFirstMarkSurface = remap.markSurfs[leaf.iFirstMarkSurface];
+				if (leaf.iFirstMarkSurface >= 0 && leaf.iFirstMarkSurface < (int)remap.markSurfs.size())
+					leaf.iFirstMarkSurface = remap.markSurfs[leaf.iFirstMarkSurface];
 				newLeafs.push_back(leaf);
 			}
 		}
@@ -9222,7 +9705,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.nodes; i++)
 	{
-		if (usage.nodes[i])
+		if (usage.nodes[i] && i < (int)remap.nodes.size())
 		{
 			remap.nodes[i] = targetMap->nodeCount + (int)newNodes.size();
 			newNodes.push_back(this->nodes[i]);
@@ -9234,26 +9717,36 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	for (size_t i = 0; i < newNodes.size(); i++)
 	{
 		BSPNODE32& node = newNodes[i];
-		node.iFirstFace = remap.faces[node.iFirstFace];
-		node.iPlane = remap.planes[node.iPlane];
+		if (node.iFirstFace >= 0 && node.iFirstFace < (int)remap.faces.size())
+			node.iFirstFace = remap.faces[node.iFirstFace];
+		if (node.iPlane >= 0 && node.iPlane < (int)remap.planes.size())
+			node.iPlane = remap.planes[node.iPlane];
 
 		for (int k = 0; k < 2; k++)
 		{
 			if (node.iChildren[k] >= 0)
 			{
-				node.iChildren[k] = remap.nodes[node.iChildren[k]];
+				if (node.iChildren[k] < (int)remap.nodes.size())
+					node.iChildren[k] = remap.nodes[node.iChildren[k]];
+				else if (forExport)
+					node.iChildren[k] = -1;
 			}
 			else if (forExport)
 			{
 				int leafIdx = ~node.iChildren[k];
-				if (leafIdx == 0)
-				{
-					node.iChildren[k] = -1;
-					if (~(remap.leaves[leafIdx]) != -1)
-						found_zero_leaf = true;
+				if (leafIdx >= 0 && leafIdx < (int)remap.leaves.size()) {
+					if (leafIdx == 0)
+					{
+						node.iChildren[k] = -1;
+						if (~(remap.leaves[leafIdx]) != -1)
+							found_zero_leaf = true;
+					}
+					else
+						node.iChildren[k] = ~(remap.leaves[leafIdx]);
 				}
-				else
-					node.iChildren[k] = ~(remap.leaves[leafIdx]);
+				else {
+					node.iChildren[k] = -1;
+				}
 			}
 		}
 	}
@@ -9277,7 +9770,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 
 	for (unsigned int i = 0; i < usage.count.clipnodes; i++)
 	{
-		if (usage.clipnodes[i])
+		if (usage.clipnodes[i] && i < (int)remap.clipnodes.size())
 		{
 			remap.clipnodes[i] = targetMap->clipnodeCount + (int)newClipnodes.size();
 			newClipnodes.push_back(this->clipnodes[i]);
@@ -9287,13 +9780,17 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	for (size_t i = 0; i < newClipnodes.size(); i++)
 	{
 		BSPCLIPNODE32& clipnode = newClipnodes[i];
-		clipnode.iPlane = remap.planes[clipnode.iPlane];
+		if (clipnode.iPlane >= 0 && clipnode.iPlane < (int)remap.planes.size())
+			clipnode.iPlane = remap.planes[clipnode.iPlane];
 
 		for (int k = 0; k < 2; k++)
 		{
 			if (clipnode.iChildren[k] >= 0)
 			{
-				clipnode.iChildren[k] = remap.clipnodes[clipnode.iChildren[k]];
+				if (clipnode.iChildren[k] < (int)remap.clipnodes.size())
+					clipnode.iChildren[k] = remap.clipnodes[clipnode.iChildren[k]];
+				else
+					clipnode.iChildren[k] = -1;
 			}
 		}
 	}
@@ -9639,6 +10136,35 @@ std::vector<int> Bsp::getFaceContents(int faceIdx)
 	return out;
 }
 
+void Bsp::remove_faces(std::vector<int> faceIdxs)
+{
+	if (faceIdxs.empty())
+		return;
+
+	std::sort(faceIdxs.begin(), faceIdxs.end(), std::greater<int>());
+
+	g_progress.update("Removing faces", (int)faceIdxs.size());
+
+	int removedFaces = 0;
+	for (int faceIdx : faceIdxs)
+	{
+		if (remove_face(faceIdx))
+		{
+			removedFaces++;
+		}
+		g_progress.tick();
+	}
+
+	save_undo_lightmaps();
+	resize_all_lightmaps();
+
+	g_progress.clear();
+	g_progress = ProgressMeter();
+
+	print_log("Removed {} faces from map!\n", removedFaces);
+}
+
+
 void Bsp::remove_faces_by_content(int content)
 {
 	std::vector<int> faces_to_remove;
@@ -9664,25 +10190,7 @@ void Bsp::remove_faces_by_content(int content)
 		g_progress.tick();
 	}
 
-	g_progress.update("Remove faces by content[DELETE]", (int)faces_to_remove.size());
-
-	int removedFaces = 0;
-
-	while (faces_to_remove.size())
-	{
-		remove_face(faces_to_remove[faces_to_remove.size() - 1]);
-		faces_to_remove.pop_back();
-		g_progress.tick();
-		removedFaces++;
-	}
-
-	save_undo_lightmaps();
-	resize_all_lightmaps();
-
-	g_progress.clear();
-	g_progress = ProgressMeter();
-
-	print_log("Removed {} faces from map!\n", removedFaces);
+	remove_faces(faces_to_remove);
 }
 
 bool Bsp::remove_face(int faceIdx, bool fromModels)
@@ -11255,7 +11763,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	renderer->pushUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 }
 
-void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl, bool export_csm, int grouping)
+void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool /*lightmapmode*/, bool with_mdl, bool export_csm, int grouping)
 {
 	if (!createDir(path))
 	{
@@ -13371,8 +13879,9 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		if (getEmbeddedTexCount() > 0)
 		{
 			std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4) + "_emb.wad";
-			createDir(g_working_dir);
-			ExportEmbeddedWad(g_working_dir + basename(targetMapFileName));
+			std::string exportPath = g_working_dir + "exported_wads/";
+			createDir(exportPath);
+			ExportEmbeddedWad(exportPath + basename(targetMapFileName));
 			print_log(PRINT_BLUE, "Export {} wad!\n", targetMapFileName);
 		}
 
@@ -14487,7 +14996,7 @@ void Bsp::setBspRender(BspRenderer* rnd)
 	renderer = rnd;
 }
 
-void Bsp::decalShoot(vec3 pos, const std::string& texname)
+void Bsp::decalShoot(vec3 /*pos*/, const std::string& /*texname*/)
 {
 	/*if (!renderer || renderer->faceMaths.empty())
 		return;
@@ -14611,7 +15120,7 @@ int Bsp::getFaceFromPlane(int iPlane)
 }
 
 
-int Bsp::getFaceFromVec(const vec3& pos, int modelIdx, int& content)
+int Bsp::getFaceFromVec(const vec3& pos, int modelIdx, int& /*content*/)
 {
 	if (modelIdx >= 0 && modelIdx < modelCount)
 	{
@@ -14706,6 +15215,56 @@ bool Bsp::is_texture_with_pal(int textureid)
 	}
 
 	return is_texture_has_pal;
+}
+
+void Bsp::fix_invalid_model_face_ranges()
+{
+	for (int i = 0; i < modelCount; i++)
+	{
+		if (models[i].nFaces > 0 && (models[i].iFirstFace < 0 || models[i].iFirstFace >= faceCount || models[i].iFirstFace + models[i].nFaces > faceCount))
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Model {} has invalid face range: {} + {} (Total: {}). Resetting.\n",
+				i, models[i].iFirstFace, models[i].nFaces, faceCount);
+			models[i].iFirstFace = 0;
+			models[i].nFaces = 0;
+		}
+		else if (models[i].nFaces <= 0)
+		{
+			models[i].iFirstFace = 0;
+			models[i].nFaces = 0;
+		}
+	}
+
+	for (int i = 0; i < nodeCount; i++)
+	{
+		if (nodes[i].nFaces > 0 && (nodes[i].iFirstFace < 0 || nodes[i].iFirstFace >= faceCount || nodes[i].iFirstFace + nodes[i].nFaces > faceCount))
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Node {} has invalid face range: {} + {} (Total: {}). Resetting.\n",
+				i, nodes[i].iFirstFace, nodes[i].nFaces, faceCount);
+			nodes[i].iFirstFace = 0;
+			nodes[i].nFaces = 0;
+		}
+		else if (nodes[i].nFaces <= 0)
+		{
+			nodes[i].iFirstFace = 0;
+			nodes[i].nFaces = 0;
+		}
+	}
+
+	int fixedMarks = 0;
+	for (int i = 0; i < marksurfCount; i++)
+	{
+		if (marksurfs[i] < 0 || marksurfs[i] >= faceCount)
+		{
+			marksurfs[i] = 0;
+			fixedMarks++;
+		}
+	}
+
+	if (fixedMarks > 0)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "Fixed {} invalid marksurface references.\n", fixedMarks);
+	}
 }
 
 void Bsp::fix_all_duplicate_vertices()
@@ -15065,3 +15624,58 @@ vec3 Bsp::getEntOffset(Entity* ent)
 	return vec3();
 }
 
+void Bsp::fix_transparency(int texIdx)
+{
+	if (texIdx < 0 || texIdx >= textureCount)
+		return;
+
+	int texOffset = ((int*)textures)[texIdx + 1];
+	if (texOffset < 0)
+		return;
+
+	BSPMIPTEX* tex = (BSPMIPTEX*)(textures + texOffset);
+
+	if (tex->szName[0] != '{' || tex->nOffsets[0] <= 0)
+		return;
+
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
+	COLOR3* pal = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+
+	// Check if blue is at 255
+	if (!(pal[255].r == 0 && pal[255].g == 0 && pal[255].b == 255))
+	{
+		// Find blue
+		int blueIdx = -1;
+		for (int k = 0; k < 256; k++)
+		{
+			if (pal[k].r == 0 && pal[k].g == 0 && pal[k].b == 255)
+			{
+				blueIdx = k;
+				break;
+			}
+		}
+
+		if (blueIdx != -1)
+		{
+			// Swap colors in palette
+			COLOR3 temp = pal[255];
+			pal[255] = pal[blueIdx];
+			pal[blueIdx] = temp;
+
+			// Remap pixels
+			for (int m = 0; m < MIPLEVELS; m++)
+			{
+				if (tex->nOffsets[m] > 0)
+				{
+					unsigned char* pixels = ((unsigned char*)tex) + tex->nOffsets[m];
+					int pixCount = (tex->nWidth >> m) * (tex->nHeight >> m);
+					for (int p = 0; p < pixCount; p++)
+					{
+						if (pixels[p] == 255) pixels[p] = (unsigned char)blueIdx;
+						else if (pixels[p] == blueIdx) pixels[p] = 255;
+					}
+				}
+			}
+		}
+	}
+}

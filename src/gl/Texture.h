@@ -1,5 +1,6 @@
 #pragma once
 #include <GL/glew.h>
+#include "bsplimits.h"
 #include "util.h"
 
 class Texture
@@ -19,6 +20,7 @@ public:
 	{
 		TYPE_TEXTURE,
 		TYPE_LIGHTMAP,
+		TYPE_LIGHTMAP_NOFILTER,
 		TYPE_DECAL
 	};
 

@@ -60,7 +60,7 @@ unsigned int GetCrc32InMemory(unsigned char* f, unsigned int length, unsigned in
 			bool xorval = (crc >> 31) != 0;
 			crc = (crc & UINT32_C(0x7FFFFFFF)) << 1;
 			if (xorval)
-				crc ^= (unsigned int)POLYNOMIAL;
+				crc ^= (unsigned int)(POLYNOMIAL & 0xFFFFFFFF);
 		}
 	}
 	return crc;

@@ -6,6 +6,7 @@
 #include "log.h"
 #include "Settings.h"
 #include "Renderer.h"
+#include "MutexManager.h"
 
 std::vector<Texture*> g_all_Textures;
 
@@ -44,6 +45,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
     {
         this->transparentMode = 2;
     }
+    std::lock_guard<std::mutex> lock(Sync::TexturesList);
     g_all_Textures.push_back(this);
 }
 
@@ -57,6 +59,7 @@ Texture::~Texture()
     if (tex_owndata && data != NULL)
         delete[] data;
 
+    std::lock_guard<std::mutex> lock(Sync::TexturesList);
     auto it = std::remove(g_all_Textures.begin(), g_all_Textures.end(), this);
     if (it != g_all_Textures.end())
     {
@@ -111,6 +114,20 @@ void Texture::upload(int _type)
     case TYPE_LIGHTMAP:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        if (!(g_render_flags & RENDER_LIGHTMAPS_NOFILTER))
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        }
+        else
+        {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        }
+        break;
+    case TYPE_LIGHTMAP_NOFILTER:
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         break;
@@ -156,8 +173,10 @@ void Texture::upload(int _type)
                 rgbaData[i] = COLOR4(0, 0, 0, 0);
             }
         }
-        delete[] data;
+        if (tex_owndata && data != nullptr)
+            delete[] data;
         data = (unsigned char*)(rgbaData);
+        tex_owndata = true;
         dataLen = (unsigned int)(width * height * sizeof(COLOR4));
     }
 
@@ -195,7 +214,7 @@ bool IsTextureTransparent(const std::string& texname)
         return false;
     for (const auto& s : g_settings.transparentTextures)
     {
-        if (s == texname)
+        if (strcasecmp(s.c_str(), texname.c_str()) == 0)
             return true;
     }
     return false;

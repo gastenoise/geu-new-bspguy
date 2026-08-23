@@ -3,6 +3,7 @@
 #include <ctime> 
 #include <set>
 #include <string.h>
+#include <set>
 
 #include "Wad.h"
 #include "Entity.h"
@@ -35,6 +36,7 @@ struct LeafDebug
 };
 
 extern size_t totalBspStructs;
+extern vec3 default_hull_extents[MAX_MAP_HULLS];
 
 class Bsp
 {
@@ -126,6 +128,8 @@ public:
 	// if modelIdx=0, the world is moved and all entities along with it
 	bool move(vec3 offset, int modelIdx = 0, bool onlyModel = false, bool forceMove = false, bool logged = true);
 
+	void transform(int modelIdx, mat4x4 matrix, vec3 center, bool logged = true);
+
 	void move_texinfo(BSPTEXTUREINFO& info, vec3 offset);
 	void move_texinfo(int idx, vec3 offset);
 	void write(const std::string& path);
@@ -173,6 +177,7 @@ public:
 
 	// face has duplicate verts, this is bad?
 	bool is_face_duplicate_edges(int faceIdx);
+	void fix_invalid_model_face_ranges();
 	void face_fix_duplicate_edges_index(int faceIdx);
 
 	// get all verts used by this model
@@ -245,10 +250,17 @@ public:
 
 	// deletes data inside a bounding box
 	void delete_box_data(vec3 clipMins, vec3 clipMaxs);
+	void delete_hull_in_box(int hullIdx, vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
+	void delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
+
+	int delete_box_clipnodes_fast(int iNode, std::vector<BSPPLANE>& clipOrder,
+		vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
+	int delete_box_nodes_fast(int iNode, vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
+
 	void delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes);
+		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
 	void delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes);
+		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
 
 	// assumes contiguous leaves starting at 0. Only works for worldspawn, which is the only model which
 	// should have leaves anyway.
@@ -332,6 +344,8 @@ public:
 	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
 	int add_texture(const WADTEX& tex, bool embedded = false);
 
+	void fix_transparency(int texIdx);
+
 	bool export_wad_to_pngs(const std::string& wadpath, const std::string& targetdir);
 	bool import_textures_to_wad(const std::string& wadpath, const std::string& texpath, bool dithering);
 
@@ -370,6 +384,7 @@ public:
 	bool leaf_add_face(int faceIdx, int leafIdx);
 	bool leaf_del_face(int faceIdx, int leafIdx);
 	bool remove_face(int faceid, bool fromModels = false);
+	void remove_faces(std::vector<int> faceIdxs);
 	void remove_faces_by_content(int content);
 	std::vector<int> getFaceContents(int faceIdx);
 	int clone_world_leaf(int oldleafIdx);
@@ -485,6 +500,7 @@ public:
 	unsigned int remove_unused_lightmaps(std::vector<bool>& usedFaces);
 	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
 	unsigned int remove_unused_textures(std::vector<bool>& usedTextures, std::vector<int>& remappedIndexes, int* removeddata = NULL);
+	int unembed_textures(std::vector<int> texIndices);
 	unsigned int remove_unused_structs(int lumpIdx, std::vector<bool>& usedStructs, std::vector<int>& remappedIndexes);
 
 	void recurse_node_leafs(int nodeIdx, std::vector<int>& outLeafs);

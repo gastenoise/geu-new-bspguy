@@ -56,6 +56,7 @@ public:
     void drawFull();
 
 private:
+    GLsizeiptr lastBufferSize = 0; // for glBufferSubData optimization
     bool ownData;            // true if buffer should delete data on destruction
     bool uploaded;           // true if data has been uploaded to GPU
     unsigned char* data;     // CPU-side pointer to vertex data (may be nullptr)

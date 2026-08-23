@@ -247,7 +247,7 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 
 		PolygonOctree mergeOctree(treeMin, treeMax, octreeDepth);
 		for (size_t i = 0; i < mergedFaces.size(); i++) {
-			mergedFaces[i].idx = i;
+			mergedFaces[i].idx = (int)i;
 			//interiorFaces[i].removeColinearVerts();
 			mergeOctree.insertPolygon(&mergedFaces[i]);
 		}
@@ -346,7 +346,7 @@ void NavMeshGenerator::linkNavPolys(Bsp* map, NavMesh* mesh) {
 		for (size_t k = i + 1; k < mesh->numPolys; k++) {
 			if (i == k)
 				continue;
-			numLinks += tryEdgeLinkPolys(map, mesh, i, k);
+			numLinks += tryEdgeLinkPolys(map, mesh, (int)i, (int)k);
 		}
 	}
 
@@ -441,17 +441,17 @@ int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, 
 				// hard to pull off and no map requires that
 
 				if (srcPoly.verts[i].z < dstPoly.verts[k].z) {
-					mesh->addLink(dstPolyIdx, srcPolyIdx, k, i, (int)-zDist, 0);
+					mesh->addLink(dstPolyIdx, srcPolyIdx, (int)k, (int)i, (int)-zDist, 0);
 				}
 				else {
-					mesh->addLink(srcPolyIdx, dstPolyIdx, i, k, (int)zDist, 0);
+					mesh->addLink(srcPolyIdx, dstPolyIdx, (int)i, (int)k, (int)zDist, 0);
 				}
 
 				return 1;
 			}
 
-			mesh->addLink(srcPolyIdx, dstPolyIdx, i, k, (int)zDist, 0);
-			mesh->addLink(dstPolyIdx, srcPolyIdx, k, i, (int)-zDist, 0);
+			mesh->addLink(srcPolyIdx, dstPolyIdx, (int)i, (int)k, (int)zDist, 0);
+			mesh->addLink(dstPolyIdx, srcPolyIdx, (int)k, (int)i, (int)-zDist, 0);
 
 			// TODO: multiple edge links are possible for overlapping polys
 			return 2;

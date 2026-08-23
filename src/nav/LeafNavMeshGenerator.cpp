@@ -430,7 +430,7 @@ int LeafNavMeshGenerator::tryFaceLinkLeaves(LeafNavMesh* mesh, int srcLeafIdx, i
 }
 
 void LeafNavMeshGenerator::calcPathCosts(Bsp* bsp, LeafNavMesh* mesh) {
-	double markStart = glfwGetTime();
+	//double markStart = glfwGetTime();
 
 	for (size_t i = 0; i < mesh->nodes.size(); i++) {
 		LeafNode& node = mesh->nodes[i];

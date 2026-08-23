@@ -79,7 +79,8 @@ unsigned char* VertexBuffer::getData()
 			return nullptr;
 		}
 		data = new unsigned char[bufferSize];
-		glGetBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, data);
+		if (data)
+			glGetBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, data);
 	}
 	return data;
 }
@@ -116,7 +117,15 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 	if (data != nullptr && numVerts > 0 && shaderProgram->elementSize > 0)
 	{
 		GLsizeiptr totalSize = static_cast<GLsizeiptr>(shaderProgram->elementSize) * numVerts;
-		glBufferData(GL_ARRAY_BUFFER, totalSize, data, GL_STATIC_DRAW);
+		if (vboId != 0 && totalSize == lastBufferSize)
+		{
+			glBufferSubData(GL_ARRAY_BUFFER, 0, totalSize, data);
+		}
+		else
+		{
+			glBufferData(GL_ARRAY_BUFFER, totalSize, data, GL_STATIC_DRAW);
+			lastBufferSize = totalSize;
+		}
 	}
 
 	GLintptr offset = 0;
