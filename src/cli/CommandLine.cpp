@@ -1,6 +1,7 @@
 #include "lang.h"
 #include "CommandLine.h"
 #include "log.h"
+#include <filesystem>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -26,9 +27,9 @@ CommandLine::CommandLine(int argc, char* argv[])
 #ifdef WIN32
 			int nArgs;
 			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-			bspfile = fs::path(szArglist[i]).string();
+			bspfile = std::filesystem::path(szArglist[i]).string();
 #else 
-			bspfile = fs::path(argv[i]).string();
+			bspfile = std::filesystem::path(argv[i]).string();
 #endif
 		}
 		if (i > 2)
@@ -66,9 +67,9 @@ CommandLine::CommandLine(int argc, char* argv[])
 #ifdef WIN32
 		int nArgs;
 		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-		bspfile = fs::path(szArglist[1]).string();
+		bspfile = std::filesystem::path(szArglist[1]).string();
 #else
-		bspfile = fs::path(argv[1]).string();
+		bspfile = std::filesystem::path(argv[1]).string();
 #endif
 	}
 }
@@ -121,6 +122,27 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 	ret.x = str_to_float(parts[0]);
 	ret.y = str_to_float(parts[1]);
 	ret.z = str_to_float(parts[2]);
+
+	return ret;
+}
+
+std::vector<vec3> CommandLine::getOptionVectorList(const std::string& optionName)
+{
+	std::vector<vec3> ret;
+	std::vector<std::string> parts = splitString(optionVals[optionName], ";");
+
+	for (size_t i = 0; i < parts.size(); i++)
+	{
+		std::vector<std::string> vparts = splitString(parts[i], ",");
+		if (vparts.size() == 3)
+		{
+			vec3 v;
+			v.x = str_to_float(trimSpaces(vparts[0]));
+			v.y = str_to_float(trimSpaces(vparts[1]));
+			v.z = str_to_float(trimSpaces(vparts[2]));
+			ret.push_back(v);
+		}
+	}
 
 	return ret;
 }
