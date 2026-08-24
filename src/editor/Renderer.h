@@ -16,6 +16,7 @@
 #define EDIT_MODEL_LUMPS (FL_PLANES | FL_TEXTURES | FL_VERTICES | FL_NODES | FL_TEXINFO | FL_FACES | FL_LIGHTING | FL_CLIPNODES | FL_LEAVES | FL_EDGES | FL_SURFEDGES | FL_MODELS | FL_MARKSURFACES)
 
 class Gui;
+class Skybox;
 
 enum transform_modes
 {
@@ -120,12 +121,15 @@ class Renderer
 	MergeResult mergeResult;
 
 	unsigned int colorShaderMultId;
-	unsigned int bspShaderSkyboxId;
 	unsigned int bspShaderRenderSkyboxId;
-	unsigned int bspShaderCameraOriginId;
+	unsigned int skyShaderViewProjId;
+	unsigned int skyShaderSkyboxId;
 	ShaderProgram* modelShader;
 	ShaderProgram* colorShader;
 	ShaderProgram* bspShader;
+	ShaderProgram* skyShader;
+	GLuint skyCubeVbo = 0;
+	GLuint skyCubeVao = 0;
 
 	double oldTime = 0.0;
 	double curTime = 0.0;
@@ -327,6 +331,7 @@ class Renderer
 	void drawModelVerts();
 	void drawModelOrigin(int modelIdx);
 	void drawTransformAxes();
+	void drawSkybox(Skybox* skybox);
 	void drawEntConnections();
 	void drawLine(vec3& start, vec3& end, COLOR4 color);
 	void drawLine2D(vec2 start, vec2 end, COLOR4 color);

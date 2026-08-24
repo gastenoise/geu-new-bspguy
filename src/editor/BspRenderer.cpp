@@ -2867,6 +2867,11 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		drawPointEntities(highlightEnts, REND_PASS_MODELSHADER);
 	}
 
+	if ((g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded() && !ortho_overview && !make_screenshot)
+	{
+		g_app->drawSkybox(skybox);
+	}
+
 	size_t ent_count = std::min(map->ents.size(), renderEnts.size());
 
 	for (int pass = 0; pass <= 2; pass++)
@@ -2880,10 +2885,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 				g_app->bspShader->bind();
 				bool useSkybox = (g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded();
 				glUniform1i(g_app->bspShaderRenderSkyboxId, useSkybox ? 1 : 0);
-				if (useSkybox)
-				{
-					skybox->bind(5);
-				}
 			}
 
 			if (ent_count && map->ents.size() > 0 && !map->ents[0]->hide)
@@ -3249,9 +3250,6 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 					rgroup.buffer->frameId--;
 
 				g_app->bspShader->pushMatrix();
-
-				vec3 camOrigGl = localCameraOrigin.flip();
-				glUniform3f(g_app->bspShaderCameraOriginId, camOrigGl.x, camOrigGl.y, camOrigGl.z);
 
 				if (texturesLoaded && g_render_flags & RENDER_TEXTURES && !rgroup.textures.empty())
 				{

@@ -119,11 +119,7 @@ const char* g_shader_multitexture_fragment =
 	"{\n"
 	"	if (uRenderSkybox == 1 && fColor.b > 0.5)\n"
 	"	{\n"
-	"		vec3 dir = normalize(vec3(fRayDir.x, fRayDir.y, -fRayDir.z));\n"
-	"		vec4 skyColor = textureCube(sSkybox, dir);\n"
-	"		float gamma = 1.6;\n"
-	"		gl_FragColor = vec4(pow(skyColor.rgb, vec3(1.0 / gamma)), 1.0);\n"
-	"		return;\n"
+	"		discard;\n"
 	"	}\n"
 	"	vec4 color = texture2D(sTex, fTex);\n"
 	"	if(color.a <= 0.15)\n"
@@ -164,5 +160,29 @@ const char* g_shader_multitexture_fragment =
 	"	color.rgb = (color.rgb * lightmap) + fcolor.rgb; \n"
 	"	float gamma = 1.6;\n"
 	"	gl_FragColor = vec4(pow(color.rgb, vec3(1.0/gamma)), color.a - fcolor.a );\n"
+	"}\n";
+
+const char* g_shader_skybox_vertex =
+	"uniform mat4 uSkyViewProj;\n"
+	"attribute vec3 vPosition;\n"
+	"varying vec3 fRayDir;\n"
+	"\n"
+	"void main()\n"
+	"{\n"
+	"	vec4 pos = uSkyViewProj * vec4(vPosition, 1.0);\n"
+	"	gl_Position = pos.xyww;\n"
+	"	fRayDir = vPosition;\n"
+	"}\n";
+
+const char* g_shader_skybox_fragment =
+	"varying vec3 fRayDir;\n"
+	"uniform samplerCube sSkybox;\n"
+	"\n"
+	"void main()\n"
+	"{\n"
+	"	vec3 dir = normalize(vec3(fRayDir.x, fRayDir.y, -fRayDir.z));\n"
+	"	vec4 skyColor = textureCube(sSkybox, dir);\n"
+	"	float gamma = 1.6;\n"
+	"	gl_FragColor = vec4(pow(skyColor.rgb, vec3(1.0 / gamma)), 1.0);\n"
 	"}\n";
 } // namespace Shaders
