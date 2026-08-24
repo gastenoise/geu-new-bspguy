@@ -122,7 +122,7 @@ class Renderer
 
 	unsigned int colorShaderMultId;
 	unsigned int bspShaderRenderSkyboxId;
-	unsigned int skyShaderViewProjId;
+	unsigned int skyShaderCameraOriginId;
 	unsigned int skyShaderSkyboxId;
 	ShaderProgram* modelShader;
 	ShaderProgram* colorShader;
@@ -331,7 +331,7 @@ class Renderer
 	void drawModelVerts();
 	void drawModelOrigin(int modelIdx);
 	void drawTransformAxes();
-	void drawSkybox(Skybox* skybox);
+	void drawSkybox(Skybox* skybox, Bsp* map);
 	void drawEntConnections();
 	void drawLine(vec3& start, vec3& end, COLOR4 color);
 	void drawLine2D(vec2 start, vec2 end, COLOR4 color);

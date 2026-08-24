@@ -396,9 +396,11 @@ Renderer::Renderer()
 	bspShader->bindAttributes();
 
 	skyShader = new ShaderProgram(Shaders::g_shader_skybox_vertex, Shaders::g_shader_skybox_fragment);
+	skyShader->setMatrixes(&modelView, &modelViewProjection);
+	skyShader->setMatrixNames(NULL, "modelViewProjection");
 	skyShader->addAttribute(POS_3F, "vPosition");
 	skyShader->bind();
-	skyShaderViewProjId = glGetUniformLocation(skyShader->ID, "uSkyViewProj");
+	skyShaderCameraOriginId = glGetUniformLocation(skyShader->ID, "uCameraOrigin");
 	skyShaderSkyboxId = glGetUniformLocation(skyShader->ID, "sSkybox");
 	glUniform1i(skyShaderSkyboxId, 0);
 	skyShader->bindAttributes();
@@ -407,9 +409,9 @@ Renderer::Renderer()
 	glBindVertexArray(skyCubeVao);
 	glGenBuffers(1, &skyCubeVbo);
 	glBindBuffer(GL_ARRAY_BUFFER, skyCubeVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(s_skyCubeVerts), s_skyCubeVerts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(vec3), nullptr, GL_DYNAMIC_DRAW);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
 	glBindVertexArray(0);
 
 	modelShader->bind();
@@ -1852,31 +1854,82 @@ void Renderer::loadFgds()
 	swapPointEntRenderer = new PointEntRenderer(mergedFgd);
 }
 
-void Renderer::drawSkybox(Skybox* skybox)
+void Renderer::drawSkybox(Skybox* skybox, Bsp* map)
 {
-	if (!skybox || !skybox->isLoaded() || !(g_render_flags & RENDER_SKYBOX))
+	if (!skybox || !skybox->isLoaded() || !(g_render_flags & RENDER_SKYBOX) || !map)
 		return;
 
-	glDepthMask(GL_FALSE);
+	BspRenderer* rend = map->getBspRender();
+	if (!rend)
+		return;
+
+	vec3 center = (map->ents.size() > 0 ? map->ents[0]->origin * -1 : vec3()) + rend->mapOffset;
+	float limit = g_limits.maxMapBoundary;
+	vec3 boxMins = center - vec3(limit, limit, limit);
+	vec3 boxMaxs = center + vec3(limit, limit, limit);
+
+	vec3 p[8] = {
+		vec3(boxMins.x, boxMins.y, boxMins.z).flip(),
+		vec3(boxMaxs.x, boxMins.y, boxMins.z).flip(),
+		vec3(boxMaxs.x, boxMaxs.y, boxMins.z).flip(),
+		vec3(boxMins.x, boxMaxs.y, boxMins.z).flip(),
+		vec3(boxMins.x, boxMins.y, boxMaxs.z).flip(),
+		vec3(boxMaxs.x, boxMins.y, boxMaxs.z).flip(),
+		vec3(boxMaxs.x, boxMaxs.y, boxMaxs.z).flip(),
+		vec3(boxMins.x, boxMaxs.y, boxMaxs.z).flip()
+	};
+
+	static const int s_boxIndices[36] = {
+		// Bottom (-Z)
+		0, 1, 2,  0, 2, 3,
+		// Top (+Z)
+		4, 6, 5,  4, 7, 6,
+		// Front (+Y)
+		3, 2, 6,  3, 6, 7,
+		// Back (-Y)
+		0, 5, 1,  0, 4, 5,
+		// Left (-X)
+		0, 7, 3,  0, 4, 7,
+		// Right (+X)
+		1, 2, 6,  1, 6, 5
+	};
+
+	vec3 boxVerts[36];
+	for (int i = 0; i < 36; i++)
+	{
+		boxVerts[i] = p[s_boxIndices[i]];
+	}
+
 	glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
 
 	skyShader->bind();
+	skyShader->pushMatrix();
 
-	mat4x4 skyView = matview;
-	skyView.m[12] = skyView.m[13] = skyView.m[14] = 0.0f;
-	mat4x4 skyViewProj = projection * skyView;
-	skyViewProj = skyViewProj.transpose();
+	matmodel.loadIdentity();
+	mat_upload();
 
-	glUniformMatrix4fv(skyShaderViewProjId, 1, GL_FALSE, &skyViewProj.m[0]);
+	vec3 camOrigGl = rend->localCameraOrigin.flip();
+	glUniform3f(skyShaderCameraOriginId, camOrigGl.x, camOrigGl.y, camOrigGl.z);
 
 	skybox->bind(0);
 
 	glBindVertexArray(skyCubeVao);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, skyCubeVbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(boxVerts), boxVerts);
 
-	glEnable(GL_CULL_FACE);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	glBindVertexArray(0);
+	skyShader->popMatrix();
+
 	glDepthMask(GL_TRUE);
+	glEnable(GL_CULL_FACE);
+
+	// Draw canvas boundary wireframe
+	glLineWidth(2.5f);
+	drawBoxWireframe(boxMins, boxMaxs, COLOR4(g_settings.mapBoundaryColor, 255));
+	glLineWidth(1.3f);
 }
 
 void Renderer::drawModelVerts()

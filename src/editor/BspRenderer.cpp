@@ -2869,7 +2869,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	if ((g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded() && !ortho_overview && !make_screenshot)
 	{
-		g_app->drawSkybox(skybox);
+		g_app->drawSkybox(skybox, map);
 	}
 
 	size_t ent_count = std::min(map->ents.size(), renderEnts.size());

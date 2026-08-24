@@ -163,15 +163,15 @@ const char* g_shader_multitexture_fragment =
 	"}\n";
 
 const char* g_shader_skybox_vertex =
-	"uniform mat4 uSkyViewProj;\n"
+	"uniform mat4 modelViewProjection;\n"
+	"uniform vec3 uCameraOrigin;\n"
 	"attribute vec3 vPosition;\n"
 	"varying vec3 fRayDir;\n"
 	"\n"
 	"void main()\n"
 	"{\n"
-	"	vec4 pos = uSkyViewProj * vec4(vPosition, 1.0);\n"
-	"	gl_Position = pos.xyww;\n"
-	"	fRayDir = vPosition;\n"
+	"	gl_Position = modelViewProjection * vec4(vPosition, 1.0);\n"
+	"	fRayDir = vPosition - uCameraOrigin;\n"
 	"}\n";
 
 const char* g_shader_skybox_fragment =
