@@ -120,12 +120,12 @@ class Renderer
 	MergeResult mergeResult;
 
 	unsigned int colorShaderMultId;
-	unsigned int skyShaderCameraOriginId;
-	unsigned int skyShaderSkyboxId;
+	unsigned int bspShaderSkyboxId;
+	unsigned int bspShaderRenderSkyboxId;
+	unsigned int bspShaderCameraOriginId;
 	ShaderProgram* modelShader;
 	ShaderProgram* colorShader;
 	ShaderProgram* bspShader;
-	ShaderProgram* skyShader;
 
 	double oldTime = 0.0;
 	double curTime = 0.0;

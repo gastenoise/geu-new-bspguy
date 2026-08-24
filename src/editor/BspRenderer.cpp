@@ -1077,7 +1077,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			{
 				verts[e].g = 0.0f;
 			}
-			verts[e].b = 0.0f;
+			verts[e].b = isSky ? 1.0f : 0.0f;
 			verts[e].a = isSky || isTrigger || (ent && ent->rendermode > 0) ? 1.0f - opacity : 0.0f;
 
 			// texture coords
@@ -2870,6 +2870,17 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		{
 			g_app->mat_upload();
 
+			if (pass == REND_PASS_BSPSHADER_TRANSPARENT)
+			{
+				g_app->bspShader->bind();
+				bool useSkybox = (g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded();
+				glUniform1i(g_app->bspShaderRenderSkyboxId, useSkybox ? 1 : 0);
+				if (useSkybox)
+				{
+					skybox->bind(5);
+				}
+			}
+
 			if (ent_count && map->ents.size() > 0 && !map->ents[0]->hide)
 			{
 				if (!ortho_overview || !renderEnts[0].isTransparentByList)
@@ -3229,34 +3240,13 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 		{
 			if (!edgesOnly && rgroup.buffer)
 			{
-				if (rgroup.isSky && (g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded())
-				{
-					if (ent && ent->isDuplicateModel)
-						rgroup.buffer->frameId--;
-
-					g_app->skyShader->pushMatrix();
-
-					if (ent)
-					{
-						g_app->matmodel = ent->modelMat4x4_calc;
-						g_app->mat_upload();
-					}
-
-					skybox->bind(0);
-
-					vec3 camOrigGl = localCameraOrigin.flip();
-					glUniform3f(g_app->skyShaderCameraOriginId, camOrigGl.x, camOrigGl.y, camOrigGl.z);
-
-					rgroup.buffer->drawFull();
-
-					g_app->skyShader->popMatrix();
-					continue;
-				}
-
 				if (ent && ent->isDuplicateModel)
 					rgroup.buffer->frameId--;
 
 				g_app->bspShader->pushMatrix();
+
+				vec3 camOrigGl = localCameraOrigin.flip();
+				glUniform3f(g_app->bspShaderCameraOriginId, camOrigGl.x, camOrigGl.y, camOrigGl.z);
 
 				if (texturesLoaded && g_render_flags & RENDER_TEXTURES && !rgroup.textures.empty())
 				{

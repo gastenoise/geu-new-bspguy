@@ -338,34 +338,28 @@ Renderer::Renderer()
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL, COLOR_4B | POS_3F);
 
 	bspShader->bind();
-	glUniform1i(glGetUniformLocation(g_app->bspShader->ID, "sTex"), 0);
+	glUniform1i(glGetUniformLocation(bspShader->ID, "sTex"), 0);
 	for (int s = 0; s < MAX_LIGHTMAPS; s++)
 	{
-		unsigned int sLightmapTexIds = glGetUniformLocation(g_app->bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
+		unsigned int sLightmapTexIds = glGetUniformLocation(bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
 		// assign lightmap texture units (skips the normal texture unit)
 		glUniform1i(sLightmapTexIds, s + 1);
 	}
+	bspShaderSkyboxId = glGetUniformLocation(bspShader->ID, "sSkybox");
+	bspShaderRenderSkyboxId = glGetUniformLocation(bspShader->ID, "uRenderSkybox");
+	bspShaderCameraOriginId = glGetUniformLocation(bspShader->ID, "uCameraOrigin");
+	glUniform1i(bspShaderSkyboxId, 5);
+	glUniform1i(bspShaderRenderSkyboxId, 0);
 	bspShader->bindAttributes();
 
 	modelShader->bind();
-	glUniform1i(glGetUniformLocation(g_app->modelShader->ID, "sTex"), 0);
+	glUniform1i(glGetUniformLocation(modelShader->ID, "sTex"), 0);
 	modelShader->bindAttributes();
 
 	colorShader->bind();
-	colorShaderMultId = glGetUniformLocation(g_app->colorShader->ID, "colorMult");
+	colorShaderMultId = glGetUniformLocation(colorShader->ID, "colorMult");
 	glUniform4f(colorShaderMultId, 0.0, 0.0, 0.0, 0.0);
 	colorShader->bindAttributes();
-
-	skyShader = new ShaderProgram(Shaders::g_shader_skybox_vertex, Shaders::g_shader_skybox_fragment);
-	skyShader->setMatrixes(&modelView, &modelViewProjection);
-	skyShader->setMatrixNames(NULL, "modelViewProjection");
-	skyShader->addAttribute(POS_3F, "vPosition");
-
-	skyShader->bind();
-	skyShaderCameraOriginId = glGetUniformLocation(skyShader->ID, "uCameraOrigin");
-	skyShaderSkyboxId = glGetUniformLocation(skyShader->ID, "sSkybox");
-	glUniform1i(skyShaderSkyboxId, 0);
-	skyShader->bindAttributes();
 
 	clearSelection();
 

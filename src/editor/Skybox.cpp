@@ -10,12 +10,12 @@ static const GLenum s_cubemapTargets[SKY_NUM_FACES] = {
 	GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // bk
 	GL_TEXTURE_CUBE_MAP_POSITIVE_Y, // up
 	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, // dn
-	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // rt
-	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z  // lf
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // lf
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z  // rt
 };
 
 static const char* s_skySuffixes[SKY_NUM_FACES] = {
-	"ft", "bk", "up", "dn", "rt", "lf"
+	"ft", "bk", "up", "dn", "lf", "rt"
 };
 
 Skybox::Skybox()
