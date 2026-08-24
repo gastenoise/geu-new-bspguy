@@ -4,7 +4,7 @@
 void Gui::drawEntityReport()
 {
 	ImGui::SetNextWindowSize(ImVec2(1200.f, 630.f), ImGuiCond_FirstUseEver);
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 
 	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
 
@@ -75,7 +75,7 @@ void Gui::drawEntityReport()
 							}
 							else if (key.empty())
 							{
-								for (const auto &kv : map->ents[i]->keyvalues)
+								for (const auto& kv : map->ents[i]->keyvalues)
 								{
 									if (kv.second == val)
 									{
@@ -102,7 +102,7 @@ void Gui::drawEntityReport()
 							else if (key.empty())
 							{
 								currentFilterMatch = true;
-								for (const auto &kv : map->ents[i]->keyvalues)
+								for (const auto& kv : map->ents[i]->keyvalues)
 								{
 									if (kv.second == val)
 									{
@@ -128,7 +128,7 @@ void Gui::drawEntityReport()
 							}
 							else if (key.empty())
 							{
-								for (const auto &kv : map->ents[i]->keyvalues)
+								for (const auto& kv : map->ents[i]->keyvalues)
 								{
 									if (kv.second.find(val) != std::string::npos)
 									{
@@ -192,7 +192,7 @@ void Gui::drawEntityReport()
 					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
 					{
 						int entIdx = visibleEnts[row];
-						Entity *ent = map->ents[entIdx];
+						Entity* ent = map->ents[entIdx];
 
 						ImGui::TableNextRow();
 						ImGui::TableSetColumnIndex(0);

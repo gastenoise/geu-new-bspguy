@@ -46,7 +46,7 @@ struct BSPLimits
 	unsigned int maxValLen;
 	unsigned int textureStep;
 	std::string engineName;
-	bool operator!=(const BSPLimits &other) const;
+	bool operator!=(const BSPLimits& other) const;
 };
 
 extern BSPLimits g_limits;

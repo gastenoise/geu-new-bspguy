@@ -9,11 +9,11 @@
 #include "filedialog/ImFileDialog.h"
 
 extern Settings g_settings;
-extern Renderer *g_app;
+extern Renderer* g_app;
 
-void RegisterAllAppActions(Gui *gui, Renderer *app)
+void RegisterAllAppActions(Gui* gui, Renderer* app)
 {
-	ActionRegistry &reg = ActionRegistry::getInstance();
+	ActionRegistry& reg = ActionRegistry::getInstance();
 	reg.clear();
 
 	auto hasMap = [app]() -> bool
@@ -35,7 +35,7 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						"Save current BSP changes",
 						[app]()
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
 							if (map && !map->is_mdl_model)
 							{
 								std::string savePath = map->bsp_path;
@@ -50,7 +50,7 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						"Save current map to a new BSP file",
 						[app]()
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
 							if (map)
 								ifd::FileDialog::Instance().Save("SaveMapAsDialog", "Save BSP As", "Valve BSP (*.bsp){.bsp}");
 						},
@@ -83,14 +83,14 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						"Undo last operation",
 						[app]()
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
 							if (map && map->getBspRender())
 								map->getBspRender()->undo();
 						},
 						[app]() -> bool
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
-							BspRenderer *rend = map ? map->getBspRender() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
+							BspRenderer* rend = map ? map->getBspRender() : nullptr;
 							return rend && !rend->undoHistory.empty() && !app->isLoading;
 						}});
 
@@ -98,14 +98,14 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						"Redo previously undone operation",
 						[app]()
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
 							if (map && map->getBspRender())
 								map->getBspRender()->redo();
 						},
 						[app]() -> bool
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
-							BspRenderer *rend = map ? map->getBspRender() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
+							BspRenderer* rend = map ? map->getBspRender() : nullptr;
 							return rend && !rend->redoHistory.empty() && !app->isLoading;
 						}});
 
@@ -143,7 +143,7 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						{
 							if (!app)
 								return;
-							Bsp *map = app->getSelectedMap();
+							Bsp* map = app->getSelectedMap();
 							if (!map || app->pickInfo.selectedEnts.empty())
 								return;
 							vec3 pivot = vec3();
@@ -168,7 +168,7 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						{
 							if (!app)
 								return;
-							Bsp *map = app->getSelectedMap();
+							Bsp* map = app->getSelectedMap();
 							if (!map)
 								return;
 							app->pickInfo.selectedEnts.clear();
@@ -195,16 +195,16 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						{
 							if (!app)
 								return;
-							Bsp *map = app->getSelectedMap();
+							Bsp* map = app->getSelectedMap();
 							if (!map || app->pickInfo.selectedFaces.empty())
 								return;
-							BSPFACE32 &selface = map->faces[app->pickInfo.selectedFaces[0]];
-							BSPTEXTUREINFO &seltexinfo = map->texinfos[selface.iTextureInfo];
+							BSPFACE32& selface = map->faces[app->pickInfo.selectedFaces[0]];
+							BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
 							app->deselectFaces();
 							for (int i = 0; i < map->faceCount; i++)
 							{
-								BSPFACE32 &face = map->faces[i];
-								BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+								BSPFACE32& face = map->faces[i];
+								BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 								if (texinfo.iMiptex == seltexinfo.iMiptex)
 								{
 									map->getBspRender()->highlightFace(i, 1);
@@ -281,17 +281,17 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						"Fix black outline / alpha artifacts on transparent masked textures",
 						[app]()
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
-							BspRenderer *rend = map ? map->getBspRender() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
+							BspRenderer* rend = map ? map->getBspRender() : nullptr;
 							if (!map || !rend)
 								return;
 							rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
 							for (int i = 0; i < map->faceCount; i++)
 							{
-								BSPFACE32 &face = map->faces[i];
+								BSPFACE32& face = map->faces[i];
 								if (face.iTextureInfo < map->texinfoCount)
 								{
-									BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+									BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 									map->fix_transparency(texinfo.iMiptex);
 								}
 							}
@@ -304,8 +304,8 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						"Repair models with out-of-bounds face ranges",
 						[app]()
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
-							BspRenderer *rend = map ? map->getBspRender() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
+							BspRenderer* rend = map ? map->getBspRender() : nullptr;
 							if (map && rend)
 							{
 								rend->pushUndoState("Fix model face ranges", EDIT_MODEL_LUMPS);
@@ -318,8 +318,8 @@ void RegisterAllAppActions(Gui *gui, Renderer *app)
 						"Remove duplicate vertices, unused planes, and compact lumps",
 						[app]()
 						{
-							Bsp *map = app ? app->getSelectedMap() : nullptr;
-							BspRenderer *rend = map ? map->getBspRender() : nullptr;
+							Bsp* map = app ? app->getSelectedMap() : nullptr;
+							BspRenderer* rend = map ? map->getBspRender() : nullptr;
 							if (map && rend)
 							{
 								rend->pushUndoState("Optimize BSP", EDIT_MODEL_LUMPS);

@@ -13,7 +13,7 @@
 namespace fs = std::filesystem;
 
 // Helper: parse materials string containing quoted names
-void CSMFile::parseMaterialsFromString(const std::string &materialsStr)
+void CSMFile::parseMaterialsFromString(const std::string& materialsStr)
 {
 	std::istringstream ss(materialsStr);
 	std::string material;
@@ -26,7 +26,7 @@ void CSMFile::parseMaterialsFromString(const std::string &materialsStr)
 std::string CSMFile::getStringFromMaterials()
 {
 	std::string ret{};
-	for (auto &m : materials)
+	for (auto& m : materials)
 	{
 		ret += "\"" + m + "\" ";
 	}
@@ -38,10 +38,10 @@ std::string CSMFile::getStringFromMaterials()
 CSMFile::CSMFile()
 {
 	readed = false;
-	for (auto &m : model)
+	for (auto& m : model)
 		delete m;
 	model.clear();
-	for (auto &s : sideModel)
+	for (auto& s : sideModel)
 		delete s;
 	sideModel.clear();
 }
@@ -50,35 +50,35 @@ CSMFile::CSMFile(std::string path)
 {
 	csmFilePath = path;
 	readed = read(path);
-	for (auto &m : model)
+	for (auto& m : model)
 		delete m;
 	model.clear();
-	for (auto &s : sideModel)
+	for (auto& s : sideModel)
 		delete s;
 	sideModel.clear();
 }
 
 CSMFile::~CSMFile()
 {
-	for (auto &tex : mat_textures)
+	for (auto& tex : mat_textures)
 	{
 		delete tex;
 	}
 	mat_textures.clear();
-	for (auto &m : model)
+	for (auto& m : model)
 		delete m;
 	model.clear();
-	for (auto &s : sideModel)
+	for (auto& s : sideModel)
 		delete s;
 	sideModel.clear();
 }
 
 // Load texture helper (searches paths and loads BMP)
-Texture *loadBMPTexture(const std::string &fileName)
+Texture* loadBMPTexture(const std::string& fileName)
 {
 	int width = 0, height = 0;
-	unsigned char *indexes = nullptr;
-	unsigned char *rgbData = nullptr;
+	unsigned char* indexes = nullptr;
+	unsigned char* rgbData = nullptr;
 	COLOR3 palette[256];
 
 	if (ReadBMP_PAL(fileName, &indexes, width, height, palette))
@@ -93,7 +93,7 @@ Texture *loadBMPTexture(const std::string &fileName)
 			rgbData[i * 3 + 2] = color.r;
 		}
 		delete[] indexes;
-		Texture *tex = new Texture(width, height, rgbData, basename(fileName), false, true);
+		Texture* tex = new Texture(width, height, rgbData, basename(fileName), false, true);
 		tex->upload(Texture::TYPE_TEXTURE);
 		return tex;
 	}
@@ -103,7 +103,7 @@ Texture *loadBMPTexture(const std::string &fileName)
 	if (ReadBMP_RGB(fileName, &rgbData, width, height))
 	{
 		print_log(PRINT_GREEN, "Loaded RGB BMP: {} ({}x{})\n", basename(fileName), width, height);
-		Texture *tex = new Texture(width, height, rgbData, basename(fileName), false, true);
+		Texture* tex = new Texture(width, height, rgbData, basename(fileName), false, true);
 		tex->upload(Texture::TYPE_TEXTURE);
 		return tex;
 	}
@@ -112,7 +112,7 @@ Texture *loadBMPTexture(const std::string &fileName)
 }
 
 // Load texture for a material name. Returns missingTex if not found.
-Texture *CSMFile::loadTextureForMaterial(const std::string &materialName)
+Texture* CSMFile::loadTextureForMaterial(const std::string& materialName)
 {
 	if (materialName.empty())
 	{
@@ -140,7 +140,7 @@ Texture *CSMFile::loadTextureForMaterial(const std::string &materialName)
 	{
 		std::string pathsStr = header.pathes;
 		std::vector<std::string> paths = splitString(pathsStr, ";");
-		for (const auto &path : paths)
+		for (const auto& path : paths)
 		{
 			std::string trimmed = trimSpaces(path);
 			if (!trimmed.empty())
@@ -152,13 +152,13 @@ Texture *CSMFile::loadTextureForMaterial(const std::string &materialName)
 	if (!ends_with(toLowerCase(textureName), ".bmp"))
 		textureName += ".bmp";
 
-	for (const auto &searchPath : searchPaths)
+	for (const auto& searchPath : searchPaths)
 	{
 		std::string texturePath = (searchPath == ".") ? textureName : (searchPath + "/" + textureName);
 		if (fileExists(texturePath))
 		{
 			print_log(PRINT_BLUE, "Found texture at: {}\n", texturePath);
-			Texture *tex = loadBMPTexture(texturePath);
+			Texture* tex = loadBMPTexture(texturePath);
 			if (tex)
 				return tex;
 		}
@@ -167,7 +167,7 @@ Texture *CSMFile::loadTextureForMaterial(const std::string &materialName)
 		{
 			try
 			{
-				for (const auto &entry : fs::directory_iterator(searchPath))
+				for (const auto& entry : fs::directory_iterator(searchPath))
 				{
 					if (entry.is_directory())
 					{
@@ -176,7 +176,7 @@ Texture *CSMFile::loadTextureForMaterial(const std::string &materialName)
 						if (fileExists(testPath))
 						{
 							print_log(PRINT_BLUE, "Found texture in subdirectory: {}\n", testPath);
-							Texture *tex = loadBMPTexture(testPath);
+							Texture* tex = loadBMPTexture(testPath);
 							if (tex)
 								return tex;
 						}
@@ -193,7 +193,7 @@ Texture *CSMFile::loadTextureForMaterial(const std::string &materialName)
 	if (FindPathInAssets(NULL, textureName, foundPath, true))
 	{
 		print_log(PRINT_BLUE, "Found texture via FindPathInAssets: {}\n", foundPath);
-		Texture *tex = loadBMPTexture(foundPath);
+		Texture* tex = loadBMPTexture(foundPath);
 		if (tex)
 			return tex;
 	}
@@ -204,13 +204,13 @@ Texture *CSMFile::loadTextureForMaterial(const std::string &materialName)
 
 void CSMFile::loadTextures()
 {
-	for (auto &tex : mat_textures)
+	for (auto& tex : mat_textures)
 		delete tex;
 	mat_textures.clear();
 
-	for (const auto &material : materials)
+	for (const auto& material : materials)
 	{
-		Texture *tex = loadTextureForMaterial(material);
+		Texture* tex = loadTextureForMaterial(material);
 		mat_textures.push_back(tex);
 	}
 
@@ -236,7 +236,7 @@ bool CSMFile::validate()
 		return false;
 	}
 
-	for (auto &f : faces)
+	for (auto& f : faces)
 	{
 		if (f.material >= materials.size())
 		{
@@ -258,7 +258,7 @@ bool CSMFile::validate()
 
 	if (header.version == 3 && header.sides_count > 0)
 	{
-		for (auto &s : sides)
+		for (auto& s : sides)
 		{
 			if (s.material >= materials.size())
 			{
@@ -277,10 +277,10 @@ bool CSMFile::validate()
 }
 
 // Read CSM v3 header and blocks
-bool CSMFile::read_v3(std::ifstream &file)
+bool CSMFile::read_v3(std::ifstream& file)
 {
 	file.seekg(0, std::ios::beg);
-	if (!file.read(reinterpret_cast<char *>(&header), sizeof(header)))
+	if (!file.read(reinterpret_cast<char*>(&header), sizeof(header)))
 		return false;
 
 	// materials
@@ -289,7 +289,7 @@ bool CSMFile::read_v3(std::ifstream &file)
 		file.seekg(header.mat_ofs);
 		std::string matstr;
 		matstr.resize(header.mat_size);
-		file.read((char *)matstr.data(), header.mat_size);
+		file.read((char*)matstr.data(), header.mat_size);
 		if (!matstr.empty())
 			parseMaterialsFromString(matstr);
 	}
@@ -300,7 +300,7 @@ bool CSMFile::read_v3(std::ifstream &file)
 		file.seekg(header.vertex_ofs);
 		vertices.resize(header.vertex_count);
 		size_t expected = sizeof(csm_vertex) * header.vertex_count;
-		file.read((char *)vertices.data(), expected);
+		file.read((char*)vertices.data(), expected);
 	}
 
 	// faces
@@ -309,7 +309,7 @@ bool CSMFile::read_v3(std::ifstream &file)
 		file.seekg(header.faces_ofs);
 		faces.resize(header.faces_count);
 		size_t expected = sizeof(csm_face) * header.faces_count;
-		file.read((char *)faces.data(), expected);
+		file.read((char*)faces.data(), expected);
 	}
 
 	// sides (v3)
@@ -317,7 +317,7 @@ bool CSMFile::read_v3(std::ifstream &file)
 	{
 		file.seekg(header.sides_ofs);
 		sides.resize(header.sides_count);
-		file.read((char *)sides.data(), header.side_size * header.sides_count);
+		file.read((char*)sides.data(), header.side_size * header.sides_count);
 	}
 
 	// points (v3)
@@ -325,14 +325,14 @@ bool CSMFile::read_v3(std::ifstream &file)
 	{
 		file.seekg(header.points_ofs);
 		points.resize(header.points_count);
-		file.read((char *)points.data(), header.point_size * header.points_count);
+		file.read((char*)points.data(), header.point_size * header.points_count);
 	}
 
 	return true;
 }
 
 // Read CSM v2 by mapping fields directly into v3 structures without creating v2 structs.
-bool CSMFile::read_v2(std::ifstream &file)
+bool CSMFile::read_v2(std::ifstream& file)
 {
 	file.seekg(0, std::ios::beg);
 
@@ -356,40 +356,40 @@ bool CSMFile::read_v2(std::ifstream &file)
 	unsigned int vertex_count = 0;
 
 	// Read fields in the same order as original v2 header layout.
-	if (!file.read(reinterpret_cast<char *>(&ident), sizeof(ident)))
+	if (!file.read(reinterpret_cast<char*>(&ident), sizeof(ident)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&version), sizeof(version)))
+	if (!file.read(reinterpret_cast<char*>(&version), sizeof(version)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&flags), sizeof(flags)))
+	if (!file.read(reinterpret_cast<char*>(&flags), sizeof(flags)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&lmGroups), sizeof(lmGroups)))
+	if (!file.read(reinterpret_cast<char*>(&lmGroups), sizeof(lmGroups)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(reserved0), sizeof(reserved0)))
+	if (!file.read(reinterpret_cast<char*>(reserved0), sizeof(reserved0)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&model_mins), sizeof(model_mins)))
+	if (!file.read(reinterpret_cast<char*>(&model_mins), sizeof(model_mins)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&model_maxs), sizeof(model_maxs)))
+	if (!file.read(reinterpret_cast<char*>(&model_maxs), sizeof(model_maxs)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(reserved1), sizeof(reserved1)))
-		return false;
-
-	if (!file.read(reinterpret_cast<char *>(&mat_ofs), sizeof(mat_ofs)))
-		return false;
-	if (!file.read(reinterpret_cast<char *>(&mat_size), sizeof(mat_size)))
+	if (!file.read(reinterpret_cast<char*>(reserved1), sizeof(reserved1)))
 		return false;
 
-	if (!file.read(reinterpret_cast<char *>(&faces_ofs), sizeof(faces_ofs)))
+	if (!file.read(reinterpret_cast<char*>(&mat_ofs), sizeof(mat_ofs)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&face_size), sizeof(face_size)))
-		return false;
-	if (!file.read(reinterpret_cast<char *>(&faces_count), sizeof(faces_count)))
+	if (!file.read(reinterpret_cast<char*>(&mat_size), sizeof(mat_size)))
 		return false;
 
-	if (!file.read(reinterpret_cast<char *>(&vertex_ofs), sizeof(vertex_ofs)))
+	if (!file.read(reinterpret_cast<char*>(&faces_ofs), sizeof(faces_ofs)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&vertex_size), sizeof(vertex_size)))
+	if (!file.read(reinterpret_cast<char*>(&face_size), sizeof(face_size)))
 		return false;
-	if (!file.read(reinterpret_cast<char *>(&vertex_count), sizeof(vertex_count)))
+	if (!file.read(reinterpret_cast<char*>(&faces_count), sizeof(faces_count)))
+		return false;
+
+	if (!file.read(reinterpret_cast<char*>(&vertex_ofs), sizeof(vertex_ofs)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&vertex_size), sizeof(vertex_size)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&vertex_count), sizeof(vertex_count)))
 		return false;
 
 	// Map into v3 header
@@ -427,7 +427,7 @@ bool CSMFile::read_v2(std::ifstream &file)
 		file.seekg(header.mat_ofs);
 		std::string matstr;
 		matstr.resize(header.mat_size);
-		file.read((char *)matstr.data(), header.mat_size);
+		file.read((char*)matstr.data(), header.mat_size);
 		if (!matstr.empty())
 			parseMaterialsFromString(matstr);
 	}
@@ -438,7 +438,7 @@ bool CSMFile::read_v2(std::ifstream &file)
 		file.seekg(header.vertex_ofs);
 		vertices.resize(header.vertex_count);
 		size_t expected = sizeof(csm_vertex) * header.vertex_count;
-		file.read((char *)vertices.data(), expected);
+		file.read((char*)vertices.data(), expected);
 	}
 
 	// Read faces: v2 face fields are read sequentially and mapped into csm_face
@@ -460,15 +460,15 @@ bool CSMFile::read_v2(std::ifstream &file)
 				vec2 uv[3];
 			} uvs[2];
 
-			if (!file.read(reinterpret_cast<char *>(&matIdx), sizeof(matIdx)))
+			if (!file.read(reinterpret_cast<char*>(&matIdx), sizeof(matIdx)))
 				return false;
-			if (!file.read(reinterpret_cast<char *>(&edgeFlags), sizeof(edgeFlags)))
+			if (!file.read(reinterpret_cast<char*>(&edgeFlags), sizeof(edgeFlags)))
 				return false;
-			if (!file.read(reinterpret_cast<char *>(vertIdx), sizeof(vertIdx)))
+			if (!file.read(reinterpret_cast<char*>(vertIdx), sizeof(vertIdx)))
 				return false;
-			if (!file.read(reinterpret_cast<char *>(&lmGroup), sizeof(lmGroup)))
+			if (!file.read(reinterpret_cast<char*>(&lmGroup), sizeof(lmGroup)))
 				return false;
-			if (!file.read(reinterpret_cast<char *>(&uvs), sizeof(uvs)))
+			if (!file.read(reinterpret_cast<char*>(&uvs), sizeof(uvs)))
 				return false;
 
 			// Map into v3 face
@@ -495,7 +495,7 @@ bool CSMFile::read_v2(std::ifstream &file)
 	return true;
 }
 
-bool CSMFile::read(const std::string &filePath)
+bool CSMFile::read(const std::string& filePath)
 {
 	std::ifstream file(filePath, std::ios::binary);
 	if (!file)
@@ -505,7 +505,7 @@ bool CSMFile::read(const std::string &filePath)
 	}
 
 	unsigned int ident = 0;
-	if (!file.read(reinterpret_cast<char *>(&ident), sizeof(ident)))
+	if (!file.read(reinterpret_cast<char*>(&ident), sizeof(ident)))
 	{
 		print_log(PRINT_RED, "Error: Failed to read ident\n");
 		return false;
@@ -518,7 +518,7 @@ bool CSMFile::read(const std::string &filePath)
 	}
 
 	unsigned int version = 0;
-	if (!file.read(reinterpret_cast<char *>(&version), sizeof(version)))
+	if (!file.read(reinterpret_cast<char*>(&version), sizeof(version)))
 	{
 		print_log(PRINT_RED, "Error: Failed to read version\n");
 		return false;
@@ -553,7 +553,7 @@ bool CSMFile::read(const std::string &filePath)
 	return result;
 }
 
-bool CSMFile::write(const std::string &filePath)
+bool CSMFile::write(const std::string& filePath)
 {
 	std::ofstream file(filePath, std::ios::binary);
 	if (!file)
@@ -585,7 +585,7 @@ bool CSMFile::write(const std::string &filePath)
 	header.sides_ofs = header.faces_ofs + (header.face_size * header.faces_count);
 	header.points_ofs = header.sides_ofs + (header.side_size * header.sides_count);
 
-	file.write(reinterpret_cast<const char *>(&header), sizeof(header));
+	file.write(reinterpret_cast<const char*>(&header), sizeof(header));
 
 	// write materials (null-terminated)
 	matstr.push_back('\0');
@@ -593,19 +593,19 @@ bool CSMFile::write(const std::string &filePath)
 
 	// write vertices
 	if (!vertices.empty())
-		file.write(reinterpret_cast<const char *>(vertices.data()), header.vertex_size * header.vertex_count);
+		file.write(reinterpret_cast<const char*>(vertices.data()), header.vertex_size * header.vertex_count);
 
 	// write faces
 	if (!faces.empty())
-		file.write(reinterpret_cast<const char *>(faces.data()), header.face_size * header.faces_count);
+		file.write(reinterpret_cast<const char*>(faces.data()), header.face_size * header.faces_count);
 
 	// write sides
 	if (!sides.empty())
-		file.write(reinterpret_cast<const char *>(sides.data()), header.side_size * header.sides_count);
+		file.write(reinterpret_cast<const char*>(sides.data()), header.side_size * header.sides_count);
 
 	// write points
 	if (!points.empty())
-		file.write(reinterpret_cast<const char *>(points.data()), header.point_size * header.points_count);
+		file.write(reinterpret_cast<const char*>(points.data()), header.point_size * header.points_count);
 
 	file.close();
 
@@ -617,7 +617,7 @@ bool CSMFile::write(const std::string &filePath)
 
 void CSMFile::upload()
 {
-	for (auto &m : model)
+	for (auto& m : model)
 		delete m;
 	model.clear();
 
@@ -625,7 +625,7 @@ void CSMFile::upload()
 	{
 		std::map<unsigned int, std::vector<modelVert>> materialVerts;
 
-		for (auto &f : faces)
+		for (auto& f : faces)
 		{
 			if (f.material >= materials.size())
 			{
@@ -650,15 +650,15 @@ void CSMFile::upload()
 			}
 		}
 
-		for (auto &pair : materialVerts)
+		for (auto& pair : materialVerts)
 		{
 			unsigned int matId = pair.first;
-			std::vector<modelVert> &verts = pair.second;
+			std::vector<modelVert>& verts = pair.second;
 
 			if (verts.empty())
 				continue;
 
-			CSM_MDL_MESH *mesh = new CSM_MDL_MESH();
+			CSM_MDL_MESH* mesh = new CSM_MDL_MESH();
 			mesh->matid = matId;
 			mesh->buffer = new VertexBuffer(g_app->modelShader, GL_TRIANGLES);
 			mesh->verts = verts;
@@ -681,21 +681,21 @@ void CSMFile::upload()
 
 void CSMFile::uploadSides()
 {
-	for (auto &s : sideModel)
+	for (auto& s : sideModel)
 		delete s;
 	sideModel.clear();
 
 	if (!showSides || sides.empty() || points.empty())
 		return;
 
-	for (auto &s : sides)
+	for (auto& s : sides)
 	{
 		if (s.numpoints < 3)
 			continue;
 		if (s.firstpoint + s.numpoints > points.size())
 			continue;
 
-		CSM_SIDE_MESH *sideMesh = new CSM_SIDE_MESH();
+		CSM_SIDE_MESH* sideMesh = new CSM_SIDE_MESH();
 		sideMesh->matid = s.material;
 		sideMesh->buffer = new VertexBuffer(g_app->modelShader, GL_TRIANGLES);
 
@@ -748,7 +748,7 @@ void CSMFile::draw()
 
 	if (!model.empty())
 	{
-		for (auto &m : model)
+		for (auto& m : model)
 		{
 			if (m && m->buffer)
 			{
@@ -773,7 +773,7 @@ void CSMFile::draw()
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 
-		for (auto &s : sideModel)
+		for (auto& s : sideModel)
 		{
 			if (s && s->buffer)
 			{
@@ -817,13 +817,13 @@ void CSMFile::printInfo()
 	}
 }
 
-std::map<unsigned int, CSMFile *> csm_models;
-CSMFile *AddNewXashCsmToRender(const std::string &path, unsigned int sum)
+std::map<unsigned int, CSMFile*> csm_models;
+CSMFile* AddNewXashCsmToRender(const std::string& path, unsigned int sum)
 {
-	unsigned int crc32 = GetCrc32InMemory((unsigned char *)path.data(), (unsigned int)path.size(), sum);
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int)path.size(), sum);
 	if (csm_models.find(crc32) != csm_models.end())
 		return csm_models[crc32];
-	CSMFile *newModel = new CSMFile(path);
+	CSMFile* newModel = new CSMFile(path);
 	csm_models[crc32] = newModel;
 	return newModel;
 }

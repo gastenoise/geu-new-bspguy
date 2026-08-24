@@ -54,12 +54,12 @@ class LeafNavMesh
 {
   public:
 	std::vector<LeafNode> nodes;
-	LeafOctree *octree;					  // finds nearby leaves from any point in space, even outside of the BSP tree
+	LeafOctree* octree;					  // finds nearby leaves from any point in space, even outside of the BSP tree
 	int leafMap[MAX_MAP_CLIPNODE_LEAVES]; // maps a BSP leaf index to nav mesh node index
 
 	LeafNavMesh();
 
-	LeafNavMesh(std::vector<LeafNode> polys, LeafOctree *octree);
+	LeafNavMesh(std::vector<LeafNode> polys, LeafOctree* octree);
 
 	bool addLink(int from, int to, Polygon3D linkArea);
 
@@ -71,7 +71,7 @@ class LeafNavMesh
 
 	float path_cost(int a, int b);
 
-	int getNodeIdx(Bsp *map, Entity *ent);
+	int getNodeIdx(Bsp* map, Entity* ent);
 
   private:
 };

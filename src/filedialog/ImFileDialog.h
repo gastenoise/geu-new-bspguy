@@ -20,7 +20,7 @@ namespace ifd
 class FileDialog
 {
   public:
-	static inline FileDialog &Instance()
+	static inline FileDialog& Instance()
 	{
 		static FileDialog ret;
 		return ret;
@@ -29,30 +29,30 @@ class FileDialog
 	FileDialog();
 	~FileDialog();
 
-	bool Save(const std::string &key, const std::string &title, const std::string &filter, const std::string &startingDir = "");
+	bool Save(const std::string& key, const std::string& title, const std::string& filter, const std::string& startingDir = "");
 
-	bool Open(const std::string &key, const std::string &title, const std::string &filter, bool isMultiselect = false, const std::string &startingDir = "");
+	bool Open(const std::string& key, const std::string& title, const std::string& filter, bool isMultiselect = false, const std::string& startingDir = "");
 
-	bool IsDone(const std::string &key);
+	bool IsDone(const std::string& key);
 
 	inline bool HasResult()
 	{
 		return m_result.size();
 	}
-	inline const std::filesystem::path &GetResult()
+	inline const std::filesystem::path& GetResult()
 	{
 		return m_result[0];
 	}
-	inline const std::vector<std::filesystem::path> &GetResults()
+	inline const std::vector<std::filesystem::path>& GetResults()
 	{
 		return m_result;
 	}
 
 	void Close();
 
-	void RemoveFavorite(const std::string &path);
-	void AddFavorite(const std::string &path);
-	inline const std::vector<std::string> &GetFavorites()
+	void RemoveFavorite(const std::string& path);
+	void AddFavorite(const std::string& path);
+	inline const std::vector<std::string>& GetFavorites()
 	{
 		return m_favorites;
 	}
@@ -67,13 +67,13 @@ class FileDialog
 		return m_zoom;
 	}
 
-	std::function<void *(unsigned char *, int, int, char)> CreateTexture; // char -> fmt -> { 0 = BGRA, 1 = RGBA }
-	std::function<void(void *)> DeleteTexture;
+	std::function<void*(unsigned char*, int, int, char)> CreateTexture; // char -> fmt -> { 0 = BGRA, 1 = RGBA }
+	std::function<void(void*)> DeleteTexture;
 
 	class FileTreeNode
 	{
 	  public:
-		FileTreeNode(const std::string &path)
+		FileTreeNode(const std::string& path)
 		{
 			Path = std::filesystem::path(path);
 			Read = false;
@@ -81,12 +81,12 @@ class FileDialog
 
 		std::filesystem::path Path;
 		bool Read;
-		std::vector<FileTreeNode *> Children;
+		std::vector<FileTreeNode*> Children;
 	};
 	class FileData
 	{
 	  public:
-		FileData(const std::filesystem::path &path);
+		FileData(const std::filesystem::path& path);
 
 		std::filesystem::path Path;
 		bool IsDirectory;
@@ -94,8 +94,8 @@ class FileDialog
 		time_t DateModified;
 
 		bool HasIconPreview;
-		void *IconPreview;
-		unsigned char *IconPreviewData;
+		void* IconPreview;
+		unsigned char* IconPreviewData;
 		int IconPreviewWidth, IconPreviewHeight;
 	};
 
@@ -117,37 +117,37 @@ class FileDialog
 
 	std::vector<std::filesystem::path> m_selections;
 	int m_selectedFileItem;
-	void m_select(const std::filesystem::path &path, bool isCtrlDown = false);
+	void m_select(const std::filesystem::path& path, bool isCtrlDown = false);
 
 	std::vector<std::filesystem::path> m_result;
-	bool m_finalize(const std::string &filename = "");
+	bool m_finalize(const std::string& filename = "");
 
 	std::string m_filter;
 	std::vector<std::vector<std::string>> m_filterExtensions;
 	size_t m_filterSelection;
-	void m_parseFilter(const std::string &filter);
+	void m_parseFilter(const std::string& filter);
 
 	std::vector<int> m_iconIndices;
 	std::vector<std::string> m_iconFilepaths; // m_iconIndices[x] <-> m_iconFilepaths[x]
-	std::unordered_map<std::string, void *> m_icons;
-	void *m_getIcon(const std::filesystem::path &path);
+	std::unordered_map<std::string, void*> m_icons;
+	void* m_getIcon(const std::filesystem::path& path);
 	void m_clearIcons();
 	void m_refreshIconPreview();
 	void m_clearIconPreview();
 
-	std::thread *m_previewLoader;
+	std::thread* m_previewLoader;
 	bool m_previewLoaderRunning;
 	void m_stopPreviewLoader();
 	void m_loadPreview();
 
-	std::vector<FileTreeNode *> m_treeCache;
-	void m_clearTree(FileTreeNode *node);
-	void m_renderTree(FileTreeNode *node);
+	std::vector<FileTreeNode*> m_treeCache;
+	void m_clearTree(FileTreeNode* node);
+	void m_renderTree(FileTreeNode* node);
 
 	unsigned int m_sortColumn;
 	unsigned int m_sortDirection;
 	std::vector<FileData> m_content;
-	void m_setDirectory(const std::filesystem::path &p, bool addHistory = true);
+	void m_setDirectory(const std::filesystem::path& p, bool addHistory = true);
 	void m_sortContent(unsigned int column, unsigned int sortDirection);
 	void m_renderContent();
 

@@ -91,7 +91,7 @@ void LeafNavMesh::clear()
 	nodes.clear();
 }
 
-LeafNavMesh::LeafNavMesh(std::vector<LeafNode> inleaves, LeafOctree *octree)
+LeafNavMesh::LeafNavMesh(std::vector<LeafNode> inleaves, LeafOctree* octree)
 {
 	clear();
 
@@ -109,7 +109,7 @@ bool LeafNavMesh::addLink(int from, int to, Polygon3D linkArea)
 
 	if (!nodes[from].addLink(to, linkArea))
 	{
-		vec3 &pos = nodes[from].center;
+		vec3& pos = nodes[from].center;
 		print_log("Failed to add link at {} {} {}\n", (int)pos.x, (int)pos.y, (int)pos.z);
 		return false;
 	}
@@ -117,7 +117,7 @@ bool LeafNavMesh::addLink(int from, int to, Polygon3D linkArea)
 	return true;
 }
 
-int LeafNavMesh::getNodeIdx(Bsp *map, Entity *ent)
+int LeafNavMesh::getNodeIdx(Bsp* map, Entity* ent)
 {
 	vec3 ori = ent->origin;
 	vec3 mins, maxs;
@@ -130,7 +130,7 @@ int LeafNavMesh::getNodeIdx(Bsp *map, Entity *ent)
 	}
 	else
 	{
-		FgdClass *fclass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+		FgdClass* fclass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
 		if (fclass->sizeSet)
 		{
 			mins = fclass->mins;
@@ -179,7 +179,7 @@ int LeafNavMesh::getNodeIdx(Bsp *map, Entity *ent)
 	// no points are inside, so test for plane intersections
 
 	cCube entCube(mins, maxs, COLOR4(0, 0, 0, 0));
-	cQuad *faces[6] = {
+	cQuad* faces[6] = {
 		&entCube.top,
 		&entCube.bottom,
 		&entCube.left,
@@ -191,17 +191,17 @@ int LeafNavMesh::getNodeIdx(Bsp *map, Entity *ent)
 	Polygon3D boxPolys[6];
 	for (int i = 0; i < 6; i++)
 	{
-		cQuad &face = *faces[i];
+		cQuad& face = *faces[i];
 		boxPolys[i] = std::vector<vec3>{face.v1.pos, face.v2.pos, face.v3.pos, face.v6.pos};
 	}
 
 	for (int i = 0; i < (int)nodes.size(); i++)
 	{
-		LeafNode &mesh = nodes[i];
+		LeafNode& mesh = nodes[i];
 
 		for (size_t k = 0; k < mesh.leafFaces.size(); k++)
 		{
-			Polygon3D &leafFace = mesh.leafFaces[k];
+			Polygon3D& leafFace = mesh.leafFaces[k];
 
 			for (int n = 0; n < 6; n++)
 			{
@@ -219,13 +219,13 @@ int LeafNavMesh::getNodeIdx(Bsp *map, Entity *ent)
 float LeafNavMesh::path_cost(int a, int b)
 {
 
-	LeafNode &nodea = nodes[a];
-	LeafNode &nodeb = nodes[b];
+	LeafNode& nodea = nodes[a];
+	LeafNode& nodeb = nodes[b];
 	vec3 delta = nodea.origin - nodeb.origin;
 
 	for (size_t i = 0; i < nodea.links.size(); i++)
 	{
-		LeafLink &link = nodea.links[i];
+		LeafLink& link = nodea.links[i];
 		if (link.node == b)
 		{
 			return link.baseCost + delta.length() * link.costMultiplier;
@@ -258,8 +258,8 @@ std::vector<int> LeafNavMesh::AStarRoute(int startNodeIdx, int endNodeIdx)
 		return emptyRoute;
 	}
 
-	LeafNode &start = nodes[startNodeIdx];
-	LeafNode &goal = nodes[endNodeIdx];
+	LeafNode& start = nodes[startNodeIdx];
+	LeafNode& goal = nodes[endNodeIdx];
 
 	openSet.insert(startNodeIdx);
 	gScore[startNodeIdx] = 0;
@@ -317,11 +317,11 @@ std::vector<int> LeafNavMesh::AStarRoute(int startNodeIdx, int endNodeIdx)
 		openSet.erase(current);
 		closedSet.insert(current);
 
-		LeafNode &currentNode = nodes[current];
+		LeafNode& currentNode = nodes[current];
 
 		for (size_t i = 0; i < currentNode.links.size(); i++)
 		{
-			LeafLink &link = currentNode.links[i];
+			LeafLink& link = currentNode.links[i];
 			if (link.node == -1)
 			{
 				break;
@@ -341,7 +341,7 @@ std::vector<int> LeafNavMesh::AStarRoute(int startNodeIdx, int endNodeIdx)
 			openSet.insert(neighbor);
 
 			// The distance from start to a neighbor
-			LeafNode &neighborNode = nodes[neighbor];
+			LeafNode& neighborNode = nodes[neighbor];
 
 			float tentative_gScore = gScore[current];
 			tentative_gScore += path_cost(currentNode.id, neighborNode.id);
@@ -405,7 +405,7 @@ std::vector<int> LeafNavMesh::dijkstraRoute(int start, int end)
 		// Traverse all links of node u
 		for (size_t i = 0; i < nodes[u].links.size(); i++)
 		{
-			LeafLink &link = nodes[u].links[i];
+			LeafLink& link = nodes[u].links[i];
 
 			if (link.node == -1)
 			{
@@ -443,8 +443,8 @@ std::vector<int> LeafNavMesh::dijkstraRoute(int start, int end)
 	float cost = 0;
 	for (size_t i = 1; i < path.size(); i++)
 	{
-		LeafNode &mesha = nodes[path[i - 1]];
-		LeafNode &meshb = nodes[path[i]];
+		LeafNode& mesha = nodes[path[i - 1]];
+		LeafNode& meshb = nodes[path[i]];
 		len += (mesha.origin - meshb.origin).length();
 		cost += path_cost(path[i - 1], path[i]);
 	}

@@ -45,7 +45,7 @@ std::string g_version_string = "NewBSPGuy v4.71";
 #include <csignal>
 #endif
 
-bool start_viewer(const char *map)
+bool start_viewer(const char* map)
 {
 	if (map && map[0] != '\0' && !fileExists(map))
 	{
@@ -73,11 +73,11 @@ bool start_viewer(const char *map)
 
 int test()
 {
-	std::vector<Bsp *> maps;
+	std::vector<Bsp*> maps;
 
 	for (int i = 1; i < 22; i++)
 	{
-		Bsp *map = new Bsp("2nd/saving_the_2nd_amendment" + (i > 1 ? std::to_string(i) : "") + ".bsp");
+		Bsp* map = new Bsp("2nd/saving_the_2nd_amendment" + (i > 1 ? std::to_string(i) : "") + ".bsp");
 		maps.push_back(map);
 	}
 
@@ -132,7 +132,7 @@ int merge_maps()
 		return 1;
 	}
 
-	std::vector<Bsp *> maps;
+	std::vector<Bsp*> maps;
 
 	for (size_t i = 0; i < input_maps.size(); i++)
 	{
@@ -141,7 +141,7 @@ int merge_maps()
 			input_maps[i] = g_startup_dir + input_maps[i];
 		}
 
-		Bsp *map = new Bsp(input_maps[i]);
+		Bsp* map = new Bsp(input_maps[i]);
 		if (!map->bsp_valid)
 		{
 			delete map;
@@ -211,7 +211,7 @@ int merge_maps()
 
 int print_info()
 {
-	Bsp *map = new Bsp(g_cmdLine.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		bool limitMode = false;
@@ -261,7 +261,7 @@ int print_info()
 
 int noclip()
 {
-	Bsp *map = new Bsp(g_cmdLine.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int model = -1;
@@ -392,7 +392,7 @@ int noclip()
 
 int simplify()
 {
-	Bsp *map = new Bsp(g_cmdLine.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int hull = 0;
@@ -473,7 +473,7 @@ int simplify()
 
 int deleteCmd()
 {
-	Bsp *map = new Bsp(g_cmdLine.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		STRUCTCOUNT removed = map->remove_unused_model_structures();
@@ -514,7 +514,7 @@ int deleteCmd()
 
 int transform()
 {
-	Bsp *map = new Bsp(g_cmdLine.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		vec3 move;
@@ -549,7 +549,7 @@ int transform()
 
 int unembed()
 {
-	Bsp *map = new Bsp(g_cmdLine.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
@@ -576,7 +576,7 @@ int modent()
 
 	if (dirExists(target))
 	{
-		for (const auto &entry : fs::directory_iterator(target))
+		for (const auto& entry : fs::directory_iterator(target))
 		{
 			if (entry.is_regular_file() && entry.path().extension() == ".bsp")
 			{
@@ -624,9 +624,9 @@ int modent()
 		return 1;
 	}
 
-	for (const auto &file : files)
+	for (const auto& file : files)
 	{
-		Bsp *map = new Bsp(file);
+		Bsp* map = new Bsp(file);
 		if (!map->bsp_valid)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "Failed to load BSP: {}\n", file);
@@ -638,7 +638,7 @@ int modent()
 
 		if (doDelete)
 		{
-			auto it = std::remove_if(map->ents.begin(), map->ents.end(), [&](Entity *ent)
+			auto it = std::remove_if(map->ents.begin(), map->ents.end(), [&](Entity* ent)
 									 {
 				if (ent->isWorldSpawn()) return false;
 				if (query.evaluate(ent)) {
@@ -651,14 +651,14 @@ int modent()
 		}
 		else
 		{
-			for (Entity *ent : map->ents)
+			for (Entity* ent : map->ents)
 			{
 				if (query.evaluate(ent))
 				{
 					if (!setVal.empty())
 					{
 						std::vector<std::string> pairs = splitStringIgnoringQuotes(setVal, ",");
-						for (auto &pair : pairs)
+						for (auto& pair : pairs)
 						{
 							size_t eqPos = pair.find('=');
 							if (eqPos != std::string::npos)
@@ -727,7 +727,7 @@ int modent()
 	return 0;
 }
 
-void print_help(const std::string &command)
+void print_help(const std::string& command)
 {
 	if (command == "merge")
 	{
@@ -983,7 +983,7 @@ void print_help(const std::string &command)
 #include <Dbghelp.h>
 
 int crashdumps = 2;
-void make_minidump(EXCEPTION_POINTERS *e)
+void make_minidump(EXCEPTION_POINTERS* e)
 {
 	if (!e)
 	{
@@ -1034,7 +1034,7 @@ void make_minidump(EXCEPTION_POINTERS *e)
 	CloseHandle(hFile);
 }
 
-LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS *e)
+LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 {
 	if (e)
 	{
@@ -1067,7 +1067,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS *e)
 
 			if (crashdumps > 0)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void *)GetModuleHandleA(0));
+				print_log(PRINT_RED | PRINT_INTENSITY, "Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void*)GetModuleHandleA(0));
 
 				crashdumps--;
 				make_minidump(e);
@@ -1086,7 +1086,7 @@ void signalHandler(int signal)
 }
 #endif
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, ".utf8");
 	setlocale(LC_NUMERIC, "C");
@@ -1119,7 +1119,7 @@ int main(int argc, char *argv[])
 
 #ifdef WIN32
 		int nArgs;
-		LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
 		bspguy_dir = GetExecutableDir(szArglist[0]);
 #else
 		if (argv && argv[0])
@@ -1151,7 +1151,7 @@ int main(int argc, char *argv[])
 			std::vector<unsigned char> oldCFG;
 			if (readFile("./bspguy.cfg", oldCFG))
 			{
-				std::string bspgu_cfgToIni = ConvertFromCFGtoINI((char *)oldCFG.data());
+				std::string bspgu_cfgToIni = ConvertFromCFGtoINI((char*)oldCFG.data());
 				writeFile(g_settings_path, bspgu_cfgToIni);
 			}
 			removeFile("./bspguy.cfg");
@@ -1279,21 +1279,21 @@ int main(int argc, char *argv[])
 			{
 				scale = str_to_int(getValueInQuotes(g_cmdLine.getOption("-scale")));
 			}
-			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportToObjWIP(g_cmdLine.bspfile, scale);
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "exportlit")
 		{
-			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportLightFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "importlit")
 		{
-			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ImportLightFile(g_cmdLine.hasOption("-i") ? g_cmdLine.getOption("-i") : g_cmdLine.bspfile);
 			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
@@ -1302,21 +1302,21 @@ int main(int argc, char *argv[])
 		else if (g_cmdLine.command == "exportrad")
 		{
 			std::string newpath;
-			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportExtFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile, newpath);
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "exportwad")
 		{
-			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportEmbeddedWad(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile + ".wad");
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "importwad")
 		{
-			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ImportWad(g_cmdLine.hasOption("-i") ? g_cmdLine.getOption("-i") : g_cmdLine.bspfile + ".wad");
 			tmpBsp->validate();
 			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
@@ -1330,7 +1330,7 @@ int main(int argc, char *argv[])
 			{
 				leafIdx = str_to_int(getValueInQuotes(g_cmdLine.getOption("-leaf")));
 			}
-			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->cull_leaf_faces(leafIdx);
 			if (tmpBsp->validate() && tmpBsp->isValid())
 				tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
@@ -1429,7 +1429,7 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
-	catch (std::filesystem::filesystem_error &ex)
+	catch (std::filesystem::filesystem_error& ex)
 	{
 		std::cout << "std::filesystem fatal error." << std::endl
 				  << "what():  " << ex.what() << '\n'
@@ -1440,7 +1440,7 @@ int main(int argc, char *argv[])
 				  << "code().category(): " << ex.code().category().name() << '\n';
 		return 1;
 	}
-	catch (std::exception &ex)
+	catch (std::exception& ex)
 	{
 		std::cout << g_version_string << "FATAL ERROR \"" << ex.what() << "\"" << std::endl;
 		return 1;

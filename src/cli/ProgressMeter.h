@@ -15,7 +15,7 @@ class ProgressMeter
 	ProgressMeter();
 
 	// set a new title for the progress meter and set the number of ticks needed to reach 100%
-	void update(const std::string &newTitle, int totalProgressTicks);
+	void update(const std::string& newTitle, int totalProgressTicks);
 
 	// increment progress counter and print current status
 	void tick();

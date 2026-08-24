@@ -326,8 +326,8 @@ typedef struct mstudioevent_s
 
 struct StudioMesh
 {
-	VertexBuffer *buffer;
-	Texture *texture;
+	VertexBuffer* buffer;
+	Texture* texture;
 	std::vector<modelVert> verts;
 	StudioMesh()
 	{
@@ -354,7 +354,7 @@ class StudioModel
 	unsigned char m_controller[4]; // bone controllers
 	unsigned char m_blending[2];   // animation blending
 	unsigned char m_mouth = 0;	   // mouth position
-	EntCube *mdl_cube = NULL;
+	EntCube* mdl_cube = NULL;
 	vec3 mins, maxs;
 
 	vec3 g_xformverts[MAXSTUDIOVERTS]; // transformed vertices
@@ -379,14 +379,14 @@ class StudioModel
 	float g_lambert; // modifier for pseudo-hemispherical lighting
 
 	// internal data
-	studiohdr_t *m_pstudiohdr;
-	mstudiomodel_t *m_pmodel;
+	studiohdr_t* m_pstudiohdr;
+	mstudiomodel_t* m_pmodel;
 
-	studiohdr_t *m_ptexturehdr;
-	studioseqhdr_t *m_panimhdr[32];
+	studiohdr_t* m_ptexturehdr;
+	studioseqhdr_t* m_panimhdr[32];
 
 	vec4 m_adj; // FIX: non persistant, make static
-	std::vector<Texture *> mdl_textures;
+	std::vector<Texture*> mdl_textures;
 	std::vector<std::vector<StudioMesh>> mdl_mesh_groups;
 
 	std::string filename;
@@ -406,7 +406,7 @@ class StudioModel
 		frametime = 999999.0;
 		g_vright = vec3();
 		g_lambert = 1.0f;
-		mdl_textures = std::vector<Texture *>();
+		mdl_textures = std::vector<Texture*>();
 		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
 		m_sequence = m_skinnum = 0;
 		m_frame = 0.0f;
@@ -472,16 +472,16 @@ class StudioModel
 			mdl_cube = NULL;
 		}
 
-		for (auto &tex : mdl_textures)
+		for (auto& tex : mdl_textures)
 		{
 			delete tex;
 		}
 
 		mdl_textures.clear();
 
-		for (auto &body : mdl_mesh_groups)
+		for (auto& body : mdl_mesh_groups)
 		{
-			for (auto &submesh : body)
+			for (auto& submesh : body)
 			{
 				if (submesh.buffer)
 				{
@@ -495,13 +495,13 @@ class StudioModel
 
 	void DrawMDL(int mesh = -1);
 
-	void Init(const std::string &modelname);
+	void Init(const std::string& modelname);
 	void RefreshMeshList(int body);
 	void UpdateModelMeshList(void);
 
 	void AdvanceFrame(float dt);
-	void ExtractBBox(vec3 &mins, vec3 &maxs);
-	void GetSequenceInfo(float *pflFrameRate, float *pflGroundSpeed);
+	void ExtractBBox(vec3& mins, vec3& maxs);
+	void GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed);
 	float SetController(int iController, float flValue);
 	float SetMouth(float flValue);
 	float SetBlending(int iBlender, float flValue);
@@ -515,20 +515,20 @@ class StudioModel
 	int GetBodyCount();
 	int GetSequence(void);
 	int GetSequenceCount();
-	bool LoadModel(const std::string &modelname, bool IsTexture = false);
-	bool LoadDemandSequences(const std::string &modelname, int seqid);
+	bool LoadModel(const std::string& modelname, bool IsTexture = false);
+	bool LoadDemandSequences(const std::string& modelname, int seqid);
 	void CalcBoneAdj(void);
-	void CalcBoneQuaternion(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, vec4 &q);
-	void CalcBonePosition(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, vec3 &pos);
-	void CalcRotations(vec3 *pos, vec4 *q, mstudioseqdesc_t *pseqdesc, mstudioanim_t *panim, float f);
-	mstudioanim_t *GetAnim(mstudioseqdesc_t *pseqdesc);
-	void SlerpBones(vec4 *q1, vec3 *pos1, vec4 *q2, vec3 *pos2, float s);
+	void CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q);
+	void CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec3& pos);
+	void CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f);
+	mstudioanim_t* GetAnim(mstudioseqdesc_t* pseqdesc);
+	void SlerpBones(vec4* q1, vec3* pos1, vec4* q2, vec3* pos2, float s);
 	void SetUpBones(void);
 	// void Lighting(float* lv, int bone, int flags, const vec3& normal);
 	// void Chrome(int* chrome, int bone, const vec3& normal);
 	// void SetupLighting(void);
 	void SetupModel(int bodypart);
-	void UploadTexture(mstudiotexture_t *ptexture, unsigned char *data, COLOR3 *pal);
+	void UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, COLOR3* pal);
 
   private:
 	vec3 static_pos1[MAXSTUDIOBONES];
@@ -551,5 +551,5 @@ class StudioModel
 	// float colorData[MAX_VERTS_PER_CALL * 4];
 };
 
-extern std::map<unsigned int, StudioModel *> mdl_models;
-StudioModel *AddNewModelToRender(const std::string &path, unsigned int sum = 0);
+extern std::map<unsigned int, StudioModel*> mdl_models;
+StudioModel* AddNewModelToRender(const std::string& path, unsigned int sum = 0);

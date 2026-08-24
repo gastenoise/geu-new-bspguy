@@ -21,13 +21,13 @@ bool vec3Equal(vec3 v1, vec3 v2, float epsilon)
 	return true;
 }
 
-Polygon3D::Polygon3D(const std::vector<vec3> &verts)
+Polygon3D::Polygon3D(const std::vector<vec3>& verts)
 {
 	this->verts = verts;
 	init();
 }
 
-Polygon3D::Polygon3D(const std::vector<vec3> &verts, int idx)
+Polygon3D::Polygon3D(const std::vector<vec3>& verts, int idx)
 {
 	this->verts = verts;
 	this->idx = idx;
@@ -99,22 +99,22 @@ void Polygon3D::init()
 	isValid = true;
 }
 
-vec2 Polygon3D::project(const vec3 &p) const
+vec2 Polygon3D::project(const vec3& p) const
 {
 	return (worldToLocal * vec4(p, 1)).xy();
 }
 
-vec3 Polygon3D::unproject(const vec2 &p) const
+vec3 Polygon3D::unproject(const vec2& p) const
 {
 	return (localToWorld * vec4(p.x, p.y, fdist, 1)).xyz();
 }
 
-float Polygon3D::distance(const vec3 &p) const
+float Polygon3D::distance(const vec3& p) const
 {
 	return dotProduct(p - verts[0], plane_z);
 }
 
-bool Polygon3D::isInside(const vec3 &p) const
+bool Polygon3D::isInside(const vec3& p) const
 {
 	if (fabs(distance(p)) > EPSILON)
 	{
@@ -124,20 +124,20 @@ bool Polygon3D::isInside(const vec3 &p) const
 	return isInside(project(p));
 }
 
-float isLeft(const vec2 &p1, const vec2 &p2, const vec2 &point)
+float isLeft(const vec2& p1, const vec2& p2, const vec2& point)
 {
 	return crossProduct(p2 - p1, point - p1);
 }
 
 // winding method
-bool Polygon3D::isInside(const vec2 &p, bool includeEdge) const
+bool Polygon3D::isInside(const vec2& p, bool includeEdge) const
 {
 	int windingNumber = 0;
 
 	for (size_t i = 0; i < localVerts.size(); i++)
 	{
-		const vec2 &p1 = localVerts[i];
-		const vec2 &p2 = localVerts[(i + 1) % localVerts.size()];
+		const vec2& p1 = localVerts[i];
+		const vec2& p2 = localVerts[(i + 1) % localVerts.size()];
 
 		if (p1.y <= p.y)
 		{
@@ -275,7 +275,7 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine)
 	return splitPolys;
 }
 
-std::vector<std::vector<vec3>> Polygon3D::split(const Polygon3D &cutPoly)
+std::vector<std::vector<vec3>> Polygon3D::split(const Polygon3D& cutPoly)
 {
 	if (!boxesIntersect(worldMins, worldMaxs, cutPoly.worldMins, cutPoly.worldMaxs))
 	{
@@ -284,8 +284,8 @@ std::vector<std::vector<vec3>> Polygon3D::split(const Polygon3D &cutPoly)
 
 	for (size_t i = 0; i < cutPoly.verts.size(); i++)
 	{
-		const vec3 &e1 = cutPoly.verts[i];
-		const vec3 &e2 = cutPoly.verts[(i + 1) % cutPoly.verts.size()];
+		const vec3& e1 = cutPoly.verts[i];
+		const vec3& e2 = cutPoly.verts[(i + 1) % cutPoly.verts.size()];
 
 		if (fabs(distance(e1)) < EPSILON && fabs(distance(e2)) < EPSILON)
 		{
@@ -311,9 +311,9 @@ bool Polygon3D::isConvex()
 
 	for (size_t i = 0; i < n; i++)
 	{
-		const vec2 &A = localVerts[i];
-		const vec2 &B = localVerts[(i + 1) % n]; // Next vertex
-		const vec2 &C = localVerts[(i + 2) % n]; // Vertex after the next
+		const vec2& A = localVerts[i];
+		const vec2& B = localVerts[(i + 1) % n]; // Next vertex
+		const vec2& C = localVerts[(i + 2) % n]; // Vertex after the next
 
 		// normalizing prevents small epsilons not working for large differences in edge lengths
 		vec2 AB = vec2(B.x - A.x, B.y - A.y).normalize();
@@ -390,9 +390,9 @@ void Polygon3D::removeColinearVerts()
 	{
 		for (size_t i = 0; i < sz; i++)
 		{
-			const vec2 &A = localVerts[(i + (sz - 1)) % sz];
-			const vec2 &B = localVerts[i];
-			const vec2 &C = localVerts[(i + 1) % sz];
+			const vec2& A = localVerts[(i + (sz - 1)) % sz];
+			const vec2& B = localVerts[i];
+			const vec2& C = localVerts[(i + 1) % sz];
 
 			vec2 AB = vec2(B.x - A.x, B.y - A.y).normalize();
 			vec2 BC = vec2(C.x - B.x, C.y - B.y).normalize();
@@ -413,7 +413,7 @@ void Polygon3D::removeColinearVerts()
 	}
 }
 
-Polygon3D Polygon3D::merge(const Polygon3D &mergePoly)
+Polygon3D Polygon3D::merge(const Polygon3D& mergePoly)
 {
 	std::vector<vec3> mergedVerts;
 
@@ -427,13 +427,13 @@ Polygon3D Polygon3D::merge(const Polygon3D &mergePoly)
 	int commonEdgeStart2 = -1, commonEdgeEnd2 = -1;
 	for (int i = 0; i < (int)verts.size(); i++)
 	{
-		const vec3 &e1 = verts[i];
-		const vec3 &e2 = verts[(i + 1) % verts.size()];
+		const vec3& e1 = verts[i];
+		const vec3& e2 = verts[(i + 1) % verts.size()];
 
 		for (int k = 0; k < (int)mergePoly.verts.size(); k++)
 		{
-			const vec3 &other1 = mergePoly.verts[k];
-			const vec3 &other2 = mergePoly.verts[(k + 1) % mergePoly.verts.size()];
+			const vec3& other1 = mergePoly.verts[k];
+			const vec3& other2 = mergePoly.verts[(k + 1) % mergePoly.verts.size()];
 
 			if ((vec3Equal(e1, other1, epsilon) && vec3Equal(e2, other2, epsilon)) || (vec3Equal(e1, other2, epsilon) && vec3Equal(e2, other1, epsilon)))
 			{
@@ -475,7 +475,7 @@ Polygon3D Polygon3D::merge(const Polygon3D &mergePoly)
 	return newPoly;
 }
 
-void push_unique_vert(std::vector<vec2> &verts, vec2 vert)
+void push_unique_vert(std::vector<vec2>& verts, vec2 vert)
 {
 	for (size_t k = 0; k < verts.size(); k++)
 	{
@@ -493,7 +493,7 @@ namespace GrahamScan
 // https://www.tutorialspoint.com/cplusplus-program-to-implement-graham-scan-algorithm-to-find-the-convex-hull
 vec2 p0;
 
-vec2 secondTop(std::stack<vec2> &stk)
+vec2 secondTop(std::stack<vec2>& stk)
 {
 	vec2 tempvec2 = stk.top();
 	stk.pop();
@@ -517,17 +517,17 @@ int direction(vec2 a, vec2 b, vec2 c)
 	return 1;	  // clockwise direction
 }
 
-int comp(const void *point1, const void *point2)
+int comp(const void* point1, const void* point2)
 {
-	vec2 *p1 = (vec2 *)point1;
-	vec2 *p2 = (vec2 *)point2;
+	vec2* p1 = (vec2*)point1;
+	vec2* p2 = (vec2*)point2;
 	int dir = direction(p0, *p1, *p2);
 	if (dir == 0)
 		return (squaredDist(p0, *p2) >= squaredDist(p0, *p1)) ? -1 : 1;
 	return (dir == 2) ? -1 : 1;
 }
 
-std::vector<vec2> findConvexHull(vec2 *points, int n)
+std::vector<vec2> findConvexHull(vec2* points, int n)
 {
 	std::vector<vec2> convexHullPoints;
 	int minY = (int)points[0].y, min = 0;
@@ -604,8 +604,8 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly)
 	// find intersection points
 	for (size_t i = 0; i < localVerts.size(); i++)
 	{
-		vec2 &va1 = localVerts[i];
-		vec2 &va2 = localVerts[(i + 1) % localVerts.size()];
+		vec2& va1 = localVerts[i];
+		vec2& va2 = localVerts[(i + 1) % localVerts.size()];
 		Line2D edgeA(va1, va2);
 
 		if (otherPoly.isInside(va1, true))
@@ -616,8 +616,8 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly)
 
 		for (size_t k = 0; k < otherLocalVerts.size(); k++)
 		{
-			vec2 &vb1 = otherLocalVerts[k];
-			vec2 &vb2 = otherLocalVerts[(k + 1) % otherLocalVerts.size()];
+			vec2& vb1 = otherLocalVerts[k];
+			vec2& vb2 = otherLocalVerts[(k + 1) % otherLocalVerts.size()];
 			Line2D edgeB(vb1, vb2);
 
 			if (!edgeA.isAlignedWith(edgeB) && edgeA.doesIntersect(edgeB))
@@ -647,12 +647,12 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly)
 	return outVerts;
 }
 
-bool Polygon3D::intersects(const Polygon3D & /*otherPoly*/) const
+bool Polygon3D::intersects(const Polygon3D& /*otherPoly*/) const
 {
 	return false;
 }
 
-bool Polygon3D::intersect(const vec3 &p1, const vec3 &p2, vec3 &ipos) const
+bool Polygon3D::intersect(const vec3& p1, const vec3& p2, vec3& ipos) const
 {
 	float t1 = dotProduct(plane_z, p1) - fdist;
 	float t2 = dotProduct(plane_z, p2) - fdist;
@@ -675,7 +675,7 @@ bool Polygon3D::intersect(const vec3 &p1, const vec3 &p2, vec3 &ipos) const
 	return isInside(project(ipos));
 }
 
-bool Polygon3D::intersect2D(const vec3 &p1, const vec3 &p2, vec3 &ipos) const
+bool Polygon3D::intersect2D(const vec3& p1, const vec3& p2, vec3& ipos) const
 {
 	vec2 p1_2d = project(p1);
 	vec2 p2_2d = project(p2);

@@ -33,7 +33,7 @@ bool DebugKeyPressed = false;
 ProgressMeter g_progress = {};
 int g_render_flags;
 
-bool fileExists(const std::string &fileName)
+bool fileExists(const std::string& fileName)
 {
 	try
 	{
@@ -47,7 +47,7 @@ bool fileExists(const std::string &fileName)
 	}
 }
 
-bool readFile(const std::string &path, std::vector<unsigned char> &outBuffer)
+bool readFile(const std::string& path, std::vector<unsigned char>& outBuffer)
 {
 	std::ifstream file(path, std::ios::binary | std::ios::ate);
 	if (!file.is_open())
@@ -60,7 +60,7 @@ bool readFile(const std::string &path, std::vector<unsigned char> &outBuffer)
 	outBuffer.resize(static_cast<size_t>(size));
 	file.seekg(0, std::ios::beg);
 
-	if (!file.read((char *)outBuffer.data(), size))
+	if (!file.read((char*)outBuffer.data(), size))
 	{
 		outBuffer.clear();
 		return false;
@@ -69,18 +69,18 @@ bool readFile(const std::string &path, std::vector<unsigned char> &outBuffer)
 	return true;
 }
 
-bool writeFile(const std::string &path, const std::vector<unsigned char> &buffer)
+bool writeFile(const std::string& path, const std::vector<unsigned char>& buffer)
 {
 	std::ofstream file(path, std::ios::binary | std::ios::trunc);
 	if (!file.is_open() || buffer.empty())
 		return false;
 
-	file.write((char *)buffer.data(), buffer.size());
+	file.write((char*)buffer.data(), buffer.size());
 	file.flush();
 	return true;
 }
 
-bool writeFile(const std::string &fileName, const char *data, int len)
+bool writeFile(const std::string& fileName, const char* data, int len)
 {
 	std::ofstream file(fileName, std::ios::trunc | std::ios::binary);
 	if (!file.is_open() || len <= 0)
@@ -92,7 +92,7 @@ bool writeFile(const std::string &fileName, const char *data, int len)
 	return true;
 }
 
-bool writeFile(const std::string &fileName, const std::string &data)
+bool writeFile(const std::string& fileName, const std::string& data)
 {
 	std::ofstream file(fileName, std::ios::trunc | std::ios::binary);
 	if (!file.is_open() || !data.size())
@@ -104,13 +104,13 @@ bool writeFile(const std::string &fileName, const std::string &data)
 	return true;
 }
 
-bool removeFile(const std::string &fileName)
+bool removeFile(const std::string& fileName)
 {
 	std::error_code err;
 	return fs::exists(fileName, err) && fs::remove(fileName, err);
 }
 
-bool copyFile(const std::string &from, const std::string &to)
+bool copyFile(const std::string& from, const std::string& to)
 {
 	if (!fileExists(from))
 		return false;
@@ -124,7 +124,7 @@ bool copyFile(const std::string &from, const std::string &to)
 	return fs::copy_file(from, to, err);
 }
 
-size_t fileSize(const std::string &filePath)
+size_t fileSize(const std::string& filePath)
 {
 	size_t fsize = 0;
 	std::ifstream file(filePath, std::ios::binary);
@@ -136,7 +136,7 @@ size_t fileSize(const std::string &filePath)
 	return fsize;
 }
 
-std::vector<std::string> splitString(const std::string &str, const std::string &delimiter, int maxParts)
+std::vector<std::string> splitString(const std::string& str, const std::string& delimiter, int maxParts)
 {
 	std::string s = str;
 	std::vector<std::string> split;
@@ -154,7 +154,7 @@ std::vector<std::string> splitString(const std::string &str, const std::string &
 	return split;
 }
 
-std::vector<std::string> splitStringIgnoringQuotes(const std::string &str, const std::string &delimitter)
+std::vector<std::string> splitStringIgnoringQuotes(const std::string& str, const std::string& delimitter)
 {
 	std::vector<std::string> split;
 	if (str.empty() || delimitter.empty())
@@ -202,7 +202,7 @@ std::vector<std::string> splitStringIgnoringQuotes(const std::string &str, const
 	return split;
 }
 
-std::string basename(const std::string &path)
+std::string basename(const std::string& path)
 {
 	size_t lastSlash = path.find_last_of("\\/");
 	if (lastSlash != std::string::npos)
@@ -212,7 +212,7 @@ std::string basename(const std::string &path)
 	return path;
 }
 
-std::string stripExt(const std::string &path)
+std::string stripExt(const std::string& path)
 {
 	size_t lastDot = path.find_last_of('.');
 	if (lastDot != std::string::npos)
@@ -222,7 +222,7 @@ std::string stripExt(const std::string &path)
 	return path;
 }
 
-std::string stripFileName(const std::string &path)
+std::string stripFileName(const std::string& path)
 {
 	size_t lastSlash = path.find_last_of("\\/");
 	if (lastSlash != std::string::npos)
@@ -231,7 +231,7 @@ std::string stripFileName(const std::string &path)
 	}
 	return path;
 }
-std::wstring stripFileName(const std::wstring &path)
+std::wstring stripFileName(const std::wstring& path)
 {
 	size_t lastSlash = path.find_last_of(L"\\/");
 	if (lastSlash != std::string::npos)
@@ -241,7 +241,7 @@ std::wstring stripFileName(const std::wstring &path)
 	return path;
 }
 
-bool isNumeric(const std::string &s)
+bool isNumeric(const std::string& s)
 {
 	if (s.empty())
 		return false;
@@ -253,7 +253,7 @@ bool isNumeric(const std::string &s)
 	return it == s.end();
 }
 
-bool isFloating(const std::string &s)
+bool isFloating(const std::string& s)
 {
 	if (s.empty())
 		return false;
@@ -271,7 +271,7 @@ bool isFloating(const std::string &s)
 	return it == s.end() && points <= 1;
 }
 
-std::string toLowerCase(const std::string &s)
+std::string toLowerCase(const std::string& s)
 {
 	std::string ret = s;
 	std::transform(ret.begin(), ret.end(), ret.begin(),
@@ -279,7 +279,7 @@ std::string toLowerCase(const std::string &s)
 				   { return (unsigned char)std::tolower(c); });
 	return ret;
 }
-std::string toUpperCase(const std::string &s)
+std::string toUpperCase(const std::string& s)
 {
 	std::string ret = s;
 	std::transform(ret.begin(), ret.end(), ret.begin(),
@@ -288,7 +288,7 @@ std::string toUpperCase(const std::string &s)
 	return ret;
 }
 
-std::string trimSpaces(const std::string &str)
+std::string trimSpaces(const std::string& str)
 {
 	if (str.empty())
 	{
@@ -307,7 +307,7 @@ std::string trimSpaces(const std::string &str)
 	return result;
 }
 
-int getTextureSizeInBytes(BSPMIPTEX *bspTexture, bool palette)
+int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette)
 {
 	int sz = sizeof(BSPMIPTEX);
 	if (bspTexture->nOffsets[0] > 0)
@@ -326,7 +326,7 @@ int getTextureSizeInBytes(BSPMIPTEX *bspTexture, bool palette)
 	return sz;
 }
 
-vec3 parseVector(const std::string &s)
+vec3 parseVector(const std::string& s)
 {
 	vec3 v;
 	std::vector<std::string> parts = splitString(s, " ");
@@ -342,7 +342,7 @@ vec3 parseVector(const std::string &s)
 	return v;
 }
 
-bool IsEntNotSupportAngles(const std::string &entname)
+bool IsEntNotSupportAngles(const std::string& entname)
 {
 	if (strcasecmp(entname.c_str(), "func_wall") == 0 ||
 		strcasecmp(entname.c_str(), "func_wall_toggle") == 0 ||
@@ -391,7 +391,7 @@ bool operator==(COLOR4 c1, COLOR4 c2)
 	return c1.r == c2.r && c1.g == c2.g && c1.b == c2.b && c1.a == c2.a;
 }
 
-bool pickAABB(const vec3 &start, const vec3 &rayDir, const vec3 &mins, const vec3 &maxs, float &bestDist)
+bool pickAABB(const vec3& start, const vec3& rayDir, const vec3& mins, const vec3& maxs, float& bestDist)
 {
 	bool inside = true;
 	char quadrant[3];
@@ -461,7 +461,7 @@ bool pickAABB(const vec3 &start, const vec3 &rayDir, const vec3 &mins, const vec
 	return false;
 }
 
-bool rayPlaneIntersect(const vec3 &start, const vec3 &dir, const vec3 &normal, float fdist, float &intersectDist)
+bool rayPlaneIntersect(const vec3& start, const vec3& dir, const vec3& normal, float fdist, float& intersectDist)
 {
 	float dot = normal.dot(dir);
 
@@ -472,21 +472,21 @@ bool rayPlaneIntersect(const vec3 &start, const vec3 &dir, const vec3 &normal, f
 	return intersectDist >= 0.0f;
 }
 
-float getDistAlongAxis(const vec3 &axis, const vec3 &p)
+float getDistAlongAxis(const vec3& axis, const vec3& p)
 {
 	return axis.dot(p) / axis.length();
 }
 
-bool getPlaneFromVerts(const std::vector<vec3> &verts, vec3 &outNormal, float &outDist)
+bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& outDist)
 {
 	constexpr float tolerance = 0.00001f;
 
 	size_t numVerts = verts.size();
 	for (size_t i = 0; i < numVerts; ++i)
 	{
-		const vec3 &v0 = verts[i];
-		const vec3 &v1 = verts[(i + 1) % numVerts];
-		const vec3 &v2 = verts[(i + 2) % numVerts];
+		const vec3& v0 = verts[i];
+		const vec3& v1 = verts[(i + 1) % numVerts];
+		const vec3& v2 = verts[(i + 2) % numVerts];
 
 		vec3 ba = v1 - v0;
 		vec3 cb = v2 - v1;
@@ -507,13 +507,13 @@ bool getPlaneFromVerts(const std::vector<vec3> &verts, vec3 &outNormal, float &o
 	return true;
 }
 
-vec3 findBestBrushCenter(std::vector<vec3> &points)
+vec3 findBestBrushCenter(std::vector<vec3>& points)
 {
 	vec3 center{};
 
 	if (points.size() > 0)
 	{
-		for (const auto &point : points)
+		for (const auto& point : points)
 		{
 			center += point;
 		}
@@ -543,7 +543,7 @@ vec3 findBestBrushCenter(std::vector<vec3> &points)
 	return center;
 }
 
-vec2 getCenter(const std::vector<vec2> &verts)
+vec2 getCenter(const std::vector<vec2>& verts)
 {
 	vec2 maxs = vec2(-FLT_MAX, -FLT_MAX);
 	vec2 mins = vec2(FLT_MAX, FLT_MAX);
@@ -556,7 +556,7 @@ vec2 getCenter(const std::vector<vec2> &verts)
 	return mins + (maxs - mins) * 0.5f;
 }
 
-vec3 getCenter(const std::vector<vec3> &verts)
+vec3 getCenter(const std::vector<vec3>& verts)
 {
 	vec3 maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	vec3 mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -569,7 +569,7 @@ vec3 getCenter(const std::vector<vec3> &verts)
 	return mins + (maxs - mins) * 0.5f;
 }
 
-vec3 getCenter(const std::vector<cVert> &verts)
+vec3 getCenter(const std::vector<cVert>& verts)
 {
 	vec3 maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	vec3 mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -582,12 +582,12 @@ vec3 getCenter(const std::vector<cVert> &verts)
 	return mins + (maxs - mins) * 0.5f;
 }
 
-vec3 getCenter(const vec3 &maxs, const vec3 &mins)
+vec3 getCenter(const vec3& maxs, const vec3& mins)
 {
 	return mins + (maxs - mins) * 0.5f;
 }
 
-void getBoundingBox(const std::vector<vec3> &verts, vec3 &mins, vec3 &maxs)
+void getBoundingBox(const std::vector<vec3>& verts, vec3& mins, vec3& maxs)
 {
 	maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -598,7 +598,7 @@ void getBoundingBox(const std::vector<vec3> &verts, vec3 &mins, vec3 &maxs)
 	}
 }
 
-void getBoundingBox(const std::vector<TransformVert> &verts, vec3 &mins, vec3 &maxs)
+void getBoundingBox(const std::vector<TransformVert>& verts, vec3& mins, vec3& maxs)
 {
 	maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -609,7 +609,7 @@ void getBoundingBox(const std::vector<TransformVert> &verts, vec3 &mins, vec3 &m
 	}
 }
 
-void expandBoundingBox(const vec3 &v, vec3 &mins, vec3 &maxs)
+void expandBoundingBox(const vec3& v, vec3& mins, vec3& maxs)
 {
 	if (v.x > maxs.x)
 		maxs.x = v.x;
@@ -626,7 +626,7 @@ void expandBoundingBox(const vec3 &v, vec3 &mins, vec3 &maxs)
 		mins.z = v.z;
 }
 
-void expandBoundingBox(const cVert &v, vec3 &mins, vec3 &maxs)
+void expandBoundingBox(const cVert& v, vec3& mins, vec3& maxs)
 {
 	if (v.pos.x > maxs.x)
 		maxs.x = v.pos.x;
@@ -643,7 +643,7 @@ void expandBoundingBox(const cVert &v, vec3 &mins, vec3 &maxs)
 		mins.z = v.pos.z;
 }
 
-void expandBoundingBox(const vec2 &v, vec2 &mins, vec2 &maxs)
+void expandBoundingBox(const vec2& v, vec2& mins, vec2& maxs)
 {
 	if (v.x > maxs.x)
 		maxs.x = v.x;
@@ -656,7 +656,7 @@ void expandBoundingBox(const vec2 &v, vec2 &mins, vec2 &maxs)
 		mins.y = v.y;
 }
 
-int BoxOnPlaneSide(const vec3 &emins, const vec3 &emaxs, const BSPPLANE *p)
+int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p)
 {
 	float dist1, dist2;
 	int sides = 0;
@@ -719,7 +719,7 @@ int BoxOnPlaneSide(const vec3 &emins, const vec3 &emaxs, const BSPPLANE *p)
 	return sides;
 }
 
-std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE> &planes)
+std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE>& planes)
 {
 	std::vector<vec3> intersectVerts;
 
@@ -736,12 +736,12 @@ std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE> &planes)
 		{
 			for (int k = j + 1; k < numPlanes; k++)
 			{
-				const vec3 &n0 = planes[i].vNormal;
-				const vec3 &n1 = planes[j].vNormal;
-				const vec3 &n2 = planes[k].vNormal;
-				const float &d0 = planes[i].fDist;
-				const float &d1 = planes[j].fDist;
-				const float &d2 = planes[k].fDist;
+				const vec3& n0 = planes[i].vNormal;
+				const vec3& n1 = planes[j].vNormal;
+				const vec3& n2 = planes[k].vNormal;
+				const float& d0 = planes[i].fDist;
+				const float& d1 = planes[j].fDist;
+				const float& d2 = planes[k].fDist;
 
 				float t = n0.x * (n1.y * n2.z - n1.z * n2.y) +
 						  n0.y * (n1.z * n2.x - n1.x * n2.z) +
@@ -763,7 +763,7 @@ std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE> &planes)
 				{
 					if (m != i && m != j && m != k)
 					{
-						const BSPPLANE &pm = planes[m];
+						const BSPPLANE& pm = planes[m];
 						if (dotProduct(v, pm.vNormal) < pm.fDist + EPSILON)
 						{
 							validVertex = false;
@@ -783,7 +783,7 @@ std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE> &planes)
 	return intersectVerts;
 }
 
-bool vertsAllOnOneSide(std::vector<vec3> &verts, BSPPLANE &plane)
+bool vertsAllOnOneSide(std::vector<vec3>& verts, BSPPLANE& plane)
 {
 	// check that all verts are on one side of the plane.
 	int planeSide = 0;
@@ -811,7 +811,7 @@ bool vertsAllOnOneSide(std::vector<vec3> &verts, BSPPLANE &plane)
 	return true;
 }
 
-std::vector<vec3> getTriangularVerts(std::vector<vec3> &verts)
+std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 {
 	int i0 = 0;
 	int i1 = -1;
@@ -862,27 +862,27 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3> &verts)
 	return {verts[i0], verts[i1], verts[i2]};
 }
 
-bool boxesIntersect(const vec3 &mins1, const vec3 &maxs1, const vec3 &mins2, const vec3 &maxs2)
+bool boxesIntersect(const vec3& mins1, const vec3& maxs1, const vec3& mins2, const vec3& maxs2)
 {
 	return (maxs1.x >= mins2.x && mins1.x <= maxs2.x) &&
 		   (maxs1.y >= mins2.y && mins1.y <= maxs2.y) &&
 		   (maxs1.z >= mins2.z && mins1.z <= maxs2.z);
 }
 
-bool pointInBox(const vec3 &p, const vec3 &mins, const vec3 &maxs)
+bool pointInBox(const vec3& p, const vec3& mins, const vec3& maxs)
 {
 	return (p.x >= mins.x && p.x <= maxs.x &&
 			p.y >= mins.y && p.y <= maxs.y &&
 			p.z >= mins.z && p.z <= maxs.z);
 }
 
-bool isBoxContained(const vec3 &innerMins, const vec3 &innerMaxs, const vec3 &outerMins, const vec3 &outerMaxs)
+bool isBoxContained(const vec3& innerMins, const vec3& innerMaxs, const vec3& outerMins, const vec3& outerMaxs)
 {
 	return (innerMins.x >= outerMins.x && innerMins.y >= outerMins.y && innerMins.z >= outerMins.z &&
 			innerMaxs.x <= outerMaxs.x && innerMaxs.y <= outerMaxs.y && innerMaxs.z <= outerMaxs.z);
 }
 
-vec3 getNormalFromVerts(std::vector<vec3> &verts)
+vec3 getNormalFromVerts(std::vector<vec3>& verts)
 {
 	std::vector<vec3> triangularVerts = getTriangularVerts(verts);
 
@@ -896,7 +896,7 @@ vec3 getNormalFromVerts(std::vector<vec3> &verts)
 	return vertsNormal;
 }
 
-std::vector<vec2> localizeVerts(std::vector<vec3> &verts)
+std::vector<vec2> localizeVerts(std::vector<vec3>& verts)
 {
 	std::vector<vec3> triangularVerts = getTriangularVerts(verts);
 
@@ -923,7 +923,7 @@ std::vector<vec2> localizeVerts(std::vector<vec3> &verts)
 	return localVerts;
 }
 
-std::vector<int> getSortedPlanarVertOrder(std::vector<vec3> &verts)
+std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 {
 	std::vector<vec2> localVerts = localizeVerts(verts);
 	if (localVerts.empty())
@@ -975,7 +975,7 @@ std::vector<int> getSortedPlanarVertOrder(std::vector<vec3> &verts)
 	return orderedVerts;
 }
 
-std::vector<vec3> getSortedPlanarVerts(std::vector<vec3> &verts)
+std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts)
 {
 	std::vector<vec3> outVerts;
 	std::vector<int> vertOrder = getSortedPlanarVertOrder(verts);
@@ -991,15 +991,15 @@ std::vector<vec3> getSortedPlanarVerts(std::vector<vec3> &verts)
 	return outVerts;
 }
 
-bool pointInsidePolygon(std::vector<vec2> &poly, vec2 p)
+bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 {
 	// https://stackoverflow.com/a/34689268
 	bool inside = true;
 	float lastd = 0;
 	for (size_t i = 0; i < poly.size(); i++)
 	{
-		vec2 &v1 = poly[i];
-		vec2 &v2 = poly[(i + 1) % poly.size()];
+		vec2& v1 = poly[i];
+		vec2& v2 = poly[(i + 1) % poly.size()];
 
 		if (std::fabs(v1.x - p.x) < EPSILON && std::fabs(v1.y - p.y) < EPSILON)
 		{
@@ -1029,10 +1029,10 @@ bool pointInsidePolygon(std::vector<vec2> &poly, vec2 p)
 #define MAX_NUMBER_OF_COLORS 0
 #define ALL_COLORS_REQUIRED 0
 
-void WriteBMP_RGB(const std::string &fileName, unsigned char *pixels_rgb, int width, int height)
+void WriteBMP_RGB(const std::string& fileName, unsigned char* pixels_rgb, int width, int height)
 {
 	const int bytesPerPixel = 3;
-	FILE *outputFile = NULL;
+	FILE* outputFile = NULL;
 	fopen_s(&outputFile, fileName.c_str(), "wb");
 	if (!outputFile)
 	{
@@ -1040,7 +1040,7 @@ void WriteBMP_RGB(const std::string &fileName, unsigned char *pixels_rgb, int wi
 		return;
 	}
 	//*****HEADER************//
-	const char *BM = "BM";
+	const char* BM = "BM";
 	fwrite(&BM[0], 1, 1, outputFile);
 	fwrite(&BM[1], 1, 1, outputFile);
 	int paddedRowSize = (int)(4 * ceil((float)width / 4.0f)) * bytesPerPixel;
@@ -1084,9 +1084,9 @@ void WriteBMP_RGB(const std::string &fileName, unsigned char *pixels_rgb, int wi
 	fclose(outputFile);
 }
 
-void WriteBMP_PAL(const std::string &fileName, unsigned char *pixels_indexes, int width, int height, COLOR3 *pal)
+void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, int width, int height, COLOR3* pal)
 {
-	FILE *outputFile = NULL;
+	FILE* outputFile = NULL;
 	fopen_s(&outputFile, fileName.c_str(), "wb");
 	if (!outputFile)
 	{
@@ -1094,7 +1094,7 @@ void WriteBMP_PAL(const std::string &fileName, unsigned char *pixels_indexes, in
 		return;
 	}
 	//*****HEADER************//
-	const char *BM = "BM";
+	const char* BM = "BM";
 	fwrite(&BM[0], 1, 1, outputFile);
 	fwrite(&BM[1], 1, 1, outputFile);
 	int paddedRowSize = (int)(4 * ceil((float)width / 4.0f));
@@ -1147,9 +1147,9 @@ void WriteBMP_PAL(const std::string &fileName, unsigned char *pixels_indexes, in
 	fclose(outputFile);
 }
 
-bool ReadBMP_RGB(const std::string &fileName, unsigned char **pixels_rgb, int &width, int &height)
+bool ReadBMP_RGB(const std::string& fileName, unsigned char** pixels_rgb, int& width, int& height)
 {
-	FILE *inputFile = NULL;
+	FILE* inputFile = NULL;
 	fopen_s(&inputFile, fileName.c_str(), "rb");
 	if (!inputFile)
 	{
@@ -1172,10 +1172,10 @@ bool ReadBMP_RGB(const std::string &fileName, unsigned char **pixels_rgb, int &w
 		return false;
 	}
 
-	int dataOffset = *(int *)&(header[DATA_OFFSET_OFFSET]);
-	width = *(int *)&(header[WIDTH_OFFSET]);
-	height = *(int *)&(header[HEIGHT_OFFSET]);
-	short bitsPerPixel = *(short *)&(header[BITS_PER_PIXEL_OFFSET]);
+	int dataOffset = *(int*)&(header[DATA_OFFSET_OFFSET]);
+	width = *(int*)&(header[WIDTH_OFFSET]);
+	height = *(int*)&(header[HEIGHT_OFFSET]);
+	short bitsPerPixel = *(short*)&(header[BITS_PER_PIXEL_OFFSET]);
 
 	if (bitsPerPixel != 24 && bitsPerPixel != 32)
 	{
@@ -1249,9 +1249,9 @@ bool ReadBMP_RGB(const std::string &fileName, unsigned char **pixels_rgb, int &w
 	return true;
 }
 
-bool ReadBMP_PAL(const std::string &fileName, unsigned char **pixels_indexes, int &width, int &height, COLOR3 palette[256])
+bool ReadBMP_PAL(const std::string& fileName, unsigned char** pixels_indexes, int& width, int& height, COLOR3 palette[256])
 {
-	FILE *inputFile = NULL;
+	FILE* inputFile = NULL;
 	fopen_s(&inputFile, fileName.c_str(), "rb");
 	if (!inputFile)
 	{
@@ -1274,10 +1274,10 @@ bool ReadBMP_PAL(const std::string &fileName, unsigned char **pixels_indexes, in
 		return false;
 	}
 
-	int dataOffset = *(int *)&(header[DATA_OFFSET_OFFSET]);
-	width = *(int *)&(header[WIDTH_OFFSET]);
-	height = *(int *)&(header[HEIGHT_OFFSET]);
-	short bitsPerPixel = *(short *)&(header[BITS_PER_PIXEL_OFFSET]);
+	int dataOffset = *(int*)&(header[DATA_OFFSET_OFFSET]);
+	width = *(int*)&(header[WIDTH_OFFSET]);
+	height = *(int*)&(header[HEIGHT_OFFSET]);
+	short bitsPerPixel = *(short*)&(header[BITS_PER_PIXEL_OFFSET]);
 
 	if (bitsPerPixel != 8)
 	{
@@ -1339,7 +1339,7 @@ int ArrayXYtoId(int w, int x, int y)
 	return x + (y * w);
 }
 
-bool dirExists(const std::string &dirName)
+bool dirExists(const std::string& dirName)
 {
 	std::error_code err;
 	return fs::exists(dirName, err) && fs::is_directory(dirName, err);
@@ -1347,11 +1347,11 @@ bool dirExists(const std::string &dirName)
 
 #ifndef WIN32
 // mkdir_p for linux from https://gist.github.com/ChisholmKyle/0cbedcd3e64132243a39
-int mkdir_p(const char *dir, const mode_t mode)
+int mkdir_p(const char* dir, const mode_t mode)
 {
 	const int PATH_MAX_STRING_SIZE = 256;
 	char tmp[PATH_MAX_STRING_SIZE];
-	char *p = NULL;
+	char* p = NULL;
 	struct stat sb;
 	int len;
 
@@ -1420,7 +1420,7 @@ int mkdir_p(const char *dir, const mode_t mode)
 }
 #endif
 
-bool createDir(const std::string &dirName)
+bool createDir(const std::string& dirName)
 {
 	if (dirExists(dirName))
 		return true;
@@ -1432,7 +1432,7 @@ bool createDir(const std::string &dirName)
 	return false;
 }
 
-void removeDir(const std::string &dirName)
+void removeDir(const std::string& dirName)
 {
 	std::error_code err;
 	fs::remove_all(dirName, err);
@@ -1450,7 +1450,7 @@ void ClearTempDirectory()
 	}
 }
 
-bool replaceAll(std::string &str, const std::string &from, const std::string &to)
+bool replaceAll(std::string& str, const std::string& from, const std::string& to)
 {
 	if (from.empty())
 		return false;
@@ -1464,14 +1464,14 @@ bool replaceAll(std::string &str, const std::string &from, const std::string &to
 	}
 	return found;
 }
-void fixupPath(char *path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash)
+void fixupPath(char* path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash)
 {
 	std::string tmpPath = path;
 	fixupPath(tmpPath, startslash, endslash);
 	memcpy(path, &tmpPath[0], tmpPath.size() + 1);
 }
 
-void fixupPath(std::string &path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash)
+void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash)
 {
 	if (path.empty())
 		return;
@@ -1623,7 +1623,7 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 }
 
 // For issue when string.size > 0 but string length is zero ("\0\0\0" string for example)
-size_t nullstrlen(const std::string &str)
+size_t nullstrlen(const std::string& str)
 {
 	return strlen(str.c_str());
 }
@@ -1633,10 +1633,10 @@ int ColorDistance(COLOR3 color, COLOR3 other)
 	return (int)std::hypot(std::hypot(color.r - other.r, color.b - other.b), color.g - other.g);
 }
 
-int GetImageColors(COLOR3 *image, int size, int max_colors)
+int GetImageColors(COLOR3* image, int size, int max_colors)
 {
 	int colorCount = 0;
-	COLOR3 *palette = new COLOR3[size];
+	COLOR3* palette = new COLOR3[size];
 	memset(palette, 0, size * sizeof(COLOR3));
 	for (int y = 0; y < size; y++)
 	{
@@ -1662,7 +1662,7 @@ int GetImageColors(COLOR3 *image, int size, int max_colors)
 	return colorCount;
 }
 
-void SimpeColorReduce(COLOR3 *image, int size)
+void SimpeColorReduce(COLOR3* image, int size)
 {
 	// Fast change count of grayscale
 	std::vector<COLOR3> colorset;
@@ -1673,7 +1673,7 @@ void SimpeColorReduce(COLOR3 *image, int size)
 
 	for (int i = 0; i < size; i++)
 	{
-		for (auto &color : colorset)
+		for (auto& color : colorset)
 		{
 			if (ColorDistance(image[i], color) <= 3)
 			{
@@ -1685,7 +1685,7 @@ void SimpeColorReduce(COLOR3 *image, int size)
 
 std::set<std::string> traced_path_list;
 
-bool FindPathInAssets(Bsp *map, const std::string &filename, std::string &outpath, bool tracesearch)
+bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpath, bool tracesearch)
 {
 	int fPathId = 1;
 	if (fileExists(filename))
@@ -1736,7 +1736,7 @@ bool FindPathInAssets(Bsp *map, const std::string &filename, std::string &outpat
 	}
 
 	// Next search path in fgd directories
-	for (auto const &dir : g_settings.fgdPaths)
+	for (auto const& dir : g_settings.fgdPaths)
 	{
 		if (dir.enabled)
 		{
@@ -1793,7 +1793,7 @@ bool FindPathInAssets(Bsp *map, const std::string &filename, std::string &outpat
 	}
 
 	// Next search path in assets directories
-	for (auto const &dir : g_settings.resPaths)
+	for (auto const& dir : g_settings.resPaths)
 	{
 		if (dir.enabled)
 		{
@@ -1933,7 +1933,7 @@ void FixupAllSystemPaths()
 		createDir(g_working_dir);
 	}
 
-	for (auto &s : g_settings.fgdPaths)
+	for (auto& s : g_settings.fgdPaths)
 	{
 		// first fix slashes and check if file exists
 		fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
@@ -1944,7 +1944,7 @@ void FixupAllSystemPaths()
 		}
 	}
 
-	for (auto &s : g_settings.resPaths)
+	for (auto& s : g_settings.resPaths)
 	{
 		// first fix slashes and check if file exists
 		fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
@@ -1961,7 +1961,7 @@ float floatRound(float f)
 	return (float)((f >= 0 || (float)(int)f == f) ? (int)f : (int)f - 1);
 }
 
-void scaleImage(const COLOR4 *inputImage, std::vector<COLOR4> &outputImage,
+void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
 				int inputWidth, int inputHeight, int outputWidth, int outputHeight)
 {
 	outputImage.resize(outputWidth * outputHeight);
@@ -2010,7 +2010,7 @@ void scaleImage(const COLOR4 *inputImage, std::vector<COLOR4> &outputImage,
 	}
 }
 
-void scaleImage(const COLOR3 *inputImage, std::vector<COLOR3> &outputImage,
+void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 				int inputWidth, int inputHeight, int outputWidth, int outputHeight)
 {
 	if (inputWidth <= 0 || inputHeight <= 0 || outputWidth <= 0 || outputHeight <= 0)
@@ -2116,27 +2116,27 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 	return retdir;
 }
 
-std::string GetExecutableDir(const std::string &arg_0)
+std::string GetExecutableDir(const std::string& arg_0)
 {
 	std::error_code err;
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path(err);
 	return GetExecutableDirInternal(retpath.string());
 }
 
-std::string GetExecutableDir(const std::wstring &arg_0)
+std::string GetExecutableDir(const std::wstring& arg_0)
 {
 	std::error_code err;
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path(err);
 	return GetExecutableDirInternal(retpath.string());
 }
 
-std::vector<vec3> scaleVerts(const std::vector<vec3> &vertices, float stretch_value)
+std::vector<vec3> scaleVerts(const std::vector<vec3>& vertices, float stretch_value)
 {
 	vec3 center_model = getCentroid(vertices);
 
 	std::vector<vec3> stretched_vertices;
 
-	for (const vec3 &vertex : vertices)
+	for (const vec3& vertex : vertices)
 	{
 		vec3 shifted_vertex = {vertex.x - center_model.x, vertex.y - center_model.y, vertex.z - center_model.z};
 		vec3 stretched_vertex = {std::signbit(shifted_vertex.x) ? shifted_vertex.x - stretch_value : shifted_vertex.x + stretch_value,
@@ -2149,13 +2149,13 @@ std::vector<vec3> scaleVerts(const std::vector<vec3> &vertices, float stretch_va
 	return stretched_vertices;
 }
 
-std::vector<cVert> scaleVerts(const std::vector<cVert> &vertices, float stretch_value)
+std::vector<cVert> scaleVerts(const std::vector<cVert>& vertices, float stretch_value)
 {
 	vec3 center_model = getCentroid(vertices);
 
 	std::vector<cVert> stretched_vertices;
 
-	for (const cVert &vertex : vertices)
+	for (const cVert& vertex : vertices)
 	{
 		vec3 shifted_vertex = {vertex.pos.x - center_model.x, vertex.pos.y - center_model.y, vertex.pos.z - center_model.z};
 		vec3 stretched_vertex = {std::signbit(shifted_vertex.x) ? shifted_vertex.x - stretch_value : shifted_vertex.x + stretch_value,
@@ -2240,8 +2240,8 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force
 	}
 
 	// Choose the axis with the largest gap
-	const AxisTest *best = &candidates[0];
-	for (const AxisTest &test : candidates)
+	const AxisTest* best = &candidates[0];
+	for (const AxisTest& test : candidates)
 	{
 		if (test.gap > best->gap)
 			best = &test;
@@ -2254,7 +2254,7 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force
 	return separationPlane;
 }
 
-std::vector<std::string> groupParts(std::vector<std::string> &ungrouped)
+std::vector<std::string> groupParts(std::vector<std::string>& ungrouped)
 {
 	std::vector<std::string> grouped;
 
@@ -2283,7 +2283,7 @@ std::vector<std::string> groupParts(std::vector<std::string> &ungrouped)
 	return grouped;
 }
 
-bool stringGroupStarts(const std::string &s)
+bool stringGroupStarts(const std::string& s)
 {
 	if (s.find('(') != std::string::npos)
 	{
@@ -2300,7 +2300,7 @@ bool stringGroupStarts(const std::string &s)
 	return false;
 }
 
-bool stringGroupEnds(const std::string &s)
+bool stringGroupEnds(const std::string& s)
 {
 	return s.find(')') != std::string::npos || s.find('\"') != std::string::npos;
 }
@@ -2343,7 +2343,7 @@ std::string getValueInQuotes(std::string s)
 	return s.substr(find1 + 1, (find2 - find1) - 1);
 }
 
-std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &points)
+std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& points)
 {
 	if (points.size() < 2)
 		return {};
@@ -2358,8 +2358,8 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &point
 
 	for (size_t i = 0; i + 1 < points.size(); i += 2)
 	{
-		const vec3 &p1 = points[i].pos;
-		const vec3 &p2 = points[i + 1].pos;
+		const vec3& p1 = points[i].pos;
+		const vec3& p2 = points[i + 1].pos;
 
 		vec3 diff = p2 - p1;
 		if (diff.lengthSquared() < EPS_SQ)
@@ -2375,7 +2375,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &point
 		}
 	}
 
-	auto getCanonicalDirection = [](const vec3 &dir) -> vec3
+	auto getCanonicalDirection = [](const vec3& dir) -> vec3
 	{
 		float len = dir.length();
 		if (len < 1e-6f)
@@ -2406,7 +2406,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &point
 
 	std::unordered_map<vec3, std::vector<std::pair<vec3, vec3>>, vec3Hash, vec3ExactEqual> dirGroups;
 
-	for (const auto &seg : segments)
+	for (const auto& seg : segments)
 	{
 		vec3 dir = seg.second - seg.first;
 		vec3 canonicalDir = getCanonicalDirection(dir);
@@ -2419,10 +2419,10 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &point
 
 	std::vector<std::pair<vec3, vec3>> mergedSegments;
 
-	for (auto &[canonicalDir, segs] : dirGroups)
+	for (auto& [canonicalDir, segs] : dirGroups)
 	{
 		std::unordered_map<vec3, std::vector<std::pair<float, float>>, vec3Hash, vec3ExactEqual> lineGroups;
-		for (const auto &seg : segs)
+		for (const auto& seg : segs)
 		{
 			vec3 A = seg.first;
 			vec3 B = seg.second;
@@ -2438,7 +2438,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &point
 			lineGroups[A_perp].push_back({std::min(tA, tB), std::max(tA, tB)});
 		}
 
-		for (auto &[base_perp, intervals] : lineGroups)
+		for (auto& [base_perp, intervals] : lineGroups)
 		{
 			if (intervals.empty())
 				continue;
@@ -2479,7 +2479,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &point
 	std::vector<cVert> result;
 	result.reserve(mergedSegments.size() * 2);
 
-	for (const auto &seg : mergedSegments)
+	for (const auto& seg : mergedSegments)
 	{
 		std::pair<vec3, vec3> normSeg = (seg.first < seg.second)
 											? std::make_pair(seg.first, seg.second)
@@ -2504,7 +2504,7 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert> &point
 	return result;
 }
 
-void removeColinearPoints(std::vector<vec3> &verts, float /*epsilon*/)
+void removeColinearPoints(std::vector<vec3>& verts, float /*epsilon*/)
 {
 
 	for (size_t i1 = 0; i1 < verts.size(); i1++)
@@ -2568,7 +2568,7 @@ void removeColinearPoints(std::vector<vec3> &verts, float /*epsilon*/)
 	}
 }
 
-bool checkCollision(const vec3 &obj1Mins, const vec3 &obj1Maxs, const vec3 &obj2Mins, const vec3 &obj2Maxs)
+bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2Mins, const vec3& obj2Maxs)
 {
 	// Check for overlap in x dimension
 	if (obj1Maxs.x < obj2Mins.x || obj1Mins.x > obj2Maxs.x)
@@ -2610,7 +2610,7 @@ Process::Process(std::string program)
 {
 }
 
-Process &Process::arg(const std::string &arg)
+Process& Process::arg(const std::string& arg)
 {
 	_arguments.push_back(arg);
 	return *this;
@@ -2654,7 +2654,7 @@ int Process::executeAndWait(int sin, int sout, int serr)
 	}
 
 	PROCESS_INFORMATION procInfo;
-	if (CreateProcessA(NULL, const_cast<char *>(getCommandlineString().c_str()), NULL, NULL, true, 0, NULL, NULL, &startInfo, &procInfo) == 0)
+	if (CreateProcessA(NULL, const_cast<char*>(getCommandlineString().c_str()), NULL, NULL, true, 0, NULL, NULL, &startInfo, &procInfo) == 0)
 	{
 		int lasterror = GetLastError();
 		LPTSTR strErrorMessage = NULL;
@@ -2682,15 +2682,15 @@ int Process::executeAndWait(int sin, int sout, int serr)
 
 	return exitCode;
 #else
-	std::vector<char *> execvpArguments;
+	std::vector<char*> execvpArguments;
 
-	char *program_c_string = new char[_program.size() + 1];
+	char* program_c_string = new char[_program.size() + 1];
 	strcpy(program_c_string, _program.c_str());
 	execvpArguments.push_back(program_c_string);
 
 	for (std::vector<std::string>::iterator arg = _arguments.begin(); arg != _arguments.end(); ++arg)
 	{
-		char *c_string = new char[(*arg).size() + 1];
+		char* c_string = new char[(*arg).size() + 1];
 		strcpy(c_string, arg->c_str());
 		execvpArguments.push_back(c_string);
 	}
@@ -2723,7 +2723,7 @@ int Process::executeAndWait(int sin, int sout, int serr)
 		exit(1);
 	}
 
-	for (std::vector<char *>::iterator arg = execvpArguments.begin(); arg != execvpArguments.end(); ++arg)
+	for (std::vector<char*>::iterator arg = execvpArguments.begin(); arg != execvpArguments.end(); ++arg)
 	{
 		delete[] *arg;
 	}
@@ -2734,7 +2734,7 @@ int Process::executeAndWait(int sin, int sout, int serr)
 #endif
 }
 
-std::vector<double> solve_uv_matrix_svd(const std::vector<std::vector<double>> &matrix, const std::vector<double> &vector)
+std::vector<double> solve_uv_matrix_svd(const std::vector<std::vector<double>>& matrix, const std::vector<double>& vector)
 {
 	// Construct the augmented matrix
 	std::vector<std::vector<double>> augmentedMatrix(3, std::vector<double>(5));
@@ -2794,7 +2794,7 @@ std::vector<double> solve_uv_matrix_svd(const std::vector<std::vector<double>> &
 	return solution;
 }
 
-bool calculateTextureInfo(BSPTEXTUREINFO &texinfo, const std::vector<vec3> &vertices, const std::vector<vec2> &uvs)
+bool calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vertices, const std::vector<vec2>& uvs)
 {
 	// Check if the number of vertices and UVs is valid
 	if (vertices.size() != 3 || uvs.size() != 3)
@@ -2836,7 +2836,7 @@ bool calculateTextureInfo(BSPTEXTUREINFO &texinfo, const std::vector<vec3> &vert
 	return true;
 }
 
-void getTrueTexSize(int &width, int &height, int maxsize)
+void getTrueTexSize(int& width, int& height, int maxsize)
 {
 	float aspectRatio = static_cast<float>(width) / height;
 
@@ -2875,14 +2875,14 @@ void getTrueTexSize(int &width, int &height, int maxsize)
 	height = newHeight;
 }
 
-vec3 getEdgeControlPoint(const std::vector<TransformVert> &hullVerts, HullEdge &edge)
+vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge)
 {
 	vec3 v0 = hullVerts[edge.verts[0]].pos;
 	vec3 v1 = hullVerts[edge.verts[1]].pos;
 	return v0 + (v1 - v0) * 0.5f;
 }
 
-vec3 getCentroid(const std::vector<cVert> &hullVerts)
+vec3 getCentroid(const std::vector<cVert>& hullVerts)
 {
 	vec3 centroid{};
 	for (size_t i = 0; i < hullVerts.size(); i++)
@@ -2892,7 +2892,7 @@ vec3 getCentroid(const std::vector<cVert> &hullVerts)
 	return centroid / static_cast<float>(hullVerts.size());
 }
 
-vec3 getCentroid(const std::vector<vec3> &hullVerts)
+vec3 getCentroid(const std::vector<vec3>& hullVerts)
 {
 	vec3 centroid{};
 	for (size_t i = 0; i < hullVerts.size(); i++)
@@ -2902,7 +2902,7 @@ vec3 getCentroid(const std::vector<vec3> &hullVerts)
 	return centroid / static_cast<float>(hullVerts.size());
 }
 
-vec3 getCentroid(const std::vector<TransformVert> &hullVerts)
+vec3 getCentroid(const std::vector<TransformVert>& hullVerts)
 {
 	vec3 centroid{};
 	for (size_t i = 0; i < hullVerts.size(); i++)
@@ -2912,7 +2912,7 @@ vec3 getCentroid(const std::vector<TransformVert> &hullVerts)
 	return centroid / static_cast<float>(hullVerts.size());
 }
 
-std::vector<std::vector<COLOR3>> splitImage(const COLOR3 *input, int input_width, int input_height, int x_parts, int y_parts, int &out_part_width, int &out_part_height)
+std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height)
 {
 	out_part_width = input_width / x_parts;
 	out_part_height = input_height / y_parts;
@@ -2945,12 +2945,12 @@ std::vector<std::vector<COLOR3>> splitImage(const COLOR3 *input, int input_width
 	return parts;
 }
 
-std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3> &input, int input_width, int input_height, int x_parts, int y_parts, int &out_part_width, int &out_part_height)
+std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height)
 {
 	return splitImage(input.data(), input_width, input_height, x_parts, y_parts, out_part_width, out_part_height);
 }
 
-std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>> &images, int x, int y, int x_parts)
+std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, int x, int y, int x_parts)
 {
 	if (x < 0 || x >= (int)images.size() || y < 0 || y >= (int)images[0].size())
 	{
@@ -2962,7 +2962,7 @@ std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>> &images, 
 	return images[index];
 }
 
-bool rayIntersectsTriangle(const vec3 &origin, const vec3 &direction, const vec3 &v0, const vec3 &v1, const vec3 &v2)
+bool rayIntersectsTriangle(const vec3& origin, const vec3& direction, const vec3& v0, const vec3& v1, const vec3& v2)
 {
 	vec3 edge1 = v1 - v0;
 	vec3 edge2 = v2 - v0;
@@ -3002,7 +3002,7 @@ bool rayIntersectsTriangle(const vec3 &origin, const vec3 &direction, const vec3
 	return false;
 }
 
-bool isPointInsideMesh(const vec3 &point, const std::vector<vec3> &glTriangles)
+bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles)
 {
 	if (glTriangles.size() % 3 != 0)
 	{
@@ -3014,9 +3014,9 @@ bool isPointInsideMesh(const vec3 &point, const std::vector<vec3> &glTriangles)
 
 	for (size_t i = 0; i < glTriangles.size(); i += 3)
 	{
-		const vec3 &v0 = glTriangles[i];
-		const vec3 &v1 = glTriangles[i + 1];
-		const vec3 &v2 = glTriangles[i + 2];
+		const vec3& v0 = glTriangles[i];
+		const vec3& v1 = glTriangles[i + 1];
+		const vec3& v2 = glTriangles[i + 2];
 
 		if (rayIntersectsTriangle(point, rayDirection, v0, v1, v2))
 		{
@@ -3028,7 +3028,7 @@ bool isPointInsideMesh(const vec3 &point, const std::vector<vec3> &glTriangles)
 	return intersectCount % 2 == 1;
 }
 
-std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3> &gl_triangles, int &max_row)
+std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3>& gl_triangles, int& max_row)
 {
 	vec3 mins, maxs;
 	getBoundingBox(gl_triangles, mins, maxs);
@@ -3083,9 +3083,9 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 
 	vec3 offset = vec3(x_offset / 2.0f, y_offset / 2.0f, z_offset / 2.0f);
 
-	for (auto &row : all_boxes)
+	for (auto& row : all_boxes)
 	{
-		for (auto &c : row)
+		for (auto& c : row)
 		{
 			c.mins -= offset;
 			c.maxs -= offset;
@@ -3095,7 +3095,7 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 	return all_boxes;
 }
 
-float getMaxDistPoints(std::vector<vec3> &points)
+float getMaxDistPoints(std::vector<vec3>& points)
 {
 	float maxDistance = 0.0f;
 	for (size_t i = 0; i < points.size(); i++)
@@ -3128,7 +3128,7 @@ int calcMipsSize(int w, int h)
 	return sz;
 }
 
-float str_to_float(const std::string &s)
+float str_to_float(const std::string& s)
 {
 	if (s.empty())
 		return 0.0f;
@@ -3142,7 +3142,7 @@ float str_to_float(const std::string &s)
 	return 0.0f;
 }
 
-int str_to_int(const std::string &s)
+int str_to_int(const std::string& s)
 {
 	if (s.empty())
 		return 0;
@@ -3199,10 +3199,10 @@ float half_prefloat(unsigned short h)
 		}
 	}
 
-	return *((float *)&f);
+	return *((float*)&f);
 }
 
-bool matchWildcard(const std::string &pattern, const std::string &text, bool caseSensitive)
+bool matchWildcard(const std::string& pattern, const std::string& text, bool caseSensitive)
 {
 	if (pattern == "*")
 		return true;
@@ -3254,46 +3254,46 @@ bool matchWildcard(const std::string &pattern, const std::string &text, bool cas
 	return dp[m];
 }
 
-bool starts_with(const std::string &str, const std::string &prefix)
+bool starts_with(const std::string& str, const std::string& prefix)
 {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
 }
-bool istarts_with(const std::string &str, const std::string &prefix)
+bool istarts_with(const std::string& str, const std::string& prefix)
 {
 	return str.size() >= prefix.size() && strncasecmp(str.c_str(), prefix.c_str(), prefix.size()) == 0;
 }
-bool starts_with(const std::wstring &str, const std::wstring &prefix)
+bool starts_with(const std::wstring& str, const std::wstring& prefix)
 {
 	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
 }
-bool ends_with(const std::string &str, const std::string &suffix)
+bool ends_with(const std::string& str, const std::string& suffix)
 {
 	if (str.size() < suffix.size())
 		return false;
 	return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
-bool ends_with(const std::wstring &str, const std::wstring &suffix)
+bool ends_with(const std::wstring& str, const std::wstring& suffix)
 {
 	if (str.size() < suffix.size())
 		return false;
 	return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
-bool starts_with(const std::string &str, char prefix)
+bool starts_with(const std::string& str, char prefix)
 {
 	return !str.empty() && str.front() == prefix;
 }
 
-bool starts_with(const std::wstring &str, wchar_t prefix)
+bool starts_with(const std::wstring& str, wchar_t prefix)
 {
 	return !str.empty() && str.front() == prefix;
 }
 
-bool ends_with(const std::string &str, char suffix)
+bool ends_with(const std::string& str, char suffix)
 {
 	return !str.empty() && str.back() == suffix;
 }
 
-bool ends_with(const std::wstring &str, wchar_t suffix)
+bool ends_with(const std::wstring& str, wchar_t suffix)
 {
 	return !str.empty() && str.back() == suffix;
 }
@@ -3315,7 +3315,7 @@ extern "C" uint64_t _dtoul3_legacy(const double x)
 
 #endif
 
-void mapFixLightEnts(Bsp *map)
+void mapFixLightEnts(Bsp* map)
 {
 	std::vector<int> modelLeafs;
 	map->modelLeafs(0, modelLeafs);
@@ -3416,14 +3416,14 @@ void mapFixLightEnts(Bsp *map)
 	map->update_ent_lump();
 }
 
-std::vector<Entity *> load_ents(const std::string &entLump, const std::string &mapName)
+std::vector<Entity*> load_ents(const std::string& entLump, const std::string& mapName)
 {
-	std::vector<Entity *> ents{};
+	std::vector<Entity*> ents{};
 	std::istringstream in(entLump);
 
 	int lineNum = 0;
 	int lastBracket = -1;
-	Entity *ent = NULL;
+	Entity* ent = NULL;
 
 	std::string line;
 	while (std::getline(in, line))
@@ -3538,29 +3538,29 @@ std::vector<Entity *> load_ents(const std::string &entLump, const std::string &m
 	return ents;
 }
 
-int GetEntsAdded(LumpState &oldLump, LumpState &newLump, const std::string &bsp_name)
+int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_name)
 {
-	std::vector<Entity *> ent1List{};
+	std::vector<Entity*> ent1List{};
 	if (oldLump.lumps[LUMP_ENTITIES].size())
-		ent1List = load_ents(std::string((char *)oldLump.lumps[LUMP_ENTITIES].data(), (char *)oldLump.lumps[LUMP_ENTITIES].data() + oldLump.lumps[LUMP_ENTITIES].size()), bsp_name);
+		ent1List = load_ents(std::string((char*)oldLump.lumps[LUMP_ENTITIES].data(), (char*)oldLump.lumps[LUMP_ENTITIES].data() + oldLump.lumps[LUMP_ENTITIES].size()), bsp_name);
 	int ent1Count = (int)ent1List.size();
-	for (auto &ent : ent1List)
+	for (auto& ent : ent1List)
 		delete ent;
 
-	std::vector<Entity *> ent2List{};
+	std::vector<Entity*> ent2List{};
 	if (newLump.lumps[LUMP_ENTITIES].size())
-		ent2List = load_ents(std::string((char *)newLump.lumps[LUMP_ENTITIES].data(), (char *)newLump.lumps[LUMP_ENTITIES].data() + newLump.lumps[LUMP_ENTITIES].size()), bsp_name);
+		ent2List = load_ents(std::string((char*)newLump.lumps[LUMP_ENTITIES].data(), (char*)newLump.lumps[LUMP_ENTITIES].data() + newLump.lumps[LUMP_ENTITIES].size()), bsp_name);
 	int ent2Count = (int)ent2List.size();
-	for (auto &ent : ent2List)
+	for (auto& ent : ent2List)
 		delete ent;
 
 	return ent2Count - ent1Count;
 }
 
-void findFilesWithExtension(const fs::path &rootPath, const std::string &extension, std::vector<std::string> &fileList, bool relative)
+void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative)
 {
 	std::error_code err{};
-	for (const auto &entry : fs::recursive_directory_iterator(rootPath, err))
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath, err))
 	{
 		if (entry.is_regular_file() && entry.path().extension() == extension)
 		{
@@ -3569,14 +3569,14 @@ void findFilesWithExtension(const fs::path &rootPath, const std::string &extensi
 	}
 }
 
-void findDirsWithHasFileExtension(const fs::path &rootPath, const std::string &extension, std::vector<std::string> &dirList, bool relative)
+void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& dirList, bool relative)
 {
 	std::error_code err{};
-	for (const auto &entry : fs::recursive_directory_iterator(rootPath, err))
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath, err))
 	{
 		if (entry.is_directory())
 		{
-			for (const auto &subEntry : fs::directory_iterator(entry, err))
+			for (const auto& subEntry : fs::directory_iterator(entry, err))
 			{
 				if (subEntry.is_regular_file() && subEntry.path().extension() == extension)
 				{
@@ -3588,7 +3588,7 @@ void findDirsWithHasFileExtension(const fs::path &rootPath, const std::string &e
 	}
 }
 
-void W_CleanupName(const char *in, char *out)
+void W_CleanupName(const char* in, char* out)
 {
 	int i;
 
@@ -3608,15 +3608,15 @@ void W_CleanupName(const char *in, char *out)
 		out[i] = 0;
 }
 
-WADTEX create_wadtex(const char *name, COLOR3 *rgbdata, int width, int height)
+WADTEX create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 {
 	if (!name)
 		return NULL;
 	COLOR3 palette[256];
 	memset(&palette, 0, sizeof(COLOR3) * 256);
-	unsigned char *mip[MIPLEVELS] = {NULL};
+	unsigned char* mip[MIPLEVELS] = {NULL};
 
-	COLOR3 *src = rgbdata;
+	COLOR3* src = rgbdata;
 	int colorCount = 0;
 
 	// create pallete and full-rez mipmap
@@ -3733,7 +3733,7 @@ WADTEX create_wadtex(const char *name, COLOR3 *rgbdata, int width, int height)
 
 	WADTEX newMipTex;
 	newMipTex.data.resize(newTexLumpSize);
-	unsigned char *newTexData = newMipTex.data.data();
+	unsigned char* newTexData = newMipTex.data.data();
 
 	newMipTex.nWidth = width;
 	newMipTex.nHeight = height;
@@ -3745,31 +3745,31 @@ WADTEX create_wadtex(const char *name, COLOR3 *rgbdata, int width, int height)
 	newMipTex.nOffsets[2] = newMipTex.nOffsets[1] + (width >> 1) * (height >> 1);
 	newMipTex.nOffsets[3] = newMipTex.nOffsets[2] + (width >> 2) * (height >> 2);
 
-	unsigned char *palleteOffset = newTexData + newMipTex.nOffsets[3] + (width >> 3) * (height >> 3);
+	unsigned char* palleteOffset = newTexData + newMipTex.nOffsets[3] + (width >> 3) * (height >> 3);
 	memcpy(newTexData + newMipTex.nOffsets[0], mip[0], width * height);
 	memcpy(newTexData + newMipTex.nOffsets[1], mip[1], (width >> 1) * (height >> 1));
 	memcpy(newTexData + newMipTex.nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 	memcpy(newTexData + newMipTex.nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 	memcpy(palleteOffset, palette, sizeof(COLOR3) * 256);
 
-	*(unsigned short *)palleteOffset = 256;
+	*(unsigned short*)palleteOffset = 256;
 	memcpy(palleteOffset + 2, palette, sizeof(COLOR3) * 256);
 
 	return newMipTex;
 }
 
-COLOR3 *ConvertWadTexToRGB(const WADTEX &wadTex, COLOR3 *palette)
+COLOR3* ConvertWadTexToRGB(const WADTEX& wadTex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0257), wadTex.szName, wadTex.nWidth, wadTex.nHeight);
 	int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
-	const unsigned char *src = wadTex.data.data();
+	const unsigned char* src = wadTex.data.data();
 
 	if (palette == NULL)
-		palette = (COLOR3 *)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+		palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 
 	int sz = wadTex.nWidth * wadTex.nHeight;
-	COLOR3 *imageData = new COLOR3[sz];
+	COLOR3* imageData = new COLOR3[sz];
 
 	for (int k = 0; k < sz; k++)
 	{
@@ -3781,18 +3781,18 @@ COLOR3 *ConvertWadTexToRGB(const WADTEX &wadTex, COLOR3 *palette)
 	return imageData;
 }
 
-COLOR3 *ConvertMipTexToRGB(BSPMIPTEX *tex, COLOR3 *palette)
+COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 {
 	/*if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0259), tex->szName, tex->nWidth, tex->nHeight);*/
 	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 
 	if (palette == NULL)
-		palette = (COLOR3 *)(((unsigned char *)tex) + tex->nOffsets[3] + lastMipSize + 2);
-	unsigned char *src = (unsigned char *)(((unsigned char *)tex) + tex->nOffsets[0]);
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 
 	int sz = tex->nWidth * tex->nHeight;
-	COLOR3 *imageData = new COLOR3[sz];
+	COLOR3* imageData = new COLOR3[sz];
 
 	for (int k = 0; k < sz; k++)
 	{
@@ -3804,18 +3804,18 @@ COLOR3 *ConvertMipTexToRGB(BSPMIPTEX *tex, COLOR3 *palette)
 	return imageData;
 }
 
-COLOR4 *ConvertWadTexToRGBA(const WADTEX &wadTex, COLOR3 *palette, int colors)
+COLOR4* ConvertWadTexToRGBA(const WADTEX& wadTex, COLOR3* palette, int colors)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0261), wadTex.szName, wadTex.nWidth, wadTex.nHeight);
 	int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
-	const unsigned char *src = wadTex.data.data();
+	const unsigned char* src = wadTex.data.data();
 
 	if (palette == NULL)
-		palette = (COLOR3 *)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+		palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 
 	int sz = wadTex.nWidth * wadTex.nHeight;
-	COLOR4 *imageData = new COLOR4[sz];
+	COLOR4* imageData = new COLOR4[sz];
 
 	for (int k = 0; k < sz; k++)
 	{
@@ -3834,18 +3834,18 @@ COLOR4 *ConvertWadTexToRGBA(const WADTEX &wadTex, COLOR3 *palette, int colors)
 	return imageData;
 }
 
-COLOR4 *ConvertMipTexToRGBA(BSPMIPTEX *tex, COLOR3 *palette, int colors)
+COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
 {
 	/*if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0263), tex->szName, tex->nWidth, tex->nHeight);*/
 	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 
 	if (palette == NULL)
-		palette = (COLOR3 *)(((unsigned char *)tex) + tex->nOffsets[3] + lastMipSize + 2);
-	unsigned char *src = (unsigned char *)(((unsigned char *)tex) + tex->nOffsets[0]);
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 
 	int sz = tex->nWidth * tex->nHeight;
-	COLOR4 *imageData = new COLOR4[sz];
+	COLOR4* imageData = new COLOR4[sz];
 
 	for (int k = 0; k < sz; k++)
 	{
@@ -3864,13 +3864,13 @@ COLOR4 *ConvertMipTexToRGBA(BSPMIPTEX *tex, COLOR3 *palette, int colors)
 	return imageData;
 }
 
-COLOR3 GetMipTexAplhaColor(BSPMIPTEX *tex, COLOR3 *palette, int max_colors)
+COLOR3 GetMipTexAplhaColor(BSPMIPTEX* tex, COLOR3* palette, int max_colors)
 {
 	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 	if (palette == NULL)
 	{
-		max_colors = *(unsigned short *)(((unsigned char *)tex) + tex->nOffsets[3] + lastMipSize);
-		palette = (COLOR3 *)(((unsigned char *)tex) + tex->nOffsets[3] + lastMipSize + 2);
+		max_colors = *(unsigned short*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize);
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
 	}
 	if (max_colors > 256 || max_colors < 0)
 	{
@@ -3879,14 +3879,14 @@ COLOR3 GetMipTexAplhaColor(BSPMIPTEX *tex, COLOR3 *palette, int max_colors)
 	return palette[max_colors - 1];
 }
 
-COLOR3 GetWadTexAplhaColor(const WADTEX &wadTex, COLOR3 *palette, int max_colors)
+COLOR3 GetWadTexAplhaColor(const WADTEX& wadTex, COLOR3* palette, int max_colors)
 {
-	const unsigned char *src = wadTex.data.data();
+	const unsigned char* src = wadTex.data.data();
 	int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
 	if (palette == NULL)
 	{
-		max_colors = *(unsigned short *)(src + wadTex.nOffsets[3] + lastMipSize - sizeof(BSPMIPTEX));
-		palette = (COLOR3 *)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+		max_colors = *(unsigned short*)(src + wadTex.nOffsets[3] + lastMipSize - sizeof(BSPMIPTEX));
+		palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 	}
 	if (max_colors > 256 || max_colors < 0)
 	{

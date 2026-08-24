@@ -117,10 +117,10 @@ struct csm_side
 // Mesh container for rendering
 struct CSM_MDL_MESH
 {
-	VertexBuffer *buffer;
+	VertexBuffer* buffer;
 	unsigned int matid;
 	std::vector<modelVert> verts;
-	Texture *texture;
+	Texture* texture;
 
 	CSM_MDL_MESH()
 	{
@@ -143,10 +143,10 @@ struct CSM_MDL_MESH
 // Side mesh for v3 sides
 struct CSM_SIDE_MESH
 {
-	VertexBuffer *buffer;
+	VertexBuffer* buffer;
 	unsigned int matid;
 	std::vector<modelVert> verts;
-	Texture *texture;
+	Texture* texture;
 
 	CSM_SIDE_MESH()
 	{
@@ -173,22 +173,22 @@ class CSMFile
 {
   private:
 	bool readed;
-	std::vector<Texture *> mat_textures;
-	std::vector<CSM_MDL_MESH *> model;
-	std::vector<CSM_SIDE_MESH *> sideModel;
+	std::vector<Texture*> mat_textures;
+	std::vector<CSM_MDL_MESH*> model;
+	std::vector<CSM_SIDE_MESH*> sideModel;
 	std::string csmFilePath;
 
-	bool read_v3(std::ifstream &file);
-	bool read_v2(std::ifstream &file);
+	bool read_v3(std::ifstream& file);
+	bool read_v2(std::ifstream& file);
 
-	void parseMaterialsFromString(const std::string &materialsStr);
+	void parseMaterialsFromString(const std::string& materialsStr);
 	std::string getStringFromMaterials();
 	void upload();
 	void uploadSides();
 
 	// load textures for materials
 	void loadTextures();
-	Texture *loadTextureForMaterial(const std::string &materialName);
+	Texture* loadTextureForMaterial(const std::string& materialName);
 
   public:
 	CSMFile();
@@ -209,13 +209,13 @@ class CSMFile
 	bool showSides = false; // default off
 
 	bool validate();
-	bool read(const std::string &filePath);
-	bool write(const std::string &filePath);
+	bool read(const std::string& filePath);
+	bool write(const std::string& filePath);
 
 	void draw();
 
 	void printInfo();
 };
 
-extern std::map<unsigned int, CSMFile *> csm_models;
-CSMFile *AddNewXashCsmToRender(const std::string &path, unsigned int sum = 0);
+extern std::map<unsigned int, CSMFile*> csm_models;
+CSMFile* AddNewXashCsmToRender(const std::string& path, unsigned int sum = 0);

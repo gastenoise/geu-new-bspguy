@@ -38,7 +38,7 @@ vec2 Line2D::project(vec2 p)
 	return start + dir * dot;
 }
 
-bool Line2D::isAlignedWith(const Line2D &other)
+bool Line2D::isAlignedWith(const Line2D& other)
 {
 	if (fabs(dotProduct(dir, other.dir)) < 0.999f)
 	{
@@ -53,7 +53,7 @@ bool Line2D::isAlignedWith(const Line2D &other)
 	return cross1 * cross2 < EPSILON;
 }
 
-float Line2D::getOverlapRanges(const Line2D &other, float &t0, float &t1, float &t2, float &t3)
+float Line2D::getOverlapRanges(const Line2D& other, float& t0, float& t1, float& t2, float& t3)
 {
 	float d1 = dotProduct(start, dir);
 	float d2 = dotProduct(end, dir);
@@ -100,13 +100,13 @@ float Line2D::getOverlapRanges(const Line2D &other, float &t0, float &t1, float 
 	return overlapDist;
 }
 
-bool onSegment(const vec2 &p, const vec2 &q, const vec2 &r)
+bool onSegment(const vec2& p, const vec2& q, const vec2& r)
 {
 	return (q.x <= std::max(p.x, r.x) && q.x >= std::min(p.x, r.x) &&
 			q.y <= std::max(p.y, r.y) && q.y >= std::min(p.y, r.y));
 }
 
-int orientation(const vec2 &p, const vec2 &q, const vec2 &r)
+int orientation(const vec2& p, const vec2& q, const vec2& r)
 {
 	float val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 
@@ -115,12 +115,12 @@ int orientation(const vec2 &p, const vec2 &q, const vec2 &r)
 	return (val > 0.0) ? 1 : 2; // Clockwise or counterclockwise
 }
 
-bool Line2D::doesIntersect(const Line2D &l2)
+bool Line2D::doesIntersect(const Line2D& l2)
 {
-	const vec2 &A = start;
-	const vec2 &B = end;
-	const vec2 &C = l2.start - l2.dir * EPSILON; // extend a bit in case point is on edge
-	const vec2 &D = l2.end + l2.dir * EPSILON;
+	const vec2& A = start;
+	const vec2& B = end;
+	const vec2& C = l2.start - l2.dir * EPSILON; // extend a bit in case point is on edge
+	const vec2& D = l2.end + l2.dir * EPSILON;
 
 	int o1 = orientation(A, B, C);
 	int o2 = orientation(A, B, D);
@@ -142,12 +142,12 @@ bool Line2D::doesIntersect(const Line2D &l2)
 	return false; // Doesn't intersect
 }
 
-vec2 Line2D::intersect(const Line2D &l2)
+vec2 Line2D::intersect(const Line2D& l2)
 {
-	const vec2 &A = start;
-	const vec2 &B = end;
-	const vec2 &C = l2.start;
-	const vec2 &D = l2.end;
+	const vec2& A = start;
+	const vec2& B = end;
+	const vec2& C = l2.start;
+	const vec2& D = l2.end;
 
 	float a1 = B.y - A.y;
 	float b1 = A.x - B.x;

@@ -12,7 +12,7 @@ ProgressMeter::ProgressMeter()
 	progress_title = "";
 }
 
-void ProgressMeter::update(const std::string &newTitle, int totalProgressTicks)
+void ProgressMeter::update(const std::string& newTitle, int totalProgressTicks)
 {
 	progress_title = newTitle;
 	progress = 0;

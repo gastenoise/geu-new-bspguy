@@ -20,12 +20,12 @@ void mat4x4::loadIdentity()
 	memcpy(m, m_identity, sizeof(m_identity));
 }
 
-void loadEmptyMat4x4(float *m)
+void loadEmptyMat4x4(float* m)
 {
 	memcpy(m, m_zero, sizeof(m_zero));
 }
 
-void glhFrustumf2(float *matrix, float left, float right, float bottom, float top,
+void glhFrustumf2(float* matrix, float left, float right, float bottom, float top,
 				  float znear, float zfar)
 {
 	float temp, temp2, temp3, temp4;
@@ -303,7 +303,7 @@ void mat4x4::rotate(float x, float y, float z)
 	mult(rmat);
 }*/
 
-mat4x4 worldToLocalTransform(const vec3 &local_x, const vec3 &local_y, const vec3 &local_z)
+mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z)
 {
 	const vec3 world_x(1, 0, 0);
 	const vec3 world_y(0, 1, 0);
@@ -365,7 +365,7 @@ float mat4x4::determinant() const
 }
 
 // http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
-mat4x4 mat4x4::invert(bool *result)
+mat4x4 mat4x4::invert(bool* result)
 {
 	mat4x4 out;
 	loadEmptyMat4x4(out.m);
@@ -522,7 +522,7 @@ void mat4x4::mult(float mat[16])
 {
 	float a[16];
 	memcpy(a, m, sizeof(a));
-	const float *b = mat;
+	const float* b = mat;
 
 	m[0] = a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12];
 	m[1] = a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13];
@@ -542,13 +542,13 @@ void mat4x4::mult(float mat[16])
 	m[15] = a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15];
 }
 
-mat4x4 operator*(const mat4x4 &m1, const mat4x4 &m2)
+mat4x4 operator*(const mat4x4& m1, const mat4x4& m2)
 {
 	mat4x4 result;
 
-	const float *a = m1.m;
-	const float *b = m2.m;
-	float *m = result.m;
+	const float* a = m1.m;
+	const float* b = m2.m;
+	float* m = result.m;
 
 	m[0] = a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12];
 	m[1] = a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13];
@@ -570,7 +570,7 @@ mat4x4 operator*(const mat4x4 &m1, const mat4x4 &m2)
 	return result;
 }
 
-vec4 operator*(const mat4x4 &mat, const vec4 &vec)
+vec4 operator*(const mat4x4& mat, const vec4& vec)
 {
 	vec4 res;
 	res.x = mat.m[0] * vec.x + mat.m[4] * vec.y + mat.m[8] * vec.z + mat.m[12] * vec.w;
@@ -580,7 +580,7 @@ vec4 operator*(const mat4x4 &mat, const vec4 &vec)
 	return res;
 }
 
-void mat4x4print(const mat4x4 &mat)
+void mat4x4print(const mat4x4& mat)
 {
 	print_log("{} {} {} {}\n", mat.m[0], mat.m[1], mat.m[2], mat.m[3]);
 	print_log("{} {} {} {}\n", mat.m[4], mat.m[5], mat.m[6], mat.m[7]);

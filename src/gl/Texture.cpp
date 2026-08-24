@@ -8,9 +8,9 @@
 #include "Renderer.h"
 #include "MutexManager.h"
 
-std::vector<Texture *> g_all_Textures;
+std::vector<Texture*> g_all_Textures;
 
-Texture::Texture(GLsizei _width, GLsizei _height, unsigned char *data, const std::string &name, bool rgba, bool _owndata)
+Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba, bool _owndata)
 {
 	tex_owndata = _owndata;
 	wad_name = "";
@@ -71,7 +71,7 @@ Texture::~Texture()
 	}
 }
 
-unsigned char *Texture::getData()
+unsigned char* Texture::getData()
 {
 	if (data == NULL)
 	{
@@ -162,9 +162,9 @@ void Texture::upload(int _type)
 	if (texName[0] == '{' && format == GL_RGB)
 	{
 		format = GL_RGBA;
-		auto *rgbData = (COLOR3 *)(data);
+		auto* rgbData = (COLOR3*)(data);
 		auto pixelCount = width * height;
-		auto *rgbaData = new COLOR4[pixelCount];
+		auto* rgbaData = new COLOR4[pixelCount];
 		for (int i = 0; i < pixelCount; i++)
 		{
 			rgbaData[i] = rgbData[i];
@@ -175,7 +175,7 @@ void Texture::upload(int _type)
 		}
 		if (tex_owndata && data != nullptr)
 			delete[] data;
-		data = (unsigned char *)(rgbaData);
+		data = (unsigned char*)(rgbaData);
 		tex_owndata = true;
 		dataLen = (unsigned int)(width * height * sizeof(COLOR4));
 	}
@@ -196,7 +196,7 @@ void Texture::upload(int _type)
 	}
 }
 
-Texture *binded_tex[64];
+Texture* binded_tex[64];
 
 void Texture::bind(GLuint texnum)
 {
@@ -208,11 +208,11 @@ void Texture::bind(GLuint texnum)
 	}
 }
 
-bool IsTextureTransparent(const std::string &texname)
+bool IsTextureTransparent(const std::string& texname)
 {
 	if (texname.empty())
 		return false;
-	for (const auto &s : g_settings.transparentTextures)
+	for (const auto& s : g_settings.transparentTextures)
 	{
 		if (strcasecmp(s.c_str(), texname.c_str()) == 0)
 			return true;

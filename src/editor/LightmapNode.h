@@ -20,7 +20,7 @@ class LightmapNode
 
 	~LightmapNode() = default;
 
-	LightmapNode(LightmapNode &&other) noexcept
+	LightmapNode(LightmapNode&& other) noexcept
 		: child{std::move(other.child[0]), std::move(other.child[1])},
 		  x(other.x), y(other.y), w(other.w), h(other.h), filled(other.filled)
 	{
@@ -28,7 +28,7 @@ class LightmapNode
 		other.filled = false;
 	}
 
-	LightmapNode &operator=(LightmapNode &&other) noexcept
+	LightmapNode& operator=(LightmapNode&& other) noexcept
 	{
 		if (this != &other)
 		{
@@ -46,8 +46,8 @@ class LightmapNode
 		return *this;
 	}
 
-	LightmapNode(const LightmapNode &) = delete;
-	LightmapNode &operator=(const LightmapNode &) = delete;
+	LightmapNode(const LightmapNode&) = delete;
+	LightmapNode& operator=(const LightmapNode&) = delete;
 
-	bool insert(int iw, int ih, int &outX, int &outY);
+	bool insert(int iw, int ih, int& outX, int& outY);
 };

@@ -25,7 +25,7 @@ VertexAttr commonAttr[VBUF_FLAGBITS] =
 		VertexAttr(3, GL_FLOAT, -1, GL_FALSE, ""),		  // POS_3F
 };
 
-VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized, const char *varName)
+VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName)
 	: numValues(numValues), valueType(valueType), handle(handle), normalized(normalized), varName(varName), size(0)
 {
 	switch (valueType)
@@ -50,7 +50,7 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 	}
 }
 
-ShaderProgram::ShaderProgram(const char *vshaderSource, const char *fshaderSource)
+ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSource)
 	: elementSize(0), modelViewID(-1), modelViewProjID(-1), ID(0xFFFFFFFF),
 	  vposID(0), vcolorID(0), vtexID(0), modelViewMat(NULL), modelViewProjMat(NULL), attributesBound(false), updMatGlobalId(9999999)
 {
@@ -124,7 +124,7 @@ void ShaderProgram::removeShader(int shaderID)
 	// Note: we do not call glDeleteShader here because Shader destructor should handle it.
 }
 
-void ShaderProgram::setMatrixes(mat4x4 *modelView, mat4x4 *modelViewProj)
+void ShaderProgram::setMatrixes(mat4x4* modelView, mat4x4* modelViewProj)
 {
 	modelViewMat = modelView;
 	modelViewProjMat = modelViewProj;
@@ -159,7 +159,7 @@ void ShaderProgram::updateMatrixes()
 	}
 }
 
-void ShaderProgram::updateMatrixes(const mat4x4 &viewMat, const mat4x4 &viewProjMat)
+void ShaderProgram::updateMatrixes(const mat4x4& viewMat, const mat4x4& viewProjMat)
 {
 	if (g_active_shader_program != ID)
 	{
@@ -184,7 +184,7 @@ void ShaderProgram::updateMatrixes(const mat4x4 &viewMat, const mat4x4 &viewProj
 		glUniformMatrix4fv(modelViewProjID, 1, GL_FALSE, &modelViewProjMat->m[0]);
 }
 
-void ShaderProgram::setMatrixNames(const char *_modelViewMat, const char *_modelViewProjMat)
+void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _modelViewProjMat)
 {
 	if (_modelViewMat)
 	{
@@ -200,7 +200,7 @@ void ShaderProgram::setMatrixNames(const char *_modelViewMat, const char *_model
 	}
 }
 
-void ShaderProgram::setVertexAttributeNames(const char *posAtt, const char *colorAtt, const char *texAtt, int attFlags)
+void ShaderProgram::setVertexAttributeNames(const char* posAtt, const char* colorAtt, const char* texAtt, int attFlags)
 {
 	if (posAtt)
 	{
@@ -348,7 +348,7 @@ void ShaderProgram::addAttributes(int attFlags)
 	}
 }
 
-void ShaderProgram::addAttribute(int numValues, int valueType, int normalized, const char *varName)
+void ShaderProgram::addAttribute(int numValues, int valueType, int normalized, const char* varName)
 {
 	VertexAttr attribute(numValues, valueType, -1, normalized, varName);
 
@@ -356,7 +356,7 @@ void ShaderProgram::addAttribute(int numValues, int valueType, int normalized, c
 	elementSize += attribute.size;
 }
 
-void ShaderProgram::addAttribute(int type, const char *varName)
+void ShaderProgram::addAttribute(int type, const char* varName)
 {
 	if (!varName || varName[0] == '\0')
 	{

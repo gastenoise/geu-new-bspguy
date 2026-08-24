@@ -8,14 +8,14 @@ class QueryNode
 {
   public:
 	virtual ~QueryNode() = default;
-	virtual bool evaluate(Entity *ent) = 0;
+	virtual bool evaluate(Entity* ent) = 0;
 };
 
 class EntityQuery
 {
   public:
-	EntityQuery(const std::string &queryString);
-	bool evaluate(Entity *ent);
+	EntityQuery(const std::string& queryString);
+	bool evaluate(Entity* ent);
 	bool isValid() const { return root != nullptr; }
 
   private:
@@ -42,7 +42,7 @@ class EntityQuery
 	std::vector<Token> tokens;
 	size_t currentToken;
 
-	void tokenize(const std::string &q);
+	void tokenize(const std::string& q);
 	std::unique_ptr<QueryNode> parseExpression();
 	std::unique_ptr<QueryNode> parseTerm();
 	std::unique_ptr<QueryNode> parseFactor();

@@ -18,12 +18,12 @@ struct ActionItem
 class ActionRegistry
 {
   public:
-	static ActionRegistry &getInstance();
+	static ActionRegistry& getInstance();
 
-	void registerAction(const ActionItem &action);
-	const std::vector<ActionItem> &getAllActions() const { return actions; }
-	std::vector<ActionItem> searchActions(const std::string &query) const;
-	bool executeAction(const std::string &id);
+	void registerAction(const ActionItem& action);
+	const std::vector<ActionItem>& getAllActions() const { return actions; }
+	std::vector<ActionItem> searchActions(const std::string& query) const;
+	bool executeAction(const std::string& id);
 
 	void clear() { actions.clear(); }
 
@@ -32,4 +32,4 @@ class ActionRegistry
 	std::vector<ActionItem> actions;
 };
 
-void RegisterAllAppActions(class Gui *gui, class Renderer *app);
+void RegisterAllAppActions(class Gui* gui, class Renderer* app);

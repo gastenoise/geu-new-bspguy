@@ -32,7 +32,7 @@ void set_console_colors(unsigned int colors = DEFAULT_CONSOLE_COLOR);
 #include "MutexManager.h"
 
 template <class... Args>
-void print_log(unsigned int colors, const std::string &format, Args... args)
+void print_log(unsigned int colors, const std::string& format, Args... args)
 {
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 
@@ -90,7 +90,7 @@ void print_log(unsigned int colors, const std::string &format, Args... args)
 	}
 	else
 	{
-		for (auto &s : splitstr)
+		for (auto& s : splitstr)
 		{
 			if (s.size())
 			{
@@ -105,7 +105,7 @@ void print_log(unsigned int colors, const std::string &format, Args... args)
 }
 
 template <class... Args>
-void print_log(const std::string &format, Args... args)
+void print_log(const std::string& format, Args... args)
 {
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 	print_log(DEFAULT_CONSOLE_COLOR, "{}", line);

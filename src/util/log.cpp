@@ -107,8 +107,8 @@ void set_console_colors(unsigned int colors)
 		std::cout << "\x1B[0m";
 		return;
 	}
-	const char *mode = colors & PRINT_INTENSITY ? "1" : "0";
-	const char *color = "37";
+	const char* mode = colors & PRINT_INTENSITY ? "1" : "0";
+	const char* color = "37";
 	switch (colors & ~PRINT_INTENSITY)
 	{
 		case PRINT_RED:

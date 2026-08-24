@@ -36,7 +36,7 @@ class Entity
 		realIdx = totalEntityStructs;
 	}
 
-	Entity(const std::string &_classname)
+	Entity(const std::string& _classname)
 	{
 		setOrAddKeyvalue("classname", _classname);
 		cachedModelIdx = -2;
@@ -51,14 +51,14 @@ class Entity
 		totalEntityStructs++;
 		realIdx = totalEntityStructs;
 	}
-	void addKeyvalue(const std::string &key, const std::string &value, bool multisupport = false);
-	void removeKeyvalue(const std::string &key);
-	bool renameKey(int idx, const std::string &newName);
-	bool renameKey(const std::string &oldName, const std::string &newName);
+	void addKeyvalue(const std::string& key, const std::string& value, bool multisupport = false);
+	void removeKeyvalue(const std::string& key);
+	bool renameKey(int idx, const std::string& newName);
+	bool renameKey(const std::string& oldName, const std::string& newName);
 	void clearAllKeyvalues();
 	void clearEmptyKeyvalues();
 
-	void setOrAddKeyvalue(const std::string &key, const std::string &value);
+	void setOrAddKeyvalue(const std::string& key, const std::string& value);
 
 	// returns -1 for invalid idx
 	int getBspModelIdx();
@@ -68,13 +68,13 @@ class Entity
 
 	bool isWorldSpawn();
 
-	bool hasKey(const std::string &key);
+	bool hasKey(const std::string& key);
 
 	std::vector<std::string> getTargets();
 
-	bool hasTarget(const std::string &checkTarget);
+	bool hasTarget(const std::string& checkTarget);
 
-	void renameTargetnameValues(const std::string &oldTargetname, const std::string &newTargetname);
+	void renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname);
 
 	void updateRenderModes();
 
@@ -82,7 +82,7 @@ class Entity
 
 	vec3 origin;
 
-	vec3 getHullOrigin(Bsp *map);
+	vec3 getHullOrigin(Bsp* map);
 
 	bool isEverVisible();
 

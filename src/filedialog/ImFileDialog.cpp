@@ -32,14 +32,14 @@
 namespace ifd
 {
 #ifndef _WIN32
-static const char *GetDefaultFolderIcon();
-static const char *GetDefaultFileIcon();
+static const char* GetDefaultFolderIcon();
+static const char* GetDefaultFileIcon();
 #endif
 /* UI CONTROLS */
-bool FolderNode(const char *label, ImTextureID icon, bool &clicked)
+bool FolderNode(const char* label, ImTextureID icon, bool& clicked)
 {
-	ImGuiContext &g = *GImGui;
-	ImGuiWindow *window = g.CurrentWindow;
+	ImGuiContext& g = *GImGui;
+	ImGuiWindow* window = g.CurrentWindow;
 
 	clicked = false;
 
@@ -51,7 +51,7 @@ bool FolderNode(const char *label, ImTextureID icon, bool &clicked)
 	{
 		if (is_mouse_x_over_arrow)
 		{
-			int *p_opened = window->StateStorage.GetIntRef(id, 0);
+			int* p_opened = window->StateStorage.GetIntRef(id, 0);
 			opened = *p_opened = !*p_opened;
 		}
 		else
@@ -64,7 +64,7 @@ bool FolderNode(const char *label, ImTextureID icon, bool &clicked)
 	bool doubleClick = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
 	if (doubleClick && hovered)
 	{
-		int *p_opened = window->StateStorage.GetIntRef(id, 0);
+		int* p_opened = window->StateStorage.GetIntRef(id, 0);
 		opened = *p_opened = !*p_opened;
 		clicked = false;
 	}
@@ -81,10 +81,10 @@ bool FolderNode(const char *label, ImTextureID icon, bool &clicked)
 		ImGui::TreePush(label);
 	return opened != 0;
 }
-bool FileNode(const char *label, ImTextureID icon)
+bool FileNode(const char* label, ImTextureID icon)
 {
-	ImGuiContext &g = *GImGui;
-	ImGuiWindow *window = g.CurrentWindow;
+	ImGuiContext& g = *GImGui;
+	ImGuiWindow* window = g.CurrentWindow;
 
 	// ImU32 id = window->GetID(label);
 	ImVec2 pos = window->DC.CursorPos;
@@ -101,20 +101,20 @@ bool FileNode(const char *label, ImTextureID icon)
 
 	return ret;
 }
-bool PathBox(const char *label, std::filesystem::path &path, char *pathBuffer, int len, ImVec2 size_arg)
+bool PathBox(const char* label, std::filesystem::path& path, char* pathBuffer, int len, ImVec2 size_arg)
 {
-	ImGuiWindow *window = ImGui::GetCurrentWindow();
+	ImGuiWindow* window = ImGui::GetCurrentWindow();
 	if (window->SkipItems)
 		return false;
 
 	bool ret = false;
 	const ImGuiID id = window->GetID(label);
-	int *state = window->StateStorage.GetIntRef(id, 0);
+	int* state = window->StateStorage.GetIntRef(id, 0);
 
 	ImGui::SameLine();
 
-	ImGuiContext &g = *GImGui;
-	const ImGuiStyle &style = g.Style;
+	ImGuiContext& g = *GImGui;
+	const ImGuiStyle& style = g.Style;
 	ImVec2 pos = window->DC.CursorPos;
 	ImVec2 uiPos = ImGui::GetCursorPos();
 	ImVec2 size = ImGui::CalcItemSize(size_arg, 200, GUI_ELEMENT_SIZE);
@@ -241,10 +241,10 @@ bool PathBox(const char *label, std::filesystem::path &path, char *pathBuffer, i
 
 	return ret;
 }
-bool FavoriteButton(const char *label, bool isFavorite)
+bool FavoriteButton(const char* label, bool isFavorite)
 {
-	ImGuiContext &g = *GImGui;
-	ImGuiWindow *window = g.CurrentWindow;
+	ImGuiContext& g = *GImGui;
+	ImGuiWindow* window = g.CurrentWindow;
 
 	ImVec2 pos = window->DC.CursorPos;
 	bool ret = ImGui::InvisibleButton(label, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE));
@@ -299,11 +299,11 @@ bool FavoriteButton(const char *label, bool isFavorite)
 
 	return ret;
 }
-bool FileIcon(const char *label, bool isSelected, ImTextureID icon, ImVec2 size, bool hasPreview, int previewWidth, int previewHeight)
+bool FileIcon(const char* label, bool isSelected, ImTextureID icon, ImVec2 size, bool hasPreview, int previewWidth, int previewHeight)
 {
-	ImGuiStyle &style = ImGui::GetStyle();
-	ImGuiContext &g = *GImGui;
-	ImGuiWindow *window = g.CurrentWindow;
+	ImGuiStyle& style = ImGui::GetStyle();
+	ImGuiContext& g = *GImGui;
+	ImGuiWindow* window = g.CurrentWindow;
 
 	float windowSpace = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
 	ImVec2 pos = window->DC.CursorPos;
@@ -351,7 +351,7 @@ bool FileIcon(const char *label, bool isSelected, ImTextureID icon, ImVec2 size,
 	return ret;
 }
 
-FileDialog::FileData::FileData(const std::filesystem::path &path)
+FileDialog::FileData::FileData(const std::filesystem::path& path)
 {
 	std::error_code ec;
 	Path = path;
@@ -388,7 +388,7 @@ FileDialog::FileDialog()
 	m_previewLoaderRunning = false;
 	m_setDirectory(std::filesystem::current_path(), false);
 	// favorites are available on every OS
-	FileTreeNode *quickAccess = new FileTreeNode("Quick Access");
+	FileTreeNode* quickAccess = new FileTreeNode("Quick Access");
 	quickAccess->Read = true;
 	m_treeCache.push_back(quickAccess);
 #ifdef _WIN32
@@ -426,12 +426,12 @@ FileDialog::FileDialog()
 	// OneDrive
 	if (fs::exists(userPath + "OneDrive"))
 	{
-		FileTreeNode *oneDrive = new FileTreeNode(userPath + "OneDrive");
+		FileTreeNode* oneDrive = new FileTreeNode(userPath + "OneDrive");
 		m_treeCache.push_back(oneDrive);
 	}
 
 	// This PC
-	FileTreeNode *thisPC = new FileTreeNode("This PC");
+	FileTreeNode* thisPC = new FileTreeNode("This PC");
 	thisPC->Read = true;
 	if (std::filesystem::exists(userPath + "3D Objects"))
 		thisPC->Children.push_back(new FileTreeNode(userPath + "3D Objects"));
@@ -456,7 +456,7 @@ FileDialog::FileDialog()
 	std::error_code ec;
 
 	// Quick Access
-	struct passwd *pw;
+	struct passwd* pw;
 	uid_t uid;
 	uid = geteuid();
 	pw = getpwuid(uid);
@@ -477,9 +477,9 @@ FileDialog::FileDialog()
 	}
 
 	// This PC
-	FileTreeNode *thisPC = new FileTreeNode("This PC");
+	FileTreeNode* thisPC = new FileTreeNode("This PC");
 	thisPC->Read = true;
-	for (const auto &entry : std::filesystem::directory_iterator("/", ec))
+	for (const auto& entry : std::filesystem::directory_iterator("/", ec))
 	{
 		if (std::filesystem::is_directory(entry, ec))
 			thisPC->Children.push_back(new FileTreeNode(entry.path().string()));
@@ -496,7 +496,7 @@ FileDialog::~FileDialog()
 		m_clearTree(fn);
 	m_treeCache.clear();
 }
-bool FileDialog::Save(const std::string &key, const std::string &title, const std::string &filter, const std::string &startingDir)
+bool FileDialog::Save(const std::string& key, const std::string& title, const std::string& filter, const std::string& startingDir)
 {
 	if (!m_currentKey.empty())
 		return false;
@@ -520,7 +520,7 @@ bool FileDialog::Save(const std::string &key, const std::string &title, const st
 
 	return true;
 }
-bool FileDialog::Open(const std::string &key, const std::string &title, const std::string &filter, bool isMultiselect, const std::string &startingDir)
+bool FileDialog::Open(const std::string& key, const std::string& title, const std::string& filter, bool isMultiselect, const std::string& startingDir)
 {
 	if (!m_currentKey.empty())
 		return false;
@@ -544,7 +544,7 @@ bool FileDialog::Open(const std::string &key, const std::string &title, const st
 
 	return true;
 }
-bool FileDialog::IsDone(const std::string &key)
+bool FileDialog::IsDone(const std::string& key)
 {
 	bool isMe = m_currentKey == key;
 
@@ -592,7 +592,7 @@ void FileDialog::Close()
 	m_clearIcons();
 }
 
-void FileDialog::RemoveFavorite(const std::string &path)
+void FileDialog::RemoveFavorite(const std::string& path)
 {
 	auto itr = std::find(m_favorites.begin(), m_favorites.end(), m_currentDirectory.string());
 
@@ -600,7 +600,7 @@ void FileDialog::RemoveFavorite(const std::string &path)
 		m_favorites.erase(itr);
 
 	// remove from sidebar
-	for (auto &p : m_treeCache)
+	for (auto& p : m_treeCache)
 		if (p->Path == "Quick Access")
 		{
 			for (size_t i = 0; i < p->Children.size(); i++)
@@ -612,7 +612,7 @@ void FileDialog::RemoveFavorite(const std::string &path)
 			break;
 		}
 }
-void FileDialog::AddFavorite(const std::string &path)
+void FileDialog::AddFavorite(const std::string& path)
 {
 	if (std::count(m_favorites.begin(), m_favorites.end(), path) > 0)
 		return;
@@ -623,7 +623,7 @@ void FileDialog::AddFavorite(const std::string &path)
 	m_favorites.push_back(path);
 
 	// add to sidebar
-	for (auto &p : m_treeCache)
+	for (auto& p : m_treeCache)
 		if (p->Path == "Quick Access")
 		{
 			p->Children.push_back(new FileTreeNode(path));
@@ -631,7 +631,7 @@ void FileDialog::AddFavorite(const std::string &path)
 		}
 }
 
-void FileDialog::m_select(const std::filesystem::path &path, bool isCtrlDown)
+void FileDialog::m_select(const std::filesystem::path& path, bool isCtrlDown)
 {
 	bool multiselect = isCtrlDown && m_isMultiselect;
 
@@ -660,7 +660,7 @@ void FileDialog::m_select(const std::filesystem::path &path, bool isCtrlDown)
 	else
 	{
 		std::string textboxVal = "";
-		for (const auto &sel : m_selections)
+		for (const auto& sel : m_selections)
 		{
 			std::string filename = sel.filename().string();
 			if (filename.empty())
@@ -672,7 +672,7 @@ void FileDialog::m_select(const std::filesystem::path &path, bool isCtrlDown)
 	}
 }
 
-bool FileDialog::m_finalize(const std::string &filename)
+bool FileDialog::m_finalize(const std::string& filename)
 {
 	bool hasResult = (!filename.empty() && m_type != IFD_DIALOG_DIRECTORY) || m_type == IFD_DIALOG_DIRECTORY;
 
@@ -696,7 +696,7 @@ bool FileDialog::m_finalize(const std::string &filename)
 		}
 		else
 		{
-			for (const auto &sel : m_selections)
+			for (const auto& sel : m_selections)
 			{
 				if (sel.is_absolute())
 					m_result.push_back(sel);
@@ -731,7 +731,7 @@ bool FileDialog::m_finalize(const std::string &filename)
 
 	return true;
 }
-void FileDialog::m_parseFilter(const std::string &filter)
+void FileDialog::m_parseFilter(const std::string& filter)
 {
 	m_filter = "";
 	m_filterExtensions.clear();
@@ -791,7 +791,7 @@ void FileDialog::m_parseFilter(const std::string &filter)
 	}
 }
 
-void *FileDialog::m_getIcon(const std::filesystem::path &path)
+void* FileDialog::m_getIcon(const std::filesystem::path& path)
 {
 #ifdef _WIN32
 	if (m_icons.count(path.string()) > 0)
@@ -824,7 +824,7 @@ void *FileDialog::m_getIcon(const std::filesystem::path &path)
 	auto itr = std::find(m_iconIndices.begin(), m_iconIndices.end(), fileInfo.iIcon);
 	if (itr != m_iconIndices.end())
 	{
-		const std::string &existingIconFilepath = m_iconFilepaths[itr - m_iconIndices.begin()];
+		const std::string& existingIconFilepath = m_iconFilepaths[itr - m_iconIndices.begin()];
 		m_icons[pathU8] = m_icons[existingIconFilepath];
 		return m_icons[pathU8];
 	}
@@ -845,7 +845,7 @@ void *FileDialog::m_getIcon(const std::filesystem::path &path)
 	if (byteSize == 0)
 		return nullptr;
 
-	unsigned char *data = (unsigned char *)malloc(byteSize);
+	unsigned char* data = (unsigned char*)malloc(byteSize);
 	GetBitmapBits(iconInfo.hbmColor, byteSize, data);
 
 	m_icons[pathU8] = this->CreateTexture(data, ds.dsBm.bmWidth, ds.dsBm.bmHeight, 0);
@@ -870,7 +870,7 @@ void *FileDialog::m_getIcon(const std::filesystem::path &path)
 	auto itr = std::find(m_iconIndices.begin(), m_iconIndices.end(), iconID);
 	if (itr != m_iconIndices.end())
 	{
-		const std::string &existingIconFilepath = m_iconFilepaths[itr - m_iconIndices.begin()];
+		const std::string& existingIconFilepath = m_iconFilepaths[itr - m_iconIndices.begin()];
 		m_icons[pathU8] = m_icons[existingIconFilepath];
 		return m_icons[pathU8];
 	}
@@ -883,19 +883,19 @@ void *FileDialog::m_getIcon(const std::filesystem::path &path)
 	// light theme - load default icons
 	if ((wndBg.x + wndBg.y + wndBg.z) / 3.0f > 0.5f)
 	{
-		unsigned char *data = (unsigned char *)ifd::GetDefaultFileIcon();
+		unsigned char* data = (unsigned char*)ifd::GetDefaultFileIcon();
 		if (iconID == 0)
-			data = (unsigned char *)ifd::GetDefaultFolderIcon();
+			data = (unsigned char*)ifd::GetDefaultFolderIcon();
 		m_icons[pathU8] = this->CreateTexture(data, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE, 0);
 	}
 	// dark theme - invert the colors
 	else
 	{
-		unsigned char *data = (unsigned char *)ifd::GetDefaultFileIcon();
+		unsigned char* data = (unsigned char*)ifd::GetDefaultFileIcon();
 		if (iconID == 0)
-			data = (unsigned char *)ifd::GetDefaultFolderIcon();
+			data = (unsigned char*)ifd::GetDefaultFolderIcon();
 
-		unsigned char *invData = (unsigned char *)malloc(DEFAULT_ICON_SIZE * DEFAULT_ICON_SIZE * 4);
+		unsigned char* invData = (unsigned char*)malloc(DEFAULT_ICON_SIZE * DEFAULT_ICON_SIZE * 4);
 		for (int y = 0; y < 32; y++)
 		{
 			for (int x = 0; x < 32; x++)
@@ -920,7 +920,7 @@ void FileDialog::m_clearIcons()
 	std::vector<unsigned int> deletedIcons;
 
 	// delete textures
-	for (auto &icon : m_icons)
+	for (auto& icon : m_icons)
 	{
 		unsigned int ptr = (unsigned int)((uintptr_t)icon.second);
 		if (std::count(deletedIcons.begin(), deletedIcons.end(), ptr)) // skip duplicates
@@ -950,7 +950,7 @@ void FileDialog::m_clearIconPreview()
 {
 	m_stopPreviewLoader();
 
-	for (auto &data : m_content)
+	for (auto& data : m_content)
 	{
 		if (!data.HasIconPreview)
 			continue;
@@ -982,7 +982,7 @@ void FileDialog::m_loadPreview()
 {
 	for (size_t i = 0; m_previewLoaderRunning && i < m_content.size(); i++)
 	{
-		auto &data = m_content[i];
+		auto& data = m_content[i];
 
 		if (data.HasIconPreview)
 			continue;
@@ -993,7 +993,7 @@ void FileDialog::m_loadPreview()
 			if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".tga")
 			{
 				int width, height, nrChannels;
-				unsigned char *image = stbi_load(data.Path.string().c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
+				unsigned char* image = stbi_load(data.Path.string().c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
 
 				if (image == nullptr || width == 0 || height == 0)
 					continue;
@@ -1008,7 +1008,7 @@ void FileDialog::m_loadPreview()
 
 	m_previewLoaderRunning = false;
 }
-void FileDialog::m_clearTree(FileTreeNode *node)
+void FileDialog::m_clearTree(FileTreeNode* node)
 {
 	if (node == nullptr)
 		return;
@@ -1019,7 +1019,7 @@ void FileDialog::m_clearTree(FileTreeNode *node)
 	delete node;
 	node = nullptr;
 }
-void FileDialog::m_setDirectory(const std::filesystem::path &p, bool addHistory)
+void FileDialog::m_setDirectory(const std::filesystem::path& p, bool addHistory)
 {
 	bool isSameDir = m_currentDirectory == p;
 
@@ -1042,19 +1042,19 @@ void FileDialog::m_setDirectory(const std::filesystem::path &p, bool addHistory)
 
 	if (p.string() == "Quick Access")
 	{
-		for (auto &node : m_treeCache)
+		for (auto& node : m_treeCache)
 		{
 			if (node->Path == p)
-				for (auto &c : node->Children)
+				for (auto& c : node->Children)
 					m_content.push_back(FileData(c->Path));
 		}
 	}
 	else if (p.string() == "This PC")
 	{
-		for (auto &node : m_treeCache)
+		for (auto& node : m_treeCache)
 		{
 			if (node->Path == p)
-				for (auto &c : node->Children)
+				for (auto& c : node->Children)
 					m_content.push_back(FileData(c->Path));
 		}
 	}
@@ -1070,7 +1070,7 @@ void FileDialog::m_setDirectory(const std::filesystem::path &p, bool addHistory)
 
 		std::error_code ec;
 		if (std::filesystem::exists(m_currentDirectory, ec))
-			for (const auto &entry : std::filesystem::directory_iterator(m_currentDirectory, ec))
+			for (const auto& entry : std::filesystem::directory_iterator(m_currentDirectory, ec))
 			{
 				FileData info(entry.path());
 
@@ -1095,7 +1095,7 @@ void FileDialog::m_setDirectory(const std::filesystem::path &p, bool addHistory)
 				{
 					if (m_filterSelection < m_filterExtensions.size())
 					{
-						const auto &exts = m_filterExtensions[m_filterSelection];
+						const auto& exts = m_filterExtensions[m_filterSelection];
 						if (exts.size() > 0)
 						{
 							std::string extension = info.Path.extension().string();
@@ -1121,7 +1121,7 @@ void FileDialog::m_sortContent(unsigned int column, unsigned int sortDirection)
 	m_sortDirection = sortDirection;
 
 	// split into directories and files
-	std::partition(m_content.begin(), m_content.end(), [](const FileData &data)
+	std::partition(m_content.begin(), m_content.end(), [](const FileData& data)
 				   { return data.IsDirectory; });
 
 	if (m_content.size() > 0)
@@ -1133,7 +1133,7 @@ void FileDialog::m_sortContent(unsigned int column, unsigned int sortDirection)
 				break;
 
 		// compare function
-		auto compareFn = [column, sortDirection](const FileData &left, const FileData &right) -> bool
+		auto compareFn = [column, sortDirection](const FileData& left, const FileData& right) -> bool
 		{
 			// name
 			if (column == 0)
@@ -1175,7 +1175,7 @@ void FileDialog::m_sortContent(unsigned int column, unsigned int sortDirection)
 	}
 }
 
-void FileDialog::m_renderTree(FileTreeNode *node)
+void FileDialog::m_renderTree(FileTreeNode* node)
 {
 	// directory
 	std::error_code ec;
@@ -1190,7 +1190,7 @@ void FileDialog::m_renderTree(FileTreeNode *node)
 		{
 			// cache children if it's not already cached
 			if (std::filesystem::exists(node->Path, ec))
-				for (const auto &entry : std::filesystem::directory_iterator(node->Path, ec))
+				for (const auto& entry : std::filesystem::directory_iterator(node->Path, ec))
 				{
 					if (std::filesystem::is_directory(entry, ec))
 						node->Children.push_back(new FileTreeNode(entry.path().string()));
@@ -1226,7 +1226,7 @@ void FileDialog::m_renderContent()
 			ImGui::TableHeadersRow();
 
 			// sort
-			if (ImGuiTableSortSpecs *sortSpecs = ImGui::TableGetSortSpecs())
+			if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs())
 			{
 				if (sortSpecs->SpecsDirty)
 				{
@@ -1237,7 +1237,7 @@ void FileDialog::m_renderContent()
 
 			// content
 			int fileId = 0;
-			for (const auto &entry : m_content)
+			for (const auto& entry : m_content)
 			{
 				const std::string filename = entry.Path.filename().string().empty() ? entry.Path.string() : entry.Path.filename().string();
 
@@ -1295,7 +1295,7 @@ void FileDialog::m_renderContent()
 	{
 		// content
 		int fileId = 0;
-		for (auto &entry : m_content)
+		for (auto& entry : m_content)
 		{
 			if (entry.HasIconPreview && entry.IconPreviewData != nullptr)
 			{
@@ -1362,7 +1362,7 @@ void FileDialog::m_renderPopups()
 			ImGui::CloseCurrentPopup();
 		else
 		{
-			const FileData &data = m_content[m_selectedFileItem];
+			const FileData& data = m_content[m_selectedFileItem];
 			ImGui::TextWrapped(fmt::format(fmt::runtime(get_localized_string(LANG_0929)), data.Path.filename().string().c_str()).c_str());
 			if (ImGui::Button(get_localized_string(LANG_0943).c_str()))
 			{
@@ -3624,12 +3624,12 @@ static const unsigned int folder_icon[] = {
 };
 
 #ifndef _WIN32
-const char *ifd::GetDefaultFolderIcon()
+const char* ifd::GetDefaultFolderIcon()
 {
-	return (const char *)&folder_icon[0];
+	return (const char*)&folder_icon[0];
 }
-const char *ifd::GetDefaultFileIcon()
+const char* ifd::GetDefaultFileIcon()
 {
-	return (const char *)&file_icon[0];
+	return (const char*)&file_icon[0];
 }
 #endif

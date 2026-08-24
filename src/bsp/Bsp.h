@@ -27,7 +27,7 @@ class BspRenderer;
 struct LeafDebug
 {
 	int leafIdx;
-	unsigned char *leafVIS;
+	unsigned char* leafVIS;
 	LeafDebug()
 	{
 		leafIdx = 0;
@@ -65,7 +65,7 @@ class Bsp
 
 	bool force_skip_crc;
 
-	std::vector<Entity *> ents;
+	std::vector<Entity*> ents;
 	int planeCount;
 	int textureCount;
 	int textureDataLength;
@@ -83,21 +83,21 @@ class Bsp
 	int surfedgeCount;
 	int modelCount;
 
-	BSPPLANE *planes;
-	unsigned char *textures;
-	vec3 *verts;
-	unsigned char *lightdata;
-	BSPNODE32 *nodes;
-	BSPTEXTUREINFO *texinfos;
-	BSPFACE32 *faces;
-	BSPFACE_INFOEX *faceinfos;
-	unsigned char *visdata;
-	BSPCLIPNODE32 *clipnodes;
-	BSPLEAF32 *leaves;
-	int *marksurfs;
-	BSPEDGE32 *edges;
-	int *surfedges;
-	BSPMODEL *models;
+	BSPPLANE* planes;
+	unsigned char* textures;
+	vec3* verts;
+	unsigned char* lightdata;
+	BSPNODE32* nodes;
+	BSPTEXTUREINFO* texinfos;
+	BSPFACE32* faces;
+	BSPFACE_INFOEX* faceinfos;
+	unsigned char* visdata;
+	BSPCLIPNODE32* clipnodes;
+	BSPLEAF32* leaves;
+	int* marksurfs;
+	BSPEDGE32* edges;
+	int* surfedges;
+	BSPMODEL* models;
 
 	bool is_colored_lightmap;
 	bool is_texture_has_pal;
@@ -111,11 +111,11 @@ class Bsp
 	bool is_bsp_model;
 	bool is_mdl_model;
 
-	StudioModel *map_mdl;
-	Sprite *map_spr;
-	CSMFile *map_csm;
+	StudioModel* map_mdl;
+	Sprite* map_spr;
+	CSMFile* map_csm;
 
-	Bsp *parentMap;
+	Bsp* parentMap;
 	void selectModelEnt();
 
 	Bsp();
@@ -129,28 +129,28 @@ class Bsp
 
 	void transform(int modelIdx, mat4x4 matrix, vec3 center, bool logged = true);
 
-	void move_texinfo(BSPTEXTUREINFO &info, vec3 offset);
+	void move_texinfo(BSPTEXTUREINFO& info, vec3 offset);
 	void move_texinfo(int idx, vec3 offset);
-	void write(const std::string &path);
+	void write(const std::string& path);
 
 	void print_info(bool perModelStats, int perModelLimit, int sortMode);
 	void print_model_hull(int modelIdx, int hull);
 	void print_clipnode_tree(int iNode, int depth);
 	void recurse_node_print(int node, int depth);
 
-	void get_last_node(int nodeIdx, int &node, int &count, int last_node = -1);
-	void get_last_clipnode(int nodeIdx, int &node, int &count, int last_node = -1); // get leaf index from world position
+	void get_last_node(int nodeIdx, int& node, int& count, int last_node = -1);
+	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1); // get leaf index from world position
 	int get_leaf(vec3 pos, int hull);
 
-	int pointContents(int iNode, const vec3 &p, int hull, std::vector<int> &nodeBranch, int &leafIdx, int &childIdx);
-	int modelLeafs(int modelIdx, std::vector<int> &modelLeafs);
-	int modelLeafs(const BSPMODEL &model, std::vector<int> &modelLeafs);
-	int pointContents(int iNode, const vec3 &p, int hull);
-	bool recursiveHullCheck(int hull, int num, float p1f, float p2f, vec3 p1, vec3 p2, TraceResult *trace);
-	void traceHull(vec3 start, vec3 end, int hull, TraceResult *ptr);
-	int pointLeaf(int iNode, const vec3 &p, int hull, int &leafIdx, int &planeIdx);
-	std::vector<int> getLeafsFromPos(const vec3 &p, float radius);
-	const char *getLeafContentsName(int contents);
+	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
+	int modelLeafs(int modelIdx, std::vector<int>& modelLeafs);
+	int modelLeafs(const BSPMODEL& model, std::vector<int>& modelLeafs);
+	int pointContents(int iNode, const vec3& p, int hull);
+	bool recursiveHullCheck(int hull, int num, float p1f, float p2f, vec3 p1, vec3 p2, TraceResult* trace);
+	void traceHull(vec3 start, vec3 end, int hull, TraceResult* ptr);
+	int pointLeaf(int iNode, const vec3& p, int hull, int& leafIdx, int& planeIdx);
+	std::vector<int> getLeafsFromPos(const vec3& p, float radius);
+	const char* getLeafContentsName(int contents);
 	// returns true if leaf is in the PVS from the given position
 	bool is_leaf_visible(int ileaf, vec3 pos);
 
@@ -165,14 +165,14 @@ class Bsp
 	// and redirects to the given hull, if redirect>0
 	void delete_hull(int hull_number, int redirect);
 
-	void write_csg_outputs(const std::string &path);
+	void write_csg_outputs(const std::string& path);
 
 	// get the bounding box for the world
-	void get_bounding_box(vec3 &mins, vec3 &maxs);
-	void get_bounding_box(int modelidx, vec3 &mins, vec3 &maxs);
+	void get_bounding_box(vec3& mins, vec3& maxs);
+	void get_bounding_box(int modelidx, vec3& mins, vec3& maxs);
 
 	// get the bounding box for all vertexes in a BSP tree
-	void get_model_vertex_bounds(int modelIdx, vec3 &mins, vec3 &maxs, bool skipSpecial = false);
+	void get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs, bool skipSpecial = false);
 
 	// face has duplicate verts, this is bad?
 	bool is_face_duplicate_edges(int faceIdx);
@@ -185,33 +185,33 @@ class Bsp
 	std::vector<int> getModelVertsIds(int modelIdx);
 
 	// gets verts formed by plane intersections with the nodes in this model
-	bool getModelPlaneIntersectVerts(int modelIdx, std::vector<TransformVert> &outVerts);
-	bool getModelPlaneIntersectVerts(int modelIdx, const std::vector<int> &planes, std::vector<TransformVert> &outVerts);
-	void getNodePlanes(int iNode, std::vector<int> &nodePlanes);
-	void getClipNodePlanes(int iClipNode, std::vector<int> &nodePlanes);
+	bool getModelPlaneIntersectVerts(int modelIdx, std::vector<TransformVert>& outVerts);
+	bool getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& planes, std::vector<TransformVert>& outVerts);
+	void getNodePlanes(int iNode, std::vector<int>& nodePlanes);
+	void getClipNodePlanes(int iClipNode, std::vector<int>& nodePlanes);
 	bool is_convex(int modelIdx);
 	bool is_node_hull_convex(int iNode);
 
 	// true if the center of this face is touching an empty leaf
-	bool isInteriorFace(const Polygon3D &poly, int hull);
+	bool isInteriorFace(const Polygon3D& poly, int hull);
 
 	// get cuts required to create bounding volumes for each solid leaf in the model
 	std::vector<NodeVolumeCuts> get_model_leaf_volume_cuts(int modelIdx, int hullIdx, int contents);
-	void get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE> &clipOrder, std::vector<NodeVolumeCuts> &output, int contents);
-	void get_node_leaf_cuts(int iNode, std::vector<BSPPLANE> &clipOrder, std::vector<NodeVolumeCuts> &output, int contents);
+	void get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output, int contents);
+	void get_node_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output, int contents);
 
-	void get_leaf_nodes(int leaf, std::vector<int> &out_nodes);
+	void get_leaf_nodes(int leaf, std::vector<int>& out_nodes);
 
 	// this a cheat to recalculate plane normals after scaling a solid. Really I should get the plane
 	// intersection code working for nonconvex solids, but that's looking like a ton of work.
 	// Scaling/stretching really only needs 3 verts _anywhere_ on the plane to calculate new normals/origins.
 	std::vector<ScalableTexinfo> getScalableTexinfos(int modelIdx); // for scaling
-	int addTextureInfo(BSPTEXTUREINFO &copy);
+	int addTextureInfo(BSPTEXTUREINFO& copy);
 
 	// fixes up the model planes/nodes after vertex posisions have been modified
 	// returns false if the model has non-planar faces
 	// TODO: split any planes shared with other models
-	bool vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert> &hullVerts, bool convexCheckOnly);
+	bool vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert>& hullVerts, bool convexCheckOnly);
 
 	void reload_ents();
 	// call this after editing ents
@@ -239,29 +239,29 @@ class Bsp
 	// deletes data outside the map bounds
 	void delete_oob_data(int clipFlags);
 
-	void delete_oob_clipnodes(int iNode, int *parentBranch, std::vector<BSPPLANE> &clipOrder,
-							  int oobFlags, bool *oobHistory, bool isFirstPass, int &removedNodes);
+	void delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
+							  int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
 
-	void delete_oob_nodes(int iNode, int *parentBranch, std::vector<BSPPLANE> &clipOrder,
-						  int oobFlags, bool *oobHistory, bool isFirstPass, int &removedNodes);
+	void delete_oob_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
+						  int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
 
 	// deletes data inside a bounding box
 	void delete_box_data(vec3 clipMins, vec3 clipMaxs);
 	void delete_hull_in_box(int hullIdx, vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 	void delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 
-	int delete_box_clipnodes_fast(int iNode, std::vector<BSPPLANE> &clipOrder,
+	int delete_box_clipnodes_fast(int iNode, std::vector<BSPPLANE>& clipOrder,
 								  vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 	int delete_box_nodes_fast(int iNode, vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 
-	void delete_box_clipnodes(int iNode, int *parentBranch, std::vector<BSPPLANE> &clipOrder,
-							  vec3 clipMins, vec3 clipMaxs, bool *oobHistory, bool isFirstPass, int &removedNodes, int redirect = CONTENTS_SOLID);
-	void delete_box_nodes(int iNode, int *parentBranch, std::vector<BSPPLANE> &clipOrder,
-						  vec3 clipMins, vec3 clipMaxs, bool *oobHistory, bool isFirstPass, int &removedNodes, int redirect = CONTENTS_SOLID);
+	void delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
+							  vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
+	void delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
+						  vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
 
 	// assumes contiguous leaves starting at 0. Only works for worldspawn, which is the only model which
 	// should have leaves anyway.
-	void count_leaves(int iNode, int &leafCount);
+	void count_leaves(int iNode, int& leafCount);
 
 	// searches for entities that have very similar models,
 	// then updates the entities to share a single model reference
@@ -292,7 +292,7 @@ class Bsp
 
 	bool downscale_texture(int textureId, int newWidth, int newHeight);
 
-	bool rename_texture(const char *oldName, const char *newName);
+	bool rename_texture(const char* oldName, const char* newName);
 
 	// updates texture coordinates after a texture has been downscaled
 	void adjust_downscaled_texture_coordinates(int textureId, int oldWidth, int oldHeight);
@@ -319,39 +319,39 @@ class Bsp
 	bool validate();
 
 	// creates a solid cube
-	int create_solid(const vec3 &mins, const vec3 &maxs, int textureIdx, bool empty = false);
+	int create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool empty = false);
 
 	// creates a new solid from the given solid definition (must be convex).
-	int create_solid(Solid &solid, int targetModelIdx = -1);
+	int create_solid(Solid& solid, int targetModelIdx = -1);
 
 	int create_leaf(int contents);
 	int create_leaf_back(int contents);
-	void create_inside_box(const vec3 &min, const vec3 &max, BSPMODEL *targetModel, int textureIdx);
-	void create_primitive_box(const vec3 &mins, const vec3 &maxs, BSPMODEL *targetModel, int textureIdx, bool inside = false);
-	void create_solid_nodes(Solid &solid, BSPMODEL *targetModel);
+	void create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx);
+	void create_primitive_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx, bool inside = false);
+	void create_solid_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
 
-	int create_node_box(const vec3 &mins, const vec3 &maxs, BSPMODEL *targetModel, bool empty = false, int leafIdx = -1);
-	int create_clipnode_box(const vec3 &mins, const vec3 &maxs, BSPMODEL *targetModel, int targetHull = 0, bool skipEmpty = false, bool empty = false);
+	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, bool empty = false, int leafIdx = -1);
+	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool empty = false);
 	// copies a model from the sourceMap into this one
-	void add_model(Bsp *sourceMap, int modelIdx);
+	void add_model(Bsp* sourceMap, int modelIdx);
 
 	// create a new texture from raw RGB data, and embeds into the bsp.
 	// Returns -1 on failure, else the new texture index
-	int add_texture(const char *name, unsigned char *data, int width, int height, bool force_custompal = false);
-	int add_texture(const WADTEX &tex, bool embedded = false);
+	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
+	int add_texture(const WADTEX& tex, bool embedded = false);
 
 	void fix_transparency(int texIdx);
 
-	bool export_wad_to_pngs(const std::string &wadpath, const std::string &targetdir);
-	bool import_textures_to_wad(const std::string &wadpath, const std::string &texpath, bool dithering);
+	bool export_wad_to_pngs(const std::string& wadpath, const std::string& targetdir);
+	bool import_textures_to_wad(const std::string& wadpath, const std::string& texpath, bool dithering);
 
-	bool export_entities(const std::string &entpath);
+	bool export_entities(const std::string& entpath);
 
-	void replace_lump(int lumpIdx, void *newData, size_t newLength);
-	void append_lump(int lumpIdx, void *newData, size_t appendLength);
+	void replace_lump(int lumpIdx, void* newData, size_t newLength);
+	void append_lump(int lumpIdx, void* newData, size_t appendLength);
 
-	bool is_invisible_solid(Entity *ent);
+	bool is_invisible_solid(Entity* ent);
 
 	// replace a model's clipnode hull with a axis-aligned bounding box
 	void simplify_model_collision(int modelIdx, int hullIdx);
@@ -359,7 +359,7 @@ class Bsp
 	// for use after scaling a model. Convex only.
 	// Skips axis-aligned planes (bounding box should have been generated beforehand)
 	bool regenerate_clipnodes(int modelIdx, int hullIdx);
-	int regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool &success);
+	int regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success);
 
 	int create_node(bool force_reversed = false, int reversed_id = 0);
 	int create_clipnode(bool force_reversed = false, int reversed_id = 0);
@@ -370,10 +370,10 @@ class Bsp
 	int create_edge();
 	int create_surfedge();
 
-	void copy_bsp_model(int modelIdx, Bsp *targetMap, STRUCTREMAP &remap, STRUCTUSAGE &usage, std::vector<BSPPLANE> &newPlanes, std::vector<vec3> &newVerts,
-						std::vector<BSPEDGE32> &newEdges, std::vector<int> &newSurfedges, std::vector<BSPTEXTUREINFO> &newTexinfo,
-						std::vector<BSPFACE32> &newFaces, std::vector<COLOR3> &newLightmaps, std::vector<BSPNODE32> &newNodes,
-						std::vector<BSPCLIPNODE32> &newClipnodes, std::vector<WADTEX> &newTextures, std::vector<BSPLEAF32> &newLeafs, std::vector<int> &newMarkSurfs, bool forExport = false);
+	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUCTUSAGE& usage, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
+						std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
+						std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
+						std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
@@ -385,12 +385,12 @@ class Bsp
 	void remove_faces_by_content(int content);
 	std::vector<int> getFaceContents(int faceIdx);
 	int clone_world_leaf(int oldleafIdx);
-	int merge_two_models_ents(Entity *src_ent, Entity *dst_ent);
-	int merge_two_models_idx(int src_model, int dst_model, int &try_again);
-	int merge_two_models_idx_internal(int src_model, int dst_model, int &try_again);
+	int merge_two_models_ents(Entity* src_ent, Entity* dst_ent);
+	int merge_two_models_idx(int src_model, int dst_model, int& try_again);
+	int merge_two_models_idx_internal(int src_model, int dst_model, int& try_again);
 	void swap_two_models(int mdl1, int mdl2);
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
-	BSPTEXTUREINFO *get_unique_texinfo(int faceIdx);
+	BSPTEXTUREINFO* get_unique_texinfo(int faceIdx);
 
 	bool is_unique_texinfo(int faceIdx);
 
@@ -408,9 +408,9 @@ class Bsp
 
 	int get_ent_from_model(int modelIdx);
 
-	void decalShoot(vec3 pos, const std::string &texname);
+	void decalShoot(vec3 pos, const std::string& texname);
 
-	std::vector<STRUCTUSAGE *> get_sorted_model_infos(int sortMode);
+	std::vector<STRUCTUSAGE*> get_sorted_model_infos(int sortMode);
 
 	// split structures that are shared between the target and other models
 	void split_shared_model_structures(int modelIdx);
@@ -421,117 +421,117 @@ class Bsp
 	// returns the current lump contents
 	LumpState duplicate_lumps(unsigned int targets = 0xFFFFFFFF);
 
-	void replace_lumps(const LumpState &state);
+	void replace_lumps(const LumpState& state);
 
 	int delete_embedded_textures();
 
-	BSPMIPTEX *find_embedded_texture(const char *name, int &texid);
-	BSPMIPTEX *find_embedded_wad_texture(const char *name, int &texid);
+	BSPMIPTEX* find_embedded_texture(const char* name, int& texid);
+	BSPMIPTEX* find_embedded_wad_texture(const char* name, int& texid);
 
 	void update_lump_pointers();
 
 	int getBspRenderId();
-	BspRenderer *getBspRender();
-	void setBspRender(BspRenderer *rnd);
+	BspRenderer* getBspRender();
+	void setBspRender(BspRenderer* rnd);
 
-	void ExportToSmdWIP(const std::string &path, bool split, bool oneRoot);
+	void ExportToSmdWIP(const std::string& path, bool split, bool oneRoot);
 
-	void ExportToObjWIP(const std::string &path, int iscale = 1, bool lightmap_mode = false, bool with_mdl = false, bool export_csm = false, int grouping = 0);
+	void ExportToObjWIP(const std::string& path, int iscale = 1, bool lightmap_mode = false, bool with_mdl = false, bool export_csm = false, int grouping = 0);
 
-	void ExportToMapWIP(const std::string &path, bool selected, bool merge_faces, bool use_one_back_vert, bool create_worldbox);
+	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces, bool use_one_back_vert, bool create_worldbox);
 
 	void import_mdl_to_bsp(int ent, int generateClipnodes, bool splitMeshes = false);
-	int import_mdl_to_bspmodel(std::vector<StudioMesh> &meshes, mat4x4 angles, bool &valid_nodes);
+	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, bool& valid_nodes);
 
 	int merge_all_planes();
 
-	void ExportPortalFile(const std::string &path);
-	void ExportExtFile(const std::string &path, std::string &out_map_path);
-	void ExportLightFile(const std::string &path);
-	void ImportLightFile(const std::string &path);
+	void ExportPortalFile(const std::string& path);
+	void ExportExtFile(const std::string& path, std::string& out_map_path);
+	void ExportLightFile(const std::string& path);
+	void ImportLightFile(const std::string& path);
 
-	bool ImportWad(const std::string &path);
-	bool ExportEmbeddedWad(const std::string &path);
+	bool ImportWad(const std::string& path);
+	bool ExportEmbeddedWad(const std::string& path);
 
-	bool isModelHasFaceIdx(const BSPMODEL &mdl, int faceid);
-	bool isModelHasLeafIdx(const BSPMODEL &bspmdl, int leafidx);
+	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
+	bool isModelHasLeafIdx(const BSPMODEL& bspmdl, int leafidx);
 
 	void hideEnts(bool hide = true);
 
 	std::vector<int> getLeafFaces(int leafIdx);
-	std::vector<int> getLeafFaces(BSPLEAF32 &leaf);
+	std::vector<int> getLeafFaces(BSPLEAF32& leaf);
 	std::vector<int> getFaceLeafs(int faceIdx);
 	int getFaceFromPlane(int iPlane);
-	int getFaceFromVec(const vec3 &pos, int modelIdx, int &content);
+	int getFaceFromVec(const vec3& pos, int modelIdx, int& content);
 	std::vector<int> getFacesFromPlane(int iPlane);
 	bool is_texture_with_pal(int textureid);
 	int getBspTextureSize(int textureid);
 	int getEmbeddedTexCount();
 
 	int getWorlspawnEntId();
-	Entity *getWorldspawnEnt();
+	Entity* getWorldspawnEnt();
 
 	void save_undo_lightmaps(bool logged = false);
 	void resize_all_lightmaps(bool logged = false);
-	bool should_resize_lightmap(LIGHTMAP &oldLightmap, LIGHTMAP &newLightmap);
+	bool should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap);
 
 	// marks all structures that this model uses
 	// TODO: don't mark faces in submodel leaves (unused)
-	void mark_model_structures(int modelIdx, STRUCTUSAGE *STRUCTUSAGE, bool skipLeaves);
-	void mark_face_structures(int iFace, STRUCTUSAGE *usage);
-	void mark_node_structures(int iNode, STRUCTUSAGE *usage, bool skipLeaves);
-	void mark_clipnode_structures(int iNode, STRUCTUSAGE *usage);
+	void mark_model_structures(int modelIdx, STRUCTUSAGE* STRUCTUSAGE, bool skipLeaves);
+	void mark_face_structures(int iFace, STRUCTUSAGE* usage);
+	void mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves);
+	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);
 
-	BSPPLANE getPlaneFromFace(const BSPFACE32 *const face);
+	BSPPLANE getPlaneFromFace(const BSPFACE32* const face);
 	bool GetFaceLightmapSize(int facenum, int size[2]);
 	int GetFaceLightmapSizeBytes(int facenum);
 	int GetFaceSingleLightmapSizeBytes(int facenum);
 	bool GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
-	bool CalcFaceExtents(lightinfo_t *l);
+	bool CalcFaceExtents(lightinfo_t* l);
 
 	int CalcFaceTextureStep(int facenum);
 	int GetTriggerTexture();
 	int AddTriggerTexture();
-	void gen_clipnodes(std::vector<vec3> &all_verts, int newModelIdx);
+	void gen_clipnodes(std::vector<vec3>& all_verts, int newModelIdx);
 
-	unsigned int remove_unused_lightmaps(std::vector<bool> &usedFaces);
-	unsigned int remove_unused_visdata(BSPLEAF32 *oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
-	unsigned int remove_unused_textures(std::vector<bool> &usedTextures, std::vector<int> &remappedIndexes, int *removeddata = NULL);
+	unsigned int remove_unused_lightmaps(std::vector<bool>& usedFaces);
+	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
+	unsigned int remove_unused_textures(std::vector<bool>& usedTextures, std::vector<int>& remappedIndexes, int* removeddata = NULL);
 	int unembed_textures(std::vector<int> texIndices);
-	unsigned int remove_unused_structs(int lumpIdx, std::vector<bool> &usedStructs, std::vector<int> &remappedIndexes);
+	unsigned int remove_unused_structs(int lumpIdx, std::vector<bool>& usedStructs, std::vector<int>& remappedIndexes);
 
-	void recurse_node_leafs(int nodeIdx, std::vector<int> &outLeafs);
+	void recurse_node_leafs(int nodeIdx, std::vector<int>& outLeafs);
 
-	bool load_lumps(const std::string &fname);
+	bool load_lumps(const std::string& fname);
 
 	void print_model_bsp(int modelIdx);
-	void print_leaf(const BSPLEAF32 &leaf);
+	void print_leaf(const BSPLEAF32& leaf);
 	void print_leaf(int leaf);
-	void print_node(const BSPNODE32 &node);
-	void print_stat(const std::string &name, unsigned int val, unsigned int max, bool isMem);
-	void print_model_stat(STRUCTUSAGE *modelInfo, unsigned int val, int max, bool isMem);
+	void print_node(const BSPNODE32& node);
+	void print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem);
+	void print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bool isMem);
 
 	std::string get_model_usage(int modelIdx);
-	std::vector<Entity *> get_model_ents(int modelIdx);
+	std::vector<Entity*> get_model_ents(int modelIdx);
 	std::vector<int> get_model_ents_ids(int modelIdx);
 
-	vec3 getEntOrigin(Entity *ent);
-	vec3 getEntOffset(Entity *ent);
+	vec3 getEntOrigin(Entity* ent);
+	vec3 getEntOffset(Entity* ent);
 
-	void write_csg_polys(int nodeIdx, FILE *fout, int flipPlaneSkip, bool debug);
+	void write_csg_polys(int nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
 
 	// remaps structure indexes to new locations
-	void remap_face_structures(int faceIdx, STRUCTREMAP *remap);
-	void remap_model_structures(int modelIdx, STRUCTREMAP *remap);
-	void remap_node_structures(int iNode, STRUCTREMAP *remap);
-	void remap_clipnode_structures(int iNode, STRUCTREMAP *remap);
+	void remap_face_structures(int faceIdx, STRUCTREMAP* remap);
+	void remap_model_structures(int modelIdx, STRUCTREMAP* remap);
+	void remap_node_structures(int iNode, STRUCTREMAP* remap);
+	void remap_clipnode_structures(int iNode, STRUCTREMAP* remap);
 
-	BspRenderer *renderer;
+	BspRenderer* renderer;
 	unsigned int originCrc32 = 0;
 
-	bool *pvsFaces = NULL; // flags which faces are marked for rendering in the PVS
+	bool* pvsFaces = NULL; // flags which faces are marked for rendering in the PVS
 	int pvsFaceCount = 0;
 	size_t realIdx = 0;
 };
 
-void update_unused_wad_files(Bsp *baseMap, Bsp *targetMap, int tex_type = 0);
+void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type = 0);

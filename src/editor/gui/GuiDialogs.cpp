@@ -36,7 +36,7 @@ void Gui::drawSettings()
 
 	if (ImGui::Begin(fmt::format("{}###SETTING_WIDGET", get_localized_string(LANG_1114)).c_str(), &showSettingsWidget))
 	{
-		ImGuiContext &g = *GImGui;
+		ImGuiContext& g = *GImGui;
 		const int settings_tabs = 7;
 
 		static int resSelected = 0;
@@ -171,14 +171,14 @@ void Gui::drawSettings()
 
 					g_settings.fgdPaths.clear();
 					PathToggleStruct tmpPath("", true);
-					for (auto &f : fgdFileList)
+					for (auto& f : fgdFileList)
 					{
 						tmpPath.path = f;
 						g_settings.fgdPaths.push_back(tmpPath);
 					}
 
 					g_settings.resPaths.clear();
-					for (auto &w : wadDirList)
+					for (auto& w : wadDirList)
 					{
 						tmpPath.path = w;
 						g_settings.resPaths.push_back(tmpPath);
@@ -328,7 +328,7 @@ void Gui::drawSettings()
 			ImGui::SameLine();
 			if (ImGui::BeginCombo("##lang", langForSelect.c_str()))
 			{
-				for (const auto &s : g_settings.languages)
+				for (const auto& s : g_settings.languages)
 				{
 					if (ImGui::Selectable(s.c_str(), s == langForSelect))
 					{
@@ -342,7 +342,7 @@ void Gui::drawSettings()
 			ImGui::SameLine();
 			if (ImGui::BeginCombo("##pal", palForSelect.c_str()))
 			{
-				for (const auto &s : g_settings.palettes)
+				for (const auto& s : g_settings.palettes)
 				{
 					if (ImGui::Selectable(s.name.c_str(), s.name == palForSelect))
 					{
@@ -707,7 +707,7 @@ void Gui::drawSettings()
 		{
 			if (ImGui::BeginCombo("##engines", engForSelect.c_str()))
 			{
-				for (const auto &s : limitsMap)
+				for (const auto& s : limitsMap)
 				{
 					if (ImGui::Selectable(s.first.c_str(), s.first == engForSelect))
 					{
@@ -733,42 +733,42 @@ void Gui::drawSettings()
 
 			ImGui::DragFloat(get_localized_string(LANG_0761).c_str(), &g_limits.fltMaxCoord, 64.f, 512.f, 2147483647.f, "%.0f");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0762).c_str(), (int *)&g_limits.maxMapModels, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0762).c_str(), (int*)&g_limits.maxMapModels, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX SURFACE EXTENTS", (int *)&g_limits.maxSurfaceExtent, 1, 4, 1024, "%i");
+			ImGui::DragInt("MAX SURFACE EXTENTS", (int*)&g_limits.maxSurfaceExtent, 1, 4, 1024, "%i");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0765).c_str(), (int *)&g_limits.maxMapNodes, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0765).c_str(), (int*)&g_limits.maxMapNodes, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0766).c_str(), (int *)&g_limits.maxMapClipnodes, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0766).c_str(), (int*)&g_limits.maxMapClipnodes, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0767).c_str(), (int *)&g_limits.maxMapLeaves, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0767).c_str(), (int*)&g_limits.maxMapLeaves, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			if (ImGui::DragInt(get_localized_string(LANG_0768).c_str(), (int *)&vis_data_count, 4, 128, 2147483647, get_localized_string(LANG_0769).c_str()))
+			if (ImGui::DragInt(get_localized_string(LANG_0768).c_str(), (int*)&vis_data_count, 4, 128, 2147483647, get_localized_string(LANG_0769).c_str()))
 			{
 				g_limits.maxMapVisdata = vis_data_count * (1024 * 1024);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0763).c_str(), (int *)&g_limits.maxMapEnts, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0763).c_str(), (int*)&g_limits.maxMapEnts, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0771).c_str(), (int *)&g_limits.maxMapSurfedges, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0771).c_str(), (int*)&g_limits.maxMapSurfedges, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0770).c_str(), (int *)&g_limits.maxMapEdges, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0770).c_str(), (int*)&g_limits.maxMapEdges, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0764).c_str(), (int *)&g_limits.maxMapTextures, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0764).c_str(), (int*)&g_limits.maxMapTextures, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			if (ImGui::DragInt(get_localized_string(LANG_0772).c_str(), (int *)&light_data_count, 4, 128, 2147483647, get_localized_string(LANG_0769).c_str()))
+			if (ImGui::DragInt(get_localized_string(LANG_0772).c_str(), (int*)&light_data_count, 4, 128, 2147483647, get_localized_string(LANG_0769).c_str()))
 			{
 				g_limits.maxMapLightdata = light_data_count * (1024 * 1024);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			if (ImGui::DragInt(get_localized_string(LANG_0773).c_str(), (int *)&g_limits.maxTextureDimension, 4, 32, 1048576, "%u"))
+			if (ImGui::DragInt(get_localized_string(LANG_0773).c_str(), (int*)&g_limits.maxTextureDimension, 4, 32, 1048576, "%u"))
 			{
 				g_limits.maxTextureSize = ((g_limits.maxTextureDimension * g_limits.maxTextureDimension * 2 * 3) / 2);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::DragFloat("MAX_MAP_BOUNDARY", &g_limits.maxMapBoundary, 64.f, 512.f, 2147483647.f, "%.0f");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0774).c_str(), (int *)&g_limits.textureStep, 4, 4, 512, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0774).c_str(), (int*)&g_limits.textureStep, 4, 4, 512, "%u");
 
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			static std::string newEngine = "engine-name";
@@ -842,7 +842,7 @@ void Gui::drawSettings()
 				g_render_flags ^= RENDER_TEXTURES_NOFILTER;
 				{
 					std::lock_guard<std::mutex> lock(Sync::TexturesList);
-					for (auto &tex : g_all_Textures)
+					for (auto& tex : g_all_Textures)
 					{
 						bool filternoneed = g_render_flags & RENDER_TEXTURES_NOFILTER;
 						if (tex->type >= 0 && tex->type != Texture::TYPE_LIGHTMAP && tex->type != Texture::TYPE_LIGHTMAP_NOFILTER)
@@ -862,7 +862,7 @@ void Gui::drawSettings()
 				g_render_flags ^= RENDER_LIGHTMAPS_NOFILTER;
 				{
 					std::lock_guard<std::mutex> lock(Sync::TexturesList);
-					for (auto &tex : g_all_Textures)
+					for (auto& tex : g_all_Textures)
 					{
 						if (tex->type == Texture::TYPE_LIGHTMAP)
 						{
@@ -1078,7 +1078,7 @@ void Gui::drawSettings()
 			app->postLoadFgds();
 			for (size_t i = 0; i < mapRenderers.size(); i++)
 			{
-				BspRenderer *mapRender = mapRenderers[i];
+				BspRenderer* mapRender = mapRenderers[i];
 				mapRender->reload();
 			}
 			app->reloading = false;
@@ -1259,7 +1259,7 @@ void Gui::drawMergeWindow()
 
 		for (size_t i = 0; i < inPaths.size(); i++)
 		{
-			std::string &s = inPaths[i];
+			std::string& s = inPaths[i];
 			ImGui::SetNextItemWidth(350);
 			ImGui::InputText(fmt::format(fmt::runtime("##inpath{}"), i).c_str(), &s);
 			ImGui::SameLine();
@@ -1299,7 +1299,7 @@ void Gui::drawMergeWindow()
 		ImGui::PopStyleColor(1);
 		if (clicked_23)
 		{
-			std::vector<Bsp *> maps;
+			std::vector<Bsp*> maps;
 			std::vector<vec3> mapsOffsets;
 			for (size_t i = 0; i < inPaths.size(); i++)
 			{
@@ -1307,7 +1307,7 @@ void Gui::drawMergeWindow()
 				{
 					if (fileExists(inPaths[i]))
 					{
-						Bsp *tmpMap = new Bsp(inPaths[i]);
+						Bsp* tmpMap = new Bsp(inPaths[i]);
 						if (tmpMap->bsp_valid)
 						{
 							maps.push_back(tmpMap);
@@ -1322,7 +1322,7 @@ void Gui::drawMergeWindow()
 			}
 			if (maps.size() < 2)
 			{
-				for (auto &map : maps)
+				for (auto& map : maps)
 					delete map;
 				maps.clear();
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1056));
@@ -1392,7 +1392,7 @@ void Gui::drawMergeWindow()
 					}
 				}
 
-				for (auto &map : maps)
+				for (auto& map : maps)
 					delete map;
 				maps.clear();
 			}
@@ -1414,7 +1414,7 @@ void Gui::drawImportMapWidget()
 	ImGui::SetNextWindowSize(ImVec2(500.f, 140.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(500.f, 140.f), ImVec2(500.f, 140.f));
 	static std::string mapPath;
-	const char *title = "Import .bsp model as func_breakable entity";
+	const char* title = "Import .bsp model as func_breakable entity";
 
 	if (showImportMapWidget_Type == SHOW_IMPORT_OPEN)
 	{
@@ -1478,11 +1478,11 @@ void Gui::drawImportMapWidget()
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
 				{
-					Bsp *map = app->getSelectedMap();
+					Bsp* map = app->getSelectedMap();
 					if (map)
 					{
 						int import_model = ImportModel(map, mapPath);
-						Entity *newEnt = new Entity("func_wall");
+						Entity* newEnt = new Entity("func_wall");
 						newEnt->addKeyvalue("model", "*" + std::to_string(import_model));
 						map->ents.push_back(newEnt);
 						map->getBspRender()->refreshEnt((int)(map->ents.size()) - 1);
@@ -1492,10 +1492,10 @@ void Gui::drawImportMapWidget()
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_ENTITY)
 				{
-					Bsp *map = app->getSelectedMap();
+					Bsp* map = app->getSelectedMap();
 					if (map)
 					{
-						Bsp *model = new Bsp(mapPath);
+						Bsp* model = new Bsp(mapPath);
 						if (!model->ents.size())
 						{
 							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0400));

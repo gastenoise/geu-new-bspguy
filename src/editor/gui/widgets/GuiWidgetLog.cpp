@@ -54,7 +54,7 @@ void Gui::drawLog()
 	if (copy)
 	{
 		std::string logStr;
-		for (const auto &str : log_buffer_copy)
+		for (const auto& str : log_buffer_copy)
 		{
 			logStr += str + "\n";
 		}

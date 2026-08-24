@@ -112,7 +112,7 @@ typedef struct
 {
 	int texmins[2], texsize[2];
 	int surfnum;
-	BSPFACE32 *face;
+	BSPFACE32* face;
 } lightinfo_t;
 
 typedef struct
@@ -124,7 +124,7 @@ typedef struct samplefrag_s
 {
 	int facenum;		   // facenum
 	samplefragrect_t rect; // original rectangle that forms the boundary
-	Winding *mywinding;	   // relative to the texture coordinate on that face
+	Winding* mywinding;	   // relative to the texture coordinate on that face
 
 	samplefrag_s()
 	{
@@ -147,5 +147,5 @@ struct LIGHTMAP
 	}
 };
 
-float CalculatePointVecsProduct(const volatile float *point, const volatile float *vecs);
-bool CanFindFacePosition(Bsp *bsp, int facenum, int imins[2], int imaxs[2]);
+float CalculatePointVecsProduct(const volatile float* point, const volatile float* vecs);
+bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2]);

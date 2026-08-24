@@ -5,7 +5,7 @@
 #include "Bsp.h"
 #include "log.h"
 
-Winding &Winding::operator=(const Winding &other)
+Winding& Winding::operator=(const Winding& other)
 {
 	if (&other == this)
 		return *this;
@@ -23,12 +23,12 @@ Winding::Winding()
 	m_Points = {};
 }
 
-Winding::Winding(const Winding &other)
+Winding::Winding(const Winding& other)
 {
 	m_Points = other.m_Points;
 }
 
-Winding::Winding(const BSPPLANE &plane, float /*epsilon*/)
+Winding::Winding(const BSPPLANE& plane, float /*epsilon*/)
 {
 	int i;
 	float max, v;
@@ -90,7 +90,7 @@ Winding::Winding(const BSPPLANE &plane, float /*epsilon*/)
 	VectorSubtract(m_Points[3], vup, m_Points[3]);
 }
 
-void Winding::getPlane(BSPPLANE &plane) const
+void Winding::getPlane(BSPPLANE& plane) const
 {
 	if (m_Points.size() >= 3)
 	{
@@ -106,14 +106,14 @@ void Winding::getPlane(BSPPLANE &plane) const
 	}
 }
 
-Winding::Winding(Bsp *bsp, const BSPFACE32 &face, float epsilon)
+Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 {
 	m_Points = std::vector<vec3>(face.nEdges);
 
 	for (int e = 0; e < face.nEdges; e++)
 	{
 		int edgeIdx = bsp->surfedges[face.iFirstEdge + e];
-		BSPEDGE32 &edge = bsp->edges[abs(edgeIdx)];
+		BSPEDGE32& edge = bsp->edges[abs(edgeIdx)];
 
 		int v = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 		m_Points[e] = bsp->verts[v];
@@ -122,9 +122,9 @@ Winding::Winding(Bsp *bsp, const BSPFACE32 &face, float epsilon)
 	RemoveColinearPoints(epsilon);
 }
 
-void Winding::MergeVerts(Bsp *src, float epsilon)
+void Winding::MergeVerts(Bsp* src, float epsilon)
 {
-	for (auto &v : m_Points)
+	for (auto& v : m_Points)
 	{
 		for (int v2 = src->vertCount - 1; v2 >= 0; v2--)
 		{
@@ -169,7 +169,7 @@ void Winding::RemoveColinearPoints(float epsilon)
 	m_Points.resize(NumPoints);
 }
 
-bool Winding::Clip(BSPPLANE &split, bool keepon, float epsilon)
+bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 {
 	float dists[MAX_POINTS_ON_WINDING]{};
 	int sides[MAX_POINTS_ON_WINDING]{};
@@ -286,7 +286,7 @@ bool Winding::Clip(BSPPLANE &split, bool keepon, float epsilon)
 
 void Winding::Round(float epsilon)
 {
-	for (auto &p : m_Points)
+	for (auto& p : m_Points)
 	{
 		for (int j = 0; j < 3; j++)
 		{
@@ -297,7 +297,7 @@ void Winding::Round(float epsilon)
 
 void Winding::Offset(vec3 Offset)
 {
-	for (auto &p : m_Points)
+	for (auto& p : m_Points)
 	{
 		p += Offset;
 	}
@@ -348,7 +348,7 @@ bool Winding::IsConvex()
 	return fabs(negativeArea) < tolerance * positiveArea;
 }
 
-bool ArePointsOnALine(const std::vector<vec3> &points)
+bool ArePointsOnALine(const std::vector<vec3>& points)
 {
 	if (points.size() < 3)
 		return true;
@@ -375,10 +375,10 @@ bool ArePointsOnALine(const std::vector<vec3> &points)
 	return false;
 }
 
-Winding *Winding::Merge(const Winding &other, const BSPPLANE &plane, float epsilon)
+Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsilon)
 {
 
-	Winding *newf = NULL;
+	Winding* newf = NULL;
 
 	//
 	// find a common edge

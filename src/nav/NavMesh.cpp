@@ -114,7 +114,7 @@ bool NavMesh::addLink(int from, int to, int srcEdge, int dstEdge, int zDist, uns
 
 	if (!nodes[from].addLink(to, srcEdge, dstEdge, zDist, flags))
 	{
-		vec3 &pos = polys[from].center;
+		vec3& pos = polys[from].center;
 		print_log("Failed to add link at {} {} {}\n", (int)pos.x, (int)pos.y, (int)pos.z);
 		return false;
 	}
@@ -134,7 +134,7 @@ std::vector<Polygon3D> NavMesh::getPolys()
 	return ret;
 }
 
-void NavMesh::getLinkMidPoints(int iNode, int iLink, vec3 &srcMid, vec3 &dstMid)
+void NavMesh::getLinkMidPoints(int iNode, int iLink, vec3& srcMid, vec3& dstMid)
 {
 	srcMid = dstMid = vec3();
 	if (iNode < 0 || iNode >= MAX_NAV_POLYS)
@@ -146,14 +146,14 @@ void NavMesh::getLinkMidPoints(int iNode, int iLink, vec3 &srcMid, vec3 &dstMid)
 		return;
 	}
 
-	NavLink &link = nodes[iNode].links[iLink];
+	NavLink& link = nodes[iNode].links[iLink];
 	if (link.node < 0 || link.node >= MAX_NAV_POLYS)
 	{
 		return;
 	}
 
-	Polygon3D &srcPoly = polys[iNode];
-	Polygon3D &dstPoly = polys[link.node];
+	Polygon3D& srcPoly = polys[iNode];
+	Polygon3D& dstPoly = polys[link.node];
 
 	int e2i = (link.srcEdge + 1) % srcPoly.verts.size();
 	int e4i = (link.dstEdge + 1) % dstPoly.verts.size();

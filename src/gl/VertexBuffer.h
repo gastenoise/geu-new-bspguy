@@ -13,7 +13,7 @@ class VertexBuffer
 {
   public:
 	// Shader program used to query attribute locations and element size
-	ShaderProgram *shaderProgram;
+	ShaderProgram* shaderProgram;
 
 	// Number of vertices currently referenced by 'data' / stored in the VBO
 	int numVerts;
@@ -28,17 +28,17 @@ class VertexBuffer
 	// primitive defaults to 0 (caller should pass a GL primitive enum).
 	// If takeOwnership is true, VertexBuffer will delete[] the pointer
 	// when replaced or on destruction.
-	VertexBuffer(ShaderProgram *shaderProgram, void *dat, int numVerts, int primitive, bool takeOwnership);
-	VertexBuffer(ShaderProgram *shaderProgram, int primitive);
+	VertexBuffer(ShaderProgram* shaderProgram, void* dat, int numVerts, int primitive, bool takeOwnership);
+	VertexBuffer(ShaderProgram* shaderProgram, int primitive);
 	~VertexBuffer();
 
 	// Set the CPU-side data pointer. If takeOwnership is true, VertexBuffer will
 	// delete[] the pointer when replaced or on destruction.
-	void setData(void *data, int numVerts, bool takeOwnership);
+	void setData(void* data, int numVerts, bool takeOwnership);
 
 	// Return CPU-side data. If data was freed but VBO exists, this will try to
 	// read back the buffer contents into a newly allocated array.
-	unsigned char *getData();
+	unsigned char* getData();
 
 	// Upload vertex data to GPU. If forceReupload is true, reupload even if
 	// already uploaded. hideErrors suppresses logging of GL errors.
@@ -59,13 +59,13 @@ class VertexBuffer
 	GLsizeiptr lastBufferSize = 0; // for glBufferSubData optimization
 	bool ownData;				   // true if buffer should delete data on destruction
 	bool uploaded;				   // true if data has been uploaded to GPU
-	unsigned char *data;		   // CPU-side pointer to vertex data (may be nullptr)
+	unsigned char* data;		   // CPU-side pointer to vertex data (may be nullptr)
 	GLuint vboId;				   // 0 means not created yet
 	GLuint vaoId;				   // 0 means not created yet
 
 	// Helper to add vertex attributes based on flags (implementation detail)
 	void addAttributes(int attFlags);
 
-	VertexBuffer(const VertexBuffer &) = delete;
-	VertexBuffer &operator=(const VertexBuffer &) = delete;
+	VertexBuffer(const VertexBuffer&) = delete;
+	VertexBuffer& operator=(const VertexBuffer&) = delete;
 };

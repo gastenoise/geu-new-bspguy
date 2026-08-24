@@ -29,11 +29,11 @@ namespace inih
 {
 
 /* Typedef for prototype of handler function. */
-typedef int (*ini_handler)(void *user, const char *section, const char *name,
-						   const char *value);
+typedef int (*ini_handler)(void* user, const char* section, const char* name,
+						   const char* value);
 
 /* Typedef for prototype of fgets-style reader function. */
-typedef char *(*ini_reader)(char *str, int num, void *stream);
+typedef char* (*ini_reader)(char* str, int num, void* stream);
 
 #define INI_STOP_ON_FIRST_ERROR 1
 #define INI_MAX_LINE 2000
@@ -44,26 +44,26 @@ typedef char *(*ini_reader)(char *str, int num, void *stream);
 #define INI_INLINE_COMMENT_PREFIXES ";"
 
 /* Strip whitespace chars off end of given string, in place. Return s. */
-inline static char *rstrip(char *s)
+inline static char* rstrip(char* s)
 {
-	char *p = s + strlen(s);
+	char* p = s + strlen(s);
 	while (p > s && isspace((unsigned char)(*--p)))
 		*p = '\0';
 	return s;
 }
 
 /* Return pointer to first non-whitespace char in given string. */
-inline static char *lskip(const char *s)
+inline static char* lskip(const char* s)
 {
 	while (*s && isspace((unsigned char)(*s)))
 		s++;
-	return (char *)s;
+	return (char*)s;
 }
 
 /* Return pointer to first char (of chars) or inline comment in given string,
    or pointer to null at end of string if neither found. Inline comment must
    be prefixed by a whitespace character to register as a comment. */
-inline static char *find_chars_or_comment(const char *s, const char *chars)
+inline static char* find_chars_or_comment(const char* s, const char* chars)
 {
 	int was_space = 0;
 	while (*s && (!chars || !strchr(chars, *s)) &&
@@ -72,11 +72,11 @@ inline static char *find_chars_or_comment(const char *s, const char *chars)
 		was_space = isspace((unsigned char)(*s));
 		s++;
 	}
-	return (char *)s;
+	return (char*)s;
 }
 
 /* Version of strncpy that ensures dest (size bytes) is null-terminated. */
-inline static char *strncpy0(char *dest, const char *src, size_t size)
+inline static char* strncpy0(char* dest, const char* src, size_t size)
 {
 	strncpy(dest, src, size - 1);
 	dest[size - 1] = '\0';
@@ -84,25 +84,25 @@ inline static char *strncpy0(char *dest, const char *src, size_t size)
 }
 
 /* See documentation in header file. */
-inline int ini_parse_stream(ini_reader reader, void *stream,
-							ini_handler handler, void *user)
+inline int ini_parse_stream(ini_reader reader, void* stream,
+							ini_handler handler, void* user)
 {
 	/* Uses a fair bit of stack (use heap instead if you need to) */
-	char *line;
+	char* line;
 	size_t max_line = INI_INITIAL_ALLOC;
-	char *new_line;
+	char* new_line;
 	size_t offset;
 	char section[MAX_SECTION] = "";
 	char prev_name[MAX_NAME] = "";
 
-	char *start;
-	char *end;
-	char *name;
-	char *value;
+	char* start;
+	char* end;
+	char* name;
+	char* value;
 	int lineno = 0;
 	int error = 0;
 
-	line = (char *)malloc(INI_INITIAL_ALLOC);
+	line = (char*)malloc(INI_INITIAL_ALLOC);
 	if (!line)
 	{
 		return -2;
@@ -123,7 +123,7 @@ inline int ini_parse_stream(ini_reader reader, void *stream,
 			max_line *= 2;
 			if (max_line > INI_MAX_LINE)
 				max_line = INI_MAX_LINE;
-			new_line = (char *)realloc(line, max_line);
+			new_line = (char*)realloc(line, max_line);
 			if (!new_line)
 			{
 				free(line);
@@ -204,14 +204,14 @@ inline int ini_parse_stream(ini_reader reader, void *stream,
 	return error;
 }
 
-inline int ini_parse_file(FILE *file, ini_handler handler, void *user)
+inline int ini_parse_file(FILE* file, ini_handler handler, void* user)
 {
 	return ini_parse_stream((ini_reader)fgets, file, handler, user);
 }
 
-inline int ini_parse(const char *filename, ini_handler handler, void *user)
+inline int ini_parse(const char* filename, ini_handler handler, void* user)
 {
-	FILE *file;
+	FILE* file;
 	int error;
 
 	file = fopen(filename, "r");
@@ -241,7 +241,7 @@ class INIReader
 
 	// Construct INIReader and parse given file. See ini.h for more info
 	// about the parsing.
-	INIReader(FILE *file);
+	INIReader(FILE* file);
 
 	// Return the result of ini_parse(), i.e., 0 on success, line number of
 	// first error on parse error, or -1 on file open error.
@@ -257,55 +257,55 @@ class INIReader
 		std::string section) const;
 
 	template <typename T = std::string>
-	T Get(const std::string &section, const std::string &name) const;
+	T Get(const std::string& section, const std::string& name) const;
 
 	template <typename T>
-	T Get(const std::string &section, const std::string &name,
-		  T &&default_v) const;
+	T Get(const std::string& section, const std::string& name,
+		  T&& default_v) const;
 
 	template <typename T = std::string>
-	std::vector<T> GetVector(const std::string &section,
-							 const std::string &name) const;
+	std::vector<T> GetVector(const std::string& section,
+							 const std::string& name) const;
 
 	template <typename T>
-	std::vector<T> GetVector(const std::string &section,
-							 const std::string &name,
-							 const std::vector<T> &default_v) const;
+	std::vector<T> GetVector(const std::string& section,
+							 const std::string& name,
+							 const std::vector<T>& default_v) const;
 
 	template <typename T = std::string>
-	void InsertEntry(const std::string &section, const std::string &name,
-					 const T &v);
+	void InsertEntry(const std::string& section, const std::string& name,
+					 const T& v);
 
 	template <typename T = std::string>
-	void InsertEntry(const std::string &section, const std::string &name,
-					 const std::vector<T> &vs);
+	void InsertEntry(const std::string& section, const std::string& name,
+					 const std::vector<T>& vs);
 
 	template <typename T = std::string>
-	void UpdateEntry(const std::string &section, const std::string &name,
-					 const T &v);
+	void UpdateEntry(const std::string& section, const std::string& name,
+					 const T& v);
 
 	template <typename T = std::string>
-	void UpdateEntry(const std::string &section, const std::string &name,
-					 const std::vector<T> &vs);
+	void UpdateEntry(const std::string& section, const std::string& name,
+					 const std::vector<T>& vs);
 
   protected:
 	int _error;
 	std::unordered_map<std::string,
 					   std::unordered_map<std::string, std::string>>
 		_values;
-	static int ValueHandler(void *user, const char *section, const char *name,
-							const char *value);
+	static int ValueHandler(void* user, const char* section, const char* name,
+							const char* value);
 
 	template <typename T>
-	T Converter(const std::string &s) const;
+	T Converter(const std::string& s) const;
 
 	const bool BoolConverter(std::string s) const;
 
 	template <typename T>
-	std::string V2String(const T &v) const;
+	std::string V2String(const T& v) const;
 
 	template <typename T>
-	std::string Vec2String(const std::vector<T> &v) const;
+	std::string Vec2String(const std::vector<T>& v) const;
 };
 
 #endif // __INIREADER_H__
@@ -329,7 +329,7 @@ inline INIReader::INIReader(std::string filename)
  * @param file A pointer to the INI file to parse
  * @throws std::runtime_error if there is an error parsing the INI file
  */
-inline INIReader::INIReader(FILE *file)
+inline INIReader::INIReader(FILE* file)
 {
 	_error = ini_parse_file(file, ValueHandler, this);
 	ParseError();
@@ -359,7 +359,7 @@ inline int INIReader::ParseError() const
 inline const std::set<std::string> INIReader::Sections() const
 {
 	std::set<std::string> retval;
-	for (auto const &element : _values)
+	for (auto const& element : _values)
 	{
 		retval.insert(element.first);
 	}
@@ -375,7 +375,7 @@ inline const std::set<std::string> INIReader::Keys(std::string section) const
 {
 	auto const _section = Get(section);
 	std::set<std::string> retval;
-	for (auto const &element : _section)
+	for (auto const& element : _section)
 	{
 		retval.insert(element.first);
 	}
@@ -406,8 +406,8 @@ inline const std::unordered_map<std::string, std::string> INIReader::Get(
  * @return The value of the given key in the given section
  */
 template <typename T>
-inline T INIReader::Get(const std::string &section,
-						const std::string &name) const
+inline T INIReader::Get(const std::string& section,
+						const std::string& name) const
 {
 	auto const _section = Get(section);
 	auto const _value = _section.find(name);
@@ -444,14 +444,14 @@ inline T INIReader::Get(const std::string &section,
  * not found
  */
 template <typename T>
-inline T INIReader::Get(const std::string &section, const std::string &name,
-						T &&default_v) const
+inline T INIReader::Get(const std::string& section, const std::string& name,
+						T&& default_v) const
 {
 	try
 	{
 		return Get<T>(section, name);
 	}
-	catch (std::runtime_error &)
+	catch (std::runtime_error&)
 	{
 		return default_v;
 	}
@@ -474,8 +474,8 @@ inline T INIReader::Get(const std::string &section, const std::string &name,
  * ```
  */
 template <typename T>
-inline std::vector<T> INIReader::GetVector(const std::string &section,
-										   const std::string &name) const
+inline std::vector<T> INIReader::GetVector(const std::string& section,
+										   const std::string& name) const
 {
 	std::string value = Get(section, name);
 
@@ -485,13 +485,13 @@ inline std::vector<T> INIReader::GetVector(const std::string &section,
 	try
 	{
 		std::vector<T> vs{};
-		for (const std::string &s : strs)
+		for (const std::string& s : strs)
 		{
 			vs.emplace_back(Converter<T>(s));
 		}
 		return vs;
 	}
-	catch (std::exception &e)
+	catch (std::exception& e)
 	{
 		throw std::runtime_error("cannot parse value " + value +
 								 " to vector<T>.");
@@ -511,14 +511,14 @@ inline std::vector<T> INIReader::GetVector(const std::string &section,
  */
 template <typename T>
 inline std::vector<T> INIReader::GetVector(
-	const std::string &section, const std::string &name,
-	const std::vector<T> &default_v) const
+	const std::string& section, const std::string& name,
+	const std::vector<T>& default_v) const
 {
 	try
 	{
 		return GetVector<T>(section, name);
 	}
-	catch (std::runtime_error &)
+	catch (std::runtime_error&)
 	{
 		return default_v;
 	};
@@ -532,8 +532,8 @@ inline std::vector<T> INIReader::GetVector(
  * @throws std::runtime_error if the key already exists in the section
  */
 template <typename T>
-inline void INIReader::InsertEntry(const std::string &section,
-								   const std::string &name, const T &v)
+inline void INIReader::InsertEntry(const std::string& section,
+								   const std::string& name, const T& v)
 {
 	if (_values[section][name].size() > 0)
 	{
@@ -551,9 +551,9 @@ inline void INIReader::InsertEntry(const std::string &section,
  * @throws std::runtime_error if the key already exists in the section
  */
 template <typename T>
-inline void INIReader::InsertEntry(const std::string &section,
-								   const std::string &name,
-								   const std::vector<T> &vs)
+inline void INIReader::InsertEntry(const std::string& section,
+								   const std::string& name,
+								   const std::vector<T>& vs)
 {
 	if (_values[section][name].size() > 0)
 	{
@@ -571,8 +571,8 @@ inline void INIReader::InsertEntry(const std::string &section,
  * @throws std::runtime_error if the key does not exist in the section
  */
 template <typename T>
-inline void INIReader::UpdateEntry(const std::string &section,
-								   const std::string &name, const T &v)
+inline void INIReader::UpdateEntry(const std::string& section,
+								   const std::string& name, const T& v)
 {
 	if (!_values[section][name].size())
 	{
@@ -590,9 +590,9 @@ inline void INIReader::UpdateEntry(const std::string &section,
  * @throws std::runtime_error if the key does not exist in the section
  */
 template <typename T>
-inline void INIReader::UpdateEntry(const std::string &section,
-								   const std::string &name,
-								   const std::vector<T> &vs)
+inline void INIReader::UpdateEntry(const std::string& section,
+								   const std::string& name,
+								   const std::vector<T>& vs)
 {
 	if (!_values[section][name].size())
 	{
@@ -603,7 +603,7 @@ inline void INIReader::UpdateEntry(const std::string &section,
 }
 
 template <typename T>
-inline std::string INIReader::V2String(const T &v) const
+inline std::string INIReader::V2String(const T& v) const
 {
 	std::stringstream ss;
 	ss << v;
@@ -611,7 +611,7 @@ inline std::string INIReader::V2String(const T &v) const
 }
 
 template <typename T>
-inline std::string INIReader::Vec2String(const std::vector<T> &v) const
+inline std::string INIReader::Vec2String(const std::vector<T>& v) const
 {
 	if (v.empty())
 	{
@@ -625,7 +625,7 @@ inline std::string INIReader::Vec2String(const std::vector<T> &v) const
 }
 
 template <typename T>
-inline T INIReader::Converter(const std::string &s) const
+inline T INIReader::Converter(const std::string& s) const
 {
 	try
 	{
@@ -635,7 +635,7 @@ inline T INIReader::Converter(const std::string &s) const
 		_ >> v;
 		return v;
 	}
-	catch (std::exception &)
+	catch (std::exception&)
 	{
 		throw std::runtime_error("cannot parse value '" + s + "' to type<T>.");
 	};
@@ -664,10 +664,10 @@ inline const bool INIReader::BoolConverter(std::string s) const
 	return value->second;
 }
 
-inline int INIReader::ValueHandler(void *user, const char *section,
-								   const char *name, const char *value)
+inline int INIReader::ValueHandler(void* user, const char* section,
+								   const char* name, const char* value)
 {
-	INIReader *reader = (INIReader *)user;
+	INIReader* reader = (INIReader*)user;
 	if (reader->_values[section][name].size() > 0)
 	{
 		throw std::runtime_error("duplicate key '" + std::string(name) +
@@ -692,8 +692,8 @@ class INIWriter
 	 * @throws std::runtime_error if the output file already exists or cannot be
 	 * opened
 	 */
-	inline static void write(const std::string &filepath,
-							 const INIReader &reader)
+	inline static void write(const std::string& filepath,
+							 const INIReader& reader)
 	{
 		if (struct stat buf; stat(filepath.c_str(), &buf) == 0)
 		{
@@ -705,10 +705,10 @@ class INIWriter
 		{
 			throw std::runtime_error("cannot open output file: " + filepath);
 		}
-		for (const auto &section : reader.Sections())
+		for (const auto& section : reader.Sections())
 		{
 			out << "[" << section << "]\n";
-			for (const auto &key : reader.Keys(section))
+			for (const auto& key : reader.Keys(section))
 			{
 				out << key << "=" << reader.Get(section, key) << "\n";
 			}

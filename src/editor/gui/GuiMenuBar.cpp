@@ -26,11 +26,11 @@
 extern float g_tooltip_delay;
 extern std::string g_working_dir;
 extern Settings g_settings;
-extern Renderer *g_app;
+extern Renderer* g_app;
 extern int pickCount;
 extern std::string g_game_dir;
 extern bool g_console_visible;
-extern std::vector<BspRenderer *> mapRenderers;
+extern std::vector<BspRenderer*> mapRenderers;
 extern bool DebugKeyPressed;
 
 enum cell_type : unsigned char
@@ -57,7 +57,7 @@ struct cell
 	cell_type type;
 };
 
-static int cell_idx(const vec3 &pos, const vec3 &mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer)
+static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer)
 {
 	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
 	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
@@ -76,7 +76,7 @@ static int cell_idx(const vec3 &pos, const vec3 &mins, float cell_size, int cell
 	return index;
 }
 
-static inline void IMGUI_TOOLTIP(ImGuiContext &g, const std::string &text)
+static inline void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& text)
 {
 	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 	{
@@ -97,10 +97,10 @@ enum
 
 void Gui::drawMenuBar()
 {
-	ImGuiContext &g = *GImGui;
+	ImGuiContext& g = *GImGui;
 	static bool ditheringEnabled = false;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -199,10 +199,10 @@ void Gui::drawMenuBar()
 
 void Gui::drawMenu_File()
 {
-	ImGuiContext &g = *GImGui;
+	ImGuiContext& g = *GImGui;
 	static bool ditheringEnabled = false;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	static cell_type cell_brush = cell_type::cell_brush;
 	static cell_type cell_wall = cell_type::cell_wall;
@@ -1031,7 +1031,7 @@ void Gui::drawMenu_File()
 
 					if (mapRenderers.empty())
 					{
-						for (auto &s : mdl_models)
+						for (auto& s : mdl_models)
 						{
 							delete s.second;
 						}
@@ -1059,7 +1059,7 @@ void Gui::drawMenu_File()
 					app->selectMapId(0);
 					print_log(get_localized_string(LANG_0907));
 
-					for (auto &s : mdl_models)
+					for (auto& s : mdl_models)
 					{
 						delete s.second;
 					}
@@ -1400,7 +1400,7 @@ void Gui::drawMenu_File()
 			if (ImGui::BeginMenu(get_localized_string(LANG_0542).c_str(), map && !map->is_mdl_model))
 			{
 				std::string hash = "##1";
-				for (auto &wad : rend->wads)
+				for (auto& wad : rend->wads)
 				{
 					if (wad->dirEntries.size() == 0)
 						continue;
@@ -1551,11 +1551,11 @@ void Gui::drawMenu_File()
 
 					for (int i = 0; i < map->models[0].nFaces; i++)
 					{
-						BSPFACE32 &face = map->faces[map->models[0].iFirstFace + i];
+						BSPFACE32& face = map->faces[map->models[0].iFirstFace + i];
 						for (int e = 0; e < face.nEdges; e++)
 						{
 							int edgeIdx = map->surfedges[face.iFirstEdge + e];
-							BSPEDGE32 &edge = map->edges[abs(edgeIdx)];
+							BSPEDGE32& edge = map->edges[abs(edgeIdx)];
 							int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 							expandBoundingBox(map->verts[vertIdx], mins, maxs);
 						}
@@ -1653,7 +1653,7 @@ void Gui::drawMenu_File()
 
 						std::mutex paralel_muta;
 
-						BSPMODEL &model = map->models[modelIdx];
+						BSPMODEL& model = map->models[modelIdx];
 
 						int headNode = model.iHeadnodes[hull];
 						if (headNode < 0)
@@ -1672,11 +1672,11 @@ void Gui::drawMenu_File()
 							{
 								for (int i = 0; i < model.nFaces; i++)
 								{
-									BSPFACE32 &face = map->faces[model.iFirstFace + i];
+									BSPFACE32& face = map->faces[model.iFirstFace + i];
 									for (int e = 0; e < face.nEdges; e++)
 									{
 										int edgeIdx = map->surfedges[face.iFirstEdge + e];
-										BSPEDGE32 &edge = map->edges[abs(edgeIdx)];
+										BSPEDGE32& edge = map->edges[abs(edgeIdx)];
 										int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 										expandBoundingBox(map->verts[vertIdx], model_mins, model_maxs);
 									}
@@ -1757,7 +1757,7 @@ void Gui::drawMenu_File()
 														  print_log("Fatal crash[#2], index {} out of bounds {}\n", index, cell_list.size());
 														  return;
 													  }
-													  cell &cur_cell = cell_list[index];
+													  cell& cur_cell = cell_list[index];
 													  expandBoundingBox(pos, pos_debug_mins, pos_debug_maxs);
 
 													  bool found = false;
@@ -1795,14 +1795,14 @@ void Gui::drawMenu_File()
 															  float minDist = cell_size * 1.5f;
 															  for (size_t f = 0; f < faceIndices.size(); f++)
 															  {
-																  BSPFACE32 &face = map->faces[faceIndices[f]];
+																  BSPFACE32& face = map->faces[faceIndices[f]];
 
 																  if (map->texinfos[face.iTextureInfo].nFlags & TEX_SPECIAL)
 																  {
 																	  continue;
 																  }
 
-																  auto &faceMath = rend->faceMaths[faceIndices[f]];
+																  auto& faceMath = rend->faceMaths[faceIndices[f]];
 
 																  float distanceToPlane = dotProduct(faceMath.normal, pos) - faceMath.fdist;
 																  float dot = std::fabs(distanceToPlane);
@@ -1813,12 +1813,12 @@ void Gui::drawMenu_File()
 																  }
 
 																  bool isInsideFace = true;
-																  const std::vector<vec3> &vertices = faceVecs[f];
+																  const std::vector<vec3>& vertices = faceVecs[f];
 
 																  for (size_t i = 0; i < vertices.size(); i++)
 																  {
-																	  const vec3 &v0 = vertices[i];
-																	  const vec3 &v1 = vertices[(i + 1) % vertices.size()];
+																	  const vec3& v0 = vertices[i];
+																	  const vec3& v1 = vertices[(i + 1) % vertices.size()];
 																	  vec3 edge = v1 - v0;
 																	  vec3 edgeNormal = crossProduct(faceMath.normal, edge).normalize();
 
@@ -1875,18 +1875,18 @@ void Gui::drawMenu_File()
 
 														  if (minFace >= 0)
 														  {
-															  BSPFACE32 &face = map->faces[minFace];
+															  BSPFACE32& face = map->faces[minFace];
 															  if (face.iTextureInfo >= 0)
 															  {
-																  BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
-																  BSPMIPTEX *tex = NULL;
+																  BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+																  BSPMIPTEX* tex = NULL;
 
 																  if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 																  {
-																	  int texOffset = ((int *)map->textures)[texinfo.iMiptex + 1];
+																	  int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 																	  if (texOffset >= 0)
 																	  {
-																		  tex = ((BSPMIPTEX *)(map->textures + texOffset));
+																		  tex = ((BSPMIPTEX*)(map->textures + texOffset));
 																		  std::lock_guard<std::mutex> lock(paralel_muta);
 																		  bool hasTex = false;
 																		  for (size_t t = 0; t < umdTextures.size(); t++)
@@ -2008,7 +2008,7 @@ void Gui::drawMenu_File()
 												continue;
 											}
 
-											cell &cur_cell = cell_list[index];
+											cell& cur_cell = cell_list[index];
 											expandBoundingBox(point_3d, pos_debug_mins, pos_debug_maxs);
 
 											unsigned char texid = 0;
@@ -2016,18 +2016,18 @@ void Gui::drawMenu_File()
 
 											if (minFace >= 0)
 											{
-												BSPFACE32 &face = map->faces[minFace];
+												BSPFACE32& face = map->faces[minFace];
 												if (face.iTextureInfo >= 0)
 												{
-													BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
-													BSPMIPTEX *tex = NULL;
+													BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+													BSPMIPTEX* tex = NULL;
 
 													if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 													{
-														int texOffset = ((int *)map->textures)[texinfo.iMiptex + 1];
+														int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 														if (texOffset >= 0)
 														{
-															tex = ((BSPMIPTEX *)(map->textures + texOffset));
+															tex = ((BSPMIPTEX*)(map->textures + texOffset));
 															std::lock_guard<std::mutex> lock(paralel_muta);
 															bool hasTex = false;
 															for (size_t t = 0; t < umdTextures.size(); t++)
@@ -2115,31 +2115,31 @@ void Gui::drawMenu_File()
 
 					if (tmpmap.is_open())
 					{
-						tmpmap.write((const char *)(&UMD_MAGIC), 4);
+						tmpmap.write((const char*)(&UMD_MAGIC), 4);
 
 						int zero = 0;
-						tmpmap.write((const char *)(&zero), 4);
-						tmpmap.write((const char *)(&zero), 4);
-						tmpmap.write((const char *)(&zero), 4);
-						tmpmap.write((const char *)(&zero), 4);
+						tmpmap.write((const char*)(&zero), 4);
+						tmpmap.write((const char*)(&zero), 4);
+						tmpmap.write((const char*)(&zero), 4);
+						tmpmap.write((const char*)(&zero), 4);
 
-						tmpmap.write((const char *)(&cell_x), 4);
-						tmpmap.write((const char *)(&cell_y), 4);
-						tmpmap.write((const char *)(&cell_size), 4);
-						tmpmap.write((const char *)(&cell_size), 4);
-						tmpmap.write((const char *)(&cell_levels), 4);
-						tmpmap.write((const char *)(&cell_layers), 4);
+						tmpmap.write((const char*)(&cell_x), 4);
+						tmpmap.write((const char*)(&cell_y), 4);
+						tmpmap.write((const char*)(&cell_size), 4);
+						tmpmap.write((const char*)(&cell_size), 4);
+						tmpmap.write((const char*)(&cell_levels), 4);
+						tmpmap.write((const char*)(&cell_layers), 4);
 
-						for (const auto &tmpcell : cell_list)
+						for (const auto& tmpcell : cell_list)
 						{
-							tmpmap.write((const char *)(&tmpcell.height), 1);
-							tmpmap.write((const char *)(&tmpcell.height_offset), 1);
-							tmpmap.write((const char *)(&tmpcell.texid), 1);
-							tmpmap.write((const char *)(&tmpcell.type), 1);
+							tmpmap.write((const char*)(&tmpcell.height), 1);
+							tmpmap.write((const char*)(&tmpcell.height_offset), 1);
+							tmpmap.write((const char*)(&tmpcell.texid), 1);
+							tmpmap.write((const char*)(&tmpcell.type), 1);
 						}
 
 						int skybool = 0;
-						tmpmap.write((const char *)(&skybool), 4);
+						tmpmap.write((const char*)(&skybool), 4);
 
 						unsigned int options = 0;
 						if (texture_support)
@@ -2151,16 +2151,16 @@ void Gui::drawMenu_File()
 							options |= umd_flags::UMD_OPTIMIZE_DISABLED;
 						}
 
-						tmpmap.write((const char *)(&options), 4);
+						tmpmap.write((const char*)(&options), 4);
 
 						// textures
 						int textureCount = (int)umdTextures.size();
-						tmpmap.write((const char *)(&textureCount), 4);
+						tmpmap.write((const char*)(&textureCount), 4);
 
-						for (const auto &texture : umdTextures)
+						for (const auto& texture : umdTextures)
 						{
 							int length = (int)texture.length();
-							tmpmap.write((const char *)(&length), 4);
+							tmpmap.write((const char*)(&length), 4);
 							tmpmap.write(texture.c_str(), length);
 						}
 
@@ -2192,14 +2192,14 @@ void Gui::drawMenu_File()
 					std::lock_guard<std::mutex> lock(Sync::TexturesList);
 					if (g_all_Textures.size() && rend)
 					{
-						for (const auto &tex : g_all_Textures)
+						for (const auto& tex : g_all_Textures)
 						{
 							if (tex != missingTex)
 							{
 								if (tex->format == GL_RGBA)
-									lodepng_encode32_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char *)tex->getData(), tex->width, tex->height);
+									lodepng_encode32_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
 								else
-									lodepng_encode24_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char *)tex->getData(), tex->width, tex->height);
+									lodepng_encode24_file((dumpPath + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->getData(), tex->width, tex->height);
 							}
 						}
 					}
@@ -2285,7 +2285,7 @@ void Gui::drawMenu_File()
 						app->reloading = true;
 						for (size_t i = 0; i < mapRenderers.size(); i++)
 						{
-							BspRenderer *mapRender = mapRenderers[i];
+							BspRenderer* mapRender = mapRenderers[i];
 							mapRender->reload();
 						}
 						app->reloading = false;
@@ -2341,7 +2341,7 @@ void Gui::drawMenu_File()
 					ditheringEnabled = !ditheringEnabled;
 
 				std::string hash = "##1";
-				for (auto &wad : rend->wads)
+				for (auto& wad : rend->wads)
 				{
 					if (wad->dirEntries.size() == 0)
 						continue;
@@ -2410,7 +2410,7 @@ void Gui::drawMenu_File()
 		*/
 		if (ImGui::BeginMenu("Recent Files", g_settings.lastOpened.size()))
 		{
-			for (auto &file : g_settings.lastOpened)
+			for (auto& file : g_settings.lastOpened)
 			{
 				std::string smallPath = file;
 				if (smallPath.length() > 61)
@@ -2463,14 +2463,14 @@ void Gui::drawMenu_File()
 
 void Gui::drawMenu_Edit()
 {
-	ImGuiContext &g = *GImGui;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	ImGuiContext& g = *GImGui;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 	{
-		EditBspCommand *undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
-		EditBspCommand *redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
+		EditBspCommand* undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
+		EditBspCommand* redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
 		std::string undoTitle = undoCmd ? "Undo " + undoCmd->desc : "Can't undo";
 		std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
 		bool canUndo = undoCmd && (!app->isLoading);
@@ -2480,7 +2480,7 @@ void Gui::drawMenu_Edit()
 
 		if (nonWorldspawnEntSelected)
 		{
-			for (auto &ent : app->pickInfo.selectedEnts)
+			for (auto& ent : app->pickInfo.selectedEnts)
 			{
 				if (map->ents[ent]->isWorldSpawn())
 				{
@@ -2564,13 +2564,13 @@ void Gui::drawMenu_Edit()
 			}
 			if (ImGui::MenuItem("Faces with Same Texture", 0, false, map && app->pickInfo.selectedFaces.size() > 0))
 			{
-				BSPFACE32 &selface = map->faces[app->pickInfo.selectedFaces[0]];
-				BSPTEXTUREINFO &seltexinfo = map->texinfos[selface.iTextureInfo];
+				BSPFACE32& selface = map->faces[app->pickInfo.selectedFaces[0]];
+				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
 				app->deselectFaces();
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					BSPFACE32 &face = map->faces[i];
-					BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+					BSPFACE32& face = map->faces[i];
+					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					if (texinfo.iMiptex == seltexinfo.iMiptex)
 					{
 						map->getBspRender()->highlightFace(i, 1);
@@ -2588,7 +2588,7 @@ void Gui::drawMenu_Edit()
 		if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
 		{
 			print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-			for (auto &tmpentIdx : app->pickInfo.selectedEnts)
+			for (auto& tmpentIdx : app->pickInfo.selectedEnts)
 			{
 				if (map->ents[tmpentIdx]->isBspModel())
 				{
@@ -2614,7 +2614,7 @@ void Gui::drawMenu_Edit()
 		if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false, !app->isLoading && allowDuplicate))
 		{
 			print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-			for (auto &tmpentIdx : app->pickInfo.selectedEnts)
+			for (auto& tmpentIdx : app->pickInfo.selectedEnts)
 			{
 				if (map->ents[tmpentIdx]->isBspModel())
 				{
@@ -2638,7 +2638,7 @@ void Gui::drawMenu_Edit()
 		}
 
 		bool IsValidForMerge = false;
-		std::vector<Entity *> toMerge;
+		std::vector<Entity*> toMerge;
 		if (app->pickInfo.selectedEnts.size() > 1)
 		{
 			IsValidForMerge = true;
@@ -2649,7 +2649,7 @@ void Gui::drawMenu_Edit()
 					IsValidForMerge = false;
 					break;
 				}
-				Entity *e = map->ents[tmpentIdx];
+				Entity* e = map->ents[tmpentIdx];
 				if (!e->isBspModel() || e->isWorldSpawn())
 				{
 					IsValidForMerge = false;
@@ -2661,11 +2661,11 @@ void Gui::drawMenu_Edit()
 
 		if (ImGui::MenuItem("Merge Selected Models (WIP)", 0, false, !app->isLoading && IsValidForMerge))
 		{
-			std::vector<Entity *> toErasePtrs;
+			std::vector<Entity*> toErasePtrs;
 			while (toMerge.size() > 1)
 			{
-				Entity *e1 = toMerge[toMerge.size() - 1];
-				Entity *e2 = toMerge[toMerge.size() - 2];
+				Entity* e1 = toMerge[toMerge.size() - 1];
+				Entity* e2 = toMerge[toMerge.size() - 2];
 				int newmodelid = map->merge_two_models_ents(e1, e2);
 				if (newmodelid < 0)
 				{
@@ -2680,7 +2680,7 @@ void Gui::drawMenu_Edit()
 				toMerge.pop_back();
 			}
 
-			for (Entity *delent : toErasePtrs)
+			for (Entity* delent : toErasePtrs)
 			{
 				auto it = std::find(map->ents.begin(), map->ents.end(), delent);
 				if (it != map->ents.end())
@@ -2735,9 +2735,9 @@ void Gui::drawMenu_Edit()
 
 void Gui::drawMenu_View()
 {
-	ImGuiContext &g = *GImGui;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	ImGuiContext& g = *GImGui;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_MENU_VIEW).c_str()))
 	{
@@ -2799,9 +2799,9 @@ void Gui::drawMenu_View()
 
 void Gui::drawMenu_Map()
 {
-	ImGuiContext &g = *GImGui;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	ImGuiContext& g = *GImGui;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	static bool ScaleOnlySelected = false;
 	static float scale_val = 1.0f;
@@ -2862,8 +2862,8 @@ void Gui::drawMenu_Map()
 
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					int *start = &map->surfedges[map->faces[i].iFirstEdge];
-					int *end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
+					int* start = &map->surfedges[map->faces[i].iFirstEdge];
+					int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
 					std::reverse(start, end);
 				}
 
@@ -2881,7 +2881,7 @@ void Gui::drawMenu_Map()
 
 				for (size_t i = 0; i < map->ents.size(); i++)
 				{
-					Entity *mapEnt = map->ents[i];
+					Entity* mapEnt = map->ents[i];
 					if (!mapEnt->origin.IsZero())
 					{
 						std::swap(mapEnt->origin.x, mapEnt->origin.y);
@@ -3355,7 +3355,7 @@ void Gui::drawMenu_Map()
 				map->validate();
 				map->write(map->bsp_path);
 
-				Process *tmpProc = new Process(g_settings.rad_path);
+				Process* tmpProc = new Process(g_settings.rad_path);
 				std::string args = g_settings.rad_options;
 				std::string bsp_path;
 				std::string old_bsp_path = map->bsp_path;
@@ -3380,7 +3380,7 @@ void Gui::drawMenu_Map()
 						int mapRenderId = map->getBspRenderId();
 						if (mapRenderId >= 0)
 						{
-							BspRenderer *mapRender = map->getBspRender();
+							BspRenderer* mapRender = map->getBspRender();
 							if (mapRender)
 							{
 								map->setBspRender(NULL);
@@ -3437,9 +3437,9 @@ void Gui::drawMenu_Map()
 
 void Gui::drawMenu_Tools()
 {
-	ImGuiContext &g = *GImGui;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	ImGuiContext& g = *GImGui;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	static int generateClipnodes = 1;
 	static bool meshToBrush = false;
@@ -3509,9 +3509,9 @@ void Gui::drawMenu_Tools()
 		if (ImGui::BeginMenu(get_localized_string(LANG_1185).c_str(), map))
 		{
 			int cullCount = 0;
-			for (auto &r : mapRenderers)
+			for (auto& r : mapRenderers)
 			{
-				for (Entity *ent : r->map->ents)
+				for (Entity* ent : r->map->ents)
 				{
 					if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull")
 					{
@@ -3522,7 +3522,7 @@ void Gui::drawMenu_Tools()
 
 			if (ImGui::MenuItem(get_localized_string(LANG_1186).c_str(), 0, false, app->getSelectedMap() && cullCount < 2))
 			{
-				Entity *newEnt = new Entity();
+				Entity* newEnt = new Entity();
 				vec3 origin = (cameraOrigin + app->cameraForward * 100);
 				if (app->gridSnappingEnabled)
 					origin = app->snapToGrid(origin);
@@ -3721,10 +3721,10 @@ void Gui::drawMenu_Tools()
 				rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					BSPFACE32 &face = map->faces[i];
+					BSPFACE32& face = map->faces[i];
 					if (face.iTextureInfo < map->texinfoCount)
 					{
-						BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 						map->fix_transparency(texinfo.iMiptex);
 					}
 				}
@@ -3734,7 +3734,7 @@ void Gui::drawMenu_Tools()
 			}
 			if (ImGui::MenuItem("Missing entities classes"))
 			{
-				for (auto &ent : map->ents)
+				for (auto& ent : map->ents)
 				{
 					if (!app->fgd->getFgdClass(ent->classname))
 					{
@@ -3747,8 +3747,8 @@ void Gui::drawMenu_Tools()
 			{
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					BSPFACE32 &face = map->faces[i];
-					BSPTEXTUREINFO &info = map->texinfos[face.iTextureInfo];
+					BSPFACE32& face = map->faces[i];
+					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 					if (info.nFlags & TEX_SPECIAL)
 					{
 						continue;
@@ -3843,7 +3843,7 @@ void Gui::drawMenu_Tools()
 				std::set<int> used_models; // Protected map
 				used_models.insert(0);
 
-				for (auto const &s : map->ents)
+				for (auto const& s : map->ents)
 				{
 					int ent_mdl_id = s->getBspModelIdx();
 					if (ent_mdl_id >= 0)
@@ -3859,7 +3859,7 @@ void Gui::drawMenu_Tools()
 				{
 					if (!used_models.count(i))
 					{
-						Entity *ent = new Entity("func_wall");
+						Entity* ent = new Entity("func_wall");
 						ent->setOrAddKeyvalue("model", "*" + std::to_string(i));
 						ent->setOrAddKeyvalue("origin", map->models[i].vOrigin.toKeyvalueString());
 						map->ents.push_back(ent);
@@ -3914,12 +3914,12 @@ void Gui::drawMenu_Tools()
 				bool foundfixes = false;
 				for (int i = 0; i < map->textureCount; i++)
 				{
-					int texOffset = ((int *)map->textures)[i + 1];
+					int texOffset = ((int*)map->textures)[i + 1];
 					if (texOffset >= 0)
 					{
 						int texlen = map->getBspTextureSize(i);
 						int dataOffset = (map->textureCount + 1) * sizeof(int);
-						BSPMIPTEX *tex = (BSPMIPTEX *)(map->textures + texOffset);
+						BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
 						if (tex->szName[0] == '\0' || strlen(tex->szName) >= MAXTEXTURENAME)
 						{
 							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1055), i);
@@ -3928,20 +3928,20 @@ void Gui::drawMenu_Tools()
 						{
 							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0364), i, map->bsp_header.lump[LUMP_TEXTURES].nLength, dataOffset + texOffset + texlen);
 
-							char *newlump = new char[dataOffset + texOffset + texlen];
+							char* newlump = new char[dataOffset + texOffset + texlen];
 							memset(newlump, 0, dataOffset + texOffset + texlen);
 							memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
 							map->replace_lump(LUMP_TEXTURES, newlump, dataOffset + texOffset + texlen);
 							delete[] newlump;
-							tex = (BSPMIPTEX *)(map->textures + texOffset);
+							tex = (BSPMIPTEX*)(map->textures + texOffset);
 							foundfixes = true;
 						}
-						int texdata = (int)(((unsigned char *)tex) - map->textures) + tex->nOffsets[0] + texlen - sizeof(BSPMIPTEX);
+						int texdata = (int)(((unsigned char*)tex) - map->textures) + tex->nOffsets[0] + texlen - sizeof(BSPMIPTEX);
 						if (texdata > map->bsp_header.lump[LUMP_TEXTURES].nLength)
 						{
 							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0364), i, map->bsp_header.lump[LUMP_TEXTURES].nLength, texdata);
 
-							char *newlump = new char[texdata];
+							char* newlump = new char[texdata];
 							memset(newlump, 0, texdata);
 							memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
 							map->replace_lump(LUMP_TEXTURES, newlump, texdata);
@@ -3962,21 +3962,21 @@ void Gui::drawMenu_Tools()
 
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					BSPFACE32 &face = map->faces[i];
-					BSPTEXTUREINFO &info = map->texinfos[face.iTextureInfo];
+					BSPFACE32& face = map->faces[i];
+					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 					if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
 					{
-						int texOffset = ((int *)map->textures)[info.iMiptex + 1];
+						int texOffset = ((int*)map->textures)[info.iMiptex + 1];
 						if (texOffset >= 0)
 						{
-							BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
+							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 							if (tex.nOffsets[0] <= 0 && tex.szName[0] != '\0')
 							{
 								if (textureset.count(tex.szName))
 									continue;
 								textureset.insert(tex.szName);
 								bool textureFoundInWad = false;
-								for (auto &s : rend->wads)
+								for (auto& s : rend->wads)
 								{
 									if (s->hasTexture(tex.szName))
 									{
@@ -3986,9 +3986,9 @@ void Gui::drawMenu_Tools()
 								}
 								if (!textureFoundInWad)
 								{
-									COLOR3 *imageData = new COLOR3[tex.nWidth * tex.nHeight];
+									COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
 									memset(imageData, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
-									map->add_texture(tex.szName, (unsigned char *)imageData, tex.nWidth, tex.nHeight);
+									map->add_texture(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
 									delete[] imageData;
 								}
 							}
@@ -4045,7 +4045,7 @@ void Gui::drawMenu_Tools()
 			if (ImGui::BeginMenu("Delete OOB Data", !app->isLoading && app->getSelectedMap() && rend))
 			{
 
-				static const char *optionNames[10] = {
+				static const char* optionNames[10] = {
 					"All Axes",
 					"X Axis",
 					"X Axis (positive only)",
@@ -4200,10 +4200,10 @@ void Gui::drawMenu_Tools()
 						BSPTEXTUREINFO texinfo = map->texinfos[face.iTextureInfo];
 						if (texinfo.iMiptex >= 0)
 						{
-							int texOffset = ((int *)map->textures)[texinfo.iMiptex + 1];
+							int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 							if (texOffset >= 0)
 							{
-								BSPMIPTEX tex = *((BSPMIPTEX *)(map->textures + texOffset));
+								BSPMIPTEX tex = *((BSPMIPTEX*)(map->textures + texOffset));
 								std::string texname = toLowerCase(tex.szName);
 								if (starts_with(texname, "sky"))
 								{
@@ -4395,15 +4395,15 @@ void Gui::drawMenu_Tools()
 
 void Gui::drawMenu_Create()
 {
-	ImGuiContext &g = *GImGui;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	ImGuiContext& g = *GImGui;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0587).c_str(), (map && !map->is_mdl_model)))
 	{
 		if (ImGui::MenuItem(get_localized_string(LANG_0588).c_str(), 0, false, map))
 		{
-			Entity *newEnt = new Entity();
+			Entity* newEnt = new Entity();
 			vec3 origin = (cameraOrigin + app->cameraForward * 100);
 			if (app->gridSnappingEnabled)
 				origin = app->snapToGrid(origin);
@@ -4420,7 +4420,7 @@ void Gui::drawMenu_Create()
 			if (app->gridSnappingEnabled)
 				origin = app->snapToGrid(origin);
 
-			Entity *newEnt = new Entity();
+			Entity* newEnt = new Entity();
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 			newEnt->addKeyvalue("classname", "func_illusionary");
 
@@ -4441,7 +4441,7 @@ void Gui::drawMenu_Create()
 			newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 			map->ents.push_back(newEnt);
 
-			BSPMODEL &model = map->models[modelIdx];
+			BSPMODEL& model = map->models[modelIdx];
 			for (int i = 0; i < model.nFaces; i++)
 			{
 				map->faces[model.iFirstFace + i].nStyles[0] = 0;
@@ -4457,7 +4457,7 @@ void Gui::drawMenu_Create()
 			if (app->gridSnappingEnabled)
 				origin = app->snapToGrid(origin);
 
-			Entity *newEnt = new Entity();
+			Entity* newEnt = new Entity();
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 			newEnt->addKeyvalue("classname", "func_wall");
 
@@ -4477,7 +4477,7 @@ void Gui::drawMenu_Create()
 			newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 			map->ents.push_back(newEnt);
 
-			BSPMODEL &model = map->models[modelIdx];
+			BSPMODEL& model = map->models[modelIdx];
 			for (int i = 0; i < model.nFaces; i++)
 			{
 				map->faces[model.iFirstFace + i].nStyles[0] = 0;
@@ -4493,7 +4493,7 @@ void Gui::drawMenu_Create()
 			if (app->gridSnappingEnabled)
 				origin = app->snapToGrid(origin);
 
-			Entity *newEnt = new Entity();
+			Entity* newEnt = new Entity();
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 			newEnt->addKeyvalue("classname", "trigger_once");
 
@@ -4512,7 +4512,7 @@ void Gui::drawMenu_Create()
 			int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, true);
 			newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 
-			BSPMODEL &model = map->models[modelIdx];
+			BSPMODEL& model = map->models[modelIdx];
 			model.iFirstFace = 0;
 			model.nFaces = 0;
 			map->remove_unused_model_structures(CLEAN_FACES | CLEAN_MARKSURFACES);
@@ -4529,7 +4529,7 @@ void Gui::drawMenu_Create()
 			if (app->gridSnappingEnabled)
 				origin = app->snapToGrid(origin);
 
-			Entity *newEnt = new Entity();
+			Entity* newEnt = new Entity();
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 			newEnt->addKeyvalue("classname", "func_wall");
 
@@ -4548,7 +4548,7 @@ void Gui::drawMenu_Create()
 			int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, true);
 			newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 
-			BSPMODEL &model = map->models[modelIdx];
+			BSPMODEL& model = map->models[modelIdx];
 			model.iFirstFace = 0;
 			model.nFaces = 0;
 			map->remove_unused_model_structures(CLEAN_FACES | CLEAN_MARKSURFACES);
@@ -4585,8 +4585,8 @@ void Gui::drawMenu_Create()
 
 void Gui::drawMenu_Windows()
 {
-	ImGuiContext &g = *GImGui;
-	Bsp *map = app->getSelectedMap();
+	ImGuiContext& g = *GImGui;
+	Bsp* map = app->getSelectedMap();
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0601).c_str()))
 	{
@@ -4596,8 +4596,8 @@ void Gui::drawMenu_Windows()
 			showConsoleWindow(g_console_visible);
 		}
 #endif
-		Bsp *selectedMap = app->getSelectedMap();
-		for (BspRenderer *bspRend : mapRenderers)
+		Bsp* selectedMap = app->getSelectedMap();
+		for (BspRenderer* bspRend : mapRenderers)
 		{
 			if (bspRend->map && !bspRend->map->is_bsp_model)
 			{
@@ -4620,7 +4620,7 @@ void Gui::drawMenu_Windows()
 
 void Gui::drawMenu_Help()
 {
-	ImGuiContext &g = *GImGui;
+	ImGuiContext& g = *GImGui;
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0602).c_str()))
 	{
@@ -4638,9 +4638,9 @@ void Gui::drawMenu_Help()
 
 void Gui::drawMenu_Debug()
 {
-	ImGuiContext &g = *GImGui;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	ImGuiContext& g = *GImGui;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0605).c_str()))
 	{
@@ -4648,12 +4648,12 @@ void Gui::drawMenu_Debug()
 		{
 			for (int i = 0; i < map->textureCount; i++)
 			{
-				int mip_offset = ((int *)map->textures)[i + 1];
-				const char *name = "";
+				int mip_offset = ((int*)map->textures)[i + 1];
+				const char* name = "";
 				int data_offset = 0;
 				if (mip_offset >= 0)
 				{
-					BSPMIPTEX *tex = (BSPMIPTEX *)(map->textures + mip_offset);
+					BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + mip_offset);
 					data_offset = tex->nOffsets[0];
 					name = tex->szName;
 					int colors = -1;
@@ -4664,8 +4664,8 @@ void Gui::drawMenu_Debug()
 
 						int szAll = calcMipsSize(w, h);
 
-						unsigned char *texdata = (unsigned char *)(((unsigned char *)tex) + tex->nOffsets[0]);
-						colors = (int)*(unsigned short *)(texdata + szAll);
+						unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
+						colors = (int)*(unsigned short*)(texdata + szAll);
 					}
 					print_log("mip name \"{}\" offset {} data offset {}-{}-{}-{} size {}x{} colors {}\n", name, mip_offset, tex->nOffsets[0],
 							  tex->nOffsets[1], tex->nOffsets[2], tex->nOffsets[3], tex->nWidth, tex->nHeight, colors);
@@ -4691,10 +4691,10 @@ void Gui::drawMenu_Debug()
 					BSPTEXTUREINFO texinfo = map->texinfos[face.iTextureInfo];
 					if (texinfo.iMiptex >= 0)
 					{
-						int texOffset = ((int *)map->textures)[texinfo.iMiptex + 1];
+						int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 						if (texOffset >= 0)
 						{
-							BSPMIPTEX tex = *((BSPMIPTEX *)(map->textures + texOffset));
+							BSPMIPTEX tex = *((BSPMIPTEX*)(map->textures + texOffset));
 							std::string texname = toLowerCase(tex.szName);
 							if (starts_with(texname, "sky"))
 							{
@@ -4720,12 +4720,12 @@ void Gui::drawMenu_Debug()
 			// map->get_bounding_box(mins, maxs);
 			int newModelIdx = ImportModel(map, "./primitives/skybox.bsp", true);
 
-			Entity *newEnt = new Entity("func_wall");
+			Entity* newEnt = new Entity("func_wall");
 
 			newEnt->addKeyvalue("model", "*" + std::to_string(newModelIdx));
 			map->ents.push_back(newEnt);
 
-			for (auto &ent : map->ents)
+			for (auto& ent : map->ents)
 			{
 				if (ent->isWorldSpawn())
 				{
@@ -4749,15 +4749,15 @@ void Gui::drawMenu_Debug()
 
 			// up
 			{
-				unsigned char *sky_malloc = NULL;
+				unsigned char* sky_malloc = NULL;
 				unsigned int w, h;
 				lodepng_decode24_file(&sky_malloc, &w, &h, "./primitives/skytest/sky_up.png");
 				if (sky_malloc)
 				{
 					int out_w, out_h;
-					auto images = splitImage((COLOR3 *)sky_malloc, w, h, 4, 4, out_w, out_h);
+					auto images = splitImage((COLOR3*)sky_malloc, w, h, 4, 4, out_w, out_h);
 					const int new_w = 256, new_h = 256;
-					for (auto &img : images)
+					for (auto& img : images)
 					{
 						std::vector<COLOR3> new_img;
 						scaleImage(img.data(), new_img, out_w, out_h, new_w, new_h);
@@ -4772,7 +4772,7 @@ void Gui::drawMenu_Debug()
 						for (int y = 0; y < 4; y++)
 						{
 							auto img = getSubImage(images, x, y, 4);
-							lodepng_encode24_file(("test-" + std::to_string(x) + "-" + std::to_string(y) + ".png").c_str(), (unsigned char *)img.data(), out_w, out_h);
+							lodepng_encode24_file(("test-" + std::to_string(x) + "-" + std::to_string(y) + ".png").c_str(), (unsigned char*)img.data(), out_w, out_h);
 						}
 					}
 
@@ -4805,22 +4805,22 @@ void Gui::drawMenu_Debug()
 									colorCount = 0;
 								}
 
-								COLOR3 *newTex = new COLOR3[new_w * new_h];
+								COLOR3* newTex = new COLOR3[new_w * new_h];
 								memcpy(newTex, target_img.data(), (new_w * new_h) * sizeof(COLOR3));
 
-								Quantizer *tmpCQuantizer = new Quantizer(256, 8);
+								Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 								if (colorCount != 0)
 									tmpCQuantizer->SetColorTable(palette, 256);
-								tmpCQuantizer->ApplyColorTable((COLOR3 *)newTex, new_w * new_h);
+								tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, new_w * new_h);
 								delete tmpCQuantizer;
 
-								lodepng_encode24_file(("testQuantizer-" + std::to_string(x) + "-" + std::to_string(y) + ".png").c_str(), (unsigned char *)newTex, out_w, out_h);
+								lodepng_encode24_file(("testQuantizer-" + std::to_string(x) + "-" + std::to_string(y) + ".png").c_str(), (unsigned char*)newTex, out_w, out_h);
 
-								map->add_texture(sky_side.c_str(), (unsigned char *)newTex, new_w, new_h);
+								map->add_texture(sky_side.c_str(), (unsigned char*)newTex, new_w, new_h);
 								delete[] newTex;
 							}
 							else
-								map->add_texture(sky_side.c_str(), (unsigned char *)target_img.data(), new_w, new_h);
+								map->add_texture(sky_side.c_str(), (unsigned char*)target_img.data(), new_w, new_h);
 						}
 					}
 					free(sky_malloc);
@@ -4848,7 +4848,7 @@ void Gui::drawMenu_Debug()
 					mat4x4 scaleMat;
 					scaleMat.loadIdentity();
 					scaleMat.scale(1.0f / 2.0f, 1.0f / 2.0f, 1.0f / 2.0f);
-					BSPTEXTUREINFO &info = map->texinfos[i];
+					BSPTEXTUREINFO& info = map->texinfos[i];
 
 					info.vS = (scaleMat * vec4(info.vS, 1)).xyz();
 					info.vT = (scaleMat * vec4(info.vT, 1)).xyz();
@@ -4865,7 +4865,7 @@ void Gui::drawMenu_Debug()
 					mat4x4 scaleMat;
 					scaleMat.loadIdentity();
 					scaleMat.scale(1.0f / scale_val, 1.0f / scale_val, 1.0f / scale_val);
-					BSPTEXTUREINFO &info = map->texinfos[i];
+					BSPTEXTUREINFO& info = map->texinfos[i];
 
 					info.vS = (scaleMat * vec4(info.vS, 1)).xyz();
 					info.vT = (scaleMat * vec4(info.vT, 1)).xyz();

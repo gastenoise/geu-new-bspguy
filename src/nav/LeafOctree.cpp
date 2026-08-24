@@ -7,18 +7,18 @@ LeafOctant::LeafOctant(vec3 min, vec3 max)
 {
 	this->mins = min;
 	this->maxs = max;
-	memset(children, NULL, sizeof(LeafOctant *) * 8);
+	memset(children, NULL, sizeof(LeafOctant*) * 8);
 }
 
 LeafOctant::~LeafOctant()
 {
-	for (LeafOctant *child : children)
+	for (LeafOctant* child : children)
 	{
 		delete child;
 	}
 }
 
-void LeafOctant::removeLeaf(LeafNode *leaf)
+void LeafOctant::removeLeaf(LeafNode* leaf)
 {
 	leaves.erase(std::remove(leaves.begin(), leaves.end(), leaf), leaves.end());
 	for (int i = 0; i < 8; i++)
@@ -33,21 +33,21 @@ LeafOctree::~LeafOctree()
 	delete root;
 }
 
-LeafOctree::LeafOctree(const vec3 &min, const vec3 &max, int depth)
+LeafOctree::LeafOctree(const vec3& min, const vec3& max, int depth)
 {
 	root = new LeafOctant(min, max);
 	maxDepth = depth;
 	buildOctree(root, 0);
 }
 
-void LeafOctree::buildOctree(LeafOctant *node, int currentDepth)
+void LeafOctree::buildOctree(LeafOctant* node, int currentDepth)
 {
 	if (currentDepth >= maxDepth)
 	{
 		return;
 	}
-	const vec3 &min = node->mins;
-	const vec3 &max = node->maxs;
+	const vec3& min = node->mins;
+	const vec3& max = node->maxs;
 	vec3 mid((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
 
 	// Define eight child octants using the min and max values
@@ -60,18 +60,18 @@ void LeafOctree::buildOctree(LeafOctant *node, int currentDepth)
 	node->children[6] = new LeafOctant(vec3(min.x, mid.y, mid.z), vec3(mid.x, max.y, max.z));
 	node->children[7] = new LeafOctant(mid, max);
 
-	for (LeafOctant *child : node->children)
+	for (LeafOctant* child : node->children)
 	{
 		buildOctree(child, currentDepth + 1);
 	}
 }
 
-void LeafOctree::insertLeaf(LeafNode *leaf)
+void LeafOctree::insertLeaf(LeafNode* leaf)
 {
 	insertLeaf(root, leaf, 0);
 }
 
-void LeafOctree::insertLeaf(LeafOctant *node, LeafNode *leaf, int currentDepth)
+void LeafOctree::insertLeaf(LeafOctant* node, LeafNode* leaf, int currentDepth)
 {
 	if (currentDepth >= maxDepth)
 	{
@@ -87,24 +87,24 @@ void LeafOctree::insertLeaf(LeafOctant *node, LeafNode *leaf, int currentDepth)
 	}
 }
 
-void LeafOctree::removeLeaf(LeafNode *leaf)
+void LeafOctree::removeLeaf(LeafNode* leaf)
 {
 	root->removeLeaf(leaf);
 }
 
-bool LeafOctree::isLeafInOctant(LeafNode *leaf, LeafOctant *node)
+bool LeafOctree::isLeafInOctant(LeafNode* leaf, LeafOctant* node)
 {
 	vec3 epsilon = vec3(1, 1, 1); // in case leaves are touching right on the border of an octree leaf
 	return boxesIntersect(leaf->mins - epsilon, leaf->maxs + epsilon, node->mins, node->maxs);
 }
 
-void LeafOctree::getLeavesInRegion(LeafNode *leaf, std::vector<bool> &regionLeaves)
+void LeafOctree::getLeavesInRegion(LeafNode* leaf, std::vector<bool>& regionLeaves)
 {
 	fill(regionLeaves.begin(), regionLeaves.end(), false);
 	getLeavesInRegion(root, leaf, 0, regionLeaves);
 }
 
-void LeafOctree::getLeavesInRegion(LeafOctant *node, LeafNode *leaf, int currentDepth, std::vector<bool> &regionLeaves)
+void LeafOctree::getLeavesInRegion(LeafOctant* node, LeafNode* leaf, int currentDepth, std::vector<bool>& regionLeaves)
 {
 	if (currentDepth >= maxDepth)
 	{

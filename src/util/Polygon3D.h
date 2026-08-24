@@ -42,15 +42,15 @@ class Polygon3D
 
 	Polygon3D() = default;
 
-	Polygon3D(const std::vector<vec3> &verts);
+	Polygon3D(const std::vector<vec3>& verts);
 
-	Polygon3D(const std::vector<vec3> &verts, int idx);
+	Polygon3D(const std::vector<vec3>& verts, int idx);
 
 	void init();
 
 	size_t sizeBytes();
 
-	float distance(const vec3 &p) const;
+	float distance(const vec3& p) const;
 
 	bool isConvex();
 
@@ -63,7 +63,7 @@ class Polygon3D
 	// multiple intersections (overlapping polys) are not handled
 	// returns empty on no intersection
 	// only applies to edges that lie flat on the plane, not ones that pierce it
-	std::vector<std::vector<vec3>> split(const Polygon3D &cutPoly);
+	std::vector<std::vector<vec3>> split(const Polygon3D& cutPoly);
 
 	// cut the polygon by an edge defined in this polygon's coordinate space
 	// returns empty if cutting not possible
@@ -72,33 +72,33 @@ class Polygon3D
 
 	// returns merged polygon vertices if polys are coplaner and share an edge
 	// otherwise returns an empty polygon
-	Polygon3D merge(const Polygon3D &mergePoly);
+	Polygon3D merge(const Polygon3D& mergePoly);
 
 	// returns the area of intersection if polys are coplaner and overlap
 	// otherwise returns an empty polygon
 	Polygon3D coplanerIntersectArea(Polygon3D otherPoly);
 
 	// returns true if the polygons intersect
-	bool intersects(const Polygon3D &otherPoly) const;
+	bool intersects(const Polygon3D& otherPoly) const;
 
 	// if true, ipos is set to the intersection point with the given line segment
-	bool intersect(const vec3 &p1, const vec3 &p2, vec3 &ipos) const;
+	bool intersect(const vec3& p1, const vec3& p2, vec3& ipos) const;
 
 	// if true, ipos is set to the projected intersection point of the given line segment
 	// the line segment is first projected onto the plane for a 2D intersect test
-	bool intersect2D(const vec3 &p1, const vec3 &p2, vec3 &ipos) const;
+	bool intersect2D(const vec3& p1, const vec3& p2, vec3& ipos) const;
 
 	// is point inside this polygon? Coordinates are in world space.
 	// Points within EPSILON of an edge are not inside.
-	bool isInside(const vec3 &p) const;
+	bool isInside(const vec3& p) const;
 
 	// is point inside this polygon? coordinates are in polygon's local space.
 	// Points within EPSILON of an edge are not inside.
-	bool isInside(const vec2 &p, bool includeEdge = false) const;
+	bool isInside(const vec2& p, bool includeEdge = false) const;
 
 	// project a 3d point onto this polygon's local coordinate system
-	vec2 project(const vec3 &p) const;
+	vec2 project(const vec3& p) const;
 
 	// get the world position of a point in the polygon's local coordinate system
-	vec3 unproject(const vec2 &p) const;
+	vec3 unproject(const vec2& p) const;
 };

@@ -24,11 +24,11 @@
 extern float g_tooltip_delay;
 extern std::string g_working_dir;
 extern Settings g_settings;
-extern Renderer *g_app;
+extern Renderer* g_app;
 extern int pickCount;
 extern std::string g_game_dir;
 extern bool g_console_visible;
-extern std::vector<BspRenderer *> mapRenderers;
+extern std::vector<BspRenderer*> mapRenderers;
 extern bool DebugKeyPressed;
 
 enum cell_type : unsigned char
@@ -55,7 +55,7 @@ struct cell
 	cell_type type;
 };
 
-static int cell_idx(const vec3 &pos, const vec3 &mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer)
+static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer)
 {
 	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
 	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
@@ -74,7 +74,7 @@ static int cell_idx(const vec3 &pos, const vec3 &mins, float cell_size, int cell
 	return index;
 }
 
-static inline void IMGUI_TOOLTIP(ImGuiContext &g, const std::string &text)
+static inline void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& text)
 {
 	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 	{
@@ -95,14 +95,14 @@ enum
 
 void Gui::drawBspContexMenu()
 {
-	ImGuiContext &g = *GImGui;
+	ImGuiContext& g = *GImGui;
 
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 
 	if (!map)
 		return;
 
-	BspRenderer *rend = map->getBspRender();
+	BspRenderer* rend = map->getBspRender();
 
 	if (!rend)
 		return;
@@ -112,14 +112,14 @@ void Gui::drawBspContexMenu()
 	if (app->originHovered && entIdxs.size())
 	{
 		int entIdx = entIdxs[0];
-		Entity *ent = map->ents[entIdx];
+		Entity* ent = map->ents[entIdx];
 		int modelIdx = ent->getBspModelIdx();
 
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
 			if (modelIdx > 0 && app->transformTarget == TRANSFORM_ORIGIN)
 			{
-				BSPMODEL &model = map->models[modelIdx];
+				BSPMODEL& model = map->models[modelIdx];
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
 				{
@@ -191,17 +191,17 @@ void Gui::drawBspContexMenu()
 					rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
 					for (int entIdx : entIdxs)
 					{
-						Entity *sel_ent = map->ents[entIdx];
+						Entity* sel_ent = map->ents[entIdx];
 						int sel_modelIdx = sel_ent->getBspModelIdx();
 						if (sel_modelIdx <= 0)
 							continue;
 
-						BSPMODEL &sel_model = map->models[sel_modelIdx];
+						BSPMODEL& sel_model = map->models[sel_modelIdx];
 						for (int i = 0; i < sel_model.nFaces; i++)
 						{
 							int faceIdx = sel_model.iFirstFace + i;
-							BSPFACE32 &face = map->faces[faceIdx];
-							BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+							BSPFACE32& face = map->faces[faceIdx];
+							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 							map->fix_transparency(texinfo.iMiptex);
 						}
 						rend->refreshEnt(entIdx);
@@ -213,7 +213,7 @@ void Gui::drawBspContexMenu()
 			}
 			else if (modelIdx > 0)
 			{
-				BSPMODEL &model = map->models[modelIdx];
+				BSPMODEL& model = map->models[modelIdx];
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
 				{
@@ -290,17 +290,17 @@ void Gui::drawBspContexMenu()
 					rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
 					for (int entIdx : entIdxs)
 					{
-						Entity *sel_ent = map->ents[entIdx];
+						Entity* sel_ent = map->ents[entIdx];
 						int sel_modelIdx = sel_ent->getBspModelIdx();
 						if (sel_modelIdx <= 0)
 							continue;
 
-						BSPMODEL &sel_model = map->models[sel_modelIdx];
+						BSPMODEL& sel_model = map->models[sel_modelIdx];
 						for (int i = 0; i < sel_model.nFaces; i++)
 						{
 							int faceIdx = sel_model.iFirstFace + i;
-							BSPFACE32 &face = map->faces[faceIdx];
-							BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+							BSPFACE32& face = map->faces[faceIdx];
+							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 							map->fix_transparency(texinfo.iMiptex);
 						}
 						rend->refreshEnt(entIdx);
@@ -399,13 +399,13 @@ void Gui::drawBspContexMenu()
 			{
 				if (g_app->pickInfo.selectedFaces.size())
 				{
-					BSPFACE32 &selface = map->faces[g_app->pickInfo.selectedFaces[0]];
-					BSPTEXTUREINFO &seltexinfo = map->texinfos[selface.iTextureInfo];
+					BSPFACE32& selface = map->faces[g_app->pickInfo.selectedFaces[0]];
+					BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
 					g_app->deselectFaces();
 					for (int i = 0; i < map->faceCount; i++)
 					{
-						BSPFACE32 &face = map->faces[i];
-						BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+						BSPFACE32& face = map->faces[i];
+						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 						if (texinfo.iMiptex == seltexinfo.iMiptex)
 						{
 							rend->highlightFace(i, 1);
@@ -430,7 +430,7 @@ void Gui::drawBspContexMenu()
 					int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
 					if (modelIdx >= 0)
 					{
-						BSPMODEL &model = map->models[modelIdx];
+						BSPMODEL& model = map->models[modelIdx];
 						for (int i = 0; i < model.nFaces; i++)
 						{
 							int faceIdx = model.iFirstFace + i;
@@ -579,7 +579,7 @@ void Gui::drawBspContexMenu()
 	{
 		if (!app->originHovered && ImGui::BeginPopup("ent_context") && entIdxs.size())
 		{
-			Entity *ent = map->ents[entIdxs[0]];
+			Entity* ent = map->ents[entIdxs[0]];
 			int modelIdx = ent->getBspModelIdx();
 			if (modelIdx < 0 && ent->isWorldSpawn())
 				modelIdx = 0;
@@ -657,7 +657,7 @@ void Gui::drawBspContexMenu()
 			ImGui::Separator();
 			if (modelIdx >= 0)
 			{
-				BSPMODEL &model = map->models[modelIdx];
+				BSPMODEL& model = map->models[modelIdx];
 				if (ImGui::BeginMenu(get_localized_string(LANG_0456).c_str()))
 				{
 					if (modelIdx > 0 || map->is_bsp_model)
@@ -820,7 +820,7 @@ void Gui::drawBspContexMenu()
 				bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
 				if (allowDuplicate && app->pickInfo.selectedEnts.size() > 1)
 				{
-					for (auto &tmpentIdx : app->pickInfo.selectedEnts)
+					for (auto& tmpentIdx : app->pickInfo.selectedEnts)
 					{
 						if (map->ents[tmpentIdx]->getBspModelIdx() <= 0)
 						{
@@ -835,7 +835,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
 					{
 						print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-						for (auto &tmpentIdx : app->pickInfo.selectedEnts)
+						for (auto& tmpentIdx : app->pickInfo.selectedEnts)
 						{
 							if (map->ents[tmpentIdx]->isBspModel())
 							{
@@ -862,7 +862,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false, !app->isLoading && allowDuplicate))
 					{
 						print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-						for (auto &tmpentIdx : app->pickInfo.selectedEnts)
+						for (auto& tmpentIdx : app->pickInfo.selectedEnts)
 						{
 							if (map->ents[tmpentIdx]->isBspModel())
 							{
@@ -886,7 +886,7 @@ void Gui::drawBspContexMenu()
 						ImGui::EndDisabled();
 					}
 					bool IsValidForMerge = false;
-					std::vector<Entity *> toMerge;
+					std::vector<Entity*> toMerge;
 					if (app->pickInfo.selectedEnts.size() > 1)
 					{
 						IsValidForMerge = true;
@@ -897,7 +897,7 @@ void Gui::drawBspContexMenu()
 								IsValidForMerge = false;
 								break;
 							}
-							Entity *e = map->ents[tmpentIdx];
+							Entity* e = map->ents[tmpentIdx];
 							if (!e->isBspModel() || e->isWorldSpawn())
 							{
 								IsValidForMerge = false;
@@ -909,12 +909,12 @@ void Gui::drawBspContexMenu()
 					// fixme
 					if (ImGui::MenuItem("MERGE BSPMODELS (WIP)", 0, false, !app->isLoading && IsValidForMerge))
 					{
-						std::vector<Entity *> toErasePtrs;
+						std::vector<Entity*> toErasePtrs;
 
 						while (toMerge.size() > 1)
 						{
-							Entity *e1 = toMerge[toMerge.size() - 1];
-							Entity *e2 = toMerge[toMerge.size() - 2];
+							Entity* e1 = toMerge[toMerge.size() - 1];
+							Entity* e2 = toMerge[toMerge.size() - 2];
 
 							int newmodelid = map->merge_two_models_ents(e1, e2);
 							if (newmodelid < 0)
@@ -932,7 +932,7 @@ void Gui::drawBspContexMenu()
 							toMerge.pop_back();
 						}
 
-						for (Entity *delent : toErasePtrs)
+						for (Entity* delent : toErasePtrs)
 						{
 							auto it = std::find(map->ents.begin(), map->ents.end(), delent);
 							if (it != map->ents.end())

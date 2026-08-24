@@ -9,7 +9,7 @@ std::string g_game_dir = "/";
 std::string g_working_dir = "./bspguy_work/";
 std::string g_startup_dir = "";
 
-inih::INIReader *settings_ini = NULL;
+inih::INIReader* settings_ini = NULL;
 
 Settings g_settings{};
 
@@ -925,13 +925,13 @@ void Settings::loadDefaultSettings()
 	transparentEntities.emplace_back("func_buyzone");
 }
 
-void Settings::fillLanguages(const std::string &folderPath)
+void Settings::fillLanguages(const std::string& folderPath)
 {
 	languages.clear();
 	languages.emplace_back("EN");
 
 	std::error_code err;
-	for (const auto &entry : fs::directory_iterator(folderPath, err))
+	for (const auto& entry : fs::directory_iterator(folderPath, err))
 	{
 		if (!entry.is_directory())
 		{
@@ -948,12 +948,12 @@ void Settings::fillLanguages(const std::string &folderPath)
 	}
 }
 
-void Settings::fillPalettes(const std::string &folderPath)
+void Settings::fillPalettes(const std::string& folderPath)
 {
 	palettes.clear();
 
 	std::error_code err;
-	for (const auto &entry : fs::directory_iterator(folderPath, err))
+	for (const auto& entry : fs::directory_iterator(folderPath, err))
 	{
 		if (!entry.is_directory())
 		{
@@ -982,7 +982,7 @@ void Settings::fillPalettes(const std::string &folderPath)
 	}
 }
 
-void Settings::AddRecentFile(const std::string &file)
+void Settings::AddRecentFile(const std::string& file)
 {
 	if (fileExists(file) && std::find(g_settings.lastOpened.begin(), g_settings.lastOpened.end(), file) == g_settings.lastOpened.end())
 	{
@@ -1011,7 +1011,7 @@ void Settings::loadSettings()
 				throw std::runtime_error(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
 			}
 		}
-		catch (std::runtime_error &runtime)
+		catch (std::runtime_error& runtime)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "Settings parse from {} fatal error: {}\n", g_settings_path, runtime.what());
 			delete settings_ini;
@@ -1035,7 +1035,7 @@ void Settings::loadSettings()
 				throw std::runtime_error(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
 			}
 		}
-		catch (std::runtime_error &runtime)
+		catch (std::runtime_error& runtime)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "Settings parse from {} fatal error: {}\n", g_settings_path, runtime.what());
 			delete settings_ini;
@@ -1517,7 +1517,7 @@ void Settings::saveSettings(std::string path)
 	if (lastOpened.size())
 		std::reverse(lastOpened.begin(), lastOpened.end());
 
-	for (auto &file : lastOpened)
+	for (auto& file : lastOpened)
 	{
 		if (fileExists(file))
 		{
@@ -1530,7 +1530,7 @@ void Settings::saveSettings(std::string path)
 	int id = 1;
 	iniData << "count=" << openCount << "\n";
 
-	for (auto &file : lastOpened)
+	for (auto& file : lastOpened)
 	{
 		if (fileExists(file))
 		{
@@ -1552,7 +1552,7 @@ void Settings::saveSettings(std::string path)
 	iniData << "[ENGINE]\n";
 	iniData << "count=" << limitsMap.size() << "\n";
 
-	for (const auto &pair : limitsMap)
+	for (const auto& pair : limitsMap)
 	{
 		iniData << "name" + std::to_string(id) << "=" << pair.first << "\n";
 		id++;
@@ -1561,10 +1561,10 @@ void Settings::saveSettings(std::string path)
 	iniData << "selected=" << g_limits.engineName << "\n\n";
 
 	id = 1;
-	for (const auto &pair : limitsMap)
+	for (const auto& pair : limitsMap)
 	{
 		const std::string engineName = pair.first;
-		const BSPLimits &limits = pair.second;
+		const BSPLimits& limits = pair.second;
 
 		iniData << "[" << engineName << "]\n";
 		iniData << "FLT_MAX_COORD=" << limits.fltMaxCoord << "\n";
@@ -1586,7 +1586,7 @@ void Settings::saveSettings(std::string path)
 		id++;
 	}
 
-	auto writeListSection = [&iniData](const std::string &section, const std::vector<std::string> &list)
+	auto writeListSection = [&iniData](const std::string& section, const std::vector<std::string>& list)
 	{
 		iniData << "[" << section << "]\n";
 		iniData << "count=" << list.size() << "\n";
@@ -1624,7 +1624,7 @@ void Settings::saveSettings()
 	saveSettings(g_settings_path);
 }
 
-std::string convertToSection(std::string &key)
+std::string convertToSection(std::string& key)
 {
 	if (key == "window_width" || key == "window_height" || key == "window_x" ||
 		key == "window_y" || key == "window_maximized" || key == "save_windows" ||
@@ -1681,7 +1681,7 @@ std::string convertToSection(std::string &key)
 	return "GENERAL";
 }
 
-std::string ConvertFromCFGtoINI(const std::string &cfgData)
+std::string ConvertFromCFGtoINI(const std::string& cfgData)
 {
 	std::istringstream cfgStream(cfgData);
 	std::string line;
@@ -1704,7 +1704,7 @@ std::string ConvertFromCFGtoINI(const std::string &cfgData)
 	std::ostringstream iniStream;
 	std::map<std::string, std::ostringstream> sections;
 
-	for (const auto &entry : cfgMap)
+	for (const auto& entry : cfgMap)
 	{
 		std::string key = entry.first;
 		std::string section = convertToSection(key);
@@ -1727,7 +1727,7 @@ std::string ConvertFromCFGtoINI(const std::string &cfgData)
 	}
 
 	std::vector<std::string> order = {"GENERAL", "GRAPHICS", "INPUT", "LIMITS", "PATHS"};
-	for (const auto &section : order)
+	for (const auto& section : order)
 	{
 		if (sections.find(section) != sections.end())
 		{
@@ -1736,7 +1736,7 @@ std::string ConvertFromCFGtoINI(const std::string &cfgData)
 		}
 	}
 
-	for (const auto &section : sections)
+	for (const auto& section : sections)
 	{
 		iniStream << section.second.str() << "\n";
 	}

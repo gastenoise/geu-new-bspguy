@@ -3,7 +3,7 @@
 
 const std::regex Keyvalues::kv_regex("\"(.*?)\"\\s*\"(.*?)\"");
 
-Keyvalues::Keyvalues(std::string &line)
+Keyvalues::Keyvalues(std::string& line)
 {
 	keys.clear();
 	values.clear();
@@ -27,7 +27,7 @@ Keyvalues::Keyvalues(void)
 	values.clear();
 }
 
-Keyvalues::Keyvalues(const std::string &key, const std::string &value)
+Keyvalues::Keyvalues(const std::string& key, const std::string& value)
 {
 	keys.push_back(key);
 	values.push_back(value);

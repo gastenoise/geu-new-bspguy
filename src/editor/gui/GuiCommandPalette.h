@@ -6,14 +6,14 @@ class Gui;
 class GuiCommandPalette
 {
   public:
-	static GuiCommandPalette &getInstance();
+	static GuiCommandPalette& getInstance();
 
 	void open();
 	void toggle();
 	void close();
 	bool isOpened() const { return isOpen; }
 
-	void draw(Gui *gui);
+	void draw(Gui* gui);
 
   private:
 	GuiCommandPalette() = default;

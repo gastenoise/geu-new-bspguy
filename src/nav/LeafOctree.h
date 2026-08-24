@@ -7,38 +7,38 @@ struct LeafOctant
 {
 	vec3 mins;
 	vec3 maxs;
-	std::vector<LeafNode *> leaves;
-	LeafOctant *children[8]; // Eight children octants
+	std::vector<LeafNode*> leaves;
+	LeafOctant* children[8]; // Eight children octants
 
 	LeafOctant(vec3 min, vec3 max);
 
 	~LeafOctant();
 
-	void removeLeaf(LeafNode *polygon);
+	void removeLeaf(LeafNode* polygon);
 };
 
 class LeafOctree
 {
   public:
-	LeafOctant *root;
+	LeafOctant* root;
 	int maxDepth;
 
-	LeafOctree(const vec3 &min, const vec3 &max, int depth);
+	LeafOctree(const vec3& min, const vec3& max, int depth);
 
 	~LeafOctree();
 
-	void insertLeaf(LeafNode *leaf);
+	void insertLeaf(LeafNode* leaf);
 
-	void removeLeaf(LeafNode *leaf);
+	void removeLeaf(LeafNode* leaf);
 
-	bool isLeafInOctant(LeafNode *leaf, LeafOctant *node);
+	bool isLeafInOctant(LeafNode* leaf, LeafOctant* node);
 
-	void getLeavesInRegion(LeafNode *leaf, std::vector<bool> &regionLeaves);
+	void getLeavesInRegion(LeafNode* leaf, std::vector<bool>& regionLeaves);
 
   private:
-	void buildOctree(LeafOctant *node, int currentDepth);
+	void buildOctree(LeafOctant* node, int currentDepth);
 
-	void getLeavesInRegion(LeafOctant *node, LeafNode *leaf, int currentDepth, std::vector<bool> &regionLeaves);
+	void getLeavesInRegion(LeafOctant* node, LeafNode* leaf, int currentDepth, std::vector<bool>& regionLeaves);
 
-	void insertLeaf(LeafOctant *node, LeafNode *leaf, int currentDepth);
+	void insertLeaf(LeafOctant* node, LeafNode* leaf, int currentDepth);
 };

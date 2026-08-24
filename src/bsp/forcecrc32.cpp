@@ -24,7 +24,7 @@
 // Public library function. Returns NULL if successful, a string starting with "I/O error: "
 // if an I/O error occurred (please see perror()), or a string if some other error occurred.
 
-unsigned int ReplaceCrc32InMemory(unsigned char *data, unsigned int len, unsigned int offset, unsigned int newcrc, unsigned int oldcrc)
+unsigned int ReplaceCrc32InMemory(unsigned char* data, unsigned int len, unsigned int offset, unsigned int newcrc, unsigned int oldcrc)
 {
 	unsigned int crc = GetCrc32InMemory(data, len, oldcrc);
 	PathCrc32InMemory(data, len, offset, crc, newcrc);
@@ -35,7 +35,7 @@ unsigned int ReplaceCrc32InMemory(unsigned char *data, unsigned int len, unsigne
 // Generator polynomial. Do not modify, because there are many dependencies
 const uint64_t POLYNOMIAL = UINT64_C(0x104C11DB7);
 
-void PathCrc32InMemory(unsigned char *data, unsigned int len, unsigned int offset, unsigned int oldcrc, unsigned int newcrc)
+void PathCrc32InMemory(unsigned char* data, unsigned int len, unsigned int offset, unsigned int oldcrc, unsigned int newcrc)
 {
 	unsigned int delta = oldcrc ^ newcrc;
 	delta = (unsigned int)multiply_mod(reciprocal_mod(pow_mod(2, (len - offset) * 8)), delta);
@@ -48,7 +48,7 @@ void PathCrc32InMemory(unsigned char *data, unsigned int len, unsigned int offse
 	}
 }
 
-unsigned int GetCrc32InMemory(unsigned char *f, unsigned int length, unsigned int oldcrc)
+unsigned int GetCrc32InMemory(unsigned char* f, unsigned int length, unsigned int oldcrc)
 {
 	unsigned int crc = oldcrc;
 	for (size_t i = 0; i < length; i++)
@@ -108,7 +108,7 @@ uint64_t pow_mod(uint64_t x, uint64_t y)
 }
 
 // Computes polynomial x divided by polynomial y, returning the quotient and remainder.
-void divide_and_remainder(uint64_t x, uint64_t y, uint64_t *q, uint64_t *r)
+void divide_and_remainder(uint64_t x, uint64_t y, uint64_t* q, uint64_t* r)
 {
 	if (y == 0)
 	{

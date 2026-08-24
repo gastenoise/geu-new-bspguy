@@ -32,7 +32,7 @@ void ResetBspLimits()
 	g_limits = limitsMap["half-life1"];
 }
 
-bool BSPLimits::operator!=(const BSPLimits &other) const
+bool BSPLimits::operator!=(const BSPLimits& other) const
 {
 	return fltMaxCoord != other.fltMaxCoord ||
 		   maxSurfaceExtent != other.maxSurfaceExtent ||

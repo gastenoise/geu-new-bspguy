@@ -117,7 +117,7 @@ bool BSPLEAF32A::isEmpty()
 	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF32A)) == 0;
 }
 
-std::vector<int> getDiffModels(LumpState &oldLump, LumpState &newLump)
+std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 {
 	std::vector<int> updateModels{};
 	if (newLump.lumps[LUMP_MODELS].empty())
@@ -147,8 +147,8 @@ std::vector<int> getDiffModels(LumpState &oldLump, LumpState &newLump)
 
 	modelLumpCount /= sizeof(BSPMODEL);
 
-	BSPMODEL *listOld = (BSPMODEL *)oldLump.lumps[LUMP_MODELS].data();
-	BSPMODEL *listNew = (BSPMODEL *)newLump.lumps[LUMP_MODELS].data();
+	BSPMODEL* listOld = (BSPMODEL*)oldLump.lumps[LUMP_MODELS].data();
+	BSPMODEL* listNew = (BSPMODEL*)newLump.lumps[LUMP_MODELS].data();
 
 	for (size_t i = 0; i < modelLumpCount; i++)
 	{
@@ -161,7 +161,7 @@ std::vector<int> getDiffModels(LumpState &oldLump, LumpState &newLump)
 	return updateModels;
 }
 
-std::vector<int> getDiffFaces(LumpState &oldLump, LumpState &newLump)
+std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump)
 {
 	std::vector<int> updateFaces{};
 	if (newLump.lumps[LUMP_FACES].empty())
@@ -191,8 +191,8 @@ std::vector<int> getDiffFaces(LumpState &oldLump, LumpState &newLump)
 
 	modelLumpCount /= sizeof(BSPFACE32);
 
-	BSPFACE32 *listOld = (BSPFACE32 *)oldLump.lumps[LUMP_FACES].data();
-	BSPFACE32 *listNew = (BSPFACE32 *)newLump.lumps[LUMP_FACES].data();
+	BSPFACE32* listOld = (BSPFACE32*)oldLump.lumps[LUMP_FACES].data();
+	BSPFACE32* listNew = (BSPFACE32*)newLump.lumps[LUMP_FACES].data();
 
 	for (size_t i = 0; i < modelLumpCount; i++)
 	{

@@ -33,7 +33,7 @@ struct WADTEX
 	int nOffsets[MIPLEVELS];
 	std::vector<unsigned char> data;
 	WADTEX();
-	WADTEX(BSPMIPTEX *tex, unsigned char *palette = NULL, unsigned short colors = 256);
+	WADTEX(BSPMIPTEX* tex, unsigned char* palette = NULL, unsigned short colors = 256);
 	~WADTEX() = default;
 };
 
@@ -76,20 +76,20 @@ class Wad
 	void precacheAllTextures();
 
 	bool hasTexture(int dirIndex);
-	bool hasTexture(const std::string &name);
+	bool hasTexture(const std::string& name);
 
-	bool write(const std::string &filename, const std::vector<WADTEX> &textures);
-	bool write(const std::vector<WADTEX> &textures);
+	bool write(const std::string& filename, const std::vector<WADTEX>& textures);
+	bool write(const std::vector<WADTEX>& textures);
 
-	WADTEX readTexture(int dirIndex, int *texturetype = NULL);
-	WADTEX readTexture(const std::string &texname, int *texturetype = NULL);
+	WADTEX readTexture(int dirIndex, int* texturetype = NULL);
+	WADTEX readTexture(const std::string& texname, int* texturetype = NULL);
 
 	WADTEX readTextureFromFile(int dirIndex);
-	WADTEX readTextureFromFile(const std::string &texname);
+	WADTEX readTextureFromFile(const std::string& texname);
 
   private:
 	WADTEX readTextureFromMemory(int dirIndex);
-	WADTEX readTextureFromMemory(const std::string &texname);
+	WADTEX readTextureFromMemory(const std::string& texname);
 
-	int findTextureIndex(const std::string &texname);
+	int findTextureIndex(const std::string& texname);
 };

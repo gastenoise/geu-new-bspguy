@@ -44,7 +44,7 @@ struct VertexAttr
 	int handle;		// location in shader program (-1 indicates invalid attribute)
 	int size;		// size of the attribute in bytes
 	int normalized; // GL_TRUE/GL_FALSE Ex: byte color values are normalized (0-255 = 0.0-1.0)
-	const char *varName;
+	const char* varName;
 
 	VertexAttr()
 	{
@@ -60,7 +60,7 @@ struct VertexAttr
 		varName = NULL;
 	}
 
-	VertexAttr(int numValues, int valueType, int handle, int normalized, const char *varName);
+	VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName);
 };
 
 extern VertexAttr commonAttr[VBUF_FLAGBITS];
@@ -70,8 +70,8 @@ class ShaderProgram
   public:
 	unsigned int ID; // OpenGL program ID
 
-	Shader *vShader; // vertex shader
-	Shader *fShader; // fragment shader
+	Shader* vShader; // vertex shader
+	Shader* fShader; // fragment shader
 
 	// commonly used vertex attributes
 	unsigned int vposID;
@@ -79,7 +79,7 @@ class ShaderProgram
 	unsigned int vtexID;
 
 	// Creates a shader program to replace the fixed-function pipeline
-	ShaderProgram(const char *vshaderSource, const char *fshaderSource);
+	ShaderProgram(const char* vshaderSource, const char* fshaderSource);
 	~ShaderProgram(void);
 
 	// use this shader program instead of the fixed function pipeline.
@@ -90,17 +90,17 @@ class ShaderProgram
 	// detach and remove a shader by its GL shader ID if it belongs to this program
 	void removeShader(int shaderID);
 
-	void setMatrixes(mat4x4 *modelView, mat4x4 *modelViewProj);
+	void setMatrixes(mat4x4* modelView, mat4x4* modelViewProj);
 
 	// Find the the modelView and modelViewProjection matrices
 	// used in the shader code, so that we can update them.
-	void setMatrixNames(const char *modelViewMat, const char *modelViewProjMat);
+	void setMatrixNames(const char* modelViewMat, const char* modelViewProjMat);
 
 	// Find the IDs for the common vertex attributes (position, color, texture coords, normals)
-	void setVertexAttributeNames(const char *posAtt, const char *colorAtt, const char *texAtt, int attFlags);
+	void setVertexAttributeNames(const char* posAtt, const char* colorAtt, const char* texAtt, int attFlags);
 
 	// upload the model, view, and projection matrices to the shader (or fixed-funcion pipe)
-	void updateMatrixes(const mat4x4 &viewMat, const mat4x4 &viewProjMat);
+	void updateMatrixes(const mat4x4& viewMat, const mat4x4& viewProjMat);
 
 	// save/restore matrices
 	void pushMatrix(int matType = MAT_MODEL);
@@ -108,8 +108,8 @@ class ShaderProgram
 
 	void addAttributes(int attFlags);
 
-	void addAttribute(int numValues, int valueType, int normalized, const char *varName);
-	void addAttribute(int type, const char *varName);
+	void addAttribute(int numValues, int valueType, int normalized, const char* varName);
+	void addAttribute(int type, const char* varName);
 	void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
 
 	std::vector<VertexAttr> attribs;
@@ -125,8 +125,8 @@ class ShaderProgram
 	int modelViewProjID;
 
 	// computed from model, view, and projection matrices
-	mat4x4 *modelViewProjMat; // for transforming vertices onto the screen
-	mat4x4 *modelViewMat;
+	mat4x4* modelViewProjMat; // for transforming vertices onto the screen
+	mat4x4* modelViewMat;
 
 	// stores previous states of matrices
 	std::vector<mat4x4> modelStack;
@@ -141,4 +141,4 @@ class ShaderProgram
 	void link();
 };
 
-void calcMatrixes(mat4x4 &outViewMat, mat4x4 &outViewProjMat);
+void calcMatrixes(mat4x4& outViewMat, mat4x4& outViewProjMat);

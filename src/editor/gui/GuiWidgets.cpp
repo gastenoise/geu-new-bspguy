@@ -37,8 +37,8 @@ void Gui::drawDebugWidget()
 	ImGui::SetNextWindowSize(ImVec2(300.f, 400.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 200.f), ImVec2(app->windowWidth - 40.f, app->windowHeight - 40.f));
 
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *renderer = map ? map->getBspRender() : NULL;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* renderer = map ? map->getBspRender() : NULL;
 	auto entIdx = app->pickInfo.selectedEnts;
 
 	if (ImGui::Begin(fmt::format("{}###DEBUG_WIDGET", get_localized_string(LANG_0624)).c_str(), &showDebugWidget))
@@ -74,7 +74,7 @@ void Gui::drawDebugWidget()
 				{
 					if (app->pressed[key])
 					{
-						const char *keyName = glfwGetKeyName(key, 0);
+						const char* keyName = glfwGetKeyName(key, 0);
 						if (keyName != NULL)
 						{
 							keysStr += std::string(keyName) + " ";
@@ -154,11 +154,11 @@ void Gui::drawDebugWidget()
 
 					if (app->pickInfo.selectedFaces.size())
 					{
-						BSPFACE32 &face = map->faces[app->pickInfo.selectedFaces[0]];
+						BSPFACE32& face = map->faces[app->pickInfo.selectedFaces[0]];
 
 						if (modelIdx > 0)
 						{
-							BSPMODEL &model = map->models[modelIdx];
+							BSPMODEL& model = map->models[modelIdx];
 							ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0372)), modelIdx).c_str());
 
 							ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0373)), model.nFaces).c_str());
@@ -169,20 +169,20 @@ void Gui::drawDebugWidget()
 
 						if (face.iTextureInfo < map->texinfoCount)
 						{
-							BSPTEXTUREINFO &info = map->texinfos[face.iTextureInfo];
+							BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 							if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
 							{
-								int texOffset = ((int *)map->textures)[info.iMiptex + 1];
+								int texOffset = ((int*)map->textures)[info.iMiptex + 1];
 								if (texOffset >= 0)
 								{
-									BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
+									BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 									ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0376)), face.iTextureInfo).c_str());
 									ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0377)), info.iMiptex).c_str());
 									ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0378)), tex.szName, tex.nWidth, tex.nHeight).c_str());
 								}
 							}
-							BSPPLANE &plane = map->planes[face.iPlane];
-							BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+							BSPPLANE& plane = map->planes[face.iPlane];
+							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 							float anglex, angley;
 							vec3 xv, yv;
 							int val = TextureAxisFromPlane(plane, xv, yv);
@@ -294,10 +294,10 @@ void Gui::drawDebugWidget()
 
 			for (int i = 0; i < map->textureCount; i++)
 			{
-				int oldOffset = ((int *)map->textures)[i + 1];
+				int oldOffset = ((int*)map->textures)[i + 1];
 				if (oldOffset > 0)
 				{
-					BSPMIPTEX *bspTex = (BSPMIPTEX *)(map->textures + oldOffset);
+					BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
 					if (bspTex->nOffsets[0] > 0)
 					{
 						TotalInternalTextures++;
@@ -307,7 +307,7 @@ void Gui::drawDebugWidget()
 
 			if (mapTexsUsage.size())
 			{
-				for (auto &tmpWad : mapTexsUsage)
+				for (auto& tmpWad : mapTexsUsage)
 				{
 					if (tmpWad.first == "internal")
 						InternalTextures += (int)tmpWad.second.size();
@@ -321,11 +321,11 @@ void Gui::drawDebugWidget()
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0386)), TotalInternalTextures > 0 ? (int)mapTexsUsage.size() - 1 : (int)mapTexsUsage.size()).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0387)), WadTextures).c_str());
 
-			for (auto &tmpWad : mapTexsUsage)
+			for (auto& tmpWad : mapTexsUsage)
 			{
 				if (ImGui::CollapsingHeader((tmpWad.first + "##debug").c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed))
 				{
-					for (auto &texName : tmpWad.second)
+					for (auto& texName : tmpWad.second)
 					{
 						ImGui::Text(texName.c_str());
 					}
@@ -370,7 +370,7 @@ void Gui::drawDebugWidget()
 		{
 			if (ImGui::Button(get_localized_string(LANG_0641).c_str()))
 			{
-				for (auto &ent : map->ents)
+				for (auto& ent : map->ents)
 				{
 					if (ent->hasKey("classname") && ent->keyvalues["classname"] == "infodecal" && ent->hasKey("texture"))
 					{
@@ -414,7 +414,7 @@ void Gui::drawDebugWidget()
 				if (planeIdx >= 0)
 				{
 					auto faces = map->getFacesFromPlane(planeIdx);
-					for (auto &f : faces)
+					for (auto& f : faces)
 					{
 						renderer->highlightFace(f, 2);
 					}
@@ -423,7 +423,7 @@ void Gui::drawDebugWidget()
 
 			ImGui::TextUnformatted("BEST LEAFS:");
 			auto leaf_list = map->getLeafsFromPos(cameraOrigin, 32);
-			for (auto &f : leaf_list)
+			for (auto& f : leaf_list)
 			{
 				ImGui::TextUnformatted(std::to_string(f).c_str());
 			}
@@ -435,14 +435,14 @@ void Gui::drawDebugWidget()
 
 				for (int f = 0; f < map->faceCount; f++)
 				{
-					BSPFACE32 &face = map->faces[f];
+					BSPFACE32& face = map->faces[f];
 
 					if (map->texinfos[face.iTextureInfo].nFlags & TEX_SPECIAL)
 					{
 						continue;
 					}
 
-					auto &faceMath = renderer->faceMaths[f];
+					auto& faceMath = renderer->faceMaths[f];
 
 					vec3 normal = faceMath.normal.normalize();
 
@@ -455,12 +455,12 @@ void Gui::drawDebugWidget()
 					}
 
 					bool isInsideFace = true;
-					const std::vector<vec3> &vertices = map->get_face_verts(f);
+					const std::vector<vec3>& vertices = map->get_face_verts(f);
 
 					for (size_t i = 0; i < vertices.size(); i++)
 					{
-						const vec3 &v0 = vertices[i];
-						const vec3 &v1 = vertices[(i + 1) % vertices.size()];
+						const vec3& v0 = vertices[i];
+						const vec3& v1 = vertices[(i + 1) % vertices.size()];
 
 						vec3 edge = v1 - v0;
 
@@ -509,20 +509,20 @@ void Gui::drawDebugWidget()
 
 		for (int i = 0; i < map->faceCount; i++)
 		{
-			BSPTEXTUREINFO &texinfo = map->texinfos[map->faces[i].iTextureInfo];
+			BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
 			if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 			{
-				int texOffset = ((int *)map->textures)[texinfo.iMiptex + 1];
+				int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 				if (texOffset >= 0)
 				{
-					BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
+					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 
 					if (tex.szName[0] != '\0')
 					{
 						if (tex.nOffsets[0] <= 0)
 						{
 							bool fondTex = false;
-							for (auto &s : renderer->wads)
+							for (auto& s : renderer->wads)
 							{
 								if (s->hasTexture(tex.szName))
 								{
@@ -569,7 +569,7 @@ void Gui::drawDebugWidget()
 
 void Gui::drawOverviewWidget()
 {
-	static Bsp *lastMap = NULL;
+	static Bsp* lastMap = NULL;
 	static bool updateFarNear = false;
 	static std::string imgFormat = ".tga";
 	if (updateFarNear)
@@ -581,7 +581,7 @@ void Gui::drawOverviewWidget()
 
 	ortho_overview = showOverviewWidget && orthoMode;
 
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 
 	if (ImGui::Begin("Overview Widget###OVERVIEW_MAKER", &showOverviewWidget, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -701,7 +701,7 @@ void Gui::drawOverviewWidget()
 
 		if (ImGui::Button("Save .txt"))
 		{
-			FILE *overfile = NULL;
+			FILE* overfile = NULL;
 			std::string overPath = g_working_dir + "overviews/";
 			createDir(overPath);
 			std::string overFile = overPath + map->bsp_name + ".txt";
@@ -752,8 +752,8 @@ void Gui::drawOverviewWidget()
 
 void Gui::drawTextureBrowser()
 {
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *mapRender = map ? map->getBspRender() : nullptr;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* mapRender = map ? map->getBspRender() : nullptr;
 
 	ImGui::SetNextWindowSize(ImVec2(720.f, 640.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(320.f, 120.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
@@ -789,7 +789,7 @@ void Gui::drawTextureBrowser()
 	static int lastCopiedMiptex = -1;
 
 	// persistent preview cache
-	static std::unordered_map<std::string, Texture *> previewCache;
+	static std::unordered_map<std::string, Texture*> previewCache;
 	static size_t lastAllTexturesCount = 0;
 	{
 		std::lock_guard<std::mutex> lock(Sync::TexturesList);
@@ -807,14 +807,14 @@ void Gui::drawTextureBrowser()
 	}
 
 	// pending WAD loads (limited per frame)
-	static std::vector<std::tuple<Wad *, int, std::string>> pendingWadLoads;
+	static std::vector<std::tuple<Wad*, int, std::string>> pendingWadLoads;
 	const int MAX_LOADS_PER_FRAME = 2;
-	auto enqueueWadLoad = [&](Wad *wad, int dirIndex, const std::string &texName)
+	auto enqueueWadLoad = [&](Wad* wad, int dirIndex, const std::string& texName)
 	{
 		std::string key = toLowerCase(texName);
 		if (previewCache.find(key) != previewCache.end())
 			return;
-		for (auto &p : pendingWadLoads)
+		for (auto& p : pendingWadLoads)
 		{
 			if (std::get<0>(p) == wad && std::get<1>(p) == dirIndex)
 				return;
@@ -826,7 +826,7 @@ void Gui::drawTextureBrowser()
 	{
 		auto task = pendingWadLoads.front();
 		pendingWadLoads.erase(pendingWadLoads.begin());
-		Wad *wad = std::get<0>(task);
+		Wad* wad = std::get<0>(task);
 		int dirIndex = std::get<1>(task);
 		std::string texName = std::get<2>(task);
 		if (!wad)
@@ -836,7 +836,7 @@ void Gui::drawTextureBrowser()
 		WADTEX wtex = wad->readTexture(dirIndex);
 		if (wtex.nWidth <= 0 || wtex.nHeight <= 0)
 			continue;
-		COLOR4 *rgba = ConvertWadTexToRGBA(wtex, NULL, 256);
+		COLOR4* rgba = ConvertWadTexToRGBA(wtex, NULL, 256);
 		if (!rgba)
 			continue;
 
@@ -847,10 +847,10 @@ void Gui::drawTextureBrowser()
 		delete[] rgba;
 
 		size_t bytes = (size_t)tw * (size_t)th * 4;
-		unsigned char *buf = new unsigned char[bytes];
+		unsigned char* buf = new unsigned char[bytes];
 		memcpy(buf, scaled.data(), bytes);
 
-		Texture *t = new Texture((GLsizei)tw, (GLsizei)th, buf, texName, true, true);
+		Texture* t = new Texture((GLsizei)tw, (GLsizei)th, buf, texName, true, true);
 		t->upload(Texture::TYPE_TEXTURE);
 		t->setWadName(basename(wad->filename));
 		previewCache[toLowerCase(texName)] = t;
@@ -861,17 +861,17 @@ void Gui::drawTextureBrowser()
 	}
 
 	// Top selection info
-	auto isTextureInMap = [&](const std::string &name) -> int
+	auto isTextureInMap = [&](const std::string& name) -> int
 	{
 		if (!map)
 			return -1;
 		std::string low = toLowerCase(name);
 		for (int i = 0; i < map->textureCount; ++i)
 		{
-			int texOffset = ((int *)map->textures)[i + 1];
+			int texOffset = ((int*)map->textures)[i + 1];
 			if (texOffset < 0)
 				continue;
-			BSPMIPTEX *tex = (BSPMIPTEX *)(map->textures + texOffset);
+			BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
 			if (!tex)
 				continue;
 			if (toLowerCase(tex->szName) == low)
@@ -937,10 +937,10 @@ void Gui::drawTextureBrowser()
 				internalTextures.reserve(std::max(0, map->textureCount));
 				for (int i = 0; i < map->textureCount; ++i)
 				{
-					int texOffset = ((int *)map->textures)[i + 1];
+					int texOffset = ((int*)map->textures)[i + 1];
 					if (texOffset < 0)
 						continue;
-					BSPMIPTEX *tex = (BSPMIPTEX *)(map->textures + texOffset);
+					BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
 					if (!tex)
 						continue;
 					std::string texName = tex->szName;
@@ -973,7 +973,7 @@ void Gui::drawTextureBrowser()
 							if (idx >= total)
 								break;
 
-							const auto &entry = internalTextures[idx];
+							const auto& entry = internalTextures[idx];
 							const std::string texName = entry.first;
 							int texIdx = entry.second;
 
@@ -982,7 +982,7 @@ void Gui::drawTextureBrowser()
 							ImGui::PushID(1000000 + idx);
 							ImGui::BeginGroup();
 
-							Texture *previewTex = nullptr;
+							Texture* previewTex = nullptr;
 							auto it = previewCache.find(toLowerCase(texName));
 							if (it != previewCache.end())
 								previewTex = it->second;
@@ -1053,13 +1053,13 @@ void Gui::drawTextureBrowser()
 				std::vector<std::pair<std::string, int>> usedTextures;
 				for (int i = 0; i < map->texinfoCount; ++i)
 				{
-					BSPTEXTUREINFO &texInfo = map->texinfos[i];
+					BSPTEXTUREINFO& texInfo = map->texinfos[i];
 					if (texInfo.iMiptex >= 0 && texInfo.iMiptex < map->textureCount)
 					{
-						int texOffset = ((int *)map->textures)[texInfo.iMiptex + 1];
+						int texOffset = ((int*)map->textures)[texInfo.iMiptex + 1];
 						if (texOffset >= 0)
 						{
-							BSPMIPTEX *tex = (BSPMIPTEX *)(map->textures + texOffset);
+							BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
 							if (tex)
 							{
 								std::string texName = tex->szName;
@@ -1099,7 +1099,7 @@ void Gui::drawTextureBrowser()
 							if (idx >= total)
 								break;
 
-							const auto &entry = usedTextures[idx];
+							const auto& entry = usedTextures[idx];
 							const std::string texName = entry.first;
 							int texIdx = entry.second;
 
@@ -1108,7 +1108,7 @@ void Gui::drawTextureBrowser()
 							ImGui::PushID(2000000 + idx);
 							ImGui::BeginGroup();
 
-							Texture *previewTex = nullptr;
+							Texture* previewTex = nullptr;
 							auto it = previewCache.find(toLowerCase(texName));
 							if (it != previewCache.end())
 								previewTex = it->second;
@@ -1165,7 +1165,7 @@ void Gui::drawTextureBrowser()
 		{
 			for (size_t wadIdx = 0; wadIdx < mapRender->wads.size(); ++wadIdx)
 			{
-				Wad *wad = mapRender->wads[wadIdx];
+				Wad* wad = mapRender->wads[wadIdx];
 				if (!wad)
 					continue;
 				if (wad->dirEntries.empty())
@@ -1223,7 +1223,7 @@ void Gui::drawTextureBrowser()
 							ImGui::PushID((int)(3000000 + wadIdx * 100000 + ii));
 							ImGui::BeginGroup();
 
-							Texture *previewTex = nullptr;
+							Texture* previewTex = nullptr;
 							auto it = previewCache.find(toLowerCase(texName));
 							if (it != previewCache.end())
 								previewTex = it->second;
@@ -1346,7 +1346,7 @@ void Gui::drawTextureBrowser()
 				int idx = isTextureInMap(lastCopiedTextureName);
 				if (idx < 0)
 				{
-					for (auto &s : mapRender->wads)
+					for (auto& s : mapRender->wads)
 					{
 						if (s->hasTexture(lastCopiedTextureName))
 						{
@@ -1392,21 +1392,21 @@ void Gui::drawKeyvalueEditor()
 	{
 		auto entIdx = app->pickInfo.selectedEnts;
 
-		Bsp *map = app->getSelectedMap();
+		Bsp* map = app->getSelectedMap();
 		if (entIdx.size() && app->fgd && !app->isLoading && !app->isModelsReloading && !app->reloading && map)
 		{
 
 			// ImGui::TextUnformatted(fmt::format("ENTS {}. FIRST ENT {}.", g_app->pickInfo.selectedEnts.size(), g_app->pickInfo.selectedEnts.size() ? g_app->pickInfo.selectedEnts[0] : -1).c_str());
 
-			Entity *ent = map->ents[entIdx[0]];
+			Entity* ent = map->ents[entIdx[0]];
 			std::string cname = ent->keyvalues["classname"];
-			FgdClass *fgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_POINT);
+			FgdClass* fgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_POINT);
 			std::vector<FgdGroup> targetGroup = app->fgd->pointEntGroups;
 
 			if (!fgdClass || (ent->hasKey("model") &&
 							  (starts_with(ent->keyvalues["model"], '*') || ends_with(toLowerCase(ent->keyvalues["model"]), ".bsp"))))
 			{
-				FgdClass *tmpfgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_SOLID);
+				FgdClass* tmpfgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_SOLID);
 				if (tmpfgdClass)
 				{
 					targetGroup = app->fgd->solidEntGroups;
@@ -1459,7 +1459,7 @@ void Gui::drawKeyvalueEditor()
 				ImGui::Text(get_localized_string(LANG_0656).c_str());
 				ImGui::Separator();
 
-				for (FgdGroup &group : targetGroup)
+				for (FgdGroup& group : targetGroup)
 				{
 					if (!group.classes.size())
 					{
@@ -1533,16 +1533,16 @@ void Gui::drawKeyvalueEditor()
 
 void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 {
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 	if (!map || entIdx < 0)
 	{
 		ImGui::Text(get_localized_string(LANG_1105).c_str());
 		return;
 	}
-	Entity *sel_ent = map->ents[entIdx];
+	Entity* sel_ent = map->ents[entIdx];
 	std::string cname = sel_ent->keyvalues["classname"];
-	FgdClass *fgdClass = app->fgd->getFgdClass(cname);
-	ImGuiStyle &style = ImGui::GetStyle();
+	FgdClass* fgdClass = app->fgd->getFgdClass(cname);
+	ImGuiStyle& style = ImGui::GetStyle();
 
 	ImGui::BeginChild(get_localized_string(LANG_0663).c_str());
 
@@ -1577,7 +1577,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 			bool foundmodel = false;
 			for (size_t i = 0; i < fgdClass->keyvalues.size(); i++)
 			{
-				KeyvalueDef &keyvalue = fgdClass->keyvalues[i];
+				KeyvalueDef& keyvalue = fgdClass->keyvalues[i];
 				std::string key = keyvalue.name;
 				if (key == "model")
 				{
@@ -1597,7 +1597,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 		for (size_t i = 0; i < fgdClass->keyvalues.size() && i < 128; i++)
 		{
-			KeyvalueDef &keyvalue = fgdClass->keyvalues[i];
+			KeyvalueDef& keyvalue = fgdClass->keyvalues[i];
 			std::string key = keyvalue.name;
 			if (key == "spawnflags")
 			{
@@ -1651,7 +1651,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 				for (size_t k = 0; k < keyvalue.choices.size(); k++)
 				{
-					KeyvalueChoice &choice = keyvalue.choices[k];
+					KeyvalueChoice& choice = keyvalue.choices[k];
 
 					if ((choice.isInteger && ikey == choice.ivalue) ||
 						(!choice.isInteger && value == choice.svalue))
@@ -1664,7 +1664,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				{
 					for (size_t k = 0; k < keyvalue.choices.size(); k++)
 					{
-						KeyvalueChoice &choice = keyvalue.choices[k];
+						KeyvalueChoice& choice = keyvalue.choices[k];
 						bool selected = choice.svalue == value || (value.empty() && choice.svalue == keyvalue.defaultValue);
 						bool needrefreshmodel = false;
 						if (ImGui::Selectable(choice.name.c_str(), selected))
@@ -1697,14 +1697,14 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 									needrefreshmodel = true;
 								}
 							}
-							BspRenderer *render = map->getBspRender();
+							BspRenderer* render = map->getBspRender();
 							if (render)
 							{
 								if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
 								{
 									for (auto selected_entId : g_app->pickInfo.selectedEnts)
 									{
-										Entity *selected_ent = map->ents[selected_entId];
+										Entity* selected_ent = map->ents[selected_entId];
 										selected_ent->setOrAddKeyvalue(key, choice.svalue);
 										map->getBspRender()->refreshEnt((int)selected_entId);
 
@@ -1757,7 +1757,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 			{
 				struct InputChangeCallback
 				{
-					static int keyValueChanged(ImGuiInputTextCallbackData *data)
+					static int keyValueChanged(ImGuiInputTextCallbackData* data)
 					{
 						if (data->EventFlag == ImGuiInputTextFlags_CallbackCharFilter)
 						{
@@ -1768,16 +1768,16 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 							}
 							return 1;
 						}
-						InputDataKey *linputData = (InputDataKey *)data->UserData;
+						InputDataKey* linputData = (InputDataKey*)data->UserData;
 
 						if (!data->Buf || !nullstrlen(linputData->key))
 							return 0;
 
 						bool needReloadModel = false;
-						Bsp *map2 = g_app->getSelectedMap();
+						Bsp* map2 = g_app->getSelectedMap();
 						if (map2)
 						{
-							BspRenderer *render = map2->getBspRender();
+							BspRenderer* render = map2->getBspRender();
 							if (render)
 							{
 								if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
@@ -1785,7 +1785,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 									for (auto selected_entId : g_app->pickInfo.selectedEnts)
 									{
 										bool needRefreshModel = false;
-										Entity *ent = map2->ents[selected_entId];
+										Entity* ent = map2->ents[selected_entId];
 										std::string newVal = data->Buf;
 
 										if (!g_app->reloading && !g_app->isModelsReloading && linputData->key == "model")
@@ -1863,7 +1863,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 				if (sel_ent->keyvalues.count(key))
 				{
-					std::string *keyval = &sel_ent->keyvalues[key];
+					std::string* keyval = &sel_ent->keyvalues[key];
 
 					if (keyvalue.iType == FGD_KEY_INTEGER)
 					{
@@ -1892,19 +1892,19 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 {
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 	if (!map || entIdx < 0)
 	{
 		ImGui::Text(get_localized_string(LANG_1163).c_str());
 		return;
 	}
 
-	Entity *ent = map->ents[entIdx];
+	Entity* ent = map->ents[entIdx];
 
 	ImGui::BeginChild(get_localized_string(LANG_0665).c_str());
 
 	unsigned int spawnflags = strtoul(ent->keyvalues["spawnflags"].c_str(), NULL, 10);
-	FgdClass *fgdClass = app->fgd->getFgdClass(ent->keyvalues["classname"]);
+	FgdClass* fgdClass = app->fgd->getFgdClass(ent->keyvalues["classname"]);
 
 	ImGui::Columns(2, get_localized_string(LANG_0666).c_str(), true);
 
@@ -1930,7 +1930,7 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 		{
 			for (auto selected_entId : g_app->pickInfo.selectedEnts)
 			{
-				Entity *selected_ent = map->ents[selected_entId];
+				Entity* selected_ent = map->ents[selected_entId];
 				unsigned int entSpawnflags = strtoul(selected_ent->keyvalues["spawnflags"].c_str(), NULL, 10);
 				if (!checkboxEnabled[i])
 				{
@@ -1978,14 +1978,14 @@ struct InputData
 
 struct TextChangeCallback
 {
-	static int keyNameChanged(ImGuiInputTextCallbackData *data)
+	static int keyNameChanged(ImGuiInputTextCallbackData* data)
 	{
-		InputData *inputData = (InputData *)data->UserData;
+		InputData* inputData = (InputData*)data->UserData;
 
-		Bsp *map = g_app->getSelectedMap();
+		Bsp* map = g_app->getSelectedMap();
 		if (map)
 		{
-			BspRenderer *render = map->getBspRender();
+			BspRenderer* render = map->getBspRender();
 			if (render)
 			{
 				if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
@@ -1996,7 +1996,7 @@ struct TextChangeCallback
 						bool reloadModels = false;
 						for (auto entId : g_app->pickInfo.selectedEnts)
 						{
-							Entity *selent = map->ents[entId];
+							Entity* selent = map->ents[entId];
 							if (selent->renameKey(key, data->Buf))
 							{
 								render->refreshEnt((int)entId);
@@ -2019,14 +2019,14 @@ struct TextChangeCallback
 		return 1;
 	}
 
-	static int keyValueChanged(ImGuiInputTextCallbackData *data)
+	static int keyValueChanged(ImGuiInputTextCallbackData* data)
 	{
-		InputData *inputData = (InputData *)data->UserData;
+		InputData* inputData = (InputData*)data->UserData;
 
-		Bsp *map2 = g_app->getSelectedMap();
+		Bsp* map2 = g_app->getSelectedMap();
 		if (map2)
 		{
-			BspRenderer *render = map2->getBspRender();
+			BspRenderer* render = map2->getBspRender();
 			if (render)
 			{
 				if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
@@ -2037,7 +2037,7 @@ struct TextChangeCallback
 
 					for (auto entId : g_app->pickInfo.selectedEnts)
 					{
-						Entity *selent = map2->ents[entId];
+						Entity* selent = map2->ents[entId];
 						if (selent->keyvalues[key] != data->Buf)
 						{
 							if (part_vec == -1 && g_app->pickInfo.selectedEnts.size() > 1)
@@ -2140,15 +2140,15 @@ struct TextChangeCallback
 };
 void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 {
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 	if (!map || entIdx < 0)
 	{
 		ImGui::Text(get_localized_string(LANG_1176).c_str());
 		return;
 	}
 
-	Entity *ent = map->ents[entIdx];
-	ImGuiStyle &style = ImGui::GetStyle();
+	Entity* ent = map->ents[entIdx];
+	ImGuiStyle& style = ImGui::GetStyle();
 
 	ImGui::Columns(4, get_localized_string(LANG_1106).c_str(), false);
 
@@ -2186,7 +2186,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	static InputData valueIds[MAX_KEYS_PER_ENT];
 	static int lastPickCount = -1;
 	static std::string dragNames[MAX_KEYS_PER_ENT];
-	static const char *dragIds[MAX_KEYS_PER_ENT];
+	static const char* dragIds[MAX_KEYS_PER_ENT];
 
 	if (dragNames[0].empty())
 	{
@@ -2220,7 +2220,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	for (size_t i = 0; i < ent->keyOrder.size() && i < MAX_KEYS_PER_ENT; i++)
 	{
 
-		const char *item = dragIds[i];
+		const char* item = dragIds[i];
 
 		{
 			style.SelectableTextAlign.x = 0.5f;
@@ -2420,7 +2420,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 		if (ImGui::Button(get_localized_string(LANG_0943).c_str(), ImVec2(120, 0)))
 		{
-			const char *clipText = ImGui::GetClipboardText();
+			const char* clipText = ImGui::GetClipboardText();
 			if (clipText)
 			{
 				std::string clipboard = clipText;
@@ -2429,10 +2429,10 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 					clipboard = "{\n\"classname\" \"_temp\"\n" + clipboard + "\n}";
 				}
 
-				std::vector<Entity *> newEnts = load_ents(clipboard, "clipboard");
+				std::vector<Entity*> newEnts = load_ents(clipboard, "clipboard");
 				if (newEnts.size() > 0)
 				{
-					Entity *source = newEnts[0];
+					Entity* source = newEnts[0];
 					std::string oldClassname = ent->keyvalues["classname"];
 					std::string oldModel = ent->hasKey("model") ? ent->keyvalues["model"] : "";
 
@@ -2445,7 +2445,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 						ent->setOrAddKeyvalue("model", oldModel);
 					}
 
-					for (auto const &key : source->keyOrder)
+					for (auto const& key : source->keyOrder)
 					{
 						if (key == "classname" || key == "model")
 							continue;
@@ -2477,7 +2477,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 void Gui::drawMDLWidget()
 {
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 	ImGui::SetNextWindowSize(ImVec2(410.f, 200.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(410.f, 330.f), ImVec2(410.f, 330.f));
 
@@ -2547,7 +2547,7 @@ void Gui::drawGOTOWidget()
 
 	if (ImGui::Begin(fmt::format("{}###GOTO_WIDGET", get_localized_string(LANG_0676)).c_str(), &showGOTOWidget, 0))
 	{
-		ImGuiStyle &style = ImGui::GetStyle();
+		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.33f;
 		if (showGOTOWidget_update)
@@ -2585,7 +2585,7 @@ void Gui::drawGOTOWidget()
 			ImGui::EndTooltip();
 		}
 
-		Bsp *map = app->getSelectedMap();
+		Bsp* map = app->getSelectedMap();
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
@@ -2667,7 +2667,7 @@ void Gui::drawGOTOWidget()
 				else if (leafid > 0 && leafid < (int)map->leafCount)
 				{
 					app->pickMode = PICK_FACE;
-					BSPLEAF32 &leaf = map->leaves[leafid];
+					BSPLEAF32& leaf = map->leaves[leafid];
 					app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
 				}
 				else if (entid > 0 && entid < (int)map->ents.size())
@@ -2691,11 +2691,11 @@ void Gui::drawGOTOWidget()
 }
 void Gui::drawTransformWidget()
 {
-	Entity *ent = NULL;
+	Entity* ent = NULL;
 	int modelIdx = -1;
 	auto entIdx = app->pickInfo.selectedEnts;
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : NULL;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (map && entIdx.size())
 	{
@@ -2724,9 +2724,9 @@ void Gui::drawTransformWidget()
 		}
 		else
 		{
-			ImGuiStyle &style = ImGui::GetStyle();
+			ImGuiStyle& style = ImGui::GetStyle();
 
-			TransformAxes &activeAxes = *(app->transformMode == TRANSFORM_MODE_SCALE ? &app->scaleAxes : &app->moveAxes);
+			TransformAxes& activeAxes = *(app->transformMode == TRANSFORM_MODE_SCALE ? &app->scaleAxes : &app->moveAxes);
 
 			int currentTransformMode = app->transformMode;
 			int currentTransformTarget = app->transformTarget;
@@ -2957,7 +2957,7 @@ void Gui::drawTransformWidget()
 			}
 			ImGui::Columns(1);
 
-			const char *element_names[] = {"0", "0.01", "0.1", "0.5", "1", "2", "4", "8", "16", "32", "64"};
+			const char* element_names[] = {"0", "0.01", "0.1", "0.5", "1", "2", "4", "8", "16", "32", "64"};
 			const int grid_snap_modes = sizeof(element_names) / sizeof(element_names[0]);
 			const float element_values[grid_snap_modes] = {0.00001f, 0.01f, 0.1f, 0.5f, 1.f, 2.f, 4.f, 8.f, 16.f, 32.f, 64.f};
 
@@ -2983,7 +2983,7 @@ void Gui::drawTransformWidget()
 			ImGui::Dummy(ImVec2(0, style.FramePadding.y));
 
 			bool anyBrushSelected = false;
-			for (auto &eIdx : app->pickInfo.selectedEnts)
+			for (auto& eIdx : app->pickInfo.selectedEnts)
 			{
 				if (map->ents[eIdx]->isBspModel() && !map->ents[eIdx]->isWorldSpawn())
 				{
@@ -2996,9 +2996,9 @@ void Gui::drawTransformWidget()
 			{
 				vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
 				vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-				for (auto &eIdx : app->pickInfo.selectedEnts)
+				for (auto& eIdx : app->pickInfo.selectedEnts)
 				{
-					Entity *tmpEnt = map->ents[eIdx];
+					Entity* tmpEnt = map->ents[eIdx];
 					int mIdx = tmpEnt->getBspModelIdx();
 					if (mIdx >= 0)
 					{
@@ -3014,9 +3014,9 @@ void Gui::drawTransformWidget()
 				}
 				vec3 collectiveCenter = getCenter(maxs, mins);
 
-				for (auto &entIdx : app->pickInfo.selectedEnts)
+				for (auto& entIdx : app->pickInfo.selectedEnts)
 				{
-					Entity *tmpEnt = map->ents[entIdx];
+					Entity* tmpEnt = map->ents[entIdx];
 					int mIdx = tmpEnt->getBspModelIdx();
 
 					bool hasOrigin = tmpEnt->hasKey("origin");
@@ -3267,7 +3267,7 @@ void Gui::loadFonts()
 	}
 	std::error_code err{};
 
-	for (const auto &entry : fs::directory_iterator(fontPath, err))
+	for (const auto& entry : fs::directory_iterator(fontPath, err))
 	{
 		if (entry.is_regular_file())
 		{
@@ -3280,7 +3280,7 @@ void Gui::loadFonts()
 		}
 	}
 
-	std::sort(fontFiles.begin(), fontFiles.end(), [&](const std::string &a, const std::string &b)
+	std::sort(fontFiles.begin(), fontFiles.end(), [&](const std::string& a, const std::string& b)
 			  {
 		bool isA = a.find(mainFont) != std::string::npos;
 		bool isB = b.find(mainFont) != std::string::npos;
@@ -3303,9 +3303,9 @@ void Gui::loadFonts()
 
 	config.GlyphRanges = glyphRanges.Data;
 
-	ImFont *tmpFont = NULL;
+	ImFont* tmpFont = NULL;
 
-	for (const auto &fontFile : fontFiles)
+	for (const auto& fontFile : fontFiles)
 	{
 		try
 		{
@@ -3336,7 +3336,7 @@ void Gui::loadFonts()
 	consoleFontLarge = tmpFont;
 }
 
-static bool ColorPicker(ImGuiIO *imgui_io, float *col, bool alphabar)
+static bool ColorPicker(ImGuiIO* imgui_io, float* col, bool alphabar)
 {
 	const int EDGE_SIZE = 200; // = int( ImGui::GetWindowWidth() * 0.75f );
 	const ImVec2 SV_PICKER_SIZE = ImVec2(EDGE_SIZE, EDGE_SIZE);
@@ -3347,7 +3347,7 @@ static bool ColorPicker(ImGuiIO *imgui_io, float *col, bool alphabar)
 	ImColor color(col[0], col[1], col[2]);
 	bool value_changed = false;
 
-	ImDrawList *draw_list = ImGui::GetWindowDrawList();
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
 	// setup
 
@@ -3543,12 +3543,12 @@ static bool ColorPicker(ImGuiIO *imgui_io, float *col, bool alphabar)
 	return value_changed || widget_used;
 }
 
-bool ColorPicker3(ImGuiIO *imgui_io, float col[3])
+bool ColorPicker3(ImGuiIO* imgui_io, float col[3])
 {
 	return ColorPicker(imgui_io, col, false);
 }
 
-bool ColorPicker4(ImGuiIO *imgui_io, float col[4])
+bool ColorPicker4(ImGuiIO* imgui_io, float col[4])
 {
 	return ColorPicker(imgui_io, col, true);
 }
@@ -3559,7 +3559,7 @@ static const int ATLAS_SPACING = 1;
 
 int LMapMaxWidth = 512;
 
-void DrawImageAtOneBigLightMap(COLOR3 *img, int w, int h, int x, int y)
+void DrawImageAtOneBigLightMap(COLOR3* img, int w, int h, int x, int y)
 {
 	if (!img || w <= 0 || h <= 0)
 		return;
@@ -3584,7 +3584,7 @@ void DrawImageAtOneBigLightMap(COLOR3 *img, int w, int h, int x, int y)
 	}
 }
 
-void DrawOneBigLightMapAtImage(COLOR3 *img, int w, int h, int x, int y)
+void DrawOneBigLightMapAtImage(COLOR3* img, int w, int h, int x, int y)
 {
 	if (!img || w <= 0 || h <= 0)
 		return;
@@ -3613,7 +3613,7 @@ struct PackEntry
 	int lightId;
 };
 
-static std::vector<PackEntry> PackFacesDeterministic(Bsp *map, const std::vector<int> &faces, int lightId, int atlasWidth, int &outAtlasHeight)
+static std::vector<PackEntry> PackFacesDeterministic(Bsp* map, const std::vector<int>& faces, int lightId, int atlasWidth, int& outAtlasHeight)
 {
 	std::vector<PackEntry> entries;
 	int current_x = 0;
@@ -3663,7 +3663,7 @@ static std::vector<PackEntry> PackFacesDeterministic(Bsp *map, const std::vector
 
 std::vector<int> faces_to_export;
 
-void ImportOneBigLightmapFile(Bsp *map)
+void ImportOneBigLightmapFile(Bsp* map)
 {
 	if (!faces_to_export.size())
 	{
@@ -3679,7 +3679,7 @@ void ImportOneBigLightmapFile(Bsp *map)
 										   get_localized_string(LANG_0408),
 										   lightId);
 
-		unsigned char *image_bytes = nullptr;
+		unsigned char* image_bytes = nullptr;
 		unsigned int w2 = 0, h2 = 0;
 		auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, filename.c_str());
 		if (error != 0 || !image_bytes)
@@ -3714,7 +3714,7 @@ void ImportOneBigLightmapFile(Bsp *map)
 		int atlasW = (int)w2;
 		int atlasH = (int)h2;
 
-		for (const auto &e : entries)
+		for (const auto& e : entries)
 		{
 			int faceIdx = e.faceIdx;
 			int sizeX = e.w, sizeY = e.h;
@@ -3755,7 +3755,7 @@ void ImportOneBigLightmapFile(Bsp *map)
 				}
 			}
 
-			memcpy((unsigned char *)(map->lightdata + offset), (unsigned char *)tmp.data(), lightmapSz);
+			memcpy((unsigned char*)(map->lightdata + offset), (unsigned char*)tmp.data(), lightmapSz);
 		}
 	}
 }
@@ -3772,7 +3772,7 @@ std::map<float, float> mapx;
 std::map<float, float> mapy;
 std::map<float, float> mapz;
 
-void Gui::ExportOneBigLightmap(Bsp *map)
+void Gui::ExportOneBigLightmap(Bsp* map)
 {
 	std::string filename;
 	faces_to_export.clear();
@@ -3800,15 +3800,15 @@ void Gui::ExportOneBigLightmap(Bsp *map)
 		size_t required = (size_t)LMapMaxWidth * (size_t)atlasHeight;
 		colordata.resize(required, COLOR3(0, 0, 255));
 
-		for (const auto &e : entries)
+		for (const auto& e : entries)
 		{
 			int sizeX = e.w, sizeY = e.h;
 			int lightmapSz = sizeX * sizeY * sizeof(COLOR3);
 			int offset = map->faces[e.faceIdx].nLightmapOffset + lightId * lightmapSz;
 
-			COLOR3 *src = nullptr;
+			COLOR3* src = nullptr;
 			if (map->lightdata && offset >= 0 && (size_t)offset + lightmapSz <= map->lightDataLength)
-				src = (COLOR3 *)(map->lightdata + offset);
+				src = (COLOR3*)(map->lightdata + offset);
 
 			if (src)
 			{
@@ -3830,7 +3830,7 @@ void Gui::ExportOneBigLightmap(Bsp *map)
 		print_log(get_localized_string(LANG_0412), filename);
 
 		unsigned err = lodepng_encode24_file(filename.c_str(),
-											 (const unsigned char *)colordata.data(),
+											 (const unsigned char*)colordata.data(),
 											 LMapMaxWidth,
 											 atlasHeight);
 		if (err)
@@ -3840,7 +3840,7 @@ void Gui::ExportOneBigLightmap(Bsp *map)
 	}
 }
 
-void ExportLightmap(const BSPFACE32 &face, int faceIdx, Bsp *map)
+void ExportLightmap(const BSPFACE32& face, int faceIdx, Bsp* map)
 {
 	int size[2];
 	map->GetFaceLightmapSize(faceIdx, size);
@@ -3856,11 +3856,11 @@ void ExportLightmap(const BSPFACE32 &face, int faceIdx, Bsp *map)
 		int offset = face.nLightmapOffset + i * lightmapSz;
 		filename = fmt::format(fmt::runtime(get_localized_string(LANG_0413)), exportPath.c_str(), get_localized_string(LANG_0408), faceIdx, i);
 		print_log(get_localized_string(LANG_0414), filename);
-		lodepng_encode24_file(filename.c_str(), (unsigned char *)(map->lightdata + offset), size[0], size[1]);
+		lodepng_encode24_file(filename.c_str(), (unsigned char*)(map->lightdata + offset), size[0], size[1]);
 	}
 }
 
-void ImportLightmap(const BSPFACE32 &face, int faceIdx, Bsp *map)
+void ImportLightmap(const BSPFACE32& face, int faceIdx, Bsp* map)
 {
 	std::string filename;
 	int size[2];
@@ -3876,13 +3876,13 @@ void ImportLightmap(const BSPFACE32 &face, int faceIdx, Bsp *map)
 		unsigned int w = size[0], h = size[1];
 		unsigned int w2 = 0, h2 = 0;
 		print_log(get_localized_string(LANG_0415), filename);
-		unsigned char *image_bytes = NULL;
+		unsigned char* image_bytes = NULL;
 		auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, filename.c_str());
 		if (error == 0 && image_bytes)
 		{
 			if (w == w2 && h == h2)
 			{
-				memcpy((unsigned char *)(map->lightdata + offset), image_bytes, lightmapSz);
+				memcpy((unsigned char*)(map->lightdata + offset), image_bytes, lightmapSz);
 			}
 			else
 			{
@@ -3900,12 +3900,12 @@ void ImportLightmap(const BSPFACE32 &face, int faceIdx, Bsp *map)
 void Gui::drawLightMapTool()
 {
 	static float colourPatch[3];
-	static Texture *currentlightMap[MAX_LIGHTMAPS] = {NULL};
+	static Texture* currentlightMap[MAX_LIGHTMAPS] = {NULL};
 	static float windowWidth = 500.0f;
 	static float windowHeight = 600.0f;
 	static int lightmap_count = 0;
 	static bool needPickColor = false;
-	const char *light_names[] =
+	const char* light_names[] =
 		{
 			"ALL",
 			"Main light",
@@ -3930,12 +3930,12 @@ void Gui::drawLightMapTool()
 		{
 			ImGui::TextDisabled(get_localized_string(LANG_0863).c_str());
 		}
-		Bsp *map = app->getSelectedMap();
+		Bsp* map = app->getSelectedMap();
 		if (map)
 		{
-			BspRenderer *renderer = map->getBspRender();
+			BspRenderer* renderer = map->getBspRender();
 			int faceIdx = app->pickInfo.selectedFaces.size() ? (int)app->pickInfo.selectedFaces[0] : -1;
-			BSPFACE32 *face = NULL;
+			BSPFACE32* face = NULL;
 			int size[2]{};
 			if (faceIdx >= 0)
 			{
@@ -4057,7 +4057,7 @@ void Gui::drawLightMapTool()
 					if (offset < 0)
 						offset = 0;
 
-					COLOR3 *lighdata = (COLOR3 *)currentlightMap[i]->getData();
+					COLOR3* lighdata = (COLOR3*)currentlightMap[i]->getData();
 
 					if (needPickColor)
 					{
@@ -4092,7 +4092,7 @@ void Gui::drawLightMapTool()
 					map->save_undo_lightmaps();
 					for (int fIdx : app->pickInfo.selectedFaces)
 					{
-						BSPFACE32 &fillFace = map->faces[fIdx];
+						BSPFACE32& fillFace = map->faces[fIdx];
 						int fillSize[2];
 						map->GetFaceLightmapSize(fIdx, fillSize);
 						int layerSize = fillSize[0] * fillSize[1];
@@ -4106,7 +4106,7 @@ void Gui::drawLightMapTool()
 							int offset = fillFace.nLightmapOffset + i * layerSize * sizeof(COLOR3);
 							if (map->lightdata && offset + layerSize * (int)sizeof(COLOR3) <= map->lightDataLength)
 							{
-								COLOR3 *dst = (COLOR3 *)(map->lightdata + offset);
+								COLOR3* dst = (COLOR3*)(map->lightdata + offset);
 								for (int k = 0; k < layerSize; k++)
 									dst[k] = fillCol;
 							}
@@ -4248,21 +4248,21 @@ void Gui::drawFaceEditorWidget()
 
 		unsigned int targetLumps = EDIT_MODEL_LUMPS;
 
-		const char *targetEditName = "Edit face";
+		const char* targetEditName = "Edit face";
 
 		static float verts_merge_epsilon = 1.0f;
 
 		static int tmpStyles[MAX_LIGHTMAPS] = {255, 255, 255, 255};
 		static bool stylesChanged = false;
 
-		Bsp *map = app->getSelectedMap();
+		Bsp* map = app->getSelectedMap();
 		if (!map || app->pickMode == PICK_OBJECT || app->pickInfo.selectedFaces.empty())
 		{
 			ImGui::Text(get_localized_string(LANG_1130).c_str());
 			ImGui::End();
 			return;
 		}
-		BspRenderer *mapRenderer = map->getBspRender();
+		BspRenderer* mapRenderer = map->getBspRender();
 		if (!mapRenderer || !mapRenderer->texturesLoaded)
 		{
 			ImGui::Text(get_localized_string(LANG_0871).c_str());
@@ -4279,17 +4279,17 @@ void Gui::drawFaceEditorWidget()
 				int faceIdx = (int)app->pickInfo.selectedFaces[0];
 				if (faceIdx >= 0)
 				{
-					BSPFACE32 &face = map->faces[faceIdx];
-					BSPPLANE &plane = map->planes[face.iPlane];
-					BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
+					BSPFACE32& face = map->faces[faceIdx];
+					BSPPLANE& plane = map->planes[face.iPlane];
+					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					width = height = 0;
 
 					if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 					{
-						int texOffset = ((int *)map->textures)[texinfo.iMiptex + 1];
+						int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 						if (texOffset >= 0)
 						{
-							BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
+							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 							width = tex.nWidth;
 							height = tex.nHeight;
 							memcpy(textureName, tex.szName, MAXTEXTURENAME);
@@ -4343,8 +4343,8 @@ void Gui::drawFaceEditorWidget()
 						int faceIdx2 = app->pickInfo.selectedFaces[i];
 						map->GetFaceLightmapSize((int)faceIdx2, lmSize);
 						lightmapSizes.push_back({lmSize[0], lmSize[1]});
-						BSPFACE32 &face2 = map->faces[faceIdx2];
-						BSPTEXTUREINFO &texinfo2 = map->texinfos[face2.iTextureInfo];
+						BSPFACE32& face2 = map->faces[faceIdx2];
+						BSPTEXTUREINFO& texinfo2 = map->texinfos[face2.iTextureInfo];
 
 						if (scaleX != 1.0f / texinfo2.vS.length())
 							scaleX = 1.0f;
@@ -4389,7 +4389,7 @@ void Gui::drawFaceEditorWidget()
 		}
 		lastPickCount = pickCount;
 
-		ImGuiStyle &style = ImGui::GetStyle();
+		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.5f;
 
@@ -4516,13 +4516,13 @@ void Gui::drawFaceEditorWidget()
 				for (auto faceIdx : app->pickInfo.selectedFaces)
 				{
 					vec3 lastvec = vec3();
-					BSPFACE32 &face = map->faces[faceIdx];
+					BSPFACE32& face = map->faces[faceIdx];
 					for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
 					{
 						int edgeIdx = map->surfedges[e];
 						BSPEDGE32 edge = map->edges[abs(edgeIdx)];
 
-						vec3 &vec = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
+						vec3& vec = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
 
 						for (int v = 0; v < map->vertCount; v++)
 						{
@@ -4625,7 +4625,7 @@ void Gui::drawFaceEditorWidget()
 			std::string tmplabel = "##unklabel";
 
 			int edgeIdx = 0;
-			for (auto &v : edgeVerts)
+			for (auto& v : edgeVerts)
 			{
 				edgeIdx++;
 				tmplabel = fmt::format(fmt::runtime(get_localized_string(LANG_0423)), edgeIdx);
@@ -4652,7 +4652,7 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::Button("COPY VERTS"))
 			{
 				std::string outstr = "";
-				for (auto &s : edgeVerts)
+				for (auto& s : edgeVerts)
 				{
 					outstr += s.toKeyvalueString() + "\n";
 				}
@@ -4670,10 +4670,10 @@ void Gui::drawFaceEditorWidget()
 			{
 				textureChanged = true;
 				pasteTextureNow = false;
-				int texOffset = ((int *)map->textures)[copiedMiptex + 1];
+				int texOffset = ((int*)map->textures)[copiedMiptex + 1];
 				if (texOffset >= 0)
 				{
-					BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
+					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 					memcpy(textureName, tex.szName, MAXTEXTURENAME);
 					textureName[15] = '\0';
 				}
@@ -4693,10 +4693,10 @@ void Gui::drawFaceEditorWidget()
 
 					for (int i = 0; i < map->textureCount; i++)
 					{
-						int texOffset = ((int *)map->textures)[i + 1];
+						int texOffset = ((int*)map->textures)[i + 1];
 						if (texOffset >= 0)
 						{
-							BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
+							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 							if (strcasecmp(tex.szName, textureName) == 0)
 							{
 								validTexture = true;
@@ -4707,15 +4707,15 @@ void Gui::drawFaceEditorWidget()
 					}
 					if (!validTexture)
 					{
-						for (auto &s : mapRenderer->wads)
+						for (auto& s : mapRenderer->wads)
 						{
 							if (s->hasTexture(textureName))
 							{
 								WADTEX wadTex = s->readTexture(textureName);
-								COLOR3 *imageData = ConvertWadTexToRGB(wadTex);
+								COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 								validTexture = true;
-								newMiptex = map->add_texture(textureName, (unsigned char *)imageData, wadTex.nWidth, wadTex.nHeight);
+								newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
 								mapRenderer->reuploadTextures();
 								mapRenderer->preRenderFaces();
 
@@ -4736,7 +4736,7 @@ void Gui::drawFaceEditorWidget()
 
 						std::vector<COLOR3> img(width * height, rndColor);
 
-						newMiptex = map->add_texture(textureName, (unsigned char *)&img[0], width, height);
+						newMiptex = map->add_texture(textureName, (unsigned char*)&img[0], width, height);
 
 						mapRenderer->reuploadTextures();
 						mapRenderer->preRenderFaces();
@@ -4753,8 +4753,8 @@ void Gui::drawFaceEditorWidget()
 
 				if (applyFaceChanges || !manualMode)
 				{
-					BSPFACE32 &face = map->faces[faceIdx];
-					BSPTEXTUREINFO *texinfo = map->get_unique_texinfo((int)faceIdx);
+					BSPFACE32& face = map->faces[faceIdx];
+					BSPTEXTUREINFO* texinfo = map->get_unique_texinfo((int)faceIdx);
 					if (shiftedX)
 					{
 						texinfo->shiftS = shiftX;
@@ -4835,7 +4835,7 @@ void Gui::drawFaceEditorWidget()
 					{
 						int edgeIdx = map->surfedges[e];
 						BSPEDGE32 edge = map->edges[abs(edgeIdx)];
-						vec3 &v = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
+						vec3& v = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
 						v = edgeVerts[vecId];
 					}
 				}
@@ -4905,14 +4905,14 @@ void Gui::drawFaceEditorWidget()
 	}
 	else
 	{
-		Bsp *map = app->getSelectedMap();
+		Bsp* map = app->getSelectedMap();
 		if (!map || app->pickMode == PICK_OBJECT)
 		{
 			ImGui::Text(get_localized_string(LANG_1130).c_str());
 			ImGui::End();
 			return;
 		}
-		BspRenderer *mapRenderer = map->getBspRender();
+		BspRenderer* mapRenderer = map->getBspRender();
 		if (!mapRenderer || !mapRenderer->texturesLoaded)
 		{
 			ImGui::Text(get_localized_string(LANG_0871).c_str());
@@ -4926,7 +4926,7 @@ void Gui::drawFaceEditorWidget()
 		static std::vector<int> vis_leafs;
 		static std::vector<int> invis_leafs;
 		static bool leaf_decompress = false;
-		static unsigned char *visData = NULL;
+		static unsigned char* visData = NULL;
 		static bool vis_debugger_press = false;
 		static std::vector<int> face_leaf_list;
 		static std::vector<int> leaf_faces;
@@ -4987,7 +4987,7 @@ void Gui::drawFaceEditorWidget()
 			}
 			else
 			{
-				BSPLEAF32 &tmpLeaf = map->leaves[last_leaf];
+				BSPLEAF32& tmpLeaf = map->leaves[last_leaf];
 
 				mapRenderer->leafCube->mins = tmpLeaf.nMins;
 				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
@@ -5030,7 +5030,7 @@ void Gui::drawFaceEditorWidget()
 		}
 		else
 		{
-			ImGuiStyle &style = ImGui::GetStyle();
+			ImGuiStyle& style = ImGui::GetStyle();
 
 			if (!app->pickInfo.selectedFaces.empty())
 			{
@@ -5195,7 +5195,7 @@ void Gui::drawFaceEditorWidget()
 			{
 				BSPFACE32 face = map->faces[last_faces[0]];
 
-				BSPPLANE &tmpPlane = map->planes[face.iPlane];
+				BSPPLANE& tmpPlane = map->planes[face.iPlane];
 				ImGui::PushItemWidth(105);
 				ImGui::TextUnformatted(fmt::format("Plane [{}] side [{}] type [{}]", face.iPlane, face.nPlaneSide, tmpPlane.nType).c_str());
 
@@ -5276,7 +5276,7 @@ void Gui::drawFaceEditorWidget()
 				}
 				if (ImGui::Button("GO TO##LEAF"))
 				{
-					BSPLEAF32 &leaf = map->leaves[last_leaf];
+					BSPLEAF32& leaf = map->leaves[last_leaf];
 					app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
 				}
 			}
@@ -5334,7 +5334,7 @@ void Gui::drawFaceEditorWidget()
 							else
 							{
 								auto faceList = map->getLeafFaces(l);
-								for (const auto &idx : faceList)
+								for (const auto& idx : faceList)
 								{
 									mapRenderer->highlightFace(idx, 1);
 								}
@@ -5343,7 +5343,7 @@ void Gui::drawFaceEditorWidget()
 						else
 						{
 							auto faceList = map->getLeafFaces(l + 1);
-							for (const auto &idx : faceList)
+							for (const auto& idx : faceList)
 							{
 								mapRenderer->highlightFace(idx, 3);
 							}
@@ -5357,7 +5357,7 @@ void Gui::drawFaceEditorWidget()
 						if (l == last_leaf || CHECKVISBIT(visData, l - 1))
 						{
 							auto faceList = map->getLeafFaces(l);
-							for (const auto &idx : faceList)
+							for (const auto& idx : faceList)
 							{
 								mapRenderer->highlightFace(idx, 2);
 							}
@@ -5371,7 +5371,7 @@ void Gui::drawFaceEditorWidget()
 				app->pickInfo.selectedFaces.clear();
 				mapRenderer->preRenderFaces();
 				auto faceList = map->getLeafFaces(last_leaf);
-				for (const auto &idx : faceList)
+				for (const auto& idx : faceList)
 				{
 					app->pickInfo.selectedFaces.push_back(idx);
 					mapRenderer->highlightFace(idx, 2);
@@ -5521,8 +5521,8 @@ void Gui::drawFaceEditorWidget()
 
 			if (ImGui::Button("Mark visible for all"))
 			{
-				unsigned char *tmpVisData = new unsigned char[rowSize];
-				unsigned char *tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
+				unsigned char* tmpVisData = new unsigned char[rowSize];
+				unsigned char* tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
 
 				// ADD ONE LEAF TO ALL VISIBILITY BYTES
 				for (int i = 1; i < map->leafCount; i++)
@@ -5540,7 +5540,7 @@ void Gui::drawFaceEditorWidget()
 
 						map->leaves[i].nVisOffset = map->visDataLength;
 
-						unsigned char *newVisLump = new unsigned char[map->visDataLength + size];
+						unsigned char* newVisLump = new unsigned char[map->visDataLength + size];
 						memcpy(newVisLump, map->visdata, map->visDataLength);
 						memcpy(newVisLump + map->visDataLength, tmpCompressed, size);
 						map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
@@ -5565,8 +5565,8 @@ void Gui::drawFaceEditorWidget()
 
 			if (ImGui::Button("Mark invisible for all"))
 			{
-				unsigned char *tmpVisData = new unsigned char[rowSize];
-				unsigned char *tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
+				unsigned char* tmpVisData = new unsigned char[rowSize];
+				unsigned char* tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
 
 				// ADD ONE LEAF TO ALL VISIBILITY BYTES
 				for (int i = 1; i < map->leafCount; i++)
@@ -5584,7 +5584,7 @@ void Gui::drawFaceEditorWidget()
 
 						map->leaves[i].nVisOffset = map->visDataLength;
 
-						unsigned char *newVisLump = new unsigned char[map->visDataLength + size];
+						unsigned char* newVisLump = new unsigned char[map->visDataLength + size];
 						memcpy(newVisLump, map->visdata, map->visDataLength);
 						memcpy(newVisLump + map->visDataLength, tmpCompressed, size);
 						map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
@@ -5608,7 +5608,7 @@ void Gui::drawFaceEditorWidget()
 			if (last_leaf == 0)
 				ImGui::EndDisabled();
 
-			BSPLEAF32 &tmpLeaf = map->leaves[last_leaf];
+			BSPLEAF32& tmpLeaf = map->leaves[last_leaf];
 			mins = tmpLeaf.nMins;
 			maxs = tmpLeaf.nMaxs;
 
@@ -5683,7 +5683,7 @@ void Gui::drawFaceEditorWidget()
 			if (leafNodes.size())
 			{
 				int nodeIdx = leafNodes[0];
-				BSPNODE32 &tmpNode = map->nodes[nodeIdx];
+				BSPNODE32& tmpNode = map->nodes[nodeIdx];
 
 				mins = tmpNode.nMins;
 				maxs = tmpNode.nMaxs;
@@ -5756,12 +5756,12 @@ void Gui::drawFaceEditorWidget()
 			if (leafNodes.size())
 			{
 				int nodeIdx = leafNodes[0];
-				BSPNODE32 &tmpNode = map->nodes[nodeIdx];
+				BSPNODE32& tmpNode = map->nodes[nodeIdx];
 
 				ImGui::PushItemWidth(105);
 				ImGui::TextUnformatted(fmt::format("Node [{}] plane [{}]", nodeIdx, tmpNode.iPlane).c_str());
 
-				BSPPLANE &tmpPlane = map->planes[tmpNode.iPlane];
+				BSPPLANE& tmpPlane = map->planes[tmpNode.iPlane];
 				maxs = tmpPlane.vNormal;
 				float dist = tmpPlane.fDist;
 
@@ -5813,7 +5813,7 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::Button("Create duplicate"))
 			{
 				last_leaf = map->clone_world_leaf(last_leaf);
-				BSPLEAF32 &leaf = map->leaves[last_leaf];
+				BSPLEAF32& leaf = map->leaves[last_leaf];
 				app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
 				mapRenderer->pushUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_PLANES | FL_MARKSURFACES | FL_VISIBILITY);
 			}
@@ -5841,12 +5841,12 @@ void Gui::drawFaceEditorWidget()
 				//	CLEARVISBIT(visData, unsel - 1);
 				// }
 
-				unsigned char *compressed = new unsigned char[g_limits.maxMapLeaves * 8];
+				unsigned char* compressed = new unsigned char[g_limits.maxMapLeaves * 8];
 				memset(compressed, 0, g_limits.maxMapLeaves / 8);
 				int size = CompressVis(visData, rowSize, compressed, g_limits.maxMapLeaves / 8);
 
 				map->leaves[last_leaf].nVisOffset = map->visDataLength;
-				unsigned char *newVisLump = new unsigned char[map->visDataLength + size];
+				unsigned char* newVisLump = new unsigned char[map->visDataLength + size];
 				memcpy(newVisLump, map->visdata, map->visDataLength);
 				memcpy(newVisLump + map->visDataLength, compressed, size);
 				map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
@@ -5927,7 +5927,7 @@ StatInfo Gui::calcStat(std::string name, unsigned int val, unsigned int max, boo
 	return stat;
 }
 
-ModelInfo Gui::calcModelStat(Bsp *map, STRUCTUSAGE *modelInfo, unsigned int val, unsigned int max, bool isMem)
+ModelInfo Gui::calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val, unsigned int max, bool isMem)
 {
 	ModelInfo stat;
 

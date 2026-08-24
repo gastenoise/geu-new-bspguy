@@ -12,7 +12,7 @@ STRUCTCOUNT::~STRUCTCOUNT()
 	planes = texInfos = leaves = nodes = clipnodes = verts = faces = textures = markSurfs = surfEdges = edges = models = texturedata = lightdata = visdata = 0;
 }
 
-STRUCTCOUNT::STRUCTCOUNT(Bsp *map)
+STRUCTCOUNT::STRUCTCOUNT(Bsp* map)
 {
 	planes = map->bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
 	texInfos = map->bsp_header.lump[LUMP_TEXINFO].nLength / sizeof(BSPTEXTUREINFO);
@@ -21,7 +21,7 @@ STRUCTCOUNT::STRUCTCOUNT(Bsp *map)
 	clipnodes = map->bsp_header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE32);
 	verts = map->bsp_header.lump[LUMP_VERTICES].nLength / sizeof(vec3);
 	faces = map->bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE32);
-	textures = *((int *)(map->lumps[LUMP_TEXTURES].data()));
+	textures = *((int*)(map->lumps[LUMP_TEXTURES].data()));
 	markSurfs = map->bsp_header.lump[LUMP_MARKSURFACES].nLength / sizeof(int);
 	surfEdges = map->bsp_header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
 	edges = map->bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE32);
@@ -31,7 +31,7 @@ STRUCTCOUNT::STRUCTCOUNT(Bsp *map)
 	visdata = map->bsp_header.lump[LUMP_VISIBILITY].nLength;
 }
 
-void STRUCTCOUNT::add(const STRUCTCOUNT &other)
+void STRUCTCOUNT::add(const STRUCTCOUNT& other)
 {
 	planes += other.planes;
 	texInfos += other.texInfos;
@@ -50,7 +50,7 @@ void STRUCTCOUNT::add(const STRUCTCOUNT &other)
 	visdata += other.visdata;
 }
 
-void STRUCTCOUNT::sub(const STRUCTCOUNT &other)
+void STRUCTCOUNT::sub(const STRUCTCOUNT& other)
 {
 	planes -= other.planes;
 	texInfos -= other.texInfos;
@@ -75,7 +75,7 @@ bool STRUCTCOUNT::allZero()
 	return memcmp(&zeros, this, sizeof(zeros)) == 0;
 }
 
-void print_stat(int indent, int stat, const char *data)
+void print_stat(int indent, int stat, const char* data)
 {
 	if (stat == 0)
 	{
@@ -85,7 +85,7 @@ void print_stat(int indent, int stat, const char *data)
 
 	for (int i = 0; i < indent; i++)
 		print_log("    ");
-	const char *plural = "s";
+	const char* plural = "s";
 	if (std::string(data) == "vertex")
 	{
 		plural = "es";
@@ -94,7 +94,7 @@ void print_stat(int indent, int stat, const char *data)
 	print_log("{} {} {}{}\n", stat > 0 ? "Deleted" : "Added", statabs, data, statabs > 1 ? plural : "");
 }
 
-void print_stat_mem(int indent, int bytes, const char *data)
+void print_stat_mem(int indent, int bytes, const char* data)
 {
 	if (bytes == 0)
 	{
@@ -130,7 +130,7 @@ STRUCTUSAGE::STRUCTUSAGE()
 	sum = STRUCTCOUNT();
 	modelIdx = 0;
 }
-STRUCTUSAGE::STRUCTUSAGE(Bsp *map)
+STRUCTUSAGE::STRUCTUSAGE(Bsp* map)
 {
 	modelIdx = 0;
 
@@ -181,7 +181,7 @@ STRUCTREMAP::STRUCTREMAP()
 {
 	count = STRUCTCOUNT();
 }
-STRUCTREMAP::STRUCTREMAP(Bsp *map)
+STRUCTREMAP::STRUCTREMAP(Bsp* map)
 {
 	count = STRUCTCOUNT(map);
 

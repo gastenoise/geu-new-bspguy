@@ -119,7 +119,7 @@ enum clean_unused_lump : unsigned int
 #define LM_DIFFUSE_STYLE 62
 #define LM_LIGHTVECS_STYLE 63
 
-static const char *g_lump_names[HEADER_LUMPS] = {
+static const char* g_lump_names[HEADER_LUMPS] = {
 	"ENTITIES",
 	"PLANES",
 	"TEXTURES",
@@ -309,7 +309,7 @@ struct BSPNODE32
 		nMins = nMaxs = vec3();
 		iFirstFace = nFaces = 0;
 	}
-	BSPNODE32(int plane, const std::array<int, 2> &childs, const vec3 &mins, const vec3 &maxs, int firstface, int faces)
+	BSPNODE32(int plane, const std::array<int, 2>& childs, const vec3& mins, const vec3& maxs, int firstface, int faces)
 		: iPlane(plane),
 		  nMins(mins),
 		  nMaxs(maxs),
@@ -340,11 +340,11 @@ struct BSPCLIPNODE32
 
 /* other */
 
-bool operator==(BSPTEXTUREINFO &struct1, BSPTEXTUREINFO &struct2);
-bool operator==(BSPPLANE &struct1, BSPPLANE &struct2);
+bool operator==(BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2);
+bool operator==(BSPPLANE& struct1, BSPPLANE& struct2);
 
-bool operator!=(BSPTEXTUREINFO &struct1, BSPTEXTUREINFO &struct2);
-bool operator!=(BSPPLANE &struct1, BSPPLANE &struct2);
+bool operator!=(BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2);
+bool operator!=(BSPPLANE& struct1, BSPPLANE& struct2);
 
 struct CSGPLANE
 {
@@ -498,7 +498,7 @@ enum RenderFx : int
 struct TransformVert
 {
 	vec3 pos;
-	vec3 *ptr; // face vertex to move with (null for invisible faces)
+	vec3* ptr; // face vertex to move with (null for invisible faces)
 	std::vector<int> iPlanes;
 	vec3 startPos; // for dragging
 	vec3 undoPos;  // for undoing invalid solid stuff
@@ -557,11 +557,11 @@ struct TraceResult
 
 struct LumpState
 {
-	void *map;
+	void* map;
 	std::vector<unsigned char> lumps[HEADER_LUMPS];
-	LumpState(void *_map)
+	LumpState(void* _map)
 		: map(_map) {}
 };
 
-std::vector<int> getDiffModels(LumpState &oldLump, LumpState &newLump);
-std::vector<int> getDiffFaces(LumpState &oldLump, LumpState &newLump);
+std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump);
+std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump);

@@ -4,7 +4,7 @@ Clipper::Clipper()
 {
 }
 
-CMesh Clipper::clip(std::vector<BSPPLANE> &clips)
+CMesh Clipper::clip(std::vector<BSPPLANE>& clips)
 {
 	CMesh mesh = createMaxSizeVolume();
 
@@ -32,14 +32,14 @@ CMesh Clipper::clip(std::vector<BSPPLANE> &clips)
 	return mesh;
 }
 
-int Clipper::clipVertices(CMesh &mesh, BSPPLANE &clip)
+int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
 {
 	int positive = 0;
 	int negative = 0;
 
 	for (size_t i = 0; i < mesh.verts.size(); i++)
 	{
-		CVertex &vert = mesh.verts[i];
+		CVertex& vert = mesh.verts[i];
 		// if (vert.visible)
 		{
 			vert.distance = dotProduct(vert.pos, clip.vNormal) - clip.fDist;
@@ -74,13 +74,13 @@ int Clipper::clipVertices(CMesh &mesh, BSPPLANE &clip)
 	return 0;
 }
 
-void Clipper::clipEdges(CMesh &mesh /*, BSPPLANE& clip*/)
+void Clipper::clipEdges(CMesh& mesh /*, BSPPLANE& clip*/)
 {
 	for (size_t i = 0; i < mesh.edges.size(); i++)
 	{
-		CEdge &edge = mesh.edges[i];
-		CVertex &v0 = mesh.verts[edge.verts[0]];
-		CVertex &v1 = mesh.verts[edge.verts[1]];
+		CEdge& edge = mesh.edges[i];
+		CVertex& v0 = mesh.verts[edge.verts[0]];
+		CVertex& v1 = mesh.verts[edge.verts[1]];
 
 		if (edge.visible)
 		{
@@ -92,7 +92,7 @@ void Clipper::clipEdges(CMesh &mesh /*, BSPPLANE& clip*/)
 				// edge is culled, remove edge from faces sharing it
 				for (int k = 0; k < 2; k++)
 				{
-					CFace &face = mesh.faces[edge.faces[k]];
+					CFace& face = mesh.faces[edge.faces[k]];
 					for (size_t e = 0; e < face.edges.size(); e++)
 					{
 						if (face.edges[e] == (int)i)
@@ -135,20 +135,20 @@ void Clipper::clipEdges(CMesh &mesh /*, BSPPLANE& clip*/)
 	}
 }
 
-void Clipper::clipFaces(CMesh &mesh, BSPPLANE &clip)
+void Clipper::clipFaces(CMesh& mesh, BSPPLANE& clip)
 {
 	CFace closeFace({}, clip.vNormal.invert());
 	int findex = (int)mesh.faces.size();
 
 	for (size_t i = 0; i < mesh.faces.size(); i++)
 	{
-		CFace &face = mesh.faces[i];
+		CFace& face = mesh.faces[i];
 
 		if (face.visible)
 		{
 			for (size_t e = 0; e < face.edges.size(); e++)
 			{
-				CEdge &edge = mesh.edges[face.edges[e]];
+				CEdge& edge = mesh.edges[face.edges[e]];
 				mesh.verts[edge.verts[0]].occurs = 0;
 				mesh.verts[edge.verts[1]].occurs = 0;
 			}
@@ -169,12 +169,12 @@ void Clipper::clipFaces(CMesh &mesh, BSPPLANE &clip)
 	mesh.faces.push_back(closeFace);
 }
 
-bool Clipper::getOpenPolyline(CMesh &mesh, CFace &face, int &start, int &final)
+bool Clipper::getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final)
 {
 	// count the number of occurrences of each vertex in the polyline
 	for (size_t i = 0; i < face.edges.size(); i++)
 	{
-		CEdge &edge = mesh.edges[face.edges[i]];
+		CEdge& edge = mesh.edges[face.edges[i]];
 		mesh.verts[edge.verts[0]].occurs++;
 		mesh.verts[edge.verts[1]].occurs++;
 	}
@@ -185,7 +185,7 @@ bool Clipper::getOpenPolyline(CMesh &mesh, CFace &face, int &start, int &final)
 
 	for (size_t i = 0; i < face.edges.size(); i++)
 	{
-		CEdge &edge = mesh.edges[face.edges[i]];
+		CEdge& edge = mesh.edges[face.edges[i]];
 		int i0 = edge.verts[0];
 		int i1 = edge.verts[1];
 

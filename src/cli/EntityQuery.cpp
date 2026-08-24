@@ -12,10 +12,10 @@ class ComparisonNode : public QueryNode
 	std::string value;
 	bool isNot;
 
-	ComparisonNode(const std::string &k, const std::string &v, bool n)
+	ComparisonNode(const std::string& k, const std::string& v, bool n)
 		: key(k), value(v), isNot(n) {}
 
-	bool evaluate(Entity *ent) override
+	bool evaluate(Entity* ent) override
 	{
 		std::string entValue = "";
 		if (ent->keyvalues.count(key))
@@ -42,7 +42,7 @@ class LogicalNode : public QueryNode
 	LogicalNode(Op o, std::unique_ptr<QueryNode> l, std::unique_ptr<QueryNode> r)
 		: op(o), left(std::move(l)), right(std::move(r)) {}
 
-	bool evaluate(Entity *ent) override
+	bool evaluate(Entity* ent) override
 	{
 		if (op == AND)
 		{
@@ -63,13 +63,13 @@ class NotNode : public QueryNode
 	NotNode(std::unique_ptr<QueryNode> c)
 		: child(std::move(c)) {}
 
-	bool evaluate(Entity *ent) override
+	bool evaluate(Entity* ent) override
 	{
 		return !child->evaluate(ent);
 	}
 };
 
-EntityQuery::EntityQuery(const std::string &queryString)
+EntityQuery::EntityQuery(const std::string& queryString)
 {
 	tokenize(queryString);
 	currentToken = 0;
@@ -79,7 +79,7 @@ EntityQuery::EntityQuery(const std::string &queryString)
 	}
 }
 
-bool EntityQuery::evaluate(Entity *ent)
+bool EntityQuery::evaluate(Entity* ent)
 {
 	if (root)
 	{
@@ -88,7 +88,7 @@ bool EntityQuery::evaluate(Entity *ent)
 	return false;
 }
 
-void EntityQuery::tokenize(const std::string &q)
+void EntityQuery::tokenize(const std::string& q)
 {
 	for (size_t i = 0; i < q.size();)
 	{

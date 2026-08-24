@@ -7,17 +7,17 @@
 #include "fmt/format.h"
 
 extern Settings g_settings;
-extern Renderer *g_app;
+extern Renderer* g_app;
 
 void Gui::drawStatusBar()
 {
 	if (!app)
 		return;
 
-	Bsp *map = app->getSelectedMap();
-	BspRenderer *rend = map ? map->getBspRender() : nullptr;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : nullptr;
 
-	ImGuiViewport *viewport = ImGui::GetMainViewport();
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	float statusBarHeight = ImGui::GetFrameHeight() + 6.0f;
 
 	ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + viewport->Size.y - statusBarHeight));
@@ -61,7 +61,7 @@ void Gui::drawStatusBar()
 					int entIdx = app->pickInfo.selectedEnts[0];
 					if (entIdx >= 0 && entIdx < (int)map->ents.size())
 					{
-						Entity *ent = map->ents[entIdx];
+						Entity* ent = map->ents[entIdx];
 						std::string cname = ent->hasKey("classname") ? ent->keyvalues["classname"] : "unknown";
 						std::string tname = ent->hasKey("targetname") ? (" (\"" + ent->keyvalues["targetname"] + "\")") : "";
 						int mdlIdx = ent->getBspModelIdx();
@@ -99,17 +99,17 @@ void Gui::drawStatusBar()
 					int faceIdx = app->pickInfo.selectedFaces[0];
 					if (faceIdx >= 0 && faceIdx < map->faceCount)
 					{
-						BSPFACE32 &face = map->faces[faceIdx];
+						BSPFACE32& face = map->faces[faceIdx];
 						std::string texName = "unknown";
 						if (face.iTextureInfo < map->texinfoCount)
 						{
-							BSPTEXTUREINFO &info = map->texinfos[face.iTextureInfo];
+							BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 							if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
 							{
-								int texOffset = ((int *)map->textures)[info.iMiptex + 1];
+								int texOffset = ((int*)map->textures)[info.iMiptex + 1];
 								if (texOffset >= 0)
 								{
-									BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
+									BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 									texName = fmt::format("{} ({}x{})", tex.szName, tex.nWidth, tex.nHeight);
 								}
 							}

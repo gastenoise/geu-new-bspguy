@@ -4,7 +4,7 @@
 
 #include <GL/glew.h>
 
-Shader::Shader(const char *sourceCode, int shaderType)
+Shader::Shader(const char* sourceCode, int shaderType)
 {
 	// Create Shader And Program Objects
 	ID = glCreateShader(shaderType);
@@ -16,7 +16,7 @@ Shader::Shader(const char *sourceCode, int shaderType)
 	glGetShaderiv(ID, GL_COMPILE_STATUS, &success);
 	if (success != GL_TRUE)
 	{
-		char *log = new char[512];
+		char* log = new char[512];
 		int len;
 		glGetShaderInfoLog(ID, 512, &len, log);
 		print_log(get_localized_string(LANG_0959), shaderType);

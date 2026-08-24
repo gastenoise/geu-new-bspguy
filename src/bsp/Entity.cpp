@@ -5,7 +5,7 @@
 
 size_t totalEntityStructs = 0;
 
-void Entity::addKeyvalue(const std::string &key, const std::string &value, bool multisupport)
+void Entity::addKeyvalue(const std::string& key, const std::string& value, bool multisupport)
 {
 	if (!nullstrlen(key))
 		return;
@@ -63,7 +63,7 @@ void Entity::addKeyvalue(const std::string &key, const std::string &value, bool 
 		updateRenderModes();
 }
 
-void Entity::setOrAddKeyvalue(const std::string &key, const std::string &value)
+void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
 {
 	if (!key.size())
 		return;
@@ -71,7 +71,7 @@ void Entity::setOrAddKeyvalue(const std::string &key, const std::string &value)
 	addKeyvalue(key, value);
 }
 
-void Entity::removeKeyvalue(const std::string &key)
+void Entity::removeKeyvalue(const std::string& key)
 {
 	if (!key.size())
 		return;
@@ -94,7 +94,7 @@ void Entity::removeKeyvalue(const std::string &key)
 		updateRenderModes();
 }
 
-bool Entity::renameKey(int idx, const std::string &newName)
+bool Entity::renameKey(int idx, const std::string& newName)
 {
 	if (idx < 0 || idx >= (int)keyOrder.size() || newName.empty())
 	{
@@ -144,7 +144,7 @@ bool Entity::renameKey(int idx, const std::string &newName)
 	return true;
 }
 
-bool Entity::renameKey(const std::string &oldName, const std::string &newName)
+bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 {
 	if (oldName.empty() || newName.empty())
 	{
@@ -222,7 +222,7 @@ void Entity::clearEmptyKeyvalues()
 	keyOrder = std::move(newKeyOrder);
 }
 
-bool Entity::hasKey(const std::string &key)
+bool Entity::hasKey(const std::string& key)
 {
 	if (keyvalues.empty() || keyOrder.empty())
 	{
@@ -515,7 +515,7 @@ std::vector<std::string> Entity::getTargets()
 	for (size_t i = 1; i < potential_tergetname_keys.size(); i++)
 	{
 		// skip targetname
-		auto &key = potential_tergetname_keys[i];
+		auto& key = potential_tergetname_keys[i];
 		if (hasKey(key))
 		{
 			targets.push_back(keyvalues[key]);
@@ -551,7 +551,7 @@ std::vector<std::string> Entity::getTargets()
 	return targets;
 }
 
-bool Entity::hasTarget(const std::string &checkTarget)
+bool Entity::hasTarget(const std::string& checkTarget)
 {
 	std::vector<std::string> targets = getTargets();
 	for (size_t i = 0; i < targets.size(); i++)
@@ -565,11 +565,11 @@ bool Entity::hasTarget(const std::string &checkTarget)
 	return false;
 }
 
-void Entity::renameTargetnameValues(const std::string &oldTargetname, const std::string &newTargetname)
+void Entity::renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname)
 {
 	for (size_t i = 0; i < potential_tergetname_keys.size(); i++)
 	{
-		auto &key = potential_tergetname_keys[i];
+		auto& key = potential_tergetname_keys[i];
 		if (keyvalues.find(key) != keyvalues.end() && keyvalues[key] == oldTargetname)
 		{
 			keyvalues[key] = newTargetname;
@@ -614,7 +614,7 @@ size_t Entity::getMemoryUsage()
 	{
 		size += keyOrder[i].size();
 	}
-	for (const auto &entry : keyvalues)
+	for (const auto& entry : keyvalues)
 	{
 		size += entry.first.size() + entry.second.size();
 	}
@@ -622,7 +622,7 @@ size_t Entity::getMemoryUsage()
 	return size;
 }
 
-vec3 Entity::getHullOrigin(Bsp *map)
+vec3 Entity::getHullOrigin(Bsp* map)
 {
 	vec3 ori = origin;
 	int modelIdx = getBspModelIdx();

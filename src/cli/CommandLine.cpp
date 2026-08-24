@@ -10,7 +10,7 @@
 #endif
 #endif
 
-CommandLine::CommandLine(int argc, char *argv[])
+CommandLine::CommandLine(int argc, char* argv[])
 {
 	askingForHelp = false;
 	for (int i = 0; i < argc; i++)
@@ -26,7 +26,7 @@ CommandLine::CommandLine(int argc, char *argv[])
 		{
 #ifdef WIN32
 			int nArgs;
-			LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
 			bspfile = std::filesystem::path(szArglist[i]).string();
 #else
 			bspfile = std::filesystem::path(argv[i]).string();
@@ -66,7 +66,7 @@ CommandLine::CommandLine(int argc, char *argv[])
 	{
 #ifdef WIN32
 		int nArgs;
-		LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
 		bspfile = std::filesystem::path(szArglist[1]).string();
 #else
 		bspfile = std::filesystem::path(argv[1]).string();
@@ -74,12 +74,12 @@ CommandLine::CommandLine(int argc, char *argv[])
 	}
 }
 
-bool CommandLine::hasOption(const std::string &optionName)
+bool CommandLine::hasOption(const std::string& optionName)
 {
 	return optionVals.find(optionName) != optionVals.end();
 }
 
-bool CommandLine::hasOptionVector(const std::string &optionName)
+bool CommandLine::hasOptionVector(const std::string& optionName)
 {
 	if (!hasOption(optionName))
 		return false;
@@ -97,17 +97,17 @@ bool CommandLine::hasOptionVector(const std::string &optionName)
 	return true;
 }
 
-std::string CommandLine::getOption(const std::string &optionName)
+std::string CommandLine::getOption(const std::string& optionName)
 {
 	return optionVals[optionName];
 }
 
-int CommandLine::getOptionInt(const std::string &optionName)
+int CommandLine::getOptionInt(const std::string& optionName)
 {
 	return str_to_int(optionVals[optionName]);
 }
 
-vec3 CommandLine::getOptionVector(const std::string &optionName)
+vec3 CommandLine::getOptionVector(const std::string& optionName)
 {
 	vec3 ret;
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");
@@ -126,7 +126,7 @@ vec3 CommandLine::getOptionVector(const std::string &optionName)
 	return ret;
 }
 
-std::vector<vec3> CommandLine::getOptionVectorList(const std::string &optionName)
+std::vector<vec3> CommandLine::getOptionVectorList(const std::string& optionName)
 {
 	std::vector<vec3> ret;
 	std::vector<std::string> parts = splitString(optionVals[optionName], ";");
@@ -147,7 +147,7 @@ std::vector<vec3> CommandLine::getOptionVectorList(const std::string &optionName
 	return ret;
 }
 
-std::vector<std::string> CommandLine::getOptionList(const std::string &optionName)
+std::vector<std::string> CommandLine::getOptionList(const std::string& optionName)
 {
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");
 

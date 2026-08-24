@@ -32,11 +32,11 @@ struct mat4x4
 	// converts row-major matrix to column-major (for OpenGL)
 	mat4x4 transpose();
 
-	mat4x4 invert(bool *result = NULL);
+	mat4x4 invert(bool* result = NULL);
 
 	float determinant() const;
 
-	float &operator()(int idx)
+	float& operator()(int idx)
 	{
 		return m[idx];
 	}
@@ -61,12 +61,12 @@ struct mat4x4
 	void mult(float mat[16]);
 };
 
-void loadEmptyMat4x4(float *m);
+void loadEmptyMat4x4(float* m);
 
-mat4x4 operator*(const mat4x4 &m1, const mat4x4 &m2);
-vec4 operator*(const mat4x4 &mat, const vec4 &vec);
-mat4x4 worldToLocalTransform(const vec3 &local_x, const vec3 &local_y, const vec3 &local_z);
-void mat4x4print(const mat4x4 &mat);
+mat4x4 operator*(const mat4x4& m1, const mat4x4& m2);
+vec4 operator*(const mat4x4& mat, const vec4& vec);
+mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z);
+void mat4x4print(const mat4x4& mat);
 
 extern float m_identity[16];
 extern float m_zero[16];

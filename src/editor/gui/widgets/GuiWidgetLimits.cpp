@@ -10,10 +10,10 @@ void Gui::drawLimits()
 		limitsInvalidated = false;
 	}
 
-	Bsp *map = app->getSelectedMap();
+	Bsp* map = app->getSelectedMap();
 	std::string title = map ? "Limits - " + map->bsp_name : "Limits";
 
-	static Bsp *oldMap = NULL;
+	static Bsp* oldMap = NULL;
 
 	if (map != oldMap)
 	{
@@ -24,7 +24,7 @@ void Gui::drawLimits()
 	if (!map)
 		return;
 
-	BspRenderer *rend = map->getBspRender();
+	BspRenderer* rend = map->getBspRender();
 	if (!rend)
 		return;
 
@@ -150,7 +150,7 @@ void Gui::drawLimits()
 	ImGui::End();
 }
 
-void Gui::drawUndoMemUsage(BspRenderer *rend)
+void Gui::drawUndoMemUsage(BspRenderer* rend)
 {
 	ImGui::SeparatorText((get_localized_string(LANG_0721) + " " + std::to_string(rend->undoHistory.size())).c_str());
 	float mb = rend->undoMemoryUsage / (1024.0f * 1024.0f);
@@ -158,10 +158,10 @@ void Gui::drawUndoMemUsage(BspRenderer *rend)
 	ImGui::Text(get_localized_string("UNDO_MEM_USAGE").c_str(), mb, mb_zip);
 }
 
-void Gui::drawLimitTab(Bsp *map, int sortMode)
+void Gui::drawLimitTab(Bsp* map, int sortMode)
 {
 	int maxCount = 0;
-	const char *countName = "None";
+	const char* countName = "None";
 	switch (sortMode)
 	{
 		case SORT_VERTS:
@@ -184,7 +184,7 @@ void Gui::drawLimitTab(Bsp *map, int sortMode)
 
 	if (!loadedLimit[sortMode])
 	{
-		std::vector<STRUCTUSAGE *> modelInfos = map->get_sorted_model_infos(sortMode);
+		std::vector<STRUCTUSAGE*> modelInfos = map->get_sorted_model_infos(sortMode);
 
 		limitModels[sortMode].clear();
 		for (size_t i = 0; i < modelInfos.size(); i++)
@@ -213,7 +213,7 @@ void Gui::drawLimitTab(Bsp *map, int sortMode)
 		}
 		loadedLimit[sortMode] = true;
 	}
-	std::vector<ModelInfo> &modelInfos = limitModels[sortMode];
+	std::vector<ModelInfo>& modelInfos = limitModels[sortMode];
 
 	ImGui::BeginChild(get_localized_string(LANG_1124).c_str());
 	ImGui::Dummy(ImVec2(0, 10));

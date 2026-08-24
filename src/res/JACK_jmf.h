@@ -6,7 +6,7 @@
 class JackWriter
 {
   public:
-	JackWriter(const std::string &filename)
+	JackWriter(const std::string& filename)
 		: file(filename, std::ios::binary) {}
 
 	~JackWriter()
@@ -18,12 +18,12 @@ class JackWriter
 	}
 
 	template <typename T>
-	void write(const T &value)
+	void write(const T& value)
 	{
-		file.write((const char *)&value, sizeof(T));
+		file.write((const char*)&value, sizeof(T));
 	}
 
-	void writeLenStr(const std::string &str)
+	void writeLenStr(const std::string& str)
 	{
 		int size = (int)str.length();
 		// write(size);
@@ -32,7 +32,7 @@ class JackWriter
 			file.write(str.data(), size);
 	}
 
-	void writeKeyVal(const std::string &key, const std::string &val)
+	void writeKeyVal(const std::string& key, const std::string& val)
 	{
 		writeLenStr(key);
 		writeLenStr(val);
@@ -50,7 +50,7 @@ class JackWriter
 class JackReader
 {
   public:
-	JackReader(const std::string &filename)
+	JackReader(const std::string& filename)
 		: file(filename, std::ios::binary) {}
 
 	~JackReader()
@@ -62,13 +62,13 @@ class JackReader
 	}
 
 	template <typename T>
-	bool read(T &value)
+	bool read(T& value)
 	{
-		file.read(reinterpret_cast<char *>(&value), sizeof(T));
+		file.read(reinterpret_cast<char*>(&value), sizeof(T));
 		return file.good();
 	}
 
-	bool readLenStr(std::string &str)
+	bool readLenStr(std::string& str)
 	{
 		int size = 0;
 		if (!read<int>(size))
@@ -83,7 +83,7 @@ class JackReader
 		return file.good();
 	}
 
-	bool readKeyVal(std::string &key, std::string &val)
+	bool readKeyVal(std::string& key, std::string& val)
 	{
 		return readLenStr(key) && readLenStr(val);
 	}

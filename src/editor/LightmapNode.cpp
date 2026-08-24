@@ -1,6 +1,6 @@
 #include "LightmapNode.h"
 
-bool LightmapNode::insert(int iw, int ih, int &outX, int &outY)
+bool LightmapNode::insert(int iw, int ih, int& outX, int& outY)
 {
 	if (child[0]) // not a leaf, try putting into child nodes
 	{

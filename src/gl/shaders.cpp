@@ -6,7 +6,7 @@ namespace Shaders
 // if you have an Nvidia GPU, compile shader code in GPU ShaderAnalyzer to be sure it works for AMD too.
 // AMD has a stricter GLSL compiler than Nvidia does.
 
-const char *g_shader_cVert_vertex =
+const char* g_shader_cVert_vertex =
 	// object variables
 	"uniform mat4 modelViewProjection;\n"
 	"uniform vec4 colorMult;\n"
@@ -24,7 +24,7 @@ const char *g_shader_cVert_vertex =
 	"	fColor = vColor + colorMult;\n"
 	"}\n";
 
-const char *g_shader_cVert_fragment =
+const char* g_shader_cVert_fragment =
 	"varying vec4 fColor;\n"
 
 	"void main()\n"
@@ -34,7 +34,7 @@ const char *g_shader_cVert_fragment =
 	"	gl_FragColor = fColor;\n"
 	"}\n";
 
-const char *g_shader_model_vertex =
+const char* g_shader_model_vertex =
 	// object variables
 	"uniform mat4 modelViewProjection;\n"
 
@@ -51,7 +51,7 @@ const char *g_shader_model_vertex =
 	"	fTex = vTex;\n"
 	"}\n";
 
-const char *g_shader_model_fragment =
+const char* g_shader_model_fragment =
 	"varying vec2 fTex;\n"
 
 	"uniform sampler2D sTex;\n"
@@ -63,7 +63,7 @@ const char *g_shader_model_fragment =
 	"		discard;\n"
 	"}\n";
 
-const char *g_shader_multitexture_vertex =
+const char* g_shader_multitexture_vertex =
 	// object variables
 	"uniform mat4 modelViewProjection;\n"
 
@@ -95,7 +95,7 @@ const char *g_shader_multitexture_vertex =
 	"	fColor = vColor;\n"
 	"}\n";
 
-const char *g_shader_multitexture_fragment =
+const char* g_shader_multitexture_fragment =
 	"varying vec2 fTex;\n"
 	"varying vec3 fLightmapTex0;\n"
 	"varying vec3 fLightmapTex1;\n"

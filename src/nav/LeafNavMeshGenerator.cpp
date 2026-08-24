@@ -13,7 +13,7 @@
 #include "Entity.h"
 #include "GLFW/glfw3.h"
 
-LeafNavMesh *LeafNavMeshGenerator::generate(Bsp *map)
+LeafNavMesh* LeafNavMeshGenerator::generate(Bsp* map)
 {
 	double NavMeshGeneratorGenStart = glfwGetTime();
 
@@ -21,8 +21,8 @@ LeafNavMesh *LeafNavMeshGenerator::generate(Bsp *map)
 	std::vector<LeafNode> leaves = getHullLeaves(map, 0, CONTENTS_EMPTY);
 	print_log("Created {} leaf nodes in {}\n", leaves.size(), (float)(glfwGetTime() - createLeavesStart));
 
-	LeafOctree *octree = createLeafOctree(map, leaves, octreeDepth);
-	LeafNavMesh *navmesh = new LeafNavMesh(leaves, octree);
+	LeafOctree* octree = createLeafOctree(map, leaves, octreeDepth);
+	LeafNavMesh* navmesh = new LeafNavMesh(leaves, octree);
 
 	linkNavLeaves(map, navmesh);
 	setLeafOrigins(map, navmesh);
@@ -32,7 +32,7 @@ LeafNavMesh *LeafNavMeshGenerator::generate(Bsp *map)
 	size_t totalSz = 0;
 	for (size_t i = 0; i < navmesh->nodes.size(); i++)
 	{
-		auto &navnode = navmesh->nodes[i];
+		auto& navnode = navmesh->nodes[i];
 
 		totalSz += sizeof(LeafNode) + (sizeof(LeafLink) * navnode.links.size());
 
@@ -52,7 +52,7 @@ LeafNavMesh *LeafNavMeshGenerator::generate(Bsp *map)
 	return navmesh;
 }
 
-std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp *map, int modelIdx, int contents)
+std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp* map, int modelIdx, int contents)
 {
 	std::vector<LeafNode> emptyLeaves;
 
@@ -74,7 +74,7 @@ std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp *map, int modelIdx
 	// GET FACES FROM MESHES
 	for (size_t m = 0; m < emptyMeshes.size(); m++)
 	{
-		CMesh &mesh = emptyMeshes[m];
+		CMesh& mesh = emptyMeshes[m];
 
 		LeafNode leaf = LeafNode();
 		leaf.mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -82,7 +82,7 @@ std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp *map, int modelIdx
 
 		for (size_t f = 0; f < mesh.faces.size(); f++)
 		{
-			CFace &face = mesh.faces[f];
+			CFace& face = mesh.faces[f];
 			if (!face.visible)
 			{
 				continue;
@@ -136,7 +136,7 @@ std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp *map, int modelIdx
 			leaf.center = vec3();
 			for (size_t i = 0; i < leaf.leafFaces.size(); i++)
 			{
-				Polygon3D &face = leaf.leafFaces[i];
+				Polygon3D& face = leaf.leafFaces[i];
 				leaf.center += face.center;
 
 				for (size_t k = 0; k < face.verts.size(); k++)
@@ -155,7 +155,7 @@ std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp *map, int modelIdx
 	return emptyLeaves;
 }
 
-void LeafNavMeshGenerator::getOctreeBox(Bsp *map, vec3 &min, vec3 &max)
+void LeafNavMeshGenerator::getOctreeBox(Bsp* map, vec3& min, vec3& max)
 {
 	vec3 mapMins;
 	vec3 mapMaxs;
@@ -171,14 +171,14 @@ void LeafNavMeshGenerator::getOctreeBox(Bsp *map, vec3 &min, vec3 &max)
 	}
 }
 
-LeafOctree *LeafNavMeshGenerator::createLeafOctree(Bsp *map, std::vector<LeafNode> &nodes, int treeDepth)
+LeafOctree* LeafNavMeshGenerator::createLeafOctree(Bsp* map, std::vector<LeafNode>& nodes, int treeDepth)
 {
 	double treeStart = glfwGetTime();
 
 	vec3 treeMin, treeMax;
 	getOctreeBox(map, treeMin, treeMax);
 
-	LeafOctree *octree = new LeafOctree(treeMin, treeMax, treeDepth);
+	LeafOctree* octree = new LeafOctree(treeMin, treeMax, treeDepth);
 
 	for (size_t i = 0; i < nodes.size(); i++)
 	{
@@ -191,20 +191,20 @@ LeafOctree *LeafNavMeshGenerator::createLeafOctree(Bsp *map, std::vector<LeafNod
 	return octree;
 }
 
-void LeafNavMeshGenerator::setLeafOrigins(Bsp *map, LeafNavMesh *mesh)
+void LeafNavMeshGenerator::setLeafOrigins(Bsp* map, LeafNavMesh* mesh)
 {
 	double timeStart = glfwGetTime();
 
 	for (size_t i = 0; i < mesh->nodes.size(); i++)
 	{
-		LeafNode &node = mesh->nodes[i];
+		LeafNode& node = mesh->nodes[i];
 
 		vec3 testBottom = node.center - vec3(0, 0, 4096);
 		node.origin = node.center;
 		int bottomFaceIdx = -1;
 		for (int n = 0; n < (int)node.leafFaces.size(); n++)
 		{
-			Polygon3D &face = node.leafFaces[n];
+			Polygon3D& face = node.leafFaces[n];
 			if (face.intersect(node.center, testBottom, node.origin))
 			{
 				bottomFaceIdx = n;
@@ -220,7 +220,7 @@ void LeafNavMeshGenerator::setLeafOrigins(Bsp *map, LeafNavMesh *mesh)
 
 		for (size_t k = 0; k < node.links.size(); k++)
 		{
-			LeafLink &link = node.links[k];
+			LeafLink& link = node.links[k];
 
 			link.pos = getBestPolyOrigin(map, link.linkArea, link.pos);
 		}
@@ -229,7 +229,7 @@ void LeafNavMeshGenerator::setLeafOrigins(Bsp *map, LeafNavMesh *mesh)
 	print_log("Set leaf origins in {}\n", (float)(glfwGetTime() - timeStart));
 }
 
-vec3 LeafNavMeshGenerator::getBestPolyOrigin(Bsp *map, Polygon3D &poly, vec3 bias)
+vec3 LeafNavMeshGenerator::getBestPolyOrigin(Bsp* map, Polygon3D& poly, vec3 bias)
 {
 	TraceResult tr;
 	map->traceHull(bias, bias + vec3(0, 0, -4096), NAV_HULL, &tr);
@@ -286,7 +286,7 @@ vec3 LeafNavMeshGenerator::getBestPolyOrigin(Bsp *map, Polygon3D &poly, vec3 bia
 	return bestPos;
 }
 
-void LeafNavMeshGenerator::linkNavLeaves(Bsp *map, LeafNavMesh *mesh)
+void LeafNavMeshGenerator::linkNavLeaves(Bsp* map, LeafNavMesh* mesh)
 {
 	int numLinks = 0;
 	double linkStart = glfwGetTime();
@@ -296,7 +296,7 @@ void LeafNavMeshGenerator::linkNavLeaves(Bsp *map, LeafNavMesh *mesh)
 
 	for (int i = 0; i < (int)mesh->nodes.size(); i++)
 	{
-		LeafNode &leaf = mesh->nodes[i];
+		LeafNode& leaf = mesh->nodes[i];
 		int leafIdx = map->get_leaf(leaf.center, 3);
 
 		if (leafIdx >= 0 && leafIdx < MAX_MAP_CLIPNODE_LEAVES)
@@ -320,7 +320,7 @@ void LeafNavMeshGenerator::linkNavLeaves(Bsp *map, LeafNavMesh *mesh)
 	print_log("Added {} nav leaf links in {}\n", numLinks, (float)(glfwGetTime() - linkStart));
 }
 
-void LeafNavMeshGenerator::linkEntityLeaves(Bsp *map, LeafNavMesh *mesh)
+void LeafNavMeshGenerator::linkEntityLeaves(Bsp* map, LeafNavMesh* mesh)
 {
 	std::vector<bool> regionLeaves;
 	regionLeaves.resize(mesh->nodes.size());
@@ -330,11 +330,11 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp *map, LeafNavMesh *mesh)
 
 	for (int i = 0; i < (int)map->ents.size(); i++)
 	{
-		Entity *ent = map->ents[i];
+		Entity* ent = map->ents[i];
 
 		if (ent->keyvalues["classname"] == "func_ladder")
 		{
-			LeafNode &entNode = addSolidEntityNode(map, mesh, i);
+			LeafNode& entNode = addSolidEntityNode(map, mesh, i);
 			entNode.maxs.z += NAV_CROUCHJUMP_HEIGHT; // players can stand on top of the ladder for more height
 			entNode.origin = (entNode.mins + entNode.maxs) * 0.5f;
 
@@ -342,7 +342,7 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp *map, LeafNavMesh *mesh)
 		}
 		else if (ent->keyvalues["classname"] == "trigger_teleport")
 		{
-			LeafNode &teleNode = addSolidEntityNode(map, mesh, i);
+			LeafNode& teleNode = addSolidEntityNode(map, mesh, i);
 			linkEntityLeaves(mesh, teleNode, regionLeaves);
 
 			// link teleport destination(s) to touched nodes
@@ -360,7 +360,7 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp *map, LeafNavMesh *mesh)
 
 			for (int k = 0; k < (int)map->ents.size(); k++)
 			{
-				Entity *tar = map->ents[k];
+				Entity* tar = map->ents[k];
 				if (tar->keyvalues["targetname"] == target)
 				{
 					if (tar->keyvalues["classname"] == "info_teleport_destination")
@@ -384,7 +384,7 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp *map, LeafNavMesh *mesh)
 				// link all possible targets
 				for (size_t k = 0; k < targets.size(); k++)
 				{
-					LeafNode &entNode = addPointEntityNode(map, mesh, targets[k], pointMins, pointMaxs);
+					LeafNode& entNode = addPointEntityNode(map, mesh, targets[k], pointMins, pointMaxs);
 					linkEntityLeaves(mesh, entNode, regionLeaves);
 
 					teleNode.addLink(entNode.id, teleNode.origin);
@@ -392,7 +392,7 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp *map, LeafNavMesh *mesh)
 			}
 			else if (pentTarget != -1)
 			{
-				LeafNode &entNode = addPointEntityNode(map, mesh, pentTarget, pointMins, pointMaxs);
+				LeafNode& entNode = addPointEntityNode(map, mesh, pentTarget, pointMins, pointMaxs);
 				linkEntityLeaves(mesh, entNode, regionLeaves);
 
 				teleNode.addLink(entNode.id, teleNode.origin);
@@ -401,7 +401,7 @@ void LeafNavMeshGenerator::linkEntityLeaves(Bsp *map, LeafNavMesh *mesh)
 	}
 }
 
-void LeafNavMeshGenerator::linkEntityLeaves(LeafNavMesh *mesh, LeafNode &entNode, std::vector<bool> &regionLeaves)
+void LeafNavMeshGenerator::linkEntityLeaves(LeafNavMesh* mesh, LeafNode& entNode, std::vector<bool>& regionLeaves)
 {
 	mesh->octree->getLeavesInRegion(&entNode, regionLeaves);
 
@@ -413,7 +413,7 @@ void LeafNavMeshGenerator::linkEntityLeaves(LeafNavMesh *mesh, LeafNode &entNode
 			continue;
 		}
 
-		LeafNode &node = mesh->nodes[i];
+		LeafNode& node = mesh->nodes[i];
 		if (boxesIntersect(node.mins, node.maxs, entNode.mins, entNode.maxs))
 		{
 			vec3 linkPos = entNode.origin;
@@ -425,9 +425,9 @@ void LeafNavMeshGenerator::linkEntityLeaves(LeafNavMesh *mesh, LeafNode &entNode
 	}
 }
 
-LeafNode &LeafNavMeshGenerator::addSolidEntityNode(Bsp *map, LeafNavMesh *mesh, int entidx)
+LeafNode& LeafNavMeshGenerator::addSolidEntityNode(Bsp* map, LeafNavMesh* mesh, int entidx)
 {
-	Entity *ent = map->ents[entidx];
+	Entity* ent = map->ents[entidx];
 	std::vector<LeafNode> leaves = getHullLeaves(map, ent->getBspModelIdx(), CONTENTS_SOLID);
 
 	// create a special ladder node which is a combination of all its leaves
@@ -435,7 +435,7 @@ LeafNode &LeafNavMeshGenerator::addSolidEntityNode(Bsp *map, LeafNavMesh *mesh, 
 	ladderNode.mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	ladderNode.maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-	for (LeafNode &node : leaves)
+	for (LeafNode& node : leaves)
 	{
 		expandBoundingBox(node.mins, ladderNode.mins, ladderNode.maxs);
 		expandBoundingBox(node.maxs, ladderNode.mins, ladderNode.maxs);
@@ -453,9 +453,9 @@ LeafNode &LeafNavMeshGenerator::addSolidEntityNode(Bsp *map, LeafNavMesh *mesh, 
 	return mesh->nodes[mesh->nodes.size() - 1];
 }
 
-LeafNode &LeafNavMeshGenerator::addPointEntityNode(Bsp *map, LeafNavMesh *mesh, int entidx, vec3 mins, vec3 maxs)
+LeafNode& LeafNavMeshGenerator::addPointEntityNode(Bsp* map, LeafNavMesh* mesh, int entidx, vec3 mins, vec3 maxs)
 {
-	Entity *ent = map->ents[entidx];
+	Entity* ent = map->ents[entidx];
 
 	LeafNode node = LeafNode();
 	node.origin = node.center = ent->origin;
@@ -468,18 +468,18 @@ LeafNode &LeafNavMeshGenerator::addPointEntityNode(Bsp *map, LeafNavMesh *mesh, 
 	return mesh->nodes[mesh->nodes.size() - 1];
 }
 
-int LeafNavMeshGenerator::tryFaceLinkLeaves(LeafNavMesh *mesh, int srcLeafIdx, int dstLeafIdx)
+int LeafNavMeshGenerator::tryFaceLinkLeaves(LeafNavMesh* mesh, int srcLeafIdx, int dstLeafIdx)
 {
-	LeafNode &srcLeaf = mesh->nodes[srcLeafIdx];
-	LeafNode &dstLeaf = mesh->nodes[dstLeafIdx];
+	LeafNode& srcLeaf = mesh->nodes[srcLeafIdx];
+	LeafNode& dstLeaf = mesh->nodes[dstLeafIdx];
 
 	for (size_t i = 0; i < srcLeaf.leafFaces.size(); i++)
 	{
-		Polygon3D &srcFace = srcLeaf.leafFaces[i];
+		Polygon3D& srcFace = srcLeaf.leafFaces[i];
 
 		for (size_t k = 0; k < dstLeaf.leafFaces.size(); k++)
 		{
-			Polygon3D &dstFace = dstLeaf.leafFaces[k];
+			Polygon3D& dstFace = dstLeaf.leafFaces[k];
 
 			Polygon3D intersectFace = srcFace.coplanerIntersectArea(dstFace);
 
@@ -495,18 +495,18 @@ int LeafNavMeshGenerator::tryFaceLinkLeaves(LeafNavMesh *mesh, int srcLeafIdx, i
 	return 0;
 }
 
-void LeafNavMeshGenerator::calcPathCosts(Bsp *bsp, LeafNavMesh *mesh)
+void LeafNavMeshGenerator::calcPathCosts(Bsp* bsp, LeafNavMesh* mesh)
 {
 	// double markStart = glfwGetTime();
 
 	for (size_t i = 0; i < mesh->nodes.size(); i++)
 	{
-		LeafNode &node = mesh->nodes[i];
+		LeafNode& node = mesh->nodes[i];
 
 		for (size_t k = 0; k < node.links.size(); k++)
 		{
-			LeafLink &link = node.links[k];
-			LeafNode &otherNode = mesh->nodes[link.node];
+			LeafLink& link = node.links[k];
+			LeafNode& otherNode = mesh->nodes[link.node];
 
 			link.baseCost = 0;
 			link.costMultiplier = 1.0f;
@@ -534,7 +534,7 @@ void LeafNavMeshGenerator::calcPathCosts(Bsp *bsp, LeafNavMesh *mesh)
 	// print_log("Calculated path costs in {}\n", (float)(glfwGetTime() - markStart));
 }
 
-void LeafNavMeshGenerator::addPathCost(LeafLink &link, Bsp *bsp, vec3 start, vec3 end, bool isDrop)
+void LeafNavMeshGenerator::addPathCost(LeafLink& link, Bsp* bsp, vec3 start, vec3 end, bool isDrop)
 {
 	TraceResult tr;
 

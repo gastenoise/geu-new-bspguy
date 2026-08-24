@@ -22,11 +22,11 @@ class STRUCTCOUNT
 	unsigned int visdata;
 
 	STRUCTCOUNT();
-	STRUCTCOUNT(Bsp *map);
+	STRUCTCOUNT(Bsp* map);
 	~STRUCTCOUNT();
 
-	void add(const STRUCTCOUNT &other);
-	void sub(const STRUCTCOUNT &other);
+	void add(const STRUCTCOUNT& other);
+	void sub(const STRUCTCOUNT& other);
 	bool allZero();
 	void print_delete_stats(int indent);
 };
@@ -53,7 +53,7 @@ class STRUCTUSAGE
 	int modelIdx;
 
 	STRUCTUSAGE();
-	STRUCTUSAGE(Bsp *map);
+	STRUCTUSAGE(Bsp* map);
 	~STRUCTUSAGE() = default;
 
 	void compute_sum();
@@ -83,6 +83,6 @@ class STRUCTREMAP
 
 	STRUCTCOUNT count; // size of each array
 	STRUCTREMAP();
-	STRUCTREMAP(Bsp *map);
+	STRUCTREMAP(Bsp* map);
 	~STRUCTREMAP() = default;
 };

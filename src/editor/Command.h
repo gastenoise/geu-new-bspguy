@@ -12,7 +12,7 @@ class EditBspCommand
 {
   public:
 	std::string desc;
-	EditBspCommand(const std::string &desc, LumpState oldLumps, LumpState newLumps, unsigned int targetLumps);
+	EditBspCommand(const std::string& desc, LumpState oldLumps, LumpState newLumps, unsigned int targetLumps);
 	~EditBspCommand() = default;
 
 	void execute();
@@ -24,6 +24,6 @@ class EditBspCommand
 	LumpState newLumps;
 
   private:
-	void refresh(BspRenderer *renderer);
+	void refresh(BspRenderer* renderer);
 	unsigned int targetLumps;
 };
