@@ -5,16 +5,21 @@
 #include <tuple>
 #include <cstdint>
 
-
 #define HL_PI 3.141592f
-#define EPSILON 0.0001f // EPSILON from rad.h / 10
+#define EPSILON 0.0001f	  // EPSILON from rad.h / 10
 #define EPSILON2 0.00001f // EPSILON from rad.h / 100
-#define ON_EPSILON 0.01f // changed for test default is 0.03125f
-
+#define ON_EPSILON 0.01f  // changed for test default is 0.03125f
 
 float clamp(float val, float min, float max);
-#define CLAMP(v, min, max) if (v < min) { v = min; } else if (v > max) { v = max; }
-
+#define CLAMP(v, min, max) \
+	if (v < min)           \
+	{                      \
+		v = min;           \
+	}                      \
+	else if (v > max)      \
+	{                      \
+		v = max;           \
+	}
 
 unsigned char FixBounds(int i);
 unsigned char FixBounds(unsigned int i);
@@ -25,16 +30,22 @@ struct COLOR3
 {
 	unsigned char r, g, b;
 
-	COLOR3() : r(0), g(0), b(0) {};
-	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b)
-	{}
-	bool operator==(const COLOR3& other) const {
+	COLOR3()
+		: r(0), g(0), b(0){};
+	COLOR3(unsigned char r, unsigned char g, unsigned char b)
+		: r(r), g(g), b(b)
+	{
+	}
+	bool operator==(const COLOR3& other) const
+	{
 		return r == other.r && g == other.g && b == other.b;
 	}
-	bool operator<(const COLOR3& other) const {
+	bool operator<(const COLOR3& other) const
+	{
 		return r < other.r && g < other.g && b < other.b;
 	}
-	bool operator>(const COLOR3& other) const {
+	bool operator>(const COLOR3& other) const
+	{
 		return other < *this;
 	}
 
@@ -50,22 +61,31 @@ struct COLOR3
 struct COLOR4
 {
 	unsigned char r, g, b, a;
-	COLOR4() : r(0), g(0), b(0), a(0) {};
-	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a)
-	{}
-	COLOR4(const COLOR3& c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
-	{}
-	COLOR4(const COLOR3& c) : r(c.r), g(c.g), b(c.b), a(255)
-	{}
+	COLOR4()
+		: r(0), g(0), b(0), a(0){};
+	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+		: r(r), g(g), b(b), a(a)
+	{
+	}
+	COLOR4(const COLOR3& c, unsigned char a)
+		: r(c.r), g(c.g), b(c.b), a(a)
+	{
+	}
+	COLOR4(const COLOR3& c)
+		: r(c.r), g(c.g), b(c.b), a(255)
+	{
+	}
 
-	COLOR3 rgb(COLOR3 background) {
+	COLOR3 rgb(COLOR3 background)
+	{
 		float alpha = a / 255.0f;
 		unsigned char r_new = FixBounds((1.0f - alpha) * r + alpha * background.r);
 		unsigned char g_new = FixBounds((1.0f - alpha) * g + alpha * background.g);
 		unsigned char b_new = FixBounds((1.0f - alpha) * b + alpha * background.b);
 		return COLOR3(r_new, g_new, b_new);
 	}
-	COLOR3 rgb() {
+	COLOR3 rgb()
+	{
 		return COLOR3(r, g, b);
 	}
 };
@@ -74,35 +94,43 @@ struct vec3
 {
 	float x, y, z;
 
-	vec3() : x(0), y(0), z(0) {}
+	vec3()
+		: x(0), y(0), z(0) {}
 
 	vec3(const vec3& other)
 	{
 		Copy(other);
 	}
 
-	vec3(vec3&& other) noexcept : x(other.x), y(other.y), z(other.z) {
+	vec3(vec3&& other) noexcept
+		: x(other.x), y(other.y), z(other.z)
+	{
 		other.x = 0;
 		other.y = 0;
 		other.z = 0;
 	}
 
-	vec3 operator-() const {
+	vec3 operator-() const
+	{
 		return *this * -1;
 	}
 
-	vec3& operator=(const vec3& other) {
+	vec3& operator=(const vec3& other)
+	{
 		Copy(other);
 		return *this;
 	}
 
-	vec3& CopyAssign(const vec3& other) {
+	vec3& CopyAssign(const vec3& other)
+	{
 		Copy(other);
 		return *this;
 	}
 
-	vec3& operator=(vec3&& other) noexcept {
-		if (this != &other) {
+	vec3& operator=(vec3&& other) noexcept
+	{
+		if (this != &other)
+		{
 			x = other.x;
 			y = other.y;
 			z = other.z;
@@ -113,9 +141,9 @@ struct vec3
 		return *this;
 	}
 
-	vec3(float x, float y, float z) : x(x), y(y), z(z)
+	vec3(float x, float y, float z)
+		: x(x), y(y), z(z)
 	{
-
 	}
 
 	void Copy(const vec3& other)
@@ -143,44 +171,53 @@ struct vec3
 		return *this;
 	}
 
-	vec3 operator+(const vec3& v) const {
+	vec3 operator+(const vec3& v) const
+	{
 		return vec3(x + v.x, y + v.y, z + v.z);
 	}
 
-	vec3 operator-(const vec3& v) const {
+	vec3 operator-(const vec3& v) const
+	{
 		return vec3(x - v.x, y - v.y, z - v.z);
 	}
 
-	vec3 operator*(const vec3& v) const {
+	vec3 operator*(const vec3& v) const
+	{
 		return vec3(x * v.x, y * v.y, z * v.z);
 	}
 
-	vec3 operator/(const vec3& v) const {
+	vec3 operator/(const vec3& v) const
+	{
 		return vec3(x / v.x, y / v.y, z / v.z);
 	}
 
-	vec3 operator+(float f) const {
+	vec3 operator+(float f) const
+	{
 		return vec3(x + f, y + f, z + f);
 	}
 
-	vec3 operator-(float f) const {
+	vec3 operator-(float f) const
+	{
 		return vec3(x - f, y - f, z - f);
 	}
 
-	vec3 operator*(float f) const {
+	vec3 operator*(float f) const
+	{
 		return vec3(x * f, y * f, z * f);
 	}
 
-	vec3 operator/(float f) const {
+	vec3 operator/(float f) const
+	{
 		return vec3(x / f, y / f, z / f);
 	}
 
-	float& operator [] (size_t i) 
+	float& operator[](size_t i)
 	{
 		return *(&x + i);
 	}
 
-	float operator [] (size_t i) const {
+	float operator[](size_t i) const
+	{
 		return *(&x + i);
 	}
 
@@ -208,11 +245,12 @@ struct vec3
 		return false;
 	}
 
-	bool operator<(const vec3& b) const {
+	bool operator<(const vec3& b) const
+	{
 		return std::tie(x, y, z) < std::tie(b.x, b.y, b.z);
 	}
 
-	vec3 normalize(float length = 1.0f)  const;
+	vec3 normalize(float length = 1.0f) const;
 	vec3 snap(float snapSize);
 	vec3 normalize_angles() const;
 	vec3 swap_xz();
@@ -226,28 +264,37 @@ struct vec3
 	vec3 invert();
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
 	std::string toString();
-	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
+	vec3 flip();   // flip from opengl to Half-life coordinate system and vice versa
 	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
 	vec3 unflip();
 	vec3 unflipUV();
-	float dist(vec3 to)  const;
-	float dot(const vec3& other) const {
+	float dist(vec3 to) const;
+	float dot(const vec3& other) const
+	{
 		return x * other.x + y * other.y + z * other.z;
 	}
 
-	vec3 cross(const vec3& other) const {
-		return { y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x };
+	vec3 cross(const vec3& other) const
+	{
+		return {y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x};
 	}
 };
 
 vec3 operator*(float lhs, const vec3& rhs);
 vec3 operator/(float lhs, const vec3& rhs);
 
-struct vec3Hash {
-	size_t operator()(const vec3& v) const {
+struct vec3Hash
+{
+	size_t operator()(const vec3& v) const
+	{
 		size_t seed = 0;
-		auto hash_float = [](float f) {
-			union { float f; uint32_t i; } u;
+		auto hash_float = [](float f)
+		{
+			union
+			{
+				float f;
+				uint32_t i;
+			} u;
 			u.f = (f == -0.0f) ? 0.0f : f;
 			return std::hash<uint32_t>{}(u.i);
 		};
@@ -258,14 +305,18 @@ struct vec3Hash {
 	}
 };
 
-struct vec3ExactEqual {
-	bool operator()(const vec3& a, const vec3& b) const {
+struct vec3ExactEqual
+{
+	bool operator()(const vec3& a, const vec3& b) const
+	{
 		return a.x == b.x && a.y == b.y && a.z == b.z;
 	}
 };
 
-struct vec3PairHash {
-	size_t operator()(const std::pair<vec3, vec3>& p) const {
+struct vec3PairHash
+{
+	size_t operator()(const std::pair<vec3, vec3>& p) const
+	{
 		size_t seed = 0;
 		vec3Hash hasher;
 		seed ^= hasher(p.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -274,13 +325,14 @@ struct vec3PairHash {
 	}
 };
 
-struct vec3PairExactEqual {
-	bool operator()(const std::pair<vec3, vec3>& a, const std::pair<vec3, vec3>& b) const {
+struct vec3PairExactEqual
+{
+	bool operator()(const std::pair<vec3, vec3>& a, const std::pair<vec3, vec3>& b) const
+	{
 		vec3ExactEqual eq;
 		return eq(a.first, b.first) && eq(a.second, b.second);
 	}
 };
-
 
 vec3 crossProduct(const vec3& v1, const vec3& v2);
 float dotProduct(const vec3& v1, const vec3& v2);
@@ -291,9 +343,11 @@ bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices);
 struct vec2
 {
 	float x, y;
-	vec2() : x(0), y(0) {};
+	vec2()
+		: x(0), y(0){};
 
-	vec2(float x, float y) : x(x), y(y)
+	vec2(float x, float y)
+		: x(x), y(y)
 	{
 		if (std::fabs(x) < EPSILON)
 			x = +0.0f;
@@ -328,28 +382,19 @@ vec2 operator/(vec2 v, float f);
 bool operator==(const vec2& v1, const vec2& v2);
 bool operator!=(const vec2& v1, const vec2& v2);
 
-
 float dotProduct(vec2 v1, vec2 v2);
 float crossProduct(vec2 v1, vec2 v2);
-
 
 struct vec4
 {
 	float x, y, z, w;
 
-	vec4() : x(0), y(0), z(0), w(0)
+	vec4()
+		: x(0), y(0), z(0), w(0)
 	{
 	}
-	vec4(float x, float y, float z) : x(x), y(y), z(z), w(1)
-	{
-		if (std::fabs(x) < EPSILON)
-			x = +0.0f;
-		if (std::fabs(y) < EPSILON)
-			y = +0.0f;
-		if (std::fabs(z) < EPSILON)
-			z = +0.0f;
-	}
-	vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w)
+	vec4(float x, float y, float z)
+		: x(x), y(y), z(z), w(1)
 	{
 		if (std::fabs(x) < EPSILON)
 			x = +0.0f;
@@ -357,10 +402,9 @@ struct vec4
 			y = +0.0f;
 		if (std::fabs(z) < EPSILON)
 			z = +0.0f;
-		if (std::fabs(w) < EPSILON)
-			w = +0.0f;
 	}
-	vec4(const vec3& v, float a) : x(v.x), y(v.y), z(v.z), w(a)
+	vec4(float x, float y, float z, float w)
+		: x(x), y(y), z(z), w(w)
 	{
 		if (std::fabs(x) < EPSILON)
 			x = +0.0f;
@@ -371,7 +415,20 @@ struct vec4
 		if (std::fabs(w) < EPSILON)
 			w = +0.0f;
 	}
-	vec4(const COLOR4& c) : x(c.r / 255.0f), y(c.g / 255.0f), z(c.b / 255.0f), w(c.a / 255.0f)
+	vec4(const vec3& v, float a)
+		: x(v.x), y(v.y), z(v.z), w(a)
+	{
+		if (std::fabs(x) < EPSILON)
+			x = +0.0f;
+		if (std::fabs(y) < EPSILON)
+			y = +0.0f;
+		if (std::fabs(z) < EPSILON)
+			z = +0.0f;
+		if (std::fabs(w) < EPSILON)
+			w = +0.0f;
+	}
+	vec4(const COLOR4& c)
+		: x(c.r / 255.0f), y(c.g / 255.0f), z(c.b / 255.0f), w(c.a / 255.0f)
 	{
 		if (std::fabs(x) < EPSILON)
 			x = +0.0f;
@@ -385,38 +442,35 @@ struct vec4
 	vec3 xyz();
 	vec2 xy();
 
+	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = " ", const std::string& suffix_w = "");
 
-	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = " "
-		, const std::string& suffix_w = "");
-
-	float operator [] (size_t i) const
+	float operator[](size_t i) const
 	{
 		switch (i)
 		{
-		case 0:
-			return x;
-		case 1:
-			return y;
-		case 2:
-			return z;
+			case 0:
+				return x;
+			case 1:
+				return y;
+			case 2:
+				return z;
 		}
 		return w;
 	}
 
-	float& operator [] (size_t i)
+	float& operator[](size_t i)
 	{
 		switch (i)
 		{
-		case 0:
-			return x;
-		case 1:
-			return y;
-		case 2:
-			return z;
+			case 0:
+				return x;
+			case 1:
+				return y;
+			case 2:
+				return z;
 		}
 		return w;
 	}
-
 };
 
 vec4 operator-(vec4 v1, const vec4& v2);
@@ -432,17 +486,16 @@ vec4 operator/(vec4 v, float f);
 bool operator==(const vec4& v1, const vec4& v2);
 bool operator!=(const vec4& v1, const vec4& v2);
 
+#define SIDE_FRONT 0
+#define SIDE_ON 2
+#define SIDE_BACK 1
+#define SIDE_CROSS -2
 
-#define	SIDE_FRONT		0
-#define	SIDE_ON			2
-#define	SIDE_BACK		1
-#define	SIDE_CROSS		-2
-
-#define	Q_PI	(float)(3.14159265358979323846)
+#define Q_PI (float)(3.14159265358979323846)
 
 // Use this definition globally
-#define	mON_EPSILON		0.01
-#define	mEQUAL_EPSILON	0.001
+#define mON_EPSILON 0.01
+#define mEQUAL_EPSILON 0.001
 
 float Q_rint(float in);
 float _DotProduct(const vec3& v1, const vec3& v2);
@@ -461,14 +514,14 @@ void VectorInverse(vec3& v);
 void ClearBounds(vec3& mins, vec3& maxs);
 void AddPointToBounds(const vec3& v, vec3& mins, vec3& maxs);
 
-void AngleMatrix(const vec3& angles, float(*matrix)[4]);
+void AngleMatrix(const vec3& angles, float (*matrix)[4]);
 void AngleIMatrix(const vec3& angles, float matrix[3][4]);
 void VectorIRotate(const vec3& in1, const float in2[3][4], vec3& out);
 void VectorRotate(const vec3& in1, const float in2[3][4], vec3& out);
 
 void VectorTransform(const vec3& in1, const float in2[3][4], vec3& out);
 
-void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4]);
+void QuaternionMatrix(const vec4& quaternion, float (*matrix)[4]);
 
 bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon = EPSILON);
 

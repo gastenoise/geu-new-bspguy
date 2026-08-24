@@ -44,7 +44,6 @@ void Gui::drawLog()
 		}
 		if (ImGui::MenuItem(get_localized_string(LANG_0708).c_str(), NULL, &AutoScroll))
 		{
-
 		}
 		ImGui::EndPopup();
 	}

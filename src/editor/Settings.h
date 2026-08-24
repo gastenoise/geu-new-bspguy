@@ -38,13 +38,14 @@ enum RenderFlags : unsigned int
 	RENDER_LIGHTMAPS_NOFILTER = 1 << 17
 };
 
-struct PathToggleStruct 
+struct PathToggleStruct
 {
 	std::string path;
 	bool enabled;
 
 	PathToggleStruct(std::string filePath, bool isEnable)
-		: enabled(isEnable), path(std::move(filePath)) {
+		: enabled(isEnable), path(std::move(filePath))
+	{
 	}
 };
 

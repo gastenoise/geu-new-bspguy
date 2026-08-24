@@ -159,7 +159,8 @@ Texture* CSMFile::loadTextureForMaterial(const std::string& materialName)
 		{
 			print_log(PRINT_BLUE, "Found texture at: {}\n", texturePath);
 			Texture* tex = loadBMPTexture(texturePath);
-			if (tex) return tex;
+			if (tex)
+				return tex;
 		}
 
 		if (dirExists(searchPath))
@@ -176,12 +177,15 @@ Texture* CSMFile::loadTextureForMaterial(const std::string& materialName)
 						{
 							print_log(PRINT_BLUE, "Found texture in subdirectory: {}\n", testPath);
 							Texture* tex = loadBMPTexture(testPath);
-							if (tex) return tex;
+							if (tex)
+								return tex;
 						}
 					}
 				}
 			}
-			catch (...) { /* ignore filesystem errors */ }
+			catch (...)
+			{ /* ignore filesystem errors */
+			}
 		}
 	}
 
@@ -190,7 +194,8 @@ Texture* CSMFile::loadTextureForMaterial(const std::string& materialName)
 	{
 		print_log(PRINT_BLUE, "Found texture via FindPathInAssets: {}\n", foundPath);
 		Texture* tex = loadBMPTexture(foundPath);
-		if (tex) return tex;
+		if (tex)
+			return tex;
 	}
 
 	print_log(PRINT_GREEN, "Texture not found for material: {}\n", materialName);
@@ -236,7 +241,7 @@ bool CSMFile::validate()
 		if (f.material >= materials.size())
 		{
 			print_log(PRINT_RED, "Error: Invalid material {} in face! Materials count: {}\n",
-				f.material, materials.size());
+					  f.material, materials.size());
 			return false;
 		}
 
@@ -245,7 +250,7 @@ bool CSMFile::validate()
 			if (f.index[i] >= vertices.size())
 			{
 				print_log(PRINT_RED, "Error: Invalid index[{}] in face = {}! Vertices: {}\n",
-					i, f.index[i], vertices.size());
+						  i, f.index[i], vertices.size());
 				return false;
 			}
 		}
@@ -336,10 +341,10 @@ bool CSMFile::read_v2(std::ifstream& file)
 	unsigned int version = 0;
 	unsigned int flags = 0;
 	unsigned int lmGroups = 0;
-	unsigned int reserved0[4] = { 0 };
+	unsigned int reserved0[4] = {0};
 	vec3 model_mins;
 	vec3 model_maxs;
-	unsigned int reserved1[4] = { 0 };
+	unsigned int reserved1[4] = {0};
 
 	unsigned int mat_ofs = 0;
 	unsigned int mat_size = 0;
@@ -351,25 +356,41 @@ bool CSMFile::read_v2(std::ifstream& file)
 	unsigned int vertex_count = 0;
 
 	// Read fields in the same order as original v2 header layout.
-	if (!file.read(reinterpret_cast<char*>(&ident), sizeof(ident))) return false;
-	if (!file.read(reinterpret_cast<char*>(&version), sizeof(version))) return false;
-	if (!file.read(reinterpret_cast<char*>(&flags), sizeof(flags))) return false;
-	if (!file.read(reinterpret_cast<char*>(&lmGroups), sizeof(lmGroups))) return false;
-	if (!file.read(reinterpret_cast<char*>(reserved0), sizeof(reserved0))) return false;
-	if (!file.read(reinterpret_cast<char*>(&model_mins), sizeof(model_mins))) return false;
-	if (!file.read(reinterpret_cast<char*>(&model_maxs), sizeof(model_maxs))) return false;
-	if (!file.read(reinterpret_cast<char*>(reserved1), sizeof(reserved1))) return false;
+	if (!file.read(reinterpret_cast<char*>(&ident), sizeof(ident)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&version), sizeof(version)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&flags), sizeof(flags)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&lmGroups), sizeof(lmGroups)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(reserved0), sizeof(reserved0)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&model_mins), sizeof(model_mins)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&model_maxs), sizeof(model_maxs)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(reserved1), sizeof(reserved1)))
+		return false;
 
-	if (!file.read(reinterpret_cast<char*>(&mat_ofs), sizeof(mat_ofs))) return false;
-	if (!file.read(reinterpret_cast<char*>(&mat_size), sizeof(mat_size))) return false;
+	if (!file.read(reinterpret_cast<char*>(&mat_ofs), sizeof(mat_ofs)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&mat_size), sizeof(mat_size)))
+		return false;
 
-	if (!file.read(reinterpret_cast<char*>(&faces_ofs), sizeof(faces_ofs))) return false;
-	if (!file.read(reinterpret_cast<char*>(&face_size), sizeof(face_size))) return false;
-	if (!file.read(reinterpret_cast<char*>(&faces_count), sizeof(faces_count))) return false;
+	if (!file.read(reinterpret_cast<char*>(&faces_ofs), sizeof(faces_ofs)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&face_size), sizeof(face_size)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&faces_count), sizeof(faces_count)))
+		return false;
 
-	if (!file.read(reinterpret_cast<char*>(&vertex_ofs), sizeof(vertex_ofs))) return false;
-	if (!file.read(reinterpret_cast<char*>(&vertex_size), sizeof(vertex_size))) return false;
-	if (!file.read(reinterpret_cast<char*>(&vertex_count), sizeof(vertex_count))) return false;
+	if (!file.read(reinterpret_cast<char*>(&vertex_ofs), sizeof(vertex_ofs)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&vertex_size), sizeof(vertex_size)))
+		return false;
+	if (!file.read(reinterpret_cast<char*>(&vertex_count), sizeof(vertex_count)))
+		return false;
 
 	// Map into v3 header
 	header.ident = ident;
@@ -431,16 +452,24 @@ bool CSMFile::read_v2(std::ifstream& file)
 			// Read v2 face primitives directly
 			unsigned short matIdx = 0;
 			unsigned short edgeFlags = 0;
-			unsigned int vertIdx[3] = { 0,0,0 };
+			unsigned int vertIdx[3] = {0, 0, 0};
 			int lmGroup = -1;
 			// v2 had uvs[2] each containing vec2 uv[3]
-			struct { vec2 uv[3]; } uvs[2];
+			struct
+			{
+				vec2 uv[3];
+			} uvs[2];
 
-			if (!file.read(reinterpret_cast<char*>(&matIdx), sizeof(matIdx))) return false;
-			if (!file.read(reinterpret_cast<char*>(&edgeFlags), sizeof(edgeFlags))) return false;
-			if (!file.read(reinterpret_cast<char*>(vertIdx), sizeof(vertIdx))) return false;
-			if (!file.read(reinterpret_cast<char*>(&lmGroup), sizeof(lmGroup))) return false;
-			if (!file.read(reinterpret_cast<char*>(&uvs), sizeof(uvs))) return false;
+			if (!file.read(reinterpret_cast<char*>(&matIdx), sizeof(matIdx)))
+				return false;
+			if (!file.read(reinterpret_cast<char*>(&edgeFlags), sizeof(edgeFlags)))
+				return false;
+			if (!file.read(reinterpret_cast<char*>(vertIdx), sizeof(vertIdx)))
+				return false;
+			if (!file.read(reinterpret_cast<char*>(&lmGroup), sizeof(lmGroup)))
+				return false;
+			if (!file.read(reinterpret_cast<char*>(&uvs), sizeof(uvs)))
+				return false;
 
 			// Map into v3 face
 			csm_face face;
@@ -581,7 +610,7 @@ bool CSMFile::write(const std::string& filePath)
 	file.close();
 
 	print_log(PRINT_GREEN, "Saved CSM v3: {} materials, {} vertices, {} faces\n",
-		materials.size(), vertices.size(), faces.size());
+			  materials.size(), vertices.size(), faces.size());
 
 	return true;
 }
@@ -646,7 +675,7 @@ void CSMFile::upload()
 		}
 
 		print_log(PRINT_BLUE, "Uploaded {} material meshes with {} total vertices\n",
-			model.size(), vertices.size());
+				  model.size(), vertices.size());
 	}
 }
 
@@ -687,9 +716,9 @@ void CSMFile::uploadSides()
 				int idx = (j == 0) ? 0 : ((j == 1) ? i : i + 1);
 				vert.pos = poly[idx];
 				vert.u = s.vecs[0].x * vert.pos.x + s.vecs[0].y * vert.pos.y +
-					s.vecs[0].z * vert.pos.z + s.vecs[0].w;
+						 s.vecs[0].z * vert.pos.z + s.vecs[0].w;
 				vert.v = s.vecs[1].x * vert.pos.x + s.vecs[1].y * vert.pos.y +
-					s.vecs[1].z * vert.pos.z + s.vecs[1].w;
+						 s.vecs[1].z * vert.pos.z + s.vecs[1].w;
 				sideMesh->verts.push_back(vert);
 			}
 		}
@@ -709,10 +738,13 @@ void CSMFile::uploadSides()
 
 void CSMFile::draw()
 {
-	if (!readed) return;
+	if (!readed)
+		return;
 
-	if (model.empty()) upload();
-	if (showSides && sideModel.empty()) uploadSides();
+	if (model.empty())
+		upload();
+	if (showSides && sideModel.empty())
+		uploadSides();
 
 	if (!model.empty())
 	{
@@ -720,8 +752,10 @@ void CSMFile::draw()
 		{
 			if (m && m->buffer)
 			{
-				if (m->texture) m->texture->bind(0);
-				else missingTex->bind(0);
+				if (m->texture)
+					m->texture->bind(0);
+				else
+					missingTex->bind(0);
 				m->buffer->drawFull();
 			}
 		}
@@ -735,20 +769,24 @@ void CSMFile::draw()
 			GLint polygonMode[2];
 			glGetIntegerv(GL_POLYGON_MODE, polygonMode);
 			wasWireframe = (polygonMode[0] == GL_LINE);
-			if (!wasWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			if (!wasWireframe)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 
 		for (auto& s : sideModel)
 		{
 			if (s && s->buffer)
 			{
-				if (s->texture) s->texture->bind(0);
-				else missingTex->bind(0);
+				if (s->texture)
+					s->texture->bind(0);
+				else
+					missingTex->bind(0);
 				s->buffer->drawFull();
 			}
 		}
 
-		if (showSides && !wasWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		if (showSides && !wasWireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 }
 
@@ -768,8 +806,8 @@ void CSMFile::printInfo()
 	print_log("  Sides: {}\n", sides.size());
 	print_log("  Points: {}\n", points.size());
 	print_log("  Bounds: ({:.2f},{:.2f},{:.2f}) to ({:.2f},{:.2f},{:.2f})\n",
-		header.model_mins.x, header.model_mins.y, header.model_mins.z,
-		header.model_maxs.x, header.model_maxs.y, header.model_maxs.z);
+			  header.model_mins.x, header.model_mins.y, header.model_mins.z,
+			  header.model_maxs.x, header.model_maxs.y, header.model_maxs.z);
 
 	if (!materials.empty())
 	{

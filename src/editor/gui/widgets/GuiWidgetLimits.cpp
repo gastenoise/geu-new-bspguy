@@ -78,9 +78,12 @@ void Gui::drawLimits()
 					ImGui::SetColumnWidth(1, midWidth);
 					ImGui::SetColumnWidth(2, otherWidth);
 
-					ImGui::Text(get_localized_string(LANG_0838).c_str()); ImGui::NextColumn();
-					ImGui::Text(get_localized_string(LANG_0839).c_str()); ImGui::NextColumn();
-					ImGui::Text(get_localized_string(LANG_0840).c_str()); ImGui::NextColumn();
+					ImGui::Text(get_localized_string(LANG_0838).c_str());
+					ImGui::NextColumn();
+					ImGui::Text(get_localized_string(LANG_0839).c_str());
+					ImGui::NextColumn();
+					ImGui::Text(get_localized_string(LANG_0840).c_str());
+					ImGui::NextColumn();
 
 					ImGui::Columns(1);
 					ImGui::Separator();
@@ -92,7 +95,8 @@ void Gui::drawLimits()
 
 					for (size_t i = 0; i < stats.size(); i++)
 					{
-						ImGui::TextColored(stats[i].color, stats[i].name.c_str()); ImGui::NextColumn();
+						ImGui::TextColored(stats[i].color, stats[i].name.c_str());
+						ImGui::NextColumn();
 
 						std::string val = stats[i].val + " / " + stats[i].max;
 						ImGui::TextColored(stats[i].color, val.c_str());
@@ -160,10 +164,22 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	const char* countName = "None";
 	switch (sortMode)
 	{
-	case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
-	case SORT_NODES:		maxCount = map->nodeCount; countName = "Nodes";  break;
-	case SORT_CLIPNODES:	maxCount = map->clipnodeCount; countName = "Clipnodes";  break;
-	case SORT_FACES:		maxCount = map->faceCount; countName = "Faces";  break;
+		case SORT_VERTS:
+			maxCount = map->vertCount;
+			countName = "Vertexes";
+			break;
+		case SORT_NODES:
+			maxCount = map->nodeCount;
+			countName = "Nodes";
+			break;
+		case SORT_CLIPNODES:
+			maxCount = map->clipnodeCount;
+			countName = "Clipnodes";
+			break;
+		case SORT_FACES:
+			maxCount = map->faceCount;
+			countName = "Faces";
+			break;
 	}
 
 	if (!loadedLimit[sortMode])
@@ -177,10 +193,18 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 
 			switch (sortMode)
 			{
-			case SORT_VERTS:		val = modelInfos[i]->sum.verts; break;
-			case SORT_NODES:		val = modelInfos[i]->sum.nodes; break;
-			case SORT_CLIPNODES:	val = modelInfos[i]->sum.clipnodes; break;
-			case SORT_FACES:		val = modelInfos[i]->sum.faces; break;
+				case SORT_VERTS:
+					val = modelInfos[i]->sum.verts;
+					break;
+				case SORT_NODES:
+					val = modelInfos[i]->sum.nodes;
+					break;
+				case SORT_CLIPNODES:
+					val = modelInfos[i]->sum.clipnodes;
+					break;
+				case SORT_FACES:
+					val = modelInfos[i]->sum.faces;
+					break;
 			}
 
 			ModelInfo stat = calcModelStat(map, modelInfos[i], val, maxCount, false);
@@ -205,10 +229,14 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	ImGui::SetColumnWidth(2, valWidth);
 	ImGui::SetColumnWidth(3, usageWidth);
 
-	ImGui::Text(get_localized_string(LANG_0845).c_str()); ImGui::NextColumn();
-	ImGui::Text(get_localized_string(LANG_0846).c_str()); ImGui::NextColumn();
-	ImGui::Text(countName); ImGui::NextColumn();
-	ImGui::Text(get_localized_string(LANG_0847).c_str()); ImGui::NextColumn();
+	ImGui::Text(get_localized_string(LANG_0845).c_str());
+	ImGui::NextColumn();
+	ImGui::Text(get_localized_string(LANG_0846).c_str());
+	ImGui::NextColumn();
+	ImGui::Text(countName);
+	ImGui::NextColumn();
+	ImGui::Text(get_localized_string(LANG_0847).c_str());
+	ImGui::NextColumn();
 
 	ImGui::Columns(1);
 	ImGui::Separator();
@@ -244,22 +272,18 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 		}
 		ImGui::NextColumn();
 
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth()
-			- ImGui::CalcTextSize(modelInfos[i].model.c_str()).x
-			- ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
-		ImGui::Text(modelInfos[i].model.c_str()); ImGui::NextColumn();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize(modelInfos[i].model.c_str()).x - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+		ImGui::Text(modelInfos[i].model.c_str());
+		ImGui::NextColumn();
 
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth()
-			- ImGui::CalcTextSize(modelInfos[i].val.c_str()).x
-			- ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
-		ImGui::Text(modelInfos[i].val.c_str()); ImGui::NextColumn();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize(modelInfos[i].val.c_str()).x - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+		ImGui::Text(modelInfos[i].val.c_str());
+		ImGui::NextColumn();
 
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth()
-			- ImGui::CalcTextSize(modelInfos[i].usage.c_str()).x
-			- ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
-		ImGui::Text(modelInfos[i].usage.c_str()); ImGui::NextColumn();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth() - ImGui::CalcTextSize(modelInfos[i].usage.c_str()).x - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+		ImGui::Text(modelInfos[i].usage.c_str());
+		ImGui::NextColumn();
 	}
-
 
 	ImGui::Columns(1);
 	ImGui::EndChild();

@@ -12,17 +12,18 @@ Wad::Wad(void)
 	fileLoadedInMemory = false;
 }
 
-Wad::Wad(std::string file, CacheMode mode) : filename(std::move(file)), cacheMode(mode)
+Wad::Wad(std::string file, CacheMode mode)
+	: filename(std::move(file)), cacheMode(mode)
 {
 	this->wadname = basename(filename);
 	dirEntries.clear();
 	textureCache.clear();
 	fileLoadedInMemory = false;
 
-	if (cacheMode == CACHE_ALL) 
+	if (cacheMode == CACHE_ALL)
 	{
 		if (!loadFullFile())
-		{	
+		{
 			fileData.clear();
 			fileLoadedInMemory = false;
 		}
@@ -77,7 +78,8 @@ bool Wad::readInfo()
 		W_CleanupName(tmpWadEntry.szName, tmpWadEntry.szName);
 		dirEntries.push_back(tmpWadEntry);
 
-		if (dirEntries[i].nType == 0x43) usableTextures = true;
+		if (dirEntries[i].nType == 0x43)
+			usableTextures = true;
 	}
 
 	wadFile.close();
@@ -497,7 +499,7 @@ WADTEX::WADTEX(BSPMIPTEX* tex, unsigned char* palette, unsigned short colors)
 	nWidth = tex->nWidth;
 	nHeight = tex->nHeight;
 	for (int i = 0; i < MIPLEVELS; i++)
-		nOffsets[i] = tex->nOffsets[i]/* - sizeof(BSPMIPTEX)*/;
+		nOffsets[i] = tex->nOffsets[i] /* - sizeof(BSPMIPTEX)*/;
 
 	if (nOffsets[0] <= 0)
 	{
@@ -510,7 +512,8 @@ WADTEX::WADTEX(BSPMIPTEX* tex, unsigned char* palette, unsigned short colors)
 	if (palette)
 	{
 		data = std::vector<unsigned char>(texdata, texdata + sz);
-		data.push_back(0); data.push_back(0);
+		data.push_back(0);
+		data.push_back(0);
 		*(unsigned short*)(data.data() + sz) = colors;
 		data.insert(data.end(), palette, palette + sizeof(COLOR3) * colors);
 	}

@@ -17,7 +17,7 @@ struct ActionItem
 
 class ActionRegistry
 {
-public:
+  public:
 	static ActionRegistry& getInstance();
 
 	void registerAction(const ActionItem& action);
@@ -27,7 +27,7 @@ public:
 
 	void clear() { actions.clear(); }
 
-private:
+  private:
 	ActionRegistry() = default;
 	std::vector<ActionItem> actions;
 };

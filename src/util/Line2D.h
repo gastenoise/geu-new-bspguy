@@ -1,7 +1,8 @@
 #pragma once
 #include "vectors.h"
 
-struct Line2D {
+struct Line2D
+{
 	vec2 start;
 	vec2 end;
 	vec2 dir;

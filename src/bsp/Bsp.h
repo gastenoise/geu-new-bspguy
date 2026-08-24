@@ -1,6 +1,6 @@
 #pragma once
 #include <chrono>
-#include <ctime> 
+#include <ctime>
 #include <set>
 #include <string.h>
 #include <set>
@@ -40,7 +40,7 @@ extern vec3 default_hull_extents[MAX_MAP_HULLS];
 
 class Bsp
 {
-public:
+  public:
 	BSPHEADER bsp_header;
 	BSPHEADER_EX bsp_header_ex;
 
@@ -118,7 +118,6 @@ public:
 	Bsp* parentMap;
 	void selectModelEnt();
 
-
 	Bsp();
 	Bsp(std::string fname);
 	~Bsp();
@@ -140,7 +139,7 @@ public:
 	void recurse_node_print(int node, int depth);
 
 	void get_last_node(int nodeIdx, int& node, int& count, int last_node = -1);
-	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1);	// get leaf index from world position
+	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1); // get leaf index from world position
 	int get_leaf(vec3 pos, int hull);
 
 	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
@@ -201,7 +200,6 @@ public:
 	void get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output, int contents);
 	void get_node_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output, int contents);
 
-
 	void get_leaf_nodes(int leaf, std::vector<int>& out_nodes);
 
 	// this a cheat to recalculate plane normals after scaling a solid. Really I should get the plane
@@ -228,8 +226,8 @@ public:
 
 	// delete structures not used by the map (needed after deleting models/hulls)
 	STRUCTCOUNT remove_unused_model_structures(unsigned int target = CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES |
-		CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MODELS);
+																	 CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
+																	 CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MODELS);
 	void delete_model(int modelIdx);
 	int merge_all_texinfos();
 	int merge_all_verts(float epsilon = 1.0f);
@@ -238,15 +236,14 @@ public:
 	// conditionally deletes hulls for entities that aren't using them
 	STRUCTCOUNT delete_unused_hulls(bool noProgress = false);
 
-
 	// deletes data outside the map bounds
 	void delete_oob_data(int clipFlags);
 
 	void delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
+							  int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
 
 	void delete_oob_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
+						  int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
 
 	// deletes data inside a bounding box
 	void delete_box_data(vec3 clipMins, vec3 clipMaxs);
@@ -254,13 +251,13 @@ public:
 	void delete_box_collision(vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 
 	int delete_box_clipnodes_fast(int iNode, std::vector<BSPPLANE>& clipOrder,
-		vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
+								  vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 	int delete_box_nodes_fast(int iNode, vec3 clipMins, vec3 clipMaxs, int redirect = CONTENTS_SOLID);
 
 	void delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
+							  vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
 	void delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
-		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
+						  vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes, int redirect = CONTENTS_SOLID);
 
 	// assumes contiguous leaves starting at 0. Only works for worldspawn, which is the only model which
 	// should have leaves anyway.
@@ -339,7 +336,7 @@ public:
 	// copies a model from the sourceMap into this one
 	void add_model(Bsp* sourceMap, int modelIdx);
 
-	// create a new texture from raw RGB data, and embeds into the bsp. 
+	// create a new texture from raw RGB data, and embeds into the bsp.
 	// Returns -1 on failure, else the new texture index
 	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
 	int add_texture(const WADTEX& tex, bool embedded = false);
@@ -374,9 +371,9 @@ public:
 	int create_surfedge();
 
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUCTUSAGE& usage, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
-		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
-		std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
+						std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
+						std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
+						std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
@@ -522,7 +519,6 @@ public:
 	vec3 getEntOffset(Entity* ent);
 
 	void write_csg_polys(int nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
-
 
 	// remaps structure indexes to new locations
 	void remap_face_structures(int faceIdx, STRUCTREMAP* remap);

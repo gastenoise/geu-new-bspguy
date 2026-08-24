@@ -19,7 +19,8 @@
 #include <execution>
 #include <algorithm>
 
-BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
+BspRenderer::BspRenderer(Bsp* _map)
+	: undoLumpState(LumpState(_map))
 {
 	map = _map;
 	map->setBspRender(this);
@@ -30,28 +31,27 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 	glTextures.clear();
 
 	leafCube = new EntCube();
-	nodeCube = new EntCube();/*
-	nodePlaneCube = new EntCube();*/
+	nodeCube = new EntCube(); /*
+	 nodePlaneCube = new EntCube();*/
 	old_rend_offs = vec3();
 
-	leafCube->sel_color = { 0, 255, 255, 150 };
-	leafCube->mins = { -32.0f,-32.0f,-32.0f };
-	leafCube->maxs = { 32.0f ,32.0f ,32.0f };
+	leafCube->sel_color = {0, 255, 255, 150};
+	leafCube->mins = {-32.0f, -32.0f, -32.0f};
+	leafCube->maxs = {32.0f, 32.0f, 32.0f};
 
 	g_app->pointEntRenderer->genCubeBuffers(leafCube);
 
-	nodeCube->sel_color = { 255, 0, 255, 150 };
-	nodeCube->mins = { -32.0f,-32.0f,-32.0f };
-	nodeCube->maxs = { 32.0f ,32.0f ,32.0f };
+	nodeCube->sel_color = {255, 0, 255, 150};
+	nodeCube->mins = {-32.0f, -32.0f, -32.0f};
+	nodeCube->maxs = {32.0f, 32.0f, 32.0f};
 
 	g_app->pointEntRenderer->genCubeBuffers(nodeCube);
 
-	//nodePlaneCube->sel_color = { 255, 255, 0, 150 };
-	//nodePlaneCube->mins = { -32.0f,-32.0f,-32.0f };
-	//nodePlaneCube->maxs = { 32.0f ,32.0f ,32.0f };
+	// nodePlaneCube->sel_color = { 255, 255, 0, 150 };
+	// nodePlaneCube->mins = { -32.0f,-32.0f,-32.0f };
+	// nodePlaneCube->maxs = { 32.0f ,32.0f ,32.0f };
 
-	//g_app->pointEntRenderer->genCubeBuffers(nodePlaneCube);
-
+	// g_app->pointEntRenderer->genCubeBuffers(nodePlaneCube);
 
 	lightEnableFlags[0] = lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = true;
 
@@ -186,7 +186,6 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 		}
 	}
 
-
 	if (g_settings.save_cam)
 	{
 		if (!map->save_cam_pos.IsZero())
@@ -229,7 +228,7 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 	clearDrawCache();
 
 	reuploadTextures();
-	//loadLightmaps();
+	// loadLightmaps();
 	preRenderEnts();
 	preRenderFaces();
 	calcFaceMaths();
@@ -301,7 +300,6 @@ void BspRenderer::loadTextures()
 			wadDirName.pop_back();
 			wadDirName.pop_back();
 
-
 			if (FindPathInAssets(map, "textures/world/" + wadDirName + "/" + wadNames[i], path))
 			{
 				print_log(get_localized_string(LANG_0269), path);
@@ -330,7 +328,6 @@ void BspRenderer::loadTextures()
 		}
 		else if (path.empty())
 		{
-
 
 			print_log(get_localized_string(LANG_0268), wadNames[i]);
 			FindPathInAssets(map, wadNames[i], path, true);
@@ -377,7 +374,7 @@ void BspRenderer::loadTextures()
 
 		std::vector<std::string> texNames;
 
-		if (/*tex->szName[0] == '-' || */tex->szName[0] == '+')
+		if (/*tex->szName[0] == '-' || */ tex->szName[0] == '+')
 		{
 			char* newname = &tex->szName[2]; // +0BTN1 +1BTN1 +ABTN1 +BBTN1
 
@@ -425,7 +422,6 @@ void BspRenderer::loadTextures()
 			texNames.push_back(tex->szName);
 		}
 
-
 		WADTEX wadTex;
 		bool foundInWad = false;
 		for (auto& tex_name : texNames)
@@ -468,7 +464,7 @@ void BspRenderer::loadTextures()
 				else
 				{
 					memcpy(palette, g_settings.palette_default,
-						256 * sizeof(COLOR3));
+						   256 * sizeof(COLOR3));
 				}
 
 				if (texNames.size() > 1)
@@ -592,7 +588,6 @@ RenderClipnodes* BspRenderer::addClipnodeModel(int modelIdx)
 		return NULL;
 	}
 
-
 	if (renderClipnodes.empty())
 	{
 		reloadClipnodes();
@@ -622,7 +617,7 @@ void BspRenderer::loadLightmaps()
 	std::vector<Texture*> atlasTextures{};
 	atlases.emplace_back(LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
 	atlasTextures.push_back(new Texture(MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE,
-		new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
+										new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
 	memset(atlasTextures[atlasTextures.size() - 1]->getData(), 255, MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
@@ -640,17 +635,17 @@ void BspRenderer::loadLightmaps()
 
 	int lightmapCount = 0;
 
-	//std::vector<int> tmpFaceCount;
-	//for (int i = 0; i < map->faceCount; i++)
+	// std::vector<int> tmpFaceCount;
+	// for (int i = 0; i < map->faceCount; i++)
 	//{
 	//	tmpFaceCount.push_back(i);
-	//}
+	// }
 
-	//std::vector<int> tmpLightmapCount;
-	//for (int i = 0; i < MAXLIGHTMAPS; i++)
+	// std::vector<int> tmpLightmapCount;
+	// for (int i = 0; i < MAXLIGHTMAPS; i++)
 	//{
 	//	tmpLightmapCount.push_back(i);
-	//}
+	// }
 
 	for (int i = 0; i < map->faceCount; i++)
 	{
@@ -658,7 +653,6 @@ void BspRenderer::loadLightmaps()
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 		if (!atlases.size())
 		{
-
 		}
 		else
 		{
@@ -734,7 +728,7 @@ void BspRenderer::loadLightmaps()
 						if (face.nLightmapOffset < 0 || texinfo.nFlags & TEX_SPECIAL || offset + src * (int)sizeof(COLOR3) >= map->lightDataLength)
 						{
 							// missing lightmap default white
-							lightDst[dst] = { 255,255,255 };
+							lightDst[dst] = {255, 255, 255};
 						}
 						else
 						{
@@ -742,15 +736,13 @@ void BspRenderer::loadLightmaps()
 						}
 					}
 				}
-
 			}
-
 		}
 	}
 
 	glLightmapTextures.assign(atlasTextures.begin(), atlasTextures.end());
 
-	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE);
+	// lodepng_encode24_file("atlas.png", atlasTextures[0]->data, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE);
 	print_log(get_localized_string(LANG_0276), lightmapCount, atlases.size());
 	lightmapsGenerated = true;
 }
@@ -831,9 +823,9 @@ void BspRenderer::genRenderFaces()
 	}
 
 	print_log("Created {} solid render groups ({} world, {} entity)\n",
-		worldRenderGroups + modelRenderGroups,
-		worldRenderGroups,
-		modelRenderGroups);
+			  worldRenderGroups + modelRenderGroups,
+			  worldRenderGroups,
+			  modelRenderGroups);
 }
 
 void BspRenderer::addNewRenderFace()
@@ -845,7 +837,6 @@ void BspRenderer::addNewRenderFace()
 		delete renderModels.back();
 		renderModels.pop_back();
 	}
-
 
 	print_log(get_localized_string(LANG_0279));
 }
@@ -892,9 +883,7 @@ void BspRenderer::deleteTextures()
 		{
 			for (auto& tex : glTextures[i])
 			{
-				if (tex != missingTex
-					&& tex != aaatriggerTex_rgba
-					&& tex != skyTex_rgba)
+				if (tex != missingTex && tex != aaatriggerTex_rgba && tex != skyTex_rgba)
 				{
 					delete tex;
 					tex = missingTex;
@@ -954,9 +943,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 		BSPMIPTEX* tex = NULL;
 
-
 		float textureStep = map->CalcFaceTextureStep(i) * 1.0f;
-
 
 		int texWidth, texHeight;
 		if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
@@ -982,12 +969,11 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			texHeight = 16;
 		}
 
-
 		LightmapInfo* lmap = lightmapsGenerated && lightmaps ? &lightmaps[faceIdx] : NULL;
 
 		lightmapVert* verts = new lightmapVert[face.nEdges];
 		int vertCount = face.nEdges;
-		Texture* lightmapAtlas[MAX_LIGHTMAPS]{ NULL };
+		Texture* lightmapAtlas[MAX_LIGHTMAPS]{NULL};
 
 		float lw = 0;
 		float lh = 0;
@@ -1033,19 +1019,10 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 
 		if (tex)
 		{
-			isTrigger = strcasecmp(tex->szName, "aaatrigger") == 0
-				|| strcasecmp(tex->szName, "clip") == 0
-				|| strcasecmp(tex->szName, "origin") == 0
-				|| strcasecmp(tex->szName, "translucent") == 0
-				|| strcasecmp(tex->szName, "skip") == 0
-				|| strcasecmp(tex->szName, "hint") == 0
-				|| strcasecmp(tex->szName, "null") == 0
-				|| strcasecmp(tex->szName, "bevel") == 0
-				|| strcasecmp(tex->szName, "noclip") == 0
-				|| strcasecmp(tex->szName, "solidhint") == 0;
+			isTrigger = strcasecmp(tex->szName, "aaatrigger") == 0 || strcasecmp(tex->szName, "clip") == 0 || strcasecmp(tex->szName, "origin") == 0 || strcasecmp(tex->szName, "translucent") == 0 || strcasecmp(tex->szName, "skip") == 0 || strcasecmp(tex->szName, "hint") == 0 || strcasecmp(tex->szName, "null") == 0 || strcasecmp(tex->szName, "bevel") == 0 || strcasecmp(tex->szName, "noclip") == 0 || strcasecmp(tex->szName, "solidhint") == 0;
 
 			isSky = strcasecmp(tex->szName, "sky") == 0 ||
-				strcasecmp(tex->szName, "skycull") == 0;
+					strcasecmp(tex->szName, "skycull") == 0;
 		}
 
 		if (ent)
@@ -1137,7 +1114,6 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 
 		int idx = 0;
 
-
 		int wireframeVertCount = face.nEdges * 2;
 		std::vector<cVert> wireframeVerts;
 		wireframeVerts.resize(wireframeVertCount);
@@ -1178,7 +1154,6 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			vertCount = newCount;
 		}
 
-
 		// add face to a render group (faces that share that same textures and opacity flag)
 		bool isTransparent = opacity < 1.0f || (tex && tex->szName[0] == '{');
 		int groupIdx = -1;
@@ -1213,7 +1188,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			newGroup.transparent = isTransparent;
 			newGroup.special = isSpecial;
 			newGroup.isTransparentByList = (tex && IsTextureTransparent(tex->szName));
-			newGroup.textures = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : std::vector<Texture*>{ greyTex };
+			newGroup.textures = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : std::vector<Texture*>{greyTex};
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
 				newGroup.lightmapAtlas[s] = lightmapAtlas[s];
@@ -1235,7 +1210,6 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 
 	renderModel->renderGroups = std::move(renderGroups);
 
-
 	for (size_t i = 0; i < renderModel->renderGroups.size(); i++)
 	{
 		if (renderGroupVerts[i].empty())
@@ -1253,7 +1227,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 
 	if (wireframeVerts_full.size())
 	{
-		using namespace std::chrono; 
+		using namespace std::chrono;
 		auto start = high_resolution_clock::now();
 		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(wireframeVerts_full);
 		auto end = high_resolution_clock::now();
@@ -1268,7 +1242,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		if (resultWireFrame)
 			memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
 
-		renderModel->wireframeBuffer = new VertexBuffer(g_app->colorShader, resultWireFrame, (int)(cleanupWireframe.size()), GL_LINES,true);
+		renderModel->wireframeBuffer = new VertexBuffer(g_app->colorShader, resultWireFrame, (int)(cleanupWireframe.size()), GL_LINES, true);
 		renderModel->wireframeBuffer->frameId = 0;
 	}
 
@@ -1344,18 +1318,17 @@ void BspRenderer::loadClipnodes()
 
 	// Using 4x threads instead of very big count
 	std::for_each(std::execution::par_unseq, tmpRenderHulls.begin(), tmpRenderHulls.end(),
-		[&](int hull)
-		{
-			for (int i = 0; i < (int)renderClipnodes.size(); i++)
-			{
-				generateClipnodeBufferForHull(i, hull);
-			}
-		}
-	);
+				  [&](int hull)
+				  {
+					  for (int i = 0; i < (int)renderClipnodes.size(); i++)
+					  {
+						  generateClipnodeBufferForHull(i, hull);
+					  }
+				  });
 }
 
-
-void BspRenderer::generateNavMeshBuffer() {
+void BspRenderer::generateNavMeshBuffer()
+{
 	int hull = 3;
 	RenderClipnodes* renderClip = &renderClipnodes[0];
 	renderClip->clipnodeBuffer[hull] = NULL;
@@ -1381,7 +1354,8 @@ void BspRenderer::generateNavMeshBuffer() {
 	std::vector<cVert> wireframeVerts;
 	std::vector<FaceMath> navFaceMaths;
 
-	for (size_t m = 0; m < navPolys.size(); m++) {
+	for (size_t m = 0; m < navPolys.size(); m++)
+	{
 		Polygon3D& poly = navPolys[m];
 
 		vec3 normal = poly.plane_z;
@@ -1400,54 +1374,67 @@ void BspRenderer::generateNavMeshBuffer() {
 		{
 			std::vector<vec3> renderVerts;
 			renderVerts.resize(poly.verts.size());
-			for (size_t i = 0; i < poly.verts.size(); i++) {
+			for (size_t i = 0; i < poly.verts.size(); i++)
+			{
 				renderVerts[i] = poly.verts[i].flip();
 			}
 
-			COLOR4 wireframeColor = { 0, 0, 0, 255 };
-			for (size_t k = 0; k < renderVerts.size(); k++) {
+			COLOR4 wireframeColor = {0, 0, 0, 255};
+			for (size_t k = 0; k < renderVerts.size(); k++)
+			{
 				wireframeVerts.emplace_back(cVert(renderVerts[k], wireframeColor));
 				wireframeVerts.emplace_back(cVert(renderVerts[(k + 1) % renderVerts.size()], wireframeColor));
 			}
 
 			vec3 lightDir = vec3(1, 1, -1).normalize();
 			float dot = (dotProduct(normal, lightDir) + 1) / 2.0f;
-			if (dot > 0.5f) {
+			if (dot > 0.5f)
+			{
 				dot = dot * dot;
 			}
 			color = hullColors[hull];
-			if (normal.z < -0.8 || true) {
+			if (normal.z < -0.8 || true)
+			{
 				static int r = 0;
 				r = (r + 1) % 8;
-				if (r == 0) {
+				if (r == 0)
+				{
 					color = COLOR4(255, 32, 32, 255);
 				}
-				else if (r == 1) {
+				else if (r == 1)
+				{
 					color = COLOR4(255, 255, 32, 255);
 				}
-				else if (r == 2) {
+				else if (r == 2)
+				{
 					color = COLOR4(255, 32, 255, 255);
 				}
-				else if (r == 3) {
+				else if (r == 3)
+				{
 					color = COLOR4(255, 128, 255, 255);
 				}
-				else if (r == 4) {
+				else if (r == 4)
+				{
 					color = COLOR4(32, 32, 255, 255);
 				}
-				else if (r == 5) {
+				else if (r == 5)
+				{
 					color = COLOR4(32, 255, 255, 255);
 				}
-				else if (r == 6) {
+				else if (r == 6)
+				{
 					color = COLOR4(32, 128, 255, 255);
 				}
-				else if (r == 7) {
+				else if (r == 7)
+				{
 					color = COLOR4(32, 255, 128, 255);
 				}
 			}
 			COLOR4 faceColor = color * (dot);
 
 			// convert from TRIANGLE_FAN style verts to TRIANGLES
-			for (size_t k = 2; k < renderVerts.size(); k++) {
+			for (size_t k = 2; k < renderVerts.size(); k++)
+			{
 				allVerts.emplace_back(cVert(renderVerts[0], faceColor));
 				allVerts.emplace_back(cVert(renderVerts[k - 1], faceColor));
 				allVerts.emplace_back(cVert(renderVerts[k], faceColor));
@@ -1463,8 +1450,8 @@ void BspRenderer::generateNavMeshBuffer() {
 	if (wireOutput)
 		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
-
-	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
+	if (allVerts.size() == 0 || wireframeVerts.size() == 0)
+	{
 		renderClip->clipnodeBuffer[hull] = NULL;
 		renderClip->wireframeClipnodeBuffer[hull] = NULL;
 		delete[] output;
@@ -1472,9 +1459,9 @@ void BspRenderer::generateNavMeshBuffer() {
 		return;
 	}
 
-	renderClip->clipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, output, (int)allVerts.size(), GL_TRIANGLES,true);
+	renderClip->clipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, output, (int)allVerts.size(), GL_TRIANGLES, true);
 
-	renderClip->wireframeClipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, wireOutput, (int)wireframeVerts.size(), GL_LINES,true);
+	renderClip->wireframeClipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, wireOutput, (int)wireframeVerts.size(), GL_LINES, true);
 
 	renderClip->faceMaths[hull] = std::move(navFaceMaths);
 
@@ -1483,18 +1470,21 @@ void BspRenderer::generateNavMeshBuffer() {
 	std::string navmesh_hull3_path = exportPath + map->bsp_name + "_hull" + std::to_string(hull) + ".obj";
 
 	std::ofstream file(navmesh_hull3_path, std::ios::out | std::ios::trunc);
-	for (size_t i = 0; i < allVerts.size(); i++) {
+	for (size_t i = 0; i < allVerts.size(); i++)
+	{
 		vec3 v = vec3(allVerts[i].pos.x, allVerts[i].pos.y, allVerts[i].pos.z);
 		file << "v " << std::fixed << std::setprecision(2) << v.x << " " << v.y << " " << v.z << std::endl;
 	}
-	for (size_t i = 0; i < allVerts.size(); i += 3) {
+	for (size_t i = 0; i < allVerts.size(); i += 3)
+	{
 		file << "f " << (i + 1) << " " << (i + 2) << " " << (i + 3) << std::endl;
 	}
 	print_log("Wrote {} verts to {}\n", allVerts.size(), navmesh_hull3_path);
 	file.close();
 }
 
-void BspRenderer::generateLeafNavMeshBuffer() {
+void BspRenderer::generateLeafNavMeshBuffer()
+{
 	int hull = NAV_HULL;
 	RenderClipnodes* renderClip = &renderClipnodes[0];
 	renderClip->clipnodeBuffer[hull] = NULL;
@@ -1515,38 +1505,48 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 	std::vector<cVert> wireframeVerts;
 	std::vector<FaceMath> navFaceMaths;
 
-	for (size_t lf = 0; lf < navMesh->nodes.size(); lf++) {
+	for (size_t lf = 0; lf < navMesh->nodes.size(); lf++)
+	{
 		LeafNode& mesh = navMesh->nodes[lf];
 
 		color = hullColors[hull];
 		static int r = 0;
 		r = (r + 1) % 8;
-		if (r == 0) {
+		if (r == 0)
+		{
 			color = COLOR4(255, 32, 32, 128);
 		}
-		else if (r == 1) {
+		else if (r == 1)
+		{
 			color = COLOR4(255, 255, 32, 128);
 		}
-		else if (r == 2) {
+		else if (r == 2)
+		{
 			color = COLOR4(255, 32, 255, 128);
 		}
-		else if (r == 3) {
+		else if (r == 3)
+		{
 			color = COLOR4(255, 128, 255, 128);
 		}
-		else if (r == 4) {
+		else if (r == 4)
+		{
 			color = COLOR4(32, 32, 255, 128);
 		}
-		else if (r == 5) {
+		else if (r == 5)
+		{
 			color = COLOR4(32, 255, 255, 128);
 		}
-		else if (r == 6) {
+		else if (r == 6)
+		{
 			color = COLOR4(32, 128, 255, 128);
 		}
-		else if (r == 7) {
+		else if (r == 7)
+		{
 			color = COLOR4(32, 255, 128, 128);
 		}
 
-		for (size_t m = 0; m < mesh.leafFaces.size(); m++) {
+		for (size_t m = 0; m < mesh.leafFaces.size(); m++)
+		{
 			Polygon3D& poly = mesh.leafFaces[m];
 
 			vec3 normal = poly.plane_z;
@@ -1565,25 +1565,29 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 			{
 				std::vector<vec3> renderVerts;
 				renderVerts.resize(poly.verts.size());
-				for (size_t i = 0; i < poly.verts.size(); i++) {
+				for (size_t i = 0; i < poly.verts.size(); i++)
+				{
 					renderVerts[i] = poly.verts[i].flip();
 				}
 
-				COLOR4 wireframeColor = { 0, 0, 0, 255 };
-				for (size_t k = 0; k < renderVerts.size(); k++) {
+				COLOR4 wireframeColor = {0, 0, 0, 255};
+				for (size_t k = 0; k < renderVerts.size(); k++)
+				{
 					wireframeVerts.emplace_back(cVert(renderVerts[k], wireframeColor));
 					wireframeVerts.emplace_back(cVert(renderVerts[(k + 1) % renderVerts.size()], wireframeColor));
 				}
 
 				vec3 lightDir = vec3(1, 1, -1).normalize();
 				float dot = (dotProduct(normal, lightDir) + 1) / 2.0f;
-				if (dot > 0.5f) {
+				if (dot > 0.5f)
+				{
 					dot = dot * dot;
 				}
 				COLOR4 faceColor = color * (dot);
 
 				// convert from TRIANGLE_FAN style verts to TRIANGLES
-				for (size_t k = 2; k < renderVerts.size(); k++) {
+				for (size_t k = 2; k < renderVerts.size(); k++)
+				{
 					allVerts.emplace_back(cVert(renderVerts[0], faceColor));
 					allVerts.emplace_back(cVert(renderVerts[k - 1], faceColor));
 					allVerts.emplace_back(cVert(renderVerts[k], faceColor));
@@ -1600,7 +1604,8 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 	if (wireOutput)
 		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
-	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
+	if (allVerts.size() == 0 || wireframeVerts.size() == 0)
+	{
 		renderClip->clipnodeBuffer[hull] = NULL;
 		renderClip->wireframeClipnodeBuffer[hull] = NULL;
 		delete[] output;
@@ -1608,13 +1613,12 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 		return;
 	}
 
-	renderClip->clipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, output, (int)allVerts.size(), GL_TRIANGLES,true);
+	renderClip->clipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, output, (int)allVerts.size(), GL_TRIANGLES, true);
 
-	renderClip->wireframeClipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, wireOutput, (int)wireframeVerts.size(), GL_LINES,true);
+	renderClip->wireframeClipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, wireOutput, (int)wireframeVerts.size(), GL_LINES, true);
 
 	renderClip->faceMaths[hull] = std::move(navFaceMaths);
 }
-
 
 void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 {
@@ -1667,7 +1671,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
 	{
-		//return;
+		// return;
 		/* // Instead of cache.... Just do nothing.
 		* todo need rewrite cache?
 		RenderClipnodes* cachedRenderClip = &renderClipnodes[oldHullIdxStruct.modelIdx];
@@ -1764,7 +1768,6 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 			vec3 normal = getNormalFromVerts(faceVerts);
 
-
 			if (dotProduct(mesh.faces[n].normal, normal) > 0.0f)
 			{
 				reverse(faceVerts.begin(), faceVerts.end());
@@ -1815,7 +1818,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 				faceVerts[c] = faceVerts[c].flip();
 			}
 
-			COLOR4 wireframeColor = { 0, 0, 0, 255 };
+			COLOR4 wireframeColor = {0, 0, 0, 255};
 			for (size_t k = 0; k < faceVerts.size(); k++)
 			{
 				wireframeVerts.emplace_back(cVert(faceVerts[k], wireframeColor));
@@ -1839,7 +1842,6 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 				allVerts.emplace_back(cVert(faceVerts[k - 1], faceColor));
 				allVerts.emplace_back(cVert(faceVerts[k], faceColor));
 			}
-
 		}
 	}
 
@@ -1862,10 +1864,10 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	if (wireOutput)
 		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
-	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, output, (int)(allVerts.size()), GL_TRIANGLES,true);
+	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, output, (int)(allVerts.size()), GL_TRIANGLES, true);
 	renderClip.clipnodeBuffer[hullIdx]->frameId = 0;
 
-	renderClip.wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, wireOutput, (int)(wireframeVerts.size()), GL_LINES,true);
+	renderClip.wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, wireOutput, (int)(wireframeVerts.size()), GL_LINES, true);
 	renderClip.wireframeClipnodeBuffer[hullIdx]->frameId = 0;
 
 	nodeBuffStr curHullIdxStruct = nodeBuffStr();
@@ -2219,7 +2221,7 @@ void BspRenderer::refreshEnt(int entIdx, int refreshFlags)
 							rendEntity.mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
 							if (rendEntity.mdl->m_pstudiohdr)
 								rendEntity.mdl->UpdateModelMeshList();
-							else 
+							else
 								rendEntity.mdl = NULL;
 						}
 						else
@@ -2408,9 +2410,9 @@ void BspRenderer::calcFaceMaths()
 		faceMaths.pop_back();
 	}
 
-	//vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
-	//vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
-	//vec3 world_z = vec3(0.0f, 0.0f, 1.0f);
+	// vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
+	// vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
+	// vec3 world_z = vec3(0.0f, 0.0f, 1.0f);
 
 	for (int i = 0; i < map->faceCount; i++)
 	{
@@ -2476,10 +2478,14 @@ void BspRenderer::refreshFace(int faceIdx)
 	for (size_t i = 0; i < allVerts.size(); i++)
 	{
 		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xy();
-		if (faceMath.localVerts[i].x < faceMath.localMins.x) faceMath.localMins.x = faceMath.localVerts[i].x;
-		if (faceMath.localVerts[i].y < faceMath.localMins.y) faceMath.localMins.y = faceMath.localVerts[i].y;
-		if (faceMath.localVerts[i].x > faceMath.localMaxs.x) faceMath.localMaxs.x = faceMath.localVerts[i].x;
-		if (faceMath.localVerts[i].y > faceMath.localMaxs.y) faceMath.localMaxs.y = faceMath.localVerts[i].y;
+		if (faceMath.localVerts[i].x < faceMath.localMins.x)
+			faceMath.localMins.x = faceMath.localVerts[i].x;
+		if (faceMath.localVerts[i].y < faceMath.localMins.y)
+			faceMath.localMins.y = faceMath.localVerts[i].y;
+		if (faceMath.localVerts[i].x > faceMath.localMaxs.x)
+			faceMath.localMaxs.x = faceMath.localVerts[i].x;
+		if (faceMath.localVerts[i].y > faceMath.localMaxs.y)
+			faceMath.localMaxs.y = faceMath.localVerts[i].y;
 	}
 }
 
@@ -2511,9 +2517,9 @@ BspRenderer::~BspRenderer()
 	delete leafCube;
 	leafCube = NULL;
 	delete nodeCube;
-	nodeCube = NULL;/*
-	delete nodePlaneCube;
-	nodePlaneCube = NULL;*/
+	nodeCube = NULL; /*
+	 delete nodePlaneCube;
+	 nodePlaneCube = NULL;*/
 
 	deleteTextures();
 	deleteLightmapTextures();
@@ -2547,7 +2553,7 @@ void BspRenderer::reuploadTextures()
 
 	deleteTextures();
 
-	//loadTextures();
+	// loadTextures();
 	glTextures.swap(glTexturesSwap);
 	glTexturesSwap.clear();
 
@@ -2569,7 +2575,6 @@ void BspRenderer::delayLoadData()
 		preRenderFaces();
 		texturesLoaded = true;
 	}
-
 
 	if (!lightmapsUploaded && lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
@@ -2736,7 +2741,6 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 	return glTextures[texinfo.iMiptex][0]->id;
 }
 
-
 void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 {
 	mapOffset = map->ents.size() ? map->ents[0]->origin : vec3();
@@ -2780,14 +2784,14 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 					nodeCube->mins = node.nMins;
 					nodeCube->maxs = node.nMaxs;
 
-					g_app->pointEntRenderer->genCubeBuffers(nodeCube);/*
+					g_app->pointEntRenderer->genCubeBuffers(nodeCube); /*
 
-					BSPPLANE plane = map->planes[node.iPlane];
+					 BSPPLANE plane = map->planes[node.iPlane];
 
-					nodePlaneCube->mins = { -32,-32,-32 };
-					nodePlaneCube->maxs = { 32,32,32 };
-					nodePlaneCube->mins += plane.vNormal;
-					g_app->pointEntRenderer->genCubeBuffers(nodePlaneCube);*/
+					 nodePlaneCube->mins = { -32,-32,-32 };
+					 nodePlaneCube->maxs = { 32,32,32 };
+					 nodePlaneCube->mins += plane.vNormal;
+					 g_app->pointEntRenderer->genCubeBuffers(nodePlaneCube);*/
 				}
 			}
 		}
@@ -2824,7 +2828,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	std::vector<int> highlightEnts = g_app->pickInfo.selectedEnts;
 
-
 	if (g_render_flags & RENDER_POINT_ENTS)
 	{
 		drawPointEntities(highlightEnts, REND_PASS_COLORSHADER);
@@ -2832,7 +2835,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 	}
 
 	size_t ent_count = std::min(map->ents.size(), renderEnts.size());
-
 
 	for (int pass = 0; pass <= 2; pass++)
 	{
@@ -2985,8 +2987,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		}
 	}
 
-
-
 	if (g_app->pickMode == PICK_FACE_LEAF && !ortho_overview && !make_screenshot)
 	{
 		glDepthMask(GL_FALSE);
@@ -2998,9 +2998,9 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		g_app->mat_upload();
 		leafCube->wireframeBuffer->drawFull();
 		glLineWidth(std::min(g_app->lineWidthRange[1], 3.0f));
-		nodeCube->wireframeBuffer->drawFull();/*
-		glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
-		nodePlaneCube->wireframeBuffer->drawFull();*/
+		nodeCube->wireframeBuffer->drawFull(); /*
+		 glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
+		 nodePlaneCube->wireframeBuffer->drawFull();*/
 		glLineWidth(1.3f);
 		glEnable(GL_CULL_FACE);
 		glDepthMask(GL_TRUE);
@@ -3009,7 +3009,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	delayLoadData();
 }
-
 
 void BspRenderer::drawModelClipnodes(int modelIdx, bool /*highlight*/, int hullIdx)
 {
@@ -3046,7 +3045,6 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool /*highlight*/, int hullI
 
 	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
 	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
-
 
 	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 	{
@@ -3171,7 +3169,6 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 				g_app->colorShader->popMatrix();
 			}
 		}
-
 	}
 
 	for (auto& rgroup : renderModels[modelIdx]->renderGroups)
@@ -3224,7 +3221,6 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 						}
 					}
 
-
 					rgroup.textures[rgroup.frameid]->bind(0);
 				}
 				else
@@ -3252,7 +3248,6 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 						{
 							blackTex->bind(s + 1);
 						}
-
 					}
 					else
 					{
@@ -3266,7 +3261,6 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 						}
 					}
 				}
-
 
 				if (g_app->pickMode != PICK_OBJECT && highlight && !ortho_overview && !make_screenshot)
 				{
@@ -3338,8 +3332,7 @@ void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass
 		{
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
 				glDepthFunc(GL_ALWAYS);
-			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
-				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
+			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr || (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
 				if (pass == REND_PASS_MODELSHADER)
 				{
@@ -3398,14 +3391,12 @@ void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass
 		}
 		else
 		{
-			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
-				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
+			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr || (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
 				if (pass == REND_PASS_MODELSHADER)
 				{
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->mat_upload();
-
 
 					if (renderEnts[i].mdl)
 					{
@@ -3420,19 +3411,18 @@ void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass
 							renderEnts[i].spr->DrawAxes();
 							renderEnts[i].spr->DrawBBox();
 						}
-
 					}
 				}
 				else if (pass == REND_PASS_COLORSHADER)
 				{
-					//g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
-					//g_app->mat_upload();
+					// g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
+					// g_app->mat_upload();
 
 					///*if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 					//{
 					//	renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 					//}*/
-					//renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+					// renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 				}
 			}
 			else
@@ -3526,7 +3516,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			vec3 maxs;
 			if (g_render_flags & RENDER_MODELS && rendEntity.mdl)
 			{
-				//rendEntity.mdl->ExtractBBox(mins, maxs);
+				// rendEntity.mdl->ExtractBBox(mins, maxs);
 				mins = rendEntity.offset + rendEntity.mdl->mins;
 				maxs = rendEntity.offset + rendEntity.mdl->maxs;
 
@@ -3683,24 +3673,23 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 				tempPickInfo.bestDist = t;
 				tempPickInfo.selectedFaces.clear();
 
-
 				// Nav mesh WIP code
-				if (g_app->debugNavMesh && modelIdx == 0 && hullIdx == 3) {
+				if (g_app->debugNavMesh && modelIdx == 0 && hullIdx == 3)
+				{
 					static int lastPick = 0;
 
 					g_app->debugPoly = debugFaces[i];
 					g_app->debugNavPoly = i;
 
-					//Polygon3D merged = debugFaces[lastPick].merge(debugFaces[i]);
-					//vector<vector<vec3>> split = debugFaces[i].split(debugFaces[lastPick]);
-					//logf("split %d by %d == %d\n", i, lastPick, split.size());
+					// Polygon3D merged = debugFaces[lastPick].merge(debugFaces[i]);
+					// vector<vector<vec3>> split = debugFaces[i].split(debugFaces[lastPick]);
+					// logf("split %d by %d == %d\n", i, lastPick, split.size());
 
 					NavNode& node = g_app->debugNavMesh->nodes[i];
 
 					lastPick = i;
 					print_log("Picked hull {}, face {}, verts {}, area {}\nNav links {}\n", hullIdx, i, debugFaces[i].verts.size(), debugFaces[i].area, node.numLinks());
 				}
-
 			}
 		}
 	}
@@ -3792,7 +3781,7 @@ void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targ
 	LumpState newLumps = map->duplicate_lumps(targets);
 	LumpState oldLumps = undoLumpState;
 
-	bool differences[HEADER_LUMPS] = { false };
+	bool differences[HEADER_LUMPS] = {false};
 
 	unsigned int targetLumps = 0;
 
@@ -3803,7 +3792,7 @@ void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targ
 		{
 			if (newLumps.lumps[i].size() != oldLumps.lumps[i].size() ||
 				!std::equal(newLumps.lumps[i].begin(), newLumps.lumps[i].end(),
-					oldLumps.lumps[i].begin()))
+							oldLumps.lumps[i].begin()))
 			{
 				anyDifference = true;
 				differences[i] = true;
@@ -3831,7 +3820,6 @@ void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targ
 			newLumps.lumps[i].clear();
 		}
 	}
-
 
 	EditBspCommand* editCommand = new EditBspCommand(actionDesc, oldLumps, newLumps, targetLumps);
 	pushUndoCommand(editCommand);
@@ -3994,4 +3982,3 @@ bool PickInfo::IsSelectedEnt(int entIdx)
 {
 	return selectedEnts.size() && std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
 }
-

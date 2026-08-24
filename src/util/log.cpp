@@ -3,17 +3,17 @@
 
 #ifdef WIN32
 #include <Windows.h>
-#else 
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
 
-std::vector<std::string> g_log_buffer = { "" };
-std::vector<unsigned int> g_color_buffer = { 0 };
+std::vector<std::string> g_log_buffer = {""};
+std::vector<unsigned int> g_color_buffer = {0};
 
-std::vector<std::string> g_console_log_buffer = { "" };
-std::vector<unsigned int> g_console_color_buffer = { 0 };
+std::vector<std::string> g_console_log_buffer = {""};
+std::vector<unsigned int> g_console_color_buffer = {0};
 
 unsigned int last_console_color = PRINT_BLUE | PRINT_GREEN | PRINT_RED | PRINT_INTENSITY;
 double flushConsoleTime = 0.0;
@@ -25,9 +25,8 @@ void FlushConsoleLog(bool wait)
 		return;
 	}
 
-	std::thread t
-	([]()
-		{
+	std::thread t([]()
+				  {
 			if (Sync::LogFlush.try_lock())
 			{
 				std::unique_lock<std::mutex> flushLock(Sync::LogFlush, std::adopt_lock);
@@ -64,9 +63,7 @@ void FlushConsoleLog(bool wait)
 					set_console_colors(color);
 					std::cout << str;
 				}
-			}
-		}
-	);
+			} });
 	if (!wait)
 	{
 		t.detach();
@@ -77,12 +74,11 @@ void FlushConsoleLog(bool wait)
 	}
 }
 
-
 bool g_console_visible = true;
 void showConsoleWindow(bool show)
 {
 	g_console_visible = show;
-#ifdef WIN32		
+#ifdef WIN32
 	if (::GetConsoleWindow())
 	{
 		::ShowWindow(::GetConsoleWindow(), show ? SW_SHOW : SW_HIDE);
@@ -102,7 +98,7 @@ void set_console_colors(unsigned int colors)
 		SetConsoleTextAttribute(console, (WORD)colors);
 	}
 }
-#else 
+#else
 void set_console_colors(unsigned int colors)
 {
 	colors = colors ? colors : (PRINT_GREEN | PRINT_BLUE | PRINT_RED | PRINT_INTENSITY);
@@ -115,15 +111,28 @@ void set_console_colors(unsigned int colors)
 	const char* color = "37";
 	switch (colors & ~PRINT_INTENSITY)
 	{
-	case PRINT_RED:								color = "31"; break;
-	case PRINT_GREEN:							color = "32"; break;
-	case PRINT_RED | PRINT_GREEN:				color = "33"; break;
-	case PRINT_BLUE:							color = "34"; break;
-	case PRINT_RED | PRINT_BLUE:				color = "35"; break;
-	case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
-	case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
+		case PRINT_RED:
+			color = "31";
+			break;
+		case PRINT_GREEN:
+			color = "32";
+			break;
+		case PRINT_RED | PRINT_GREEN:
+			color = "33";
+			break;
+		case PRINT_BLUE:
+			color = "34";
+			break;
+		case PRINT_RED | PRINT_BLUE:
+			color = "35";
+			break;
+		case PRINT_GREEN | PRINT_BLUE:
+			color = "36";
+			break;
+		case PRINT_GREEN | PRINT_BLUE | PRINT_RED:
+			color = "36";
+			break;
 	}
 	std::cout << "\x1B[" << mode << ";" << color << "m";
 }
 #endif
-

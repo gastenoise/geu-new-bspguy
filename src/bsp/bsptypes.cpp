@@ -40,17 +40,20 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 	if (fx > 1.0f - EPSILON && fy < EPSILON && fz < EPSILON)
 	{
 		planeType = PLANE_X;
-		if (newNormal.x < 0.0f) shouldFlip = true;
+		if (newNormal.x < 0.0f)
+			shouldFlip = true;
 	}
 	else if (fy > 1.0f - EPSILON && fz < EPSILON && fx < EPSILON)
 	{
 		planeType = PLANE_Y;
-		if (newNormal.y < 0.0f) shouldFlip = true;
+		if (newNormal.y < 0.0f)
+			shouldFlip = true;
 	}
 	else if (fz > 1.0f - EPSILON && fx < EPSILON && fy < EPSILON)
 	{
 		planeType = PLANE_Z;
-		if (newNormal.z < 0.0f) shouldFlip = true;
+		if (newNormal.z < 0.0f)
+			shouldFlip = true;
 	}
 	else
 	{
@@ -82,12 +85,10 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 	return shouldFlip;
 }
 
-
 bool BSPPLANE::update_plane(bool flip)
 {
 	return update_plane(vNormal, fDist, flip);
 }
-
 
 bool BSPLEAF16::isEmpty()
 {
@@ -97,7 +98,6 @@ bool BSPLEAF16::isEmpty()
 
 	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF16)) == 0;
 }
-
 
 bool BSPLEAF32::isEmpty()
 {
@@ -160,7 +160,6 @@ std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 
 	return updateModels;
 }
-
 
 std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump)
 {

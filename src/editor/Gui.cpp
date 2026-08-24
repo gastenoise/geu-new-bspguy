@@ -29,12 +29,13 @@ bool filterNeeded = true;
 
 std::string iniPath = "./imgui.ini";
 
-enum umd_flags : unsigned int {
+enum umd_flags : unsigned int
+{
 	UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
 	UMD_OPTIMIZE_DISABLED = 1 << 1
 };
 
-enum cell_type :unsigned char
+enum cell_type : unsigned char
 {
 	cell_none = 0,
 	cell_brush,
@@ -58,12 +59,14 @@ struct cell
 	cell_type type;
 };
 
-int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer) {
+int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer)
+{
 	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
 	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
 	int lvl = static_cast<int>(std::round((pos.z - mins.z) / cell_size));
 
-	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers) {
+	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers)
+	{
 		return -1;
 	}
 
@@ -77,7 +80,8 @@ int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int
 
 void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& IMGUI_TOOLTIP)
 {
-	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+	{
 		ImGui::BeginTooltip();
 		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 		ImGui::TextUnformatted(IMGUI_TOOLTIP.c_str());
@@ -100,20 +104,21 @@ void Gui::init()
 	ImGui::CreateContext();
 	imgui_io = &ImGui::GetIO();
 
-	imgui_io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//imgui_io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	imgui_io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+	// imgui_io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
 	imgui_io->IniFilename = !g_settings.save_windows ? NULL : iniPath.c_str();
 
 	// Setup Dear ImGui style
 	setupTheme();
-	//ImGui::StyleColorsClassic();
+	// ImGui::StyleColorsClassic();
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplGlfw_InitForOpenGL(app->window, true);
 	ImGui_ImplOpenGL3_Init("#version 130");
 	// ImFileDialog requires you to set the CreateTexture and DeleteTexture
-	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void* {
+	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void*
+	{
 		GLuint tex;
 
 		glGenTextures(1, &tex);
@@ -121,27 +126,30 @@ void Gui::init()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return (void*)(size_t)tex;
-		};
-	ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
+	};
+	ifd::FileDialog::Instance().DeleteTexture = [](void* tex)
+	{
 		GLuint texID = (GLuint)((uintptr_t)tex);
 		glDeleteTextures(1, &texID);
-		};
+	};
 
 	loadFonts();
 
 	imgui_io->ConfigWindowsMoveFromTitleBarOnly = true;
 
-	auto loadIconHelper = [&](const char* path, const char* name) {
+	auto loadIconHelper = [&](const char* path, const char* name)
+	{
 		unsigned char* img_malloc = NULL;
 		unsigned int width = 0, height = 0;
 		lodepng_decode32_file(&img_malloc, &width, &height, path);
 		unsigned char* img_new = NULL;
-		if (img_malloc) {
+		if (img_malloc)
+		{
 			img_new = new unsigned char[width * height * 4];
 			memcpy(img_new, img_malloc, width * height * 4);
 			free(img_malloc);
@@ -221,19 +229,19 @@ void Gui::draw()
 		{
 			drawTextureBrowser();
 		}
-	bool inOverview = showOverviewWidget && orthoMode;
-	if (inOverview && !wasInOverview)
-	{
-		oldCameraOrigin = cameraOrigin;
-		oldCameraAngles = cameraAngles;
-		wasInOverview = true;
-	}
-	else if (!inOverview && wasInOverview)
-	{
-		cameraOrigin = oldCameraOrigin;
-		cameraAngles = oldCameraAngles;
-		wasInOverview = false;
-	}
+		bool inOverview = showOverviewWidget && orthoMode;
+		if (inOverview && !wasInOverview)
+		{
+			oldCameraOrigin = cameraOrigin;
+			oldCameraAngles = cameraAngles;
+			wasInOverview = true;
+		}
+		else if (!inOverview && wasInOverview)
+		{
+			cameraOrigin = oldCameraOrigin;
+			cameraAngles = oldCameraAngles;
+			wasInOverview = false;
+		}
 
 		if (showOverviewWidget)
 		{
@@ -306,7 +314,6 @@ void Gui::draw()
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-
 	if (shouldReloadFonts)
 	{
 		shouldReloadFonts = false;
@@ -372,7 +379,7 @@ void Gui::copyStyle()
 	copiedStyle.valid = true;
 
 	print_log("Style copied: Scale({:.3f}, {:.3f}), Shift({:.3f}, {:.3f}), Rotate({:.3f}, {:.3f})\n",
-		copiedStyle.scaleX, copiedStyle.scaleY, copiedStyle.shiftX, copiedStyle.shiftY, copiedStyle.rotateX, copiedStyle.rotateY);
+			  copiedStyle.scaleX, copiedStyle.scaleY, copiedStyle.shiftX, copiedStyle.shiftY, copiedStyle.rotateX, copiedStyle.rotateY);
 }
 
 void Gui::pasteStyle()
@@ -550,7 +557,7 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	STRUCTREMAP remap(bspModel);
 	STRUCTUSAGE usage(bspModel);
 	bspModel->copy_bsp_model(0, map, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
-		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
+							 newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
 
 	if (!noclip && newClipnodes.size())
 	{
@@ -594,7 +601,7 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 			{
 				auto data = ConvertWadTexToRGB(tex);
 				map->add_texture(tex.szName, (unsigned char*)data, tex.nWidth, tex.nHeight);
-				delete[]data;
+				delete[] data;
 			}
 			else
 			{
@@ -679,8 +686,10 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	if (map->models[newModelIdx].iFirstFace >= 0 && map->models[newModelIdx].iFirstFace < (int)remap.faces.size())
 		map->models[newModelIdx].iFirstFace = remap.faces[map->models[newModelIdx].iFirstFace];
 
-	auto getRemappedLeaf = [&](int leafIdx) {
-		if (leafIdx >= 0 && leafIdx < (int)remap.leaves.size()) {
+	auto getRemappedLeaf = [&](int leafIdx)
+	{
+		if (leafIdx >= 0 && leafIdx < (int)remap.leaves.size())
+		{
 			return ~(remap.leaves[leafIdx]);
 		}
 		return -1;
@@ -713,19 +722,19 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 		}
 	}
 
-	//if (map->models[newModelIdx].nVisLeafs > 0 && map->models[newModelIdx].nVisLeafs > newLeaves.size())
+	// if (map->models[newModelIdx].nVisLeafs > 0 && map->models[newModelIdx].nVisLeafs > newLeaves.size())
 	//{
 	//	map->models[newModelIdx].nVisLeafs--;
-	//}
-	//else if (map->models[newModelIdx].nVisLeafs > newLeaves.size())
+	// }
+	// else if (map->models[newModelIdx].nVisLeafs > newLeaves.size())
 	//{
 	//	map->leafCount--;
 	//	map->bsp_header.lump[LUMP_LEAVES].nLength -= sizeof(BSPLEAF32);
-	//}
-	//else if (newLeaves.size() > map->models[newModelIdx].nVisLeafs)
+	// }
+	// else if (newLeaves.size() > map->models[newModelIdx].nVisLeafs)
 	//{
 	//	map->models[newModelIdx].nVisLeafs++;
-	//}
+	// }
 
 	bspModel->setBspRender(NULL);
 	delete bspModel;
@@ -750,7 +759,8 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 
 void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const std::vector<int>& faceIdxs, int ExportType, bool movemodel)
 {
-	if (faceIdxs.empty()) return;
+	if (faceIdxs.empty())
+		return;
 
 	LumpState backupLumps = src_map->duplicate_lumps();
 
@@ -759,13 +769,15 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 
 	// Copy faces to a temporary buffer first to avoid pointer invalidation during append
 	std::vector<BSPFACE32> tempFaces;
-	for (int fid : faceIdxs) {
+	for (int fid : faceIdxs)
+	{
 		tempFaces.push_back(src_map->faces[fid]);
 	}
 
 	// Copy faces to the end of the face lump to make them contiguous for the model
 	int firstFace = src_map->faceCount;
-	for (auto& face : tempFaces) {
+	for (auto& face : tempFaces)
+	{
 		src_map->append_lump(LUMP_FACES, &face, sizeof(BSPFACE32));
 	}
 	src_map->update_lump_pointers();
@@ -788,7 +800,8 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 	int faceTreeHead = src_map->nodeCount;
 	int sharedSolidLeaf = 0;
 
-	for (int i = 0; i < (int)faceIdxs.size(); i++) {
+	for (int i = 0; i < (int)faceIdxs.size(); i++)
+	{
 		BSPNODE32 node;
 		node.iFirstFace = firstFace + i;
 		node.nFaces = 1;
@@ -798,10 +811,12 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 
 		int side = src_map->faces[node.iFirstFace].nPlaneSide;
 
-		if (i == (int)faceIdxs.size() - 1) {
+		if (i == (int)faceIdxs.size() - 1)
+		{
 			node.iChildren[1 - side] = ~sharedSolidLeaf;
 		}
-		else {
+		else
+		{
 			node.iChildren[1 - side] = faceTreeHead + i + 1;
 		}
 		node.iChildren[side] = ~anyEmptyLeaf;
@@ -815,7 +830,8 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 	src_map->nodes[boxHeadNode + 5].iChildren[1] = faceTreeHead;
 
 	// Manually generate clipnodes for all hulls with proper expansion
-	for (int hull = 1; hull < MAX_MAP_HULLS; hull++) {
+	for (int hull = 1; hull < MAX_MAP_HULLS; hull++)
+	{
 		vec3 hullExtent = default_hull_extents[hull];
 
 		// Create a bounding box for this hull
@@ -824,7 +840,8 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 
 		// Build expanded face ladder for this hull
 		int hullFaceTreeHead = src_map->clipnodeCount;
-		for (int i = 0; i < (int)faceIdxs.size(); i++) {
+		for (int i = 0; i < (int)faceIdxs.size(); i++)
+		{
 			BSPFACE32& face = src_map->faces[firstFace + i];
 			BSPCLIPNODE32 clipnode;
 
@@ -840,10 +857,12 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 			src_map->planes[clipnode.iPlane] = srcPlane;
 
 			int side = face.nPlaneSide;
-			if (i == (int)faceIdxs.size() - 1) {
+			if (i == (int)faceIdxs.size() - 1)
+			{
 				clipnode.iChildren[1 - side] = CONTENTS_SOLID;
 			}
-			else {
+			else
+			{
 				clipnode.iChildren[1 - side] = hullFaceTreeHead + i + 1;
 			}
 			clipnode.iChildren[side] = CONTENTS_EMPTY;
@@ -862,8 +881,10 @@ void Gui::ExportFaceModel(Bsp* src_map, const std::string& export_path, const st
 	ExportModel(src_map, export_path, newModelIdx, ExportType, movemodel);
 
 	src_map->replace_lumps(backupLumps);
-	for (int i = 0; i < HEADER_LUMPS; i++) {
-		if (backupLumps.lumps[i].size() == 0 && src_map->lumps[i].size() > 0) {
+	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
+		if (backupLumps.lumps[i].size() == 0 && src_map->lumps[i].size() > 0)
+		{
 			src_map->lumps[i].clear();
 			src_map->bsp_header.lump[i].nLength = 0;
 		}
@@ -959,7 +980,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	STRUCTUSAGE usage(src_map);
 
 	src_map->copy_bsp_model(model_id, bspModel, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
-		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
+							newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
 
 	if (newEdges.size())
 	{
@@ -1006,9 +1027,9 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 			{
 				auto data = ConvertWadTexToRGB(tex);
 				int mip = bspModel->add_texture(tex.szName, (unsigned char*)data, tex.nWidth, tex.nHeight);
-				delete[]data;
+				delete[] data;
 				data = ConvertMipTexToRGB(bspModel->find_embedded_texture(tex.szName, mip));
-				delete[]data;
+				delete[] data;
 			}
 			else
 			{
@@ -1136,13 +1157,13 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 		bspModel->bsp_header.nVersion = 30;
 	}
 
-	//if (src_entId >= 0)
+	// if (src_entId >= 0)
 	//{
 	//	if (src_map->ents[src_entId]->classname == "func_water")
 	//	{
 	//		bspModel->models[0].vOrigin = getCenter(bspModel->models[0].nMins, bspModel->models[0].nMaxs);
 	//	}
-	//}
+	// }
 
 	bspModel->bsp_path = final_path;
 	bspModel->write(bspModel->bsp_path);
@@ -1181,8 +1202,6 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 
 	print_log(get_localized_string(LANG_1068), final_path);
 }
-
-
 
 void Gui::OpenFile(const std::string& file)
 {
@@ -1267,7 +1286,6 @@ void Gui::OpenFile(const std::string& file)
 		app->selectMap(tmpMap);
 	}
 }
-
 
 void Gui::drawToolbar()
 {
@@ -1372,7 +1390,7 @@ void Gui::drawFpsOverlay()
 	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
 	if (ImGui::Begin(get_localized_string(LANG_0609).c_str(), 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
-		//ImGui::TextUnformatted(fmt::format("{} FPS", current_fps).c_str());
+		// ImGui::TextUnformatted(fmt::format("{} FPS", current_fps).c_str());
 		ImGui::TextUnformatted(fmt::format("{:.0f} FPS", imgui_io->Framerate).c_str());
 		if (ImGui::BeginPopupContextWindow())
 		{
@@ -1485,7 +1503,7 @@ void Gui::drawStatusMessage()
 	if (app->isLoading)
 	{
 		ImVec2 window_pos = ImVec2((app->windowWidth - loadingWindowWidth) / 2,
-			(app->windowHeight - loadingWindowHeight) / 2);
+								   (app->windowHeight - loadingWindowHeight) / 2);
 		ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
 
 		if (ImGui::Begin(get_localized_string(LANG_0619).c_str(), 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
@@ -1502,18 +1520,34 @@ void Gui::drawStatusMessage()
 			ImGui::PushFont(consoleFontLarge);
 			switch (loadTick)
 			{
-			case 0: ImGui::Text(get_localized_string(LANG_0620).c_str()); break;
-			case 1: ImGui::Text(get_localized_string(LANG_0621).c_str()); break;
-			case 2: ImGui::Text(get_localized_string(LANG_0622).c_str()); break;
-			case 3: ImGui::Text(get_localized_string(LANG_0623).c_str()); break;
-			case 4: ImGui::Text(get_localized_string(LANG_1097).c_str()); break;
-			case 5: ImGui::Text(get_localized_string(LANG_1098).c_str()); break;
-			case 6: ImGui::Text(get_localized_string(LANG_1099).c_str()); break;
-			case 7: ImGui::Text(get_localized_string(LANG_1162).c_str()); break;
-			default:  break;
+				case 0:
+					ImGui::Text(get_localized_string(LANG_0620).c_str());
+					break;
+				case 1:
+					ImGui::Text(get_localized_string(LANG_0621).c_str());
+					break;
+				case 2:
+					ImGui::Text(get_localized_string(LANG_0622).c_str());
+					break;
+				case 3:
+					ImGui::Text(get_localized_string(LANG_0623).c_str());
+					break;
+				case 4:
+					ImGui::Text(get_localized_string(LANG_1097).c_str());
+					break;
+				case 5:
+					ImGui::Text(get_localized_string(LANG_1098).c_str());
+					break;
+				case 6:
+					ImGui::Text(get_localized_string(LANG_1099).c_str());
+					break;
+				case 7:
+					ImGui::Text(get_localized_string(LANG_1162).c_str());
+					break;
+				default:
+					break;
 			}
 			ImGui::PopFont();
-
 		}
 		loadingWindowWidth = ImGui::GetWindowWidth();
 		loadingWindowHeight = ImGui::GetWindowHeight();
@@ -1521,7 +1555,6 @@ void Gui::drawStatusMessage()
 		ImGui::End();
 	}
 }
-
 
 void Gui::reloadLimits()
 {
@@ -1567,7 +1600,6 @@ void Gui::checkFaceErrors()
 	if (!map)
 		return;
 
-
 	for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 	{
 		int size[2];
@@ -1592,67 +1624,69 @@ void Gui::refresh()
 	reloadLimits();
 	checkValidHulls();
 }
-void Gui::setupTheme() {
-    constexpr ImVec4 COLOR_DEEP_OBSIDIAN    = ImVec4(0.043f, 0.047f, 0.063f, 1.000f);
-    constexpr ImVec4 COLOR_BLOOD_CRIMSON    = ImVec4(0.545f, 0.078f, 0.165f, 1.000f);
-    constexpr ImVec4 COLOR_NIGHTMARE_PURPLE = ImVec4(0.149f, 0.161f, 0.290f, 1.000f);
-    constexpr ImVec4 COLOR_GARGOYLE_GREY    = ImVec4(0.431f, 0.478f, 0.525f, 1.000f);
-    constexpr ImVec4 COLOR_VELLUM_CREAM     = ImVec4(0.890f, 0.835f, 0.722f, 1.000f);
+void Gui::setupTheme()
+{
+	constexpr ImVec4 COLOR_DEEP_OBSIDIAN = ImVec4(0.043f, 0.047f, 0.063f, 1.000f);
+	constexpr ImVec4 COLOR_BLOOD_CRIMSON = ImVec4(0.545f, 0.078f, 0.165f, 1.000f);
+	constexpr ImVec4 COLOR_NIGHTMARE_PURPLE = ImVec4(0.149f, 0.161f, 0.290f, 1.000f);
+	constexpr ImVec4 COLOR_GARGOYLE_GREY = ImVec4(0.431f, 0.478f, 0.525f, 1.000f);
+	constexpr ImVec4 COLOR_VELLUM_CREAM = ImVec4(0.890f, 0.835f, 0.722f, 1.000f);
 
-    auto applyAlpha = [](const ImVec4& color, float alpha) { return ImVec4(color.x, color.y, color.z, alpha); };
+	auto applyAlpha = [](const ImVec4& color, float alpha)
+	{ return ImVec4(color.x, color.y, color.z, alpha); };
 
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.Colors[ImGuiCol_Text] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
-    style.Colors[ImGuiCol_TextDisabled] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
-    style.Colors[ImGuiCol_WindowBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
-    style.Colors[ImGuiCol_ChildBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.94f);
-    style.Colors[ImGuiCol_PopupBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.96f);
-    style.Colors[ImGuiCol_Border] = applyAlpha(COLOR_GARGOYLE_GREY, 0.45f);
-    style.Colors[ImGuiCol_BorderShadow] = applyAlpha(ImVec4(0,0,0,0), 0.00f);
-    style.Colors[ImGuiCol_FrameBg] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.75f);
-    style.Colors[ImGuiCol_FrameBgHovered] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 1.00f);
-    style.Colors[ImGuiCol_FrameBgActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
-    style.Colors[ImGuiCol_TitleBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
-    style.Colors[ImGuiCol_TitleBgActive] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 1.00f);
-    style.Colors[ImGuiCol_TitleBgCollapsed] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.75f);
-    style.Colors[ImGuiCol_MenuBarBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
-    style.Colors[ImGuiCol_ScrollbarBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.60f);
-    style.Colors[ImGuiCol_ScrollbarGrab] = applyAlpha(COLOR_GARGOYLE_GREY, 0.50f);
-    style.Colors[ImGuiCol_ScrollbarGrabHovered] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
-    style.Colors[ImGuiCol_ScrollbarGrabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.90f);
-    style.Colors[ImGuiCol_CheckMark] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
-    style.Colors[ImGuiCol_SliderGrab] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
-    style.Colors[ImGuiCol_SliderGrabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
-    style.Colors[ImGuiCol_Button] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.85f);
-    style.Colors[ImGuiCol_ButtonHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
-    style.Colors[ImGuiCol_ButtonActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
-    style.Colors[ImGuiCol_Header] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.60f);
-    style.Colors[ImGuiCol_HeaderHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.65f);
-    style.Colors[ImGuiCol_HeaderActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.90f);
-    style.Colors[ImGuiCol_Separator] = applyAlpha(COLOR_GARGOYLE_GREY, 0.40f);
-    style.Colors[ImGuiCol_SeparatorHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.75f);
-    style.Colors[ImGuiCol_SeparatorActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
-    style.Colors[ImGuiCol_ResizeGrip] = applyAlpha(COLOR_GARGOYLE_GREY, 0.30f);
-    style.Colors[ImGuiCol_ResizeGripHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
-    style.Colors[ImGuiCol_ResizeGripActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
-    style.Colors[ImGuiCol_Tab] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.70f);
-    style.Colors[ImGuiCol_TabHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.75f);
-    style.Colors[ImGuiCol_TabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.95f);
-    style.Colors[ImGuiCol_TabUnfocused] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.40f);
-    style.Colors[ImGuiCol_TabUnfocusedActive] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.80f);
-    style.Colors[ImGuiCol_PlotLines] = applyAlpha(COLOR_GARGOYLE_GREY, 1.00f);
-    style.Colors[ImGuiCol_PlotLinesHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
-    style.Colors[ImGuiCol_PlotHistogram] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.85f);
-    style.Colors[ImGuiCol_PlotHistogramHovered] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
-    style.Colors[ImGuiCol_TableHeaderBg] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.85f);
-    style.Colors[ImGuiCol_TableBorderStrong] = applyAlpha(COLOR_GARGOYLE_GREY, 0.60f);
-    style.Colors[ImGuiCol_TableBorderLight] = applyAlpha(COLOR_GARGOYLE_GREY, 0.30f);
-    style.Colors[ImGuiCol_TableRowBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.00f);
-    style.Colors[ImGuiCol_TableRowBgAlt] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.20f);
-    style.Colors[ImGuiCol_TextSelectedBg] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.45f);
-    style.Colors[ImGuiCol_DragDropTarget] = applyAlpha(COLOR_VELLUM_CREAM, 0.90f);
-    style.Colors[ImGuiCol_NavHighlight] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
-    style.Colors[ImGuiCol_NavWindowingHighlight] = applyAlpha(COLOR_VELLUM_CREAM, 0.70f);
-    style.Colors[ImGuiCol_NavWindowingDimBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.60f);
-    style.Colors[ImGuiCol_ModalWindowDimBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.70f);
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.Colors[ImGuiCol_Text] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
+	style.Colors[ImGuiCol_TextDisabled] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
+	style.Colors[ImGuiCol_WindowBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
+	style.Colors[ImGuiCol_ChildBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.94f);
+	style.Colors[ImGuiCol_PopupBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.96f);
+	style.Colors[ImGuiCol_Border] = applyAlpha(COLOR_GARGOYLE_GREY, 0.45f);
+	style.Colors[ImGuiCol_BorderShadow] = applyAlpha(ImVec4(0, 0, 0, 0), 0.00f);
+	style.Colors[ImGuiCol_FrameBg] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.75f);
+	style.Colors[ImGuiCol_FrameBgHovered] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 1.00f);
+	style.Colors[ImGuiCol_FrameBgActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
+	style.Colors[ImGuiCol_TitleBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
+	style.Colors[ImGuiCol_TitleBgActive] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 1.00f);
+	style.Colors[ImGuiCol_TitleBgCollapsed] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.75f);
+	style.Colors[ImGuiCol_MenuBarBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 1.00f);
+	style.Colors[ImGuiCol_ScrollbarBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.60f);
+	style.Colors[ImGuiCol_ScrollbarGrab] = applyAlpha(COLOR_GARGOYLE_GREY, 0.50f);
+	style.Colors[ImGuiCol_ScrollbarGrabHovered] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
+	style.Colors[ImGuiCol_ScrollbarGrabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.90f);
+	style.Colors[ImGuiCol_CheckMark] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
+	style.Colors[ImGuiCol_SliderGrab] = applyAlpha(COLOR_GARGOYLE_GREY, 0.80f);
+	style.Colors[ImGuiCol_SliderGrabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+	style.Colors[ImGuiCol_Button] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.85f);
+	style.Colors[ImGuiCol_ButtonHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
+	style.Colors[ImGuiCol_ButtonActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+	style.Colors[ImGuiCol_Header] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.60f);
+	style.Colors[ImGuiCol_HeaderHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.65f);
+	style.Colors[ImGuiCol_HeaderActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.90f);
+	style.Colors[ImGuiCol_Separator] = applyAlpha(COLOR_GARGOYLE_GREY, 0.40f);
+	style.Colors[ImGuiCol_SeparatorHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.75f);
+	style.Colors[ImGuiCol_SeparatorActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+	style.Colors[ImGuiCol_ResizeGrip] = applyAlpha(COLOR_GARGOYLE_GREY, 0.30f);
+	style.Colors[ImGuiCol_ResizeGripHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.70f);
+	style.Colors[ImGuiCol_ResizeGripActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+	style.Colors[ImGuiCol_Tab] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.70f);
+	style.Colors[ImGuiCol_TabHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.75f);
+	style.Colors[ImGuiCol_TabActive] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.95f);
+	style.Colors[ImGuiCol_TabUnfocused] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.40f);
+	style.Colors[ImGuiCol_TabUnfocusedActive] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.80f);
+	style.Colors[ImGuiCol_PlotLines] = applyAlpha(COLOR_GARGOYLE_GREY, 1.00f);
+	style.Colors[ImGuiCol_PlotLinesHovered] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+	style.Colors[ImGuiCol_PlotHistogram] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.85f);
+	style.Colors[ImGuiCol_PlotHistogramHovered] = applyAlpha(COLOR_VELLUM_CREAM, 1.00f);
+	style.Colors[ImGuiCol_TableHeaderBg] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.85f);
+	style.Colors[ImGuiCol_TableBorderStrong] = applyAlpha(COLOR_GARGOYLE_GREY, 0.60f);
+	style.Colors[ImGuiCol_TableBorderLight] = applyAlpha(COLOR_GARGOYLE_GREY, 0.30f);
+	style.Colors[ImGuiCol_TableRowBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.00f);
+	style.Colors[ImGuiCol_TableRowBgAlt] = applyAlpha(COLOR_NIGHTMARE_PURPLE, 0.20f);
+	style.Colors[ImGuiCol_TextSelectedBg] = applyAlpha(COLOR_BLOOD_CRIMSON, 0.45f);
+	style.Colors[ImGuiCol_DragDropTarget] = applyAlpha(COLOR_VELLUM_CREAM, 0.90f);
+	style.Colors[ImGuiCol_NavHighlight] = applyAlpha(COLOR_BLOOD_CRIMSON, 1.00f);
+	style.Colors[ImGuiCol_NavWindowingHighlight] = applyAlpha(COLOR_VELLUM_CREAM, 0.70f);
+	style.Colors[ImGuiCol_NavWindowingDimBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.60f);
+	style.Colors[ImGuiCol_ModalWindowDimBg] = applyAlpha(COLOR_DEEP_OBSIDIAN, 0.70f);
 }

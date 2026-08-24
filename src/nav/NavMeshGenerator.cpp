@@ -8,10 +8,10 @@
 #include "util.h"
 #include <algorithm>
 
-
 #include "GLFW/glfw3.h"
 
-NavMesh* NavMeshGenerator::generate(Bsp* map, int hull) {
+NavMesh* NavMeshGenerator::generate(Bsp* map, int hull)
+{
 	double NavMeshGeneratorGenStart = glfwGetTime();
 
 	std::vector<Polygon3D*> solidFaces = getHullFaces(map, hull);
@@ -19,7 +19,7 @@ NavMesh* NavMeshGenerator::generate(Bsp* map, int hull) {
 	mergeFaces(map, faces);
 	cullTinyFaces(faces);
 
-	for (size_t i = 0; i < solidFaces.size(); i++) 
+	for (size_t i = 0; i < solidFaces.size(); i++)
 	{
 		delete solidFaces[i];
 	}
@@ -32,7 +32,8 @@ NavMesh* NavMeshGenerator::generate(Bsp* map, int hull) {
 	return navmesh;
 }
 
-std::vector<Polygon3D*> NavMeshGenerator::getHullFaces(Bsp* map, int hull) {
+std::vector<Polygon3D*> NavMeshGenerator::getHullFaces(Bsp* map, int hull)
+{
 	float hullShrink = 0;
 	std::vector<Polygon3D*> solidFaces;
 
@@ -41,26 +42,33 @@ std::vector<Polygon3D*> NavMeshGenerator::getHullFaces(Bsp* map, int hull) {
 	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(0, hull, CONTENTS_SOLID);
 
 	std::vector<CMesh> solidMeshes;
-	for (size_t k = 0; k < solidNodes.size(); k++) {
+	for (size_t k = 0; k < solidNodes.size(); k++)
+	{
 		solidMeshes.emplace_back(clipper.clip(solidNodes[k].cuts));
 	}
 
 	// GET FACES FROM MESHES
-	for (size_t m = 0; m < solidMeshes.size(); m++) {
+	for (size_t m = 0; m < solidMeshes.size(); m++)
+	{
 		CMesh& mesh = solidMeshes[m];
 
-		for (size_t f = 0; f < mesh.faces.size(); f++) {
+		for (size_t f = 0; f < mesh.faces.size(); f++)
+		{
 			CFace& face = mesh.faces[f];
-			if (!face.visible) {
+			if (!face.visible)
+			{
 				continue;
 			}
 
 			std::set<int> uniqueFaceVerts;
 
-			for (size_t k = 0; k < face.edges.size(); k++) {
-				for (int v = 0; v < 2; v++) {
+			for (size_t k = 0; k < face.edges.size(); k++)
+			{
+				for (int v = 0; v < 2; v++)
+				{
 					int vertIdx = mesh.edges[face.edges[k]].verts[v];
-					if (!mesh.verts[vertIdx].visible) {
+					if (!mesh.verts[vertIdx].visible)
+					{
 						continue;
 					}
 					uniqueFaceVerts.insert(vertIdx);
@@ -68,20 +76,23 @@ std::vector<Polygon3D*> NavMeshGenerator::getHullFaces(Bsp* map, int hull) {
 			}
 
 			std::vector<vec3> faceVerts;
-			for (auto vertIdx : uniqueFaceVerts) {
+			for (auto vertIdx : uniqueFaceVerts)
+			{
 				faceVerts.push_back(mesh.verts[vertIdx].pos);
 			}
 
 			faceVerts = getSortedPlanarVerts(faceVerts);
 
-			if (faceVerts.size() < 3) {
-				//print_log("Degenerate clipnode face discarded {}\n", faceVerts.size());
+			if (faceVerts.size() < 3)
+			{
+				// print_log("Degenerate clipnode face discarded {}\n", faceVerts.size());
 				continue;
 			}
 
 			vec3 normal = getNormalFromVerts(faceVerts);
 
-			if (dotProduct(face.normal, normal) < 0) {
+			if (dotProduct(face.normal, normal) < 0)
+			{
 				reverse(faceVerts.begin(), faceVerts.end());
 				normal = normal.invert();
 			}
@@ -92,14 +103,14 @@ std::vector<Polygon3D*> NavMeshGenerator::getHullFaces(Bsp* map, int hull) {
 				poly->extendAlongAxis(hullShrink);
 
 			solidFaces.push_back(poly);
-
 		}
 	}
 
 	return solidFaces;
 }
 
-void NavMeshGenerator::getOctreeBox(Bsp* map, vec3& min, vec3& max) {
+void NavMeshGenerator::getOctreeBox(Bsp* map, vec3& min, vec3& max)
+{
 	vec3 mapMins;
 	vec3 mapMaxs;
 	map->get_bounding_box(mapMins, mapMaxs);
@@ -107,31 +118,35 @@ void NavMeshGenerator::getOctreeBox(Bsp* map, vec3& min, vec3& max) {
 	min = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 	max = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 
-	while (isBoxContained(mapMins, mapMaxs, min * 0.5f, max * 0.5f)) {
+	while (isBoxContained(mapMins, mapMaxs, min * 0.5f, max * 0.5f))
+	{
 		max *= 0.5f;
 		min *= 0.5f;
 	}
 }
 
-PolygonOctree* NavMeshGenerator::createPolyOctree(Bsp* map, const std::vector<Polygon3D*>& faces, int treeDepth) {
+PolygonOctree* NavMeshGenerator::createPolyOctree(Bsp* map, const std::vector<Polygon3D*>& faces, int treeDepth)
+{
 	vec3 treeMin, treeMax;
 	getOctreeBox(map, treeMin, treeMax);
 
 	print_log("Create octree depth {}, size {} -> {}\n", treeDepth, treeMax.x, treeMax.x / pow(2, treeDepth));
 	PolygonOctree* octree = new PolygonOctree(treeMin, treeMax, treeDepth);
 
-	for (size_t i = 0; i < faces.size(); i++) {
+	for (size_t i = 0; i < faces.size(); i++)
+	{
 		octree->insertPolygon(faces[i]);
 	}
 
 	return octree;
 }
 
-std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, std::vector<Polygon3D*>& faces) {
+std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, std::vector<Polygon3D*>& faces)
+{
 	PolygonOctree* octree = createPolyOctree(map, faces, octreeDepth);
 
 	size_t debugPoly = 0;
-	//debugPoly = 601;
+	// debugPoly = 601;
 
 	int avgInRegion = 0;
 	int regionChecks = 0;
@@ -149,22 +164,25 @@ std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, st
 	std::vector<bool> regionPolys;
 	regionPolys.resize(cuttingPolyCount);
 
-	for (size_t i = 0; i < faces.size(); i++) {
+	for (size_t i = 0; i < faces.size(); i++)
+	{
 		Polygon3D* poly = faces[i];
-		//if (debugPoly && i != debugPoly && i < cuttingPolys.size()) {
+		// if (debugPoly && i != debugPoly && i < cuttingPolys.size()) {
 		//	continue;
-		//}
-		if (!poly->isValid) {
+		// }
+		if (!poly->isValid)
+		{
 			continue;
 		}
-		if (walkableSurfacesOnly && poly->plane_z.z < 0.7) {
+		if (walkableSurfacesOnly && poly->plane_z.z < 0.7)
+		{
 			continue;
 		}
 
-		//print_log("debug poly idx {} -> {}\n", didx, i);
-		//didx++;
+		// print_log("debug poly idx {} -> {}\n", didx, i);
+		// didx++;
 
-		//print_log("Splitting {}\n", i);
+		// print_log("Splitting {}\n", i);
 
 		octree->getPolysInRegion(poly, regionPolys);
 		if (poly->idx < cuttingPolyCount)
@@ -177,23 +195,27 @@ std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, st
 		if (!doSplit || (debugPoly && i != debugPoly && i < cuttingPolyCount))
 			sz = 0;
 
-		for (size_t k = 0; k < sz; k++) {
-			if (!regionPolys[k]) {
+		for (size_t k = 0; k < sz; k++)
+		{
+			if (!regionPolys[k])
+			{
 				continue;
 			}
 			Polygon3D* cutPoly = faces[k];
 			avgInRegion++;
-			//if (k != 1547) {
+			// if (k != 1547) {
 			//	continue;
-			//}
+			// }
 
 			std::vector<std::vector<vec3>> splitPolys = poly->split(*cutPoly);
 
-			if (splitPolys.size()) {
+			if (splitPolys.size())
+			{
 				Polygon3D* newpoly0 = new Polygon3D(splitPolys[0], (int)faces.size());
 				Polygon3D* newpoly1 = new Polygon3D(splitPolys[1], (int)faces.size());
 
-				if (newpoly0->area < EPSILON || newpoly1->area < EPSILON) {
+				if (newpoly0->area < EPSILON || newpoly1->area < EPSILON)
+				{
 					delete newpoly0;
 					delete newpoly1;
 					continue;
@@ -206,20 +228,24 @@ std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, st
 				numSplits++;
 
 				float newArea = newpoly0->area + newpoly1->area;
-				if (newArea < poly->area * 0.9f) {
+				if (newArea < poly->area * 0.9f)
+				{
 					print_log("Poly {} area shrunk by {} ({} -> {})\n", i, (poly->area - newArea), poly->area, newArea);
 				}
 
-				//print_log("Split poly {} by {} into areas {} {}\n", i, k, newpoly0->area, newpoly1->area);
+				// print_log("Split poly {} by {} into areas {} {}\n", i, k, newpoly0->area, newpoly1->area);
 				break;
 			}
 		}
-		if (!doSplit) {
-			if (i < cuttingPolyCount) {
+		if (!doSplit)
+		{
+			if (i < cuttingPolyCount)
+			{
 				interiorFaces.push_back(*poly);
 			}
 		}
-		else if (!anySplits && (map->isInteriorFace(*poly, hull) || !doCull)) {
+		else if (!anySplits && (map->isInteriorFace(*poly, hull) || !doCull))
+		{
 			interiorFaces.push_back(*poly);
 		}
 	}
@@ -233,7 +259,8 @@ std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, st
 	return interiorFaces;
 }
 
-void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
+void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces)
+{
 	double mergeStart = glfwGetTime();
 
 	vec3 treeMin, treeMax;
@@ -243,12 +270,14 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 	std::vector<Polygon3D> mergedFaces = faces;
 	int pass = 0;
 	int maxPass = 10;
-	for (pass = 0; pass <= maxPass; pass++) {
+	for (pass = 0; pass <= maxPass; pass++)
+	{
 
 		PolygonOctree mergeOctree(treeMin, treeMax, octreeDepth);
-		for (size_t i = 0; i < mergedFaces.size(); i++) {
+		for (size_t i = 0; i < mergedFaces.size(); i++)
+		{
 			mergedFaces[i].idx = (int)i;
-			//interiorFaces[i].removeColinearVerts();
+			// interiorFaces[i].removeColinearVerts();
 			mergeOctree.insertPolygon(&mergedFaces[i]);
 		}
 
@@ -257,11 +286,12 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 
 		std::vector<Polygon3D> newMergedFaces;
 
-		for (size_t i = 0; i < mergedFaces.size(); i++) {
+		for (size_t i = 0; i < mergedFaces.size(); i++)
+		{
 			Polygon3D& poly = mergedFaces[i];
 			if (poly.idx == -1)
 				continue;
-			//if (pass == 4 && i != 149)
+			// if (pass == 4 && i != 149)
 			//	continue;
 
 			mergeOctree.getPolysInRegion(&poly, regionPolys);
@@ -270,8 +300,10 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 			size_t sz = regionPolys.size();
 			bool anyMerges = false;
 
-			for (size_t k = i + 1; k < sz; k++) {
-				if (!regionPolys[k]) {
+			for (size_t k = i + 1; k < sz; k++)
+			{
+				if (!regionPolys[k])
+				{
 					continue;
 				}
 				Polygon3D& mergePoly = mergedFaces[k];
@@ -286,7 +318,8 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 
 				Polygon3D mergedPoly = poly.merge(mergePoly);
 
-				if (!mergedPoly.isValid || mergedPoly.verts.size() > MAX_NAV_POLY_VERTS) {
+				if (!mergedPoly.isValid || mergedPoly.verts.size() > MAX_NAV_POLY_VERTS)
+				{
 					continue;
 				}
 
@@ -304,12 +337,14 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 				newMergedFaces.push_back(poly);
 		}
 
-		//print_log("Removed {} polys in pass {}\n", mergedFaces.size() - newMergedFaces.size(), pass + 1);
+		// print_log("Removed {} polys in pass {}\n", mergedFaces.size() - newMergedFaces.size(), pass + 1);
 
-		if (mergedFaces.size() == newMergedFaces.size() || pass == maxPass) {
+		if (mergedFaces.size() == newMergedFaces.size() || pass == maxPass)
+		{
 			break;
 		}
-		else {
+		else
+		{
 			mergedFaces = std::move(newMergedFaces);
 		}
 	}
@@ -320,12 +355,15 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 	faces = mergedFaces;
 }
 
-void NavMeshGenerator::cullTinyFaces(std::vector<Polygon3D>& faces) {
+void NavMeshGenerator::cullTinyFaces(std::vector<Polygon3D>& faces)
+{
 	const int TINY_POLY = 64; // cull faces smaller than this
 
 	std::vector<Polygon3D> finalPolys;
-	for (size_t i = 0; i < faces.size(); i++) {
-		if (faces[i].area < TINY_POLY) {
+	for (size_t i = 0; i < faces.size(); i++)
+	{
+		if (faces[i].area < TINY_POLY)
+		{
 			// TODO: only remove if there is at least one unconnected edge,
 			// otherwise there will be holes
 			continue;
@@ -337,13 +375,16 @@ void NavMeshGenerator::cullTinyFaces(std::vector<Polygon3D>& faces) {
 	faces = finalPolys;
 }
 
-void NavMeshGenerator::linkNavPolys(Bsp* map, NavMesh* mesh) {
+void NavMeshGenerator::linkNavPolys(Bsp* map, NavMesh* mesh)
+{
 	int numLinks = 0;
 
 	double linkStart = glfwGetTime();
 
-	for (size_t i = 0; i < mesh->numPolys; i++) {
-		for (size_t k = i + 1; k < mesh->numPolys; k++) {
+	for (size_t i = 0; i < mesh->numPolys; i++)
+	{
+		for (size_t k = i + 1; k < mesh->numPolys; k++)
+		{
 			if (i == k)
 				continue;
 			numLinks += tryEdgeLinkPolys(map, mesh, (int)i, (int)k);
@@ -353,26 +394,31 @@ void NavMeshGenerator::linkNavPolys(Bsp* map, NavMesh* mesh) {
 	print_log("Added {} nav poly links in {}\n", numLinks, (float)(glfwGetTime() - linkStart));
 }
 
-int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, int dstPolyIdx) {
+int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, int dstPolyIdx)
+{
 	const Polygon3D& srcPoly = mesh->polys[srcPolyIdx];
 	const Polygon3D& dstPoly = mesh->polys[dstPolyIdx];
 
-	for (size_t i = 0; i < srcPoly.topdownVerts.size(); i++) {
+	for (size_t i = 0; i < srcPoly.topdownVerts.size(); i++)
+	{
 		size_t inext = (i + 1) % srcPoly.topdownVerts.size();
 		Line2D thisEdge(srcPoly.topdownVerts[i], srcPoly.topdownVerts[inext]);
 
-		for (size_t k = 0; k < dstPoly.topdownVerts.size(); k++) {
+		for (size_t k = 0; k < dstPoly.topdownVerts.size(); k++)
+		{
 			size_t knext = (k + 1) % dstPoly.topdownVerts.size();
 			Line2D otherEdge(dstPoly.topdownVerts[k], dstPoly.topdownVerts[knext]);
 
-			if (!thisEdge.isAlignedWith(otherEdge) || k >= srcPoly.verts.size() || knext >= srcPoly.verts.size()) {
+			if (!thisEdge.isAlignedWith(otherEdge) || k >= srcPoly.verts.size() || knext >= srcPoly.verts.size())
+			{
 				continue;
 			}
 
 			float t0, t1, t2, t3;
 			float overlapDist = thisEdge.getOverlapRanges(otherEdge, t0, t1, t2, t3);
 
-			if (overlapDist < 1.0f) {
+			if (overlapDist < 1.0f)
+			{
 				continue; // shared region too short
 			}
 
@@ -389,14 +435,17 @@ int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, 
 			float max2 = std::max(e3.z, e4.z);
 
 			float zDist = 0.0f; // 0 = edges are are the same height or cross at some point
-			if (max1 < min2) { // dst is above src
+			if (max1 < min2)
+			{ // dst is above src
 				zDist = ceilf(min2 - max1);
 			}
-			else if (min1 > max2) { // dst is below src
+			else if (min1 > max2)
+			{ // dst is below src
 				zDist = floorf(max2 - min1);
 			}
 
-			if (fabs(zDist) > NAV_STEP_HEIGHT) {
+			if (fabs(zDist) > NAV_STEP_HEIGHT)
+			{
 				// trace at every point along the edge to see if this connection is possible
 				// starting at the mid point and working outwards
 				bool isBelow = zDist > 0;
@@ -412,38 +461,45 @@ int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, 
 				float step = stepUnits / flatLen;
 				TraceResult tr;
 				bool isBlocked = true;
-				for (float f = 0; f < 0.5f; f += step) {
+				for (float f = 0; f < 0.5f; f += step)
+				{
 					vec3 test1 = mid1 + (delta1 * f) + testOffset;
 					vec3 test2 = mid2 + (delta2 * f) + testOffset;
 					vec3 test3 = mid1 + (delta1 * -f) + testOffset;
 					vec3 test4 = mid2 + (delta2 * -f) + testOffset;
 
 					map->traceHull(test1, test2, 3, &tr);
-					if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.9f) {
+					if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.9f)
+					{
 						isBlocked = false;
 						break;
 					}
 					map->traceHull(test3, test4, 3, &tr);
-					if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.9f) {
+					if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.9f)
+					{
 						isBlocked = false;
 						break;
 					}
 				}
 
-				if (isBlocked) {
+				if (isBlocked)
+				{
 					continue;
 				}
 			}
 
-			if (dotProduct(thisEdge.dir, otherEdge.dir) > 0) {
+			if (dotProduct(thisEdge.dir, otherEdge.dir) > 0)
+			{
 				// Polygons overlap, but this is ok when dropping down.
 				// Technically it's possible to go up too but that's
 				// hard to pull off and no map requires that
 
-				if (srcPoly.verts[i].z < dstPoly.verts[k].z) {
+				if (srcPoly.verts[i].z < dstPoly.verts[k].z)
+				{
 					mesh->addLink(dstPolyIdx, srcPolyIdx, (int)k, (int)i, (int)-zDist, 0);
 				}
-				else {
+				else
+				{
 					mesh->addLink(srcPolyIdx, dstPolyIdx, (int)i, (int)k, (int)zDist, 0);
 				}
 

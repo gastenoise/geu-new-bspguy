@@ -5,7 +5,7 @@
 
 class Texture
 {
-public:
+  public:
 	unsigned int id; // OpenGL texture ID
 	int type;
 	GLsizei height, width;
@@ -34,7 +34,8 @@ public:
 	// get data (if deleted, then fill it from texture)
 	unsigned char* getData();
 
-	void setWadName(const std::string& s) {
+	void setWadName(const std::string& s)
+	{
 		wad_name = s;
 	}
 
@@ -42,8 +43,8 @@ public:
 	void bind(GLuint texnum);
 
 	int dataLen;
-private:
 
+  private:
 	bool uploaded;
 	unsigned char* data; // RGB(A) data
 	bool tex_owndata;

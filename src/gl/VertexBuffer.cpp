@@ -6,30 +6,28 @@
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int _numVerts, int primitive, bool takeOwnership)
 	: frameId(-1),
-	uploaded(false),
-	vboId(0),
-	vaoId(0),
-	data((unsigned char*)dat),
-	numVerts(_numVerts),
-	ownData(takeOwnership),
-	shaderProgram(shaderProgram),
-	primitive(primitive)
+	  uploaded(false),
+	  vboId(0),
+	  vaoId(0),
+	  data((unsigned char*)dat),
+	  numVerts(_numVerts),
+	  ownData(takeOwnership),
+	  shaderProgram(shaderProgram),
+	  primitive(primitive)
 {
-
 }
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int primitive)
 	: frameId(-1),
-	uploaded(false),
-	vboId(0),
-	vaoId(0),
-	data(nullptr),
-	numVerts(0),
-	ownData(false),
-	shaderProgram(shaderProgram),
-	primitive(primitive)
+	  uploaded(false),
+	  vboId(0),
+	  vaoId(0),
+	  data(nullptr),
+	  numVerts(0),
+	  ownData(false),
+	  shaderProgram(shaderProgram),
+	  primitive(primitive)
 {
-
 }
 
 VertexBuffer::~VertexBuffer()
@@ -136,11 +134,11 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 
 		glEnableVertexAttribArray(a.handle);
 		glVertexAttribPointer(a.handle,
-			a.numValues,
-			a.valueType,
-			a.normalized != 0,
-			shaderProgram->elementSize,
-			(const void*)(uintptr_t)offset);
+							  a.numValues,
+							  a.valueType,
+							  a.normalized != 0,
+							  shaderProgram->elementSize,
+							  (const void*)(uintptr_t)offset);
 		if (!hideErrors)
 		{
 			GLenum err = glGetError();

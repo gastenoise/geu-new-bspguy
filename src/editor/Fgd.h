@@ -91,7 +91,7 @@ struct FgdClass
 		// default to the purple cube
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
-		color = { 220, 0, 220 };
+		color = {220, 0, 220};
 		offset = vec3();
 		modelSkin = modelBody = modelSequence = 0;
 		scale = 1.0f;
@@ -110,7 +110,7 @@ struct FgdGroup
 
 class Fgd
 {
-public:
+  public:
 	std::string path;
 	std::string name;
 	std::vector<FgdClass*> classes;
@@ -121,7 +121,8 @@ public:
 	std::vector<std::string> existsFlagNames;
 	std::vector<int> existsFlagNamesBits;
 
-	Fgd(std::string _path) : path(std::move(_path))
+	Fgd(std::string _path)
+		: path(std::move(_path))
 	{
 		this->name = stripExt(basename(path));
 		this->lineNum = 0;
@@ -136,7 +137,7 @@ public:
 	FgdClass* getFgdClass(const std::string& cname);
 	FgdClass* getFgdClass(const std::string& cname, int type);
 
-private:
+  private:
 	int lineNum = 0;
 	std::string line; // current line being parsed
 

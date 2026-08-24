@@ -2,14 +2,14 @@
 #include "Keyvalue.h"
 #include <map>
 
-typedef std::map< std::string, std::string > hashmap;
+typedef std::map<std::string, std::string> hashmap;
 class Bsp;
 
 extern size_t totalEntityStructs;
 
 class Entity
 {
-public:
+  public:
 	hashmap keyvalues;
 	std::vector<std::string> keyOrder;
 
@@ -80,15 +80,14 @@ public:
 
 	size_t getMemoryUsage(); // aproximate
 
-	vec3 origin;	
-	
+	vec3 origin;
+
 	vec3 getHullOrigin(Bsp* map);
 
-	
 	bool isEverVisible();
 
 	std::string serialize();
-	
+
 	int rendermode;
 	int renderamt;
 	int renderfx;
@@ -96,4 +95,3 @@ public:
 
 	size_t realIdx;
 };
-

@@ -6,25 +6,31 @@
 #include <string.h>
 #include "GLFW/glfw3.h"
 
-bool NavNode::addLink(int node, int srcEdge, int dstEdge, int zDist, unsigned char _flags) {
-	if (srcEdge < 0 || srcEdge >= MAX_NAV_POLY_VERTS) {
+bool NavNode::addLink(int node, int srcEdge, int dstEdge, int zDist, unsigned char _flags)
+{
+	if (srcEdge < 0 || srcEdge >= MAX_NAV_POLY_VERTS)
+	{
 		print_log("Error: add link to invalid src edge {}\n", srcEdge);
 		return false;
 	}
-	if (dstEdge < 0 || dstEdge >= MAX_NAV_POLY_VERTS) {
+	if (dstEdge < 0 || dstEdge >= MAX_NAV_POLY_VERTS)
+	{
 		print_log("Error: add link to invalid dst edge {}\n", dstEdge);
 		return false;
 	}
-	
-	for (int i = 0; i < MAX_NAV_LINKS; i++) {
-		if (links[i].node == node) {
+
+	for (int i = 0; i < MAX_NAV_LINKS; i++)
+	{
+		if (links[i].node == node)
+		{
 			links[i].srcEdge = srcEdge;
 			links[i].dstEdge = dstEdge;
 			links[i].zDist = zDist;
 			links[i].flags = _flags;
 			return true;
 		}
-		if (links[i].node == -1) {
+		if (links[i].node == -1)
+		{
 			links[i].srcEdge = srcEdge;
 			links[i].dstEdge = dstEdge;
 			links[i].node = node;
@@ -38,11 +44,14 @@ bool NavNode::addLink(int node, int srcEdge, int dstEdge, int zDist, unsigned ch
 	return false;
 }
 
-int NavNode::numLinks() {
+int NavNode::numLinks()
+{
 	int numLinks = 0;
 
-	for (int i = 0; i < MAX_NAV_LINKS; i++) {
-		if (links[i].node == -1) {
+	for (int i = 0; i < MAX_NAV_LINKS; i++)
+	{
+		if (links[i].node == -1)
+		{
 			break;
 		}
 		numLinks++;
@@ -51,19 +60,23 @@ int NavNode::numLinks() {
 	return numLinks;
 }
 
-NavMesh::NavMesh() {
+NavMesh::NavMesh()
+{
 	clear();
 	numPolys = 0;
 }
 
-void NavMesh::clear() {
+void NavMesh::clear()
+{
 	memset(nodes, 0, sizeof(NavNode) * MAX_NAV_POLYS);
 
-	for (int i = 0; i < MAX_NAV_POLYS; i++) {
+	for (int i = 0; i < MAX_NAV_POLYS; i++)
+	{
 		polys[i] = Polygon3D();
 		nodes[i].id = i;
 
-		for (int k = 0; k < MAX_NAV_LINKS; k++) {
+		for (int k = 0; k < MAX_NAV_LINKS; k++)
+		{
 			nodes[i].links[k].srcEdge = 0;
 			nodes[i].links[k].dstEdge = 0;
 			nodes[i].links[k].node = -1;
@@ -72,30 +85,35 @@ void NavMesh::clear() {
 	}
 }
 
-NavMesh::NavMesh(std::vector<Polygon3D> faces) {
+NavMesh::NavMesh(std::vector<Polygon3D> faces)
+{
 	clear();
 
-	for (size_t i = 0; i < faces.size(); i++) {
+	for (size_t i = 0; i < faces.size(); i++)
+	{
 		polys[i] = Polygon3D(faces[i].verts);
 		if (faces[i].verts.size() > MAX_NAV_POLY_VERTS)
 			print_log("Error: Face {} has {} verts (max is {})\n", i, faces[i].verts.size(), MAX_NAV_POLY_VERTS);
 	}
 	numPolys = faces.size();
 
-	print_log("Created nav mesh with {} polys (x{} = {} KB)\n", 
-		numPolys, sizeof(NavNode), (sizeof(NavNode)*numPolys) / 1024);
+	print_log("Created nav mesh with {} polys (x{} = {} KB)\n",
+			  numPolys, sizeof(NavNode), (sizeof(NavNode) * numPolys) / 1024);
 
 	print_log("NavPolyNode = {} bytes, NavLink = {} bytes\n",
-		sizeof(NavNode), sizeof(NavLink));
+			  sizeof(NavNode), sizeof(NavLink));
 }
 
-bool NavMesh::addLink(int from, int to, int srcEdge, int dstEdge, int zDist, unsigned char flags) {
-	if (from < 0 || to < 0 || from >= MAX_NAV_POLYS || to >= MAX_NAV_POLYS) {
+bool NavMesh::addLink(int from, int to, int srcEdge, int dstEdge, int zDist, unsigned char flags)
+{
+	if (from < 0 || to < 0 || from >= MAX_NAV_POLYS || to >= MAX_NAV_POLYS)
+	{
 		print_log("Error: add link from/to invalid node {} {}\n", from, to);
 		return false;
 	}
 
-	if (!nodes[from].addLink(to, srcEdge, dstEdge, zDist, flags)) {
+	if (!nodes[from].addLink(to, srcEdge, dstEdge, zDist, flags))
+	{
 		vec3& pos = polys[from].center;
 		print_log("Failed to add link at {} {} {}\n", (int)pos.x, (int)pos.y, (int)pos.z);
 		return false;
@@ -104,27 +122,33 @@ bool NavMesh::addLink(int from, int to, int srcEdge, int dstEdge, int zDist, uns
 	return true;
 }
 
-std::vector<Polygon3D> NavMesh::getPolys() {
+std::vector<Polygon3D> NavMesh::getPolys()
+{
 	std::vector<Polygon3D> ret;
 
-	for (size_t i = 0; i < numPolys; i++) {
+	for (size_t i = 0; i < numPolys; i++)
+	{
 		ret.push_back(polys[i]);
 	}
 
 	return ret;
 }
 
-void NavMesh::getLinkMidPoints(int iNode, int iLink, vec3& srcMid, vec3& dstMid) {
+void NavMesh::getLinkMidPoints(int iNode, int iLink, vec3& srcMid, vec3& dstMid)
+{
 	srcMid = dstMid = vec3();
-	if (iNode < 0 || iNode >= MAX_NAV_POLYS) {
+	if (iNode < 0 || iNode >= MAX_NAV_POLYS)
+	{
 		return;
 	}
-	if (iLink < 0 || iLink >= MAX_NAV_LINKS) {
+	if (iLink < 0 || iLink >= MAX_NAV_LINKS)
+	{
 		return;
 	}
 
 	NavLink& link = nodes[iNode].links[iLink];
-	if (link.node < 0 || link.node >= MAX_NAV_POLYS) {
+	if (link.node < 0 || link.node >= MAX_NAV_POLYS)
+	{
 		return;
 	}
 

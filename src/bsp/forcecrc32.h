@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <string.h>
 
-
 void PathCrc32InMemory(unsigned char* data, unsigned int len, unsigned int offset, unsigned int oldcrc, unsigned int newcrc);
 unsigned int GetCrc32InMemory(unsigned char* f, unsigned int length, unsigned int oldcrc = UINT32_C(0xFFFFFFFF));
 unsigned int ReplaceCrc32InMemory(unsigned char* data, unsigned int len, unsigned int offset, unsigned int newcrc, unsigned int oldcrc = UINT32_C(0xFFFFFFFF));

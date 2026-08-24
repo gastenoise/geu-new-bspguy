@@ -3,24 +3,30 @@
 #include <string>
 #include <fstream>
 
-class JackWriter {
-public:
-	JackWriter(const std::string& filename) : file(filename, std::ios::binary) {}
+class JackWriter
+{
+  public:
+	JackWriter(const std::string& filename)
+		: file(filename, std::ios::binary) {}
 
-	~JackWriter() {
-		if (file.is_open()) {
+	~JackWriter()
+	{
+		if (file.is_open())
+		{
 			file.close();
 		}
 	}
 
 	template <typename T>
-	void write(const T& value) {
+	void write(const T& value)
+	{
 		file.write((const char*)&value, sizeof(T));
 	}
 
-	void writeLenStr(const std::string& str) {
+	void writeLenStr(const std::string& str)
+	{
 		int size = (int)str.length();
-		//write(size);
+		// write(size);
 		write<int>(size);
 		if (size > 0)
 			file.write(str.data(), size);
@@ -32,51 +38,61 @@ public:
 		writeLenStr(val);
 	}
 
-	bool is_open() const {
+	bool is_open() const
+	{
 		return file && file.is_open();
 	}
 
-private:
+  private:
 	std::ofstream file;
 };
 
-class JackReader {
-public:
-	JackReader(const std::string& filename) : file(filename, std::ios::binary) {}
+class JackReader
+{
+  public:
+	JackReader(const std::string& filename)
+		: file(filename, std::ios::binary) {}
 
-	~JackReader() {
-		if (file.is_open()) {
+	~JackReader()
+	{
+		if (file.is_open())
+		{
 			file.close();
 		}
 	}
 
 	template <typename T>
-	bool read(T& value) {
+	bool read(T& value)
+	{
 		file.read(reinterpret_cast<char*>(&value), sizeof(T));
 		return file.good();
 	}
 
-	bool readLenStr(std::string& str) {
+	bool readLenStr(std::string& str)
+	{
 		int size = 0;
-		if (!read<int>(size)) {
+		if (!read<int>(size))
+		{
 			return false;
 		}
 		str.resize(size);
-		if (size > 0) {
+		if (size > 0)
+		{
 			file.read(&str[0], size);
 		}
 		return file.good();
 	}
 
-	bool readKeyVal(std::string& key, std::string& val) {
+	bool readKeyVal(std::string& key, std::string& val)
+	{
 		return readLenStr(key) && readLenStr(val);
 	}
 
-	bool is_open() const {
+	bool is_open() const
+	{
 		return file && file.is_open();
 	}
 
-private:
+  private:
 	std::ifstream file;
 };
-

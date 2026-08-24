@@ -55,12 +55,14 @@ struct cell
 	cell_type type;
 };
 
-static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer) {
+static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer)
+{
 	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
 	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
 	int lvl = static_cast<int>(std::round((pos.z - mins.z) / cell_size));
 
-	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers) {
+	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers)
+	{
 		return -1;
 	}
 
@@ -74,20 +76,22 @@ static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell
 
 static inline void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& text)
 {
-	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+	{
 		ImGui::BeginTooltip();
 		ImGui::TextUnformatted(text.c_str());
 		ImGui::EndTooltip();
 	}
 }
 
-namespace umd_flags {
-	enum {
-		UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
-		UMD_OPTIMIZE_DISABLED = 1 << 1
-	};
+namespace umd_flags
+{
+enum
+{
+	UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
+	UMD_OPTIMIZE_DISABLED = 1 << 1
+};
 }
-
 
 void Gui::drawBspContexMenu()
 {
@@ -120,7 +124,7 @@ void Gui::drawBspContexMenu()
 				if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
 				{
 					map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-						map->models[modelIdx].nMaxs);
+															  map->models[modelIdx].nMaxs);
 					rend->refreshModel(modelIdx);
 					pickCount++; // force gui refresh
 				}
@@ -130,7 +134,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0432).c_str()))
 					{
 						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+																  map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.z = model.nMaxs.z;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -138,7 +142,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0433).c_str()))
 					{
 						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+																  map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.z = model.nMins.z;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -147,7 +151,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0434).c_str()))
 					{
 						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+																  map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.x = model.nMins.x;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -155,7 +159,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0435).c_str()))
 					{
 						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+																  map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.x = model.nMaxs.x;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -164,7 +168,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0436).c_str()))
 					{
 						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+																  map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.y = model.nMins.y;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -172,7 +176,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0437).c_str()))
 					{
 						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+																  map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.y = model.nMaxs.y;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -189,7 +193,8 @@ void Gui::drawBspContexMenu()
 					{
 						Entity* sel_ent = map->ents[entIdx];
 						int sel_modelIdx = sel_ent->getBspModelIdx();
-						if (sel_modelIdx <= 0) continue;
+						if (sel_modelIdx <= 0)
+							continue;
 
 						BSPMODEL& sel_model = map->models[sel_modelIdx];
 						for (int i = 0; i < sel_model.nFaces; i++)
@@ -213,7 +218,8 @@ void Gui::drawBspContexMenu()
 				if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
 				{
 					ent->setOrAddKeyvalue("origin", (-getCenter(map->models[modelIdx].nMins,
-						map->models[modelIdx].nMaxs)).toKeyvalueString());
+																map->models[modelIdx].nMaxs))
+														.toKeyvalueString());
 					rend->refreshEnt(entIdx);
 					pickCount++; // force gui refresh
 				}
@@ -223,7 +229,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0432).c_str()))
 					{
 						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+												 map->models[modelIdx].nMaxs);
 						vOrigin.z = model.nMaxs.z;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -232,7 +238,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0433).c_str()))
 					{
 						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+												 map->models[modelIdx].nMaxs);
 						vOrigin.z = model.nMins.z;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -242,7 +248,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0434).c_str()))
 					{
 						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+												 map->models[modelIdx].nMaxs);
 						vOrigin.x = model.nMins.x;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -251,7 +257,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0435).c_str()))
 					{
 						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+												 map->models[modelIdx].nMaxs);
 						vOrigin.x = model.nMaxs.x;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -260,7 +266,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0436).c_str()))
 					{
 						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+												 map->models[modelIdx].nMaxs);
 						vOrigin.y = model.nMins.y;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -269,7 +275,7 @@ void Gui::drawBspContexMenu()
 					if (ImGui::MenuItem(get_localized_string(LANG_0437).c_str()))
 					{
 						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+												 map->models[modelIdx].nMaxs);
 						vOrigin.y = model.nMaxs.y;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -286,7 +292,8 @@ void Gui::drawBspContexMenu()
 					{
 						Entity* sel_ent = map->ents[entIdx];
 						int sel_modelIdx = sel_ent->getBspModelIdx();
-						if (sel_modelIdx <= 0) continue;
+						if (sel_modelIdx <= 0)
+							continue;
 
 						BSPMODEL& sel_model = map->models[sel_modelIdx];
 						for (int i = 0; i < sel_model.nFaces; i++)
@@ -351,7 +358,7 @@ void Gui::drawBspContexMenu()
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), get_localized_string(LANG_0441).c_str(), false,
-				copiedMiptex >= 0 && copiedMiptex < map->textureCount))
+								copiedMiptex >= 0 && copiedMiptex < map->textureCount))
 			{
 				pasteTexture();
 			}
@@ -509,7 +516,6 @@ void Gui::drawBspContexMenu()
 							}
 						}
 					}
-
 				}
 
 				ImGui::EndMenu();
@@ -809,7 +815,6 @@ void Gui::drawBspContexMenu()
 					ImGui::EndMenu();
 				}
 
-
 				ImGui::Separator();
 
 				bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
@@ -887,12 +892,14 @@ void Gui::drawBspContexMenu()
 						IsValidForMerge = true;
 						for (auto tmpentIdx : app->pickInfo.selectedEnts)
 						{
-							if (tmpentIdx < 0 || tmpentIdx >= (int)map->ents.size()) 
+							if (tmpentIdx < 0 || tmpentIdx >= (int)map->ents.size())
 							{
-								IsValidForMerge = false; break; 
+								IsValidForMerge = false;
+								break;
 							}
 							Entity* e = map->ents[tmpentIdx];
-							if (!e->isBspModel() || e->isWorldSpawn()) {
+							if (!e->isBspModel() || e->isWorldSpawn())
+							{
 								IsValidForMerge = false;
 								break;
 							}
@@ -910,7 +917,8 @@ void Gui::drawBspContexMenu()
 							Entity* e2 = toMerge[toMerge.size() - 2];
 
 							int newmodelid = map->merge_two_models_ents(e1, e2);
-							if (newmodelid < 0) {
+							if (newmodelid < 0)
+							{
 								print_log(PRINT_RED, "Merge failed for models {} and {}\n", e1->getBspModelIdx(), e2->getBspModelIdx());
 								break;
 							}
@@ -924,9 +932,10 @@ void Gui::drawBspContexMenu()
 							toMerge.pop_back();
 						}
 
-						for (Entity* delent : toErasePtrs) {
+						for (Entity* delent : toErasePtrs)
+						{
 							auto it = std::find(map->ents.begin(), map->ents.end(), delent);
-							if (it != map->ents.end()) 
+							if (it != map->ents.end())
 							{
 								map->ents.erase(it);
 								delete delent;
@@ -945,7 +954,6 @@ void Gui::drawBspContexMenu()
 						rend->pushUndoState("MERGE BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
 						rend->preRenderEnts();
 					}
-
 
 					if (ImGui::IsItemHovered())
 					{
@@ -999,7 +1007,6 @@ void Gui::drawBspContexMenu()
 					ImGui::TextUnformatted(get_localized_string(LANG_0472).c_str());
 					ImGui::EndTooltip();
 				}
-
 			}
 			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_0473).c_str()))
 			{
@@ -1019,7 +1026,6 @@ void Gui::drawBspContexMenu()
 			{
 				showKeyvalueWidget = true;
 			}
-
 
 			ImGui::EndPopup();
 		}
@@ -1045,7 +1051,6 @@ void Gui::drawBspContexMenu()
 		}
 	}
 }
-
 
 void Gui::drawContextMenu_Entity() {}
 void Gui::drawContextMenu_Face() {}

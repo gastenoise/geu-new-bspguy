@@ -4,14 +4,16 @@
 #include <lodepng.h>
 #include "log.h"
 
-std::vector<unsigned char> compressData(const std::vector<unsigned char>& data) {
+std::vector<unsigned char> compressData(const std::vector<unsigned char>& data)
+{
 	unsigned char* out = NULL;
 	size_t outsize = 0;
 	LodePNGCompressSettings settings;
 	lodepng_compress_settings_init(&settings);
 
 	unsigned error = lodepng_zlib_compress(&out, &outsize, data.data(), data.size(), &settings);
-	if (error) {
+	if (error)
+	{
 		throw std::runtime_error("Compression failed: " + std::string(lodepng_error_text(error)));
 	}
 
@@ -20,14 +22,16 @@ std::vector<unsigned char> compressData(const std::vector<unsigned char>& data) 
 	return compressedData;
 }
 
-std::vector<unsigned char> decompressData(const std::vector<unsigned char>& compressedData) {
+std::vector<unsigned char> decompressData(const std::vector<unsigned char>& compressedData)
+{
 	unsigned char* out = NULL;
 	size_t outsize = 0;
 	LodePNGDecompressSettings settings;
 	lodepng_decompress_settings_init(&settings);
 
 	unsigned error = lodepng_zlib_decompress(&out, &outsize, compressedData.data(), compressedData.size(), &settings);
-	if (error) {
+	if (error)
+	{
 		throw std::runtime_error("Decompression failed: " + std::string(lodepng_error_text(error)));
 	}
 
@@ -36,9 +40,8 @@ std::vector<unsigned char> decompressData(const std::vector<unsigned char>& comp
 	return decompressedData;
 }
 
-
-EditBspCommand::EditBspCommand(const std::string& desc, LumpState _oldLumps, LumpState _newLumps, unsigned int targetLumps) :
-	desc(desc), oldLumps(std::move(_oldLumps)), newLumps(std::move(_newLumps)), targetLumps(targetLumps), memoryused(0)
+EditBspCommand::EditBspCommand(const std::string& desc, LumpState _oldLumps, LumpState _newLumps, unsigned int targetLumps)
+	: desc(desc), oldLumps(std::move(_oldLumps)), newLumps(std::move(_newLumps)), targetLumps(targetLumps), memoryused(0)
 {
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -87,7 +90,6 @@ void EditBspCommand::execute()
 		}
 	}
 
-	
 	map->replace_lumps(newLumps);
 
 	refresh(renderer);
@@ -122,7 +124,6 @@ void EditBspCommand::execute()
 		renderer->refreshModel(mdl, false);
 	}
 	//}
-
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -201,7 +202,6 @@ void EditBspCommand::undo()
 		renderer->refreshModel(mdl, false);
 	}
 	//}
-
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{

@@ -10,7 +10,6 @@
 // BEGIN COPIED QRAD CODE
 //
 
-
 // ApplyMatrix: (x y z 1)T -> matrix * (x y z 1)T
 void ApplyMatrix(const mat4x4& m, const vec3& in, vec3& out)
 {
@@ -23,7 +22,6 @@ bool InvertMatrix(mat4x4 m, mat4x4& m_inverse)
 	return true;
 }
 
-
 void TranslateWorldToTex(Bsp* bsp, int facenum, mat4x4& m)
 {
 	BSPFACE32* f = &bsp->faces[facenum];
@@ -33,19 +31,19 @@ void TranslateWorldToTex(Bsp* bsp, int facenum, mat4x4& m)
 	for (int i = 0; i < 3; i++)
 	{
 		m.m[i * 4 + 0] = ((float*)&ti->vS)[i];
-		m.m[i * 4 + 1] = ((float*)&ti->vT)[i]; 
-		m.m[i * 4 + 2] = ((float*)&fp.vNormal)[i]; 
+		m.m[i * 4 + 1] = ((float*)&ti->vT)[i];
+		m.m[i * 4 + 2] = ((float*)&fp.vNormal)[i];
 	}
 
 	m.m[3 * 4 + 0] = ti->shiftS;
 	m.m[3 * 4 + 1] = ti->shiftT;
-	m.m[3 * 4 + 2] = -fp.fDist; 
+	m.m[3 * 4 + 2] = -fp.fDist;
 }
 
 bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 {
-	float texmins[2] = { 0.0f,0.0f };
-	float texmaxs[2] = { 0.0f,0.0f };
+	float texmins[2] = {0.0f, 0.0f};
+	float texmaxs[2] = {0.0f, 0.0f};
 
 	mat4x4 worldtotex;
 	worldtotex.loadIdentity();
@@ -118,7 +116,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 	for (int k = 0; k < 2; k++)
 	{
 		imins[k] = (int)floor(texmins[k] / tmpTextureStep);
-		imaxs[k] = (int)ceil(texmaxs[k] / tmpTextureStep );
+		imaxs[k] = (int)ceil(texmaxs[k] / tmpTextureStep);
 	}
 
 	int w = imaxs[0] - imins[0] + 1;
@@ -148,7 +146,7 @@ float CalculatePointVecsProduct(const volatile float* point, const volatile floa
 }
 
 //
-//bool GetFaceExtentsX(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
+// bool GetFaceExtentsX(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 //{
 //	BSPFACE32* f;
 //	float mins[2], maxs[2], val;

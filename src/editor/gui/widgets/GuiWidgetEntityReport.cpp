@@ -20,7 +20,7 @@ void Gui::drawEntityReport()
 			static int MAX_FILTERS = 1;
 			static std::vector<std::string> keyFilter = {""};
 			static std::vector<std::string> valueFilter = {""};
-			static std::vector<int> opFilter = {0}; // 0: =, 1: !=
+			static std::vector<int> opFilter = {0};					  // 0: =, 1: !=
 			static std::vector<int> logicFilter = std::vector<int>(); // 0: AND, 1: OR
 			static int lastSelect = -1;
 			static std::vector<int> visibleEnts;

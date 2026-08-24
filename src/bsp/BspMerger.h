@@ -1,8 +1,9 @@
-#pragma once 
+#pragma once
 #include "Bsp.h"
 #include "vectors.h"
 
-struct MergeResult {
+struct MergeResult
+{
 	Bsp* map;
 
 	// merge failed if map is null, and below are suggested fixes
@@ -18,7 +19,7 @@ struct MAPBLOCK
 	vec3 mins, maxs, size, offset;
 	Bsp* map;
 	std::string merge_name;
-	
+
 	void suggest_intersection_fix(MAPBLOCK& other, MergeResult& result)
 	{
 		float xdelta_neg = other.maxs.x - mins.x;
@@ -39,14 +40,14 @@ struct MAPBLOCK
 	bool intersects(MAPBLOCK& other)
 	{
 		return (mins.x <= other.maxs.x && maxs.x >= other.mins.x) &&
-			(mins.y <= other.maxs.y && maxs.y >= other.mins.y) &&
-			(mins.z <= other.maxs.z && maxs.y >= other.mins.z);
+			   (mins.y <= other.maxs.y && maxs.y >= other.mins.y) &&
+			   (mins.z <= other.maxs.z && maxs.y >= other.mins.z);
 	}
 };
 
 class BspMerger
 {
-public:
+  public:
 	BspMerger() = default;
 
 	// merges all maps into one
@@ -54,7 +55,6 @@ public:
 	// noscript - don't add support for the bspguy map script (worse performance + buggy, but simpler)
 
 	MergeResult merge(std::vector<Bsp*> maps, const std::string& output_name, bool noripent, bool noscript, bool nomergestyles, std::vector<vec3> overlapGaps = {});
-
 
 	// wrapper around BSP data merging for nicer console output
 	void merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultName);
@@ -94,7 +94,6 @@ public:
 
 	void create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane);
 
-
 	// remapped structure indexes for mapB when merging
 	std::vector<int> texRemap;
 	std::vector<int> texInfoRemap;
@@ -112,7 +111,7 @@ public:
 	int otherFaceCount = 0;
 	int thisNodeCount = 0;
 	int thisClipnodeCount = 0;
-	int thisWorldLeafCount = 0; // excludes solid leaf 0
+	int thisWorldLeafCount = 0;	 // excludes solid leaf 0
 	int otherWorldLeafCount = 0; // excluding solid leaf 0
 	int thisSurfEdgeCount = 0;
 	int thisMarkSurfCount = 0;

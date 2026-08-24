@@ -9,7 +9,6 @@ std::string g_game_dir = "/";
 std::string g_working_dir = "./bspguy_work/";
 std::string g_startup_dir = "";
 
-
 inih::INIReader* settings_ini = NULL;
 
 Settings g_settings{};
@@ -54,9 +53,7 @@ void Settings::loadDefaultSettings()
 
 	settings_tab = 0;
 
-	render_flags = g_render_flags = (RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL
-		| RENDER_ENTS | RENDER_SPECIAL_ENTS | RENDER_POINT_ENTS | RENDER_WIREFRAME | RENDER_ENT_CONNECTIONS
-		| RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED | RENDER_WORLD_CLIPNODES | RENDER_ORIGIN);
+	render_flags = g_render_flags = (RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL | RENDER_ENTS | RENDER_SPECIAL_ENTS | RENDER_POINT_ENTS | RENDER_WIREFRAME | RENDER_ENT_CONNECTIONS | RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED | RENDER_WORLD_CLIPNODES | RENDER_ORIGIN);
 
 	vsync = true;
 	merge_verts = false;
@@ -80,7 +77,6 @@ void Settings::loadDefaultSettings()
 	rad_path = "hlrad.exe";
 	rad_options = "\"{map_path}\"";
 
-
 	default_is_empty = true;
 
 	reload_ents_list = true;
@@ -89,54 +85,774 @@ void Settings::loadDefaultSettings()
 	palette_name = "quake_1";
 
 	unsigned char default_data[0x300] = {
-	 0x00, 0x00, 0x00, 0x0F, 0x0F, 0x0F, 0x1F, 0x1F, 0x1F, 0x2F, 0x2F, 0x2F, 0x3F, 0x3F, 0x3F, 0x4B,
-	 0x4B, 0x4B, 0x5B, 0x5B, 0x5B, 0x6B, 0x6B, 0x6B, 0x7B, 0x7B, 0x7B, 0x8B, 0x8B, 0x8B, 0x9B, 0x9B,
-	 0x9B, 0xAB, 0xAB, 0xAB, 0xBB, 0xBB, 0xBB, 0xCB, 0xCB, 0xCB, 0xDB, 0xDB, 0xDB, 0xEB, 0xEB, 0xEB,
-	 0x0F, 0x0B, 0x07, 0x17, 0x0F, 0x0B, 0x1F, 0x17, 0x0B, 0x27, 0x1B, 0x0F, 0x2F, 0x23, 0x13, 0x37,
-	 0x2B, 0x17, 0x3F, 0x2F, 0x17, 0x4B, 0x37, 0x1B, 0x53, 0x3B, 0x1B, 0x5B, 0x43, 0x1F, 0x63, 0x4B,
-	 0x1F, 0x6B, 0x53, 0x1F, 0x73, 0x57, 0x1F, 0x7B, 0x5F, 0x23, 0x83, 0x67, 0x23, 0x8F, 0x6F, 0x23,
-	 0x0B, 0x0B, 0x0F, 0x13, 0x13, 0x1B, 0x1B, 0x1B, 0x27, 0x27, 0x27, 0x33, 0x2F, 0x2F, 0x3F, 0x37,
-	 0x37, 0x4B, 0x3F, 0x3F, 0x57, 0x47, 0x47, 0x67, 0x4F, 0x4F, 0x73, 0x5B, 0x5B, 0x7F, 0x63, 0x63,
-	 0x8B, 0x6B, 0x6B, 0x97, 0x73, 0x73, 0xA3, 0x7B, 0x7B, 0xAF, 0x83, 0x83, 0xBB, 0x8B, 0x8B, 0xCB,
-	 0x00, 0x00, 0x00, 0x07, 0x07, 0x00, 0x0B, 0x0B, 0x00, 0x13, 0x13, 0x00, 0x1B, 0x1B, 0x00, 0x23,
-	 0x23, 0x00, 0x2B, 0x2B, 0x07, 0x2F, 0x2F, 0x07, 0x37, 0x37, 0x07, 0x3F, 0x3F, 0x07, 0x47, 0x47,
-	 0x07, 0x4B, 0x4B, 0x0B, 0x53, 0x53, 0x0B, 0x5B, 0x5B, 0x0B, 0x63, 0x63, 0x0B, 0x6B, 0x6B, 0x0F,
-	 0x07, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x17, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x27, 0x00, 0x00, 0x2F,
-	 0x00, 0x00, 0x37, 0x00, 0x00, 0x3F, 0x00, 0x00, 0x47, 0x00, 0x00, 0x4F, 0x00, 0x00, 0x57, 0x00,
-	 0x00, 0x5F, 0x00, 0x00, 0x67, 0x00, 0x00, 0x6F, 0x00, 0x00, 0x77, 0x00, 0x00, 0x7F, 0x00, 0x00,
-	 0x13, 0x13, 0x00, 0x1B, 0x1B, 0x00, 0x23, 0x23, 0x00, 0x2F, 0x2B, 0x00, 0x37, 0x2F, 0x00, 0x43,
-	 0x37, 0x00, 0x4B, 0x3B, 0x07, 0x57, 0x43, 0x07, 0x5F, 0x47, 0x07, 0x6B, 0x4B, 0x0B, 0x77, 0x53,
-	 0x0F, 0x83, 0x57, 0x13, 0x8B, 0x5B, 0x13, 0x97, 0x5F, 0x1B, 0xA3, 0x63, 0x1F, 0xAF, 0x67, 0x23,
-	 0x23, 0x13, 0x07, 0x2F, 0x17, 0x0B, 0x3B, 0x1F, 0x0F, 0x4B, 0x23, 0x13, 0x57, 0x2B, 0x17, 0x63,
-	 0x2F, 0x1F, 0x73, 0x37, 0x23, 0x7F, 0x3B, 0x2B, 0x8F, 0x43, 0x33, 0x9F, 0x4F, 0x33, 0xAF, 0x63,
-	 0x2F, 0xBF, 0x77, 0x2F, 0xCF, 0x8F, 0x2B, 0xDF, 0xAB, 0x27, 0xEF, 0xCB, 0x1F, 0xFF, 0xF3, 0x1B,
-	 0x0B, 0x07, 0x00, 0x1B, 0x13, 0x00, 0x2B, 0x23, 0x0F, 0x37, 0x2B, 0x13, 0x47, 0x33, 0x1B, 0x53,
-	 0x37, 0x23, 0x63, 0x3F, 0x2B, 0x6F, 0x47, 0x33, 0x7F, 0x53, 0x3F, 0x8B, 0x5F, 0x47, 0x9B, 0x6B,
-	 0x53, 0xA7, 0x7B, 0x5F, 0xB7, 0x87, 0x6B, 0xC3, 0x93, 0x7B, 0xD3, 0xA3, 0x8B, 0xE3, 0xB3, 0x97,
-	 0xAB, 0x8B, 0xA3, 0x9F, 0x7F, 0x97, 0x93, 0x73, 0x87, 0x8B, 0x67, 0x7B, 0x7F, 0x5B, 0x6F, 0x77,
-	 0x53, 0x63, 0x6B, 0x4B, 0x57, 0x5F, 0x3F, 0x4B, 0x57, 0x37, 0x43, 0x4B, 0x2F, 0x37, 0x43, 0x27,
-	 0x2F, 0x37, 0x1F, 0x23, 0x2B, 0x17, 0x1B, 0x23, 0x13, 0x13, 0x17, 0x0B, 0x0B, 0x0F, 0x07, 0x07,
-	 0xBB, 0x73, 0x9F, 0xAF, 0x6B, 0x8F, 0xA3, 0x5F, 0x83, 0x97, 0x57, 0x77, 0x8B, 0x4F, 0x6B, 0x7F,
-	 0x4B, 0x5F, 0x73, 0x43, 0x53, 0x6B, 0x3B, 0x4B, 0x5F, 0x33, 0x3F, 0x53, 0x2B, 0x37, 0x47, 0x23,
-	 0x2B, 0x3B, 0x1F, 0x23, 0x2F, 0x17, 0x1B, 0x23, 0x13, 0x13, 0x17, 0x0B, 0x0B, 0x0F, 0x07, 0x07,
-	 0xDB, 0xC3, 0xBB, 0xCB, 0xB3, 0xA7, 0xBF, 0xA3, 0x9B, 0xAF, 0x97, 0x8B, 0xA3, 0x87, 0x7B, 0x97,
-	 0x7B, 0x6F, 0x87, 0x6F, 0x5F, 0x7B, 0x63, 0x53, 0x6B, 0x57, 0x47, 0x5F, 0x4B, 0x3B, 0x53, 0x3F,
-	 0x33, 0x43, 0x33, 0x27, 0x37, 0x2B, 0x1F, 0x27, 0x1F, 0x17, 0x1B, 0x13, 0x0F, 0x0F, 0x0B, 0x07,
-	 0x6F, 0x83, 0x7B, 0x67, 0x7B, 0x6F, 0x5F, 0x73, 0x67, 0x57, 0x6B, 0x5F, 0x4F, 0x63, 0x57, 0x47,
-	 0x5B, 0x4F, 0x3F, 0x53, 0x47, 0x37, 0x4B, 0x3F, 0x2F, 0x43, 0x37, 0x2B, 0x3B, 0x2F, 0x23, 0x33,
-	 0x27, 0x1F, 0x2B, 0x1F, 0x17, 0x23, 0x17, 0x0F, 0x1B, 0x13, 0x0B, 0x13, 0x0B, 0x07, 0x0B, 0x07,
-	 0xFF, 0xF3, 0x1B, 0xEF, 0xDF, 0x17, 0xDB, 0xCB, 0x13, 0xCB, 0xB7, 0x0F, 0xBB, 0xA7, 0x0F, 0xAB,
-	 0x97, 0x0B, 0x9B, 0x83, 0x07, 0x8B, 0x73, 0x07, 0x7B, 0x63, 0x07, 0x6B, 0x53, 0x00, 0x5B, 0x47,
-	 0x00, 0x4B, 0x37, 0x00, 0x3B, 0x2B, 0x00, 0x2B, 0x1F, 0x00, 0x1B, 0x0F, 0x00, 0x0B, 0x07, 0x00,
-	 0x00, 0x00, 0xFF, 0x0B, 0x0B, 0xEF, 0x13, 0x13, 0xDF, 0x1B, 0x1B, 0xCF, 0x23, 0x23, 0xBF, 0x2B,
-	 0x2B, 0xAF, 0x2F, 0x2F, 0x9F, 0x2F, 0x2F, 0x8F, 0x2F, 0x2F, 0x7F, 0x2F, 0x2F, 0x6F, 0x2F, 0x2F,
-	 0x5F, 0x2B, 0x2B, 0x4F, 0x23, 0x23, 0x3F, 0x1B, 0x1B, 0x2F, 0x13, 0x13, 0x1F, 0x0B, 0x0B, 0x0F,
-	 0x2B, 0x00, 0x00, 0x3B, 0x00, 0x00, 0x4B, 0x07, 0x00, 0x5F, 0x07, 0x00, 0x6F, 0x0F, 0x00, 0x7F,
-	 0x17, 0x07, 0x93, 0x1F, 0x07, 0xA3, 0x27, 0x0B, 0xB7, 0x33, 0x0F, 0xC3, 0x4B, 0x1B, 0xCF, 0x63,
-	 0x2B, 0xDB, 0x7F, 0x3B, 0xE3, 0x97, 0x4F, 0xE7, 0xAB, 0x5F, 0xEF, 0xBF, 0x77, 0xF7, 0xD3, 0x8B,
-	 0xA7, 0x7B, 0x3B, 0xB7, 0x9B, 0x37, 0xC7, 0xC3, 0x37, 0xE7, 0xE3, 0x57, 0x7F, 0xBF, 0xFF, 0xAB,
-	 0xE7, 0xFF, 0xD7, 0xFF, 0xFF, 0x67, 0x00, 0x00, 0x8B, 0x00, 0x00, 0xB3, 0x00, 0x00, 0xD7, 0x00,
-	 0x00, 0xFF, 0x00, 0x00, 0xFF, 0xF3, 0x93, 0xFF, 0xF7, 0xC7, 0xFF, 0xFF, 0xFF, 0x9F, 0x5B, 0x53,
+		0x00,
+		0x00,
+		0x00,
+		0x0F,
+		0x0F,
+		0x0F,
+		0x1F,
+		0x1F,
+		0x1F,
+		0x2F,
+		0x2F,
+		0x2F,
+		0x3F,
+		0x3F,
+		0x3F,
+		0x4B,
+		0x4B,
+		0x4B,
+		0x5B,
+		0x5B,
+		0x5B,
+		0x6B,
+		0x6B,
+		0x6B,
+		0x7B,
+		0x7B,
+		0x7B,
+		0x8B,
+		0x8B,
+		0x8B,
+		0x9B,
+		0x9B,
+		0x9B,
+		0xAB,
+		0xAB,
+		0xAB,
+		0xBB,
+		0xBB,
+		0xBB,
+		0xCB,
+		0xCB,
+		0xCB,
+		0xDB,
+		0xDB,
+		0xDB,
+		0xEB,
+		0xEB,
+		0xEB,
+		0x0F,
+		0x0B,
+		0x07,
+		0x17,
+		0x0F,
+		0x0B,
+		0x1F,
+		0x17,
+		0x0B,
+		0x27,
+		0x1B,
+		0x0F,
+		0x2F,
+		0x23,
+		0x13,
+		0x37,
+		0x2B,
+		0x17,
+		0x3F,
+		0x2F,
+		0x17,
+		0x4B,
+		0x37,
+		0x1B,
+		0x53,
+		0x3B,
+		0x1B,
+		0x5B,
+		0x43,
+		0x1F,
+		0x63,
+		0x4B,
+		0x1F,
+		0x6B,
+		0x53,
+		0x1F,
+		0x73,
+		0x57,
+		0x1F,
+		0x7B,
+		0x5F,
+		0x23,
+		0x83,
+		0x67,
+		0x23,
+		0x8F,
+		0x6F,
+		0x23,
+		0x0B,
+		0x0B,
+		0x0F,
+		0x13,
+		0x13,
+		0x1B,
+		0x1B,
+		0x1B,
+		0x27,
+		0x27,
+		0x27,
+		0x33,
+		0x2F,
+		0x2F,
+		0x3F,
+		0x37,
+		0x37,
+		0x4B,
+		0x3F,
+		0x3F,
+		0x57,
+		0x47,
+		0x47,
+		0x67,
+		0x4F,
+		0x4F,
+		0x73,
+		0x5B,
+		0x5B,
+		0x7F,
+		0x63,
+		0x63,
+		0x8B,
+		0x6B,
+		0x6B,
+		0x97,
+		0x73,
+		0x73,
+		0xA3,
+		0x7B,
+		0x7B,
+		0xAF,
+		0x83,
+		0x83,
+		0xBB,
+		0x8B,
+		0x8B,
+		0xCB,
+		0x00,
+		0x00,
+		0x00,
+		0x07,
+		0x07,
+		0x00,
+		0x0B,
+		0x0B,
+		0x00,
+		0x13,
+		0x13,
+		0x00,
+		0x1B,
+		0x1B,
+		0x00,
+		0x23,
+		0x23,
+		0x00,
+		0x2B,
+		0x2B,
+		0x07,
+		0x2F,
+		0x2F,
+		0x07,
+		0x37,
+		0x37,
+		0x07,
+		0x3F,
+		0x3F,
+		0x07,
+		0x47,
+		0x47,
+		0x07,
+		0x4B,
+		0x4B,
+		0x0B,
+		0x53,
+		0x53,
+		0x0B,
+		0x5B,
+		0x5B,
+		0x0B,
+		0x63,
+		0x63,
+		0x0B,
+		0x6B,
+		0x6B,
+		0x0F,
+		0x07,
+		0x00,
+		0x00,
+		0x0F,
+		0x00,
+		0x00,
+		0x17,
+		0x00,
+		0x00,
+		0x1F,
+		0x00,
+		0x00,
+		0x27,
+		0x00,
+		0x00,
+		0x2F,
+		0x00,
+		0x00,
+		0x37,
+		0x00,
+		0x00,
+		0x3F,
+		0x00,
+		0x00,
+		0x47,
+		0x00,
+		0x00,
+		0x4F,
+		0x00,
+		0x00,
+		0x57,
+		0x00,
+		0x00,
+		0x5F,
+		0x00,
+		0x00,
+		0x67,
+		0x00,
+		0x00,
+		0x6F,
+		0x00,
+		0x00,
+		0x77,
+		0x00,
+		0x00,
+		0x7F,
+		0x00,
+		0x00,
+		0x13,
+		0x13,
+		0x00,
+		0x1B,
+		0x1B,
+		0x00,
+		0x23,
+		0x23,
+		0x00,
+		0x2F,
+		0x2B,
+		0x00,
+		0x37,
+		0x2F,
+		0x00,
+		0x43,
+		0x37,
+		0x00,
+		0x4B,
+		0x3B,
+		0x07,
+		0x57,
+		0x43,
+		0x07,
+		0x5F,
+		0x47,
+		0x07,
+		0x6B,
+		0x4B,
+		0x0B,
+		0x77,
+		0x53,
+		0x0F,
+		0x83,
+		0x57,
+		0x13,
+		0x8B,
+		0x5B,
+		0x13,
+		0x97,
+		0x5F,
+		0x1B,
+		0xA3,
+		0x63,
+		0x1F,
+		0xAF,
+		0x67,
+		0x23,
+		0x23,
+		0x13,
+		0x07,
+		0x2F,
+		0x17,
+		0x0B,
+		0x3B,
+		0x1F,
+		0x0F,
+		0x4B,
+		0x23,
+		0x13,
+		0x57,
+		0x2B,
+		0x17,
+		0x63,
+		0x2F,
+		0x1F,
+		0x73,
+		0x37,
+		0x23,
+		0x7F,
+		0x3B,
+		0x2B,
+		0x8F,
+		0x43,
+		0x33,
+		0x9F,
+		0x4F,
+		0x33,
+		0xAF,
+		0x63,
+		0x2F,
+		0xBF,
+		0x77,
+		0x2F,
+		0xCF,
+		0x8F,
+		0x2B,
+		0xDF,
+		0xAB,
+		0x27,
+		0xEF,
+		0xCB,
+		0x1F,
+		0xFF,
+		0xF3,
+		0x1B,
+		0x0B,
+		0x07,
+		0x00,
+		0x1B,
+		0x13,
+		0x00,
+		0x2B,
+		0x23,
+		0x0F,
+		0x37,
+		0x2B,
+		0x13,
+		0x47,
+		0x33,
+		0x1B,
+		0x53,
+		0x37,
+		0x23,
+		0x63,
+		0x3F,
+		0x2B,
+		0x6F,
+		0x47,
+		0x33,
+		0x7F,
+		0x53,
+		0x3F,
+		0x8B,
+		0x5F,
+		0x47,
+		0x9B,
+		0x6B,
+		0x53,
+		0xA7,
+		0x7B,
+		0x5F,
+		0xB7,
+		0x87,
+		0x6B,
+		0xC3,
+		0x93,
+		0x7B,
+		0xD3,
+		0xA3,
+		0x8B,
+		0xE3,
+		0xB3,
+		0x97,
+		0xAB,
+		0x8B,
+		0xA3,
+		0x9F,
+		0x7F,
+		0x97,
+		0x93,
+		0x73,
+		0x87,
+		0x8B,
+		0x67,
+		0x7B,
+		0x7F,
+		0x5B,
+		0x6F,
+		0x77,
+		0x53,
+		0x63,
+		0x6B,
+		0x4B,
+		0x57,
+		0x5F,
+		0x3F,
+		0x4B,
+		0x57,
+		0x37,
+		0x43,
+		0x4B,
+		0x2F,
+		0x37,
+		0x43,
+		0x27,
+		0x2F,
+		0x37,
+		0x1F,
+		0x23,
+		0x2B,
+		0x17,
+		0x1B,
+		0x23,
+		0x13,
+		0x13,
+		0x17,
+		0x0B,
+		0x0B,
+		0x0F,
+		0x07,
+		0x07,
+		0xBB,
+		0x73,
+		0x9F,
+		0xAF,
+		0x6B,
+		0x8F,
+		0xA3,
+		0x5F,
+		0x83,
+		0x97,
+		0x57,
+		0x77,
+		0x8B,
+		0x4F,
+		0x6B,
+		0x7F,
+		0x4B,
+		0x5F,
+		0x73,
+		0x43,
+		0x53,
+		0x6B,
+		0x3B,
+		0x4B,
+		0x5F,
+		0x33,
+		0x3F,
+		0x53,
+		0x2B,
+		0x37,
+		0x47,
+		0x23,
+		0x2B,
+		0x3B,
+		0x1F,
+		0x23,
+		0x2F,
+		0x17,
+		0x1B,
+		0x23,
+		0x13,
+		0x13,
+		0x17,
+		0x0B,
+		0x0B,
+		0x0F,
+		0x07,
+		0x07,
+		0xDB,
+		0xC3,
+		0xBB,
+		0xCB,
+		0xB3,
+		0xA7,
+		0xBF,
+		0xA3,
+		0x9B,
+		0xAF,
+		0x97,
+		0x8B,
+		0xA3,
+		0x87,
+		0x7B,
+		0x97,
+		0x7B,
+		0x6F,
+		0x87,
+		0x6F,
+		0x5F,
+		0x7B,
+		0x63,
+		0x53,
+		0x6B,
+		0x57,
+		0x47,
+		0x5F,
+		0x4B,
+		0x3B,
+		0x53,
+		0x3F,
+		0x33,
+		0x43,
+		0x33,
+		0x27,
+		0x37,
+		0x2B,
+		0x1F,
+		0x27,
+		0x1F,
+		0x17,
+		0x1B,
+		0x13,
+		0x0F,
+		0x0F,
+		0x0B,
+		0x07,
+		0x6F,
+		0x83,
+		0x7B,
+		0x67,
+		0x7B,
+		0x6F,
+		0x5F,
+		0x73,
+		0x67,
+		0x57,
+		0x6B,
+		0x5F,
+		0x4F,
+		0x63,
+		0x57,
+		0x47,
+		0x5B,
+		0x4F,
+		0x3F,
+		0x53,
+		0x47,
+		0x37,
+		0x4B,
+		0x3F,
+		0x2F,
+		0x43,
+		0x37,
+		0x2B,
+		0x3B,
+		0x2F,
+		0x23,
+		0x33,
+		0x27,
+		0x1F,
+		0x2B,
+		0x1F,
+		0x17,
+		0x23,
+		0x17,
+		0x0F,
+		0x1B,
+		0x13,
+		0x0B,
+		0x13,
+		0x0B,
+		0x07,
+		0x0B,
+		0x07,
+		0xFF,
+		0xF3,
+		0x1B,
+		0xEF,
+		0xDF,
+		0x17,
+		0xDB,
+		0xCB,
+		0x13,
+		0xCB,
+		0xB7,
+		0x0F,
+		0xBB,
+		0xA7,
+		0x0F,
+		0xAB,
+		0x97,
+		0x0B,
+		0x9B,
+		0x83,
+		0x07,
+		0x8B,
+		0x73,
+		0x07,
+		0x7B,
+		0x63,
+		0x07,
+		0x6B,
+		0x53,
+		0x00,
+		0x5B,
+		0x47,
+		0x00,
+		0x4B,
+		0x37,
+		0x00,
+		0x3B,
+		0x2B,
+		0x00,
+		0x2B,
+		0x1F,
+		0x00,
+		0x1B,
+		0x0F,
+		0x00,
+		0x0B,
+		0x07,
+		0x00,
+		0x00,
+		0x00,
+		0xFF,
+		0x0B,
+		0x0B,
+		0xEF,
+		0x13,
+		0x13,
+		0xDF,
+		0x1B,
+		0x1B,
+		0xCF,
+		0x23,
+		0x23,
+		0xBF,
+		0x2B,
+		0x2B,
+		0xAF,
+		0x2F,
+		0x2F,
+		0x9F,
+		0x2F,
+		0x2F,
+		0x8F,
+		0x2F,
+		0x2F,
+		0x7F,
+		0x2F,
+		0x2F,
+		0x6F,
+		0x2F,
+		0x2F,
+		0x5F,
+		0x2B,
+		0x2B,
+		0x4F,
+		0x23,
+		0x23,
+		0x3F,
+		0x1B,
+		0x1B,
+		0x2F,
+		0x13,
+		0x13,
+		0x1F,
+		0x0B,
+		0x0B,
+		0x0F,
+		0x2B,
+		0x00,
+		0x00,
+		0x3B,
+		0x00,
+		0x00,
+		0x4B,
+		0x07,
+		0x00,
+		0x5F,
+		0x07,
+		0x00,
+		0x6F,
+		0x0F,
+		0x00,
+		0x7F,
+		0x17,
+		0x07,
+		0x93,
+		0x1F,
+		0x07,
+		0xA3,
+		0x27,
+		0x0B,
+		0xB7,
+		0x33,
+		0x0F,
+		0xC3,
+		0x4B,
+		0x1B,
+		0xCF,
+		0x63,
+		0x2B,
+		0xDB,
+		0x7F,
+		0x3B,
+		0xE3,
+		0x97,
+		0x4F,
+		0xE7,
+		0xAB,
+		0x5F,
+		0xEF,
+		0xBF,
+		0x77,
+		0xF7,
+		0xD3,
+		0x8B,
+		0xA7,
+		0x7B,
+		0x3B,
+		0xB7,
+		0x9B,
+		0x37,
+		0xC7,
+		0xC3,
+		0x37,
+		0xE7,
+		0xE3,
+		0x57,
+		0x7F,
+		0xBF,
+		0xFF,
+		0xAB,
+		0xE7,
+		0xFF,
+		0xD7,
+		0xFF,
+		0xFF,
+		0x67,
+		0x00,
+		0x00,
+		0x8B,
+		0x00,
+		0x00,
+		0xB3,
+		0x00,
+		0x00,
+		0xD7,
+		0x00,
+		0x00,
+		0xFF,
+		0x00,
+		0x00,
+		0xFF,
+		0xF3,
+		0x93,
+		0xFF,
+		0xF7,
+		0xC7,
+		0xFF,
+		0xFF,
+		0xFF,
+		0x9F,
+		0x5B,
+		0x53,
 	};
 
 	pal_id = -1;
@@ -163,7 +879,7 @@ void Settings::loadDefaultSettings()
 	entsThatNeverNeedAnyHulls.emplace_back("func_tankcontrols");
 	entsThatNeverNeedAnyHulls.emplace_back("func_traincontrols");
 	entsThatNeverNeedAnyHulls.emplace_back("func_vehiclecontrols");
-	entsThatNeverNeedAnyHulls.emplace_back("trigger_autosave"); // obsolete in sven
+	entsThatNeverNeedAnyHulls.emplace_back("trigger_autosave");	  // obsolete in sven
 	entsThatNeverNeedAnyHulls.emplace_back("trigger_endsection"); // obsolete in sven
 
 	entsThatNeverNeedCollision.clear();
@@ -209,7 +925,7 @@ void Settings::loadDefaultSettings()
 	transparentEntities.emplace_back("func_buyzone");
 }
 
-void  Settings::fillLanguages(const std::string& folderPath)
+void Settings::fillLanguages(const std::string& folderPath)
 {
 	languages.clear();
 	languages.emplace_back("EN");
@@ -217,7 +933,8 @@ void  Settings::fillLanguages(const std::string& folderPath)
 	std::error_code err;
 	for (const auto& entry : fs::directory_iterator(folderPath, err))
 	{
-		if (!entry.is_directory()) {
+		if (!entry.is_directory())
+		{
 			std::string filename = entry.path().filename().string();
 			if (starts_with(filename, "language_") && ends_with(filename, ".ini"))
 			{
@@ -238,7 +955,8 @@ void Settings::fillPalettes(const std::string& folderPath)
 	std::error_code err;
 	for (const auto& entry : fs::directory_iterator(folderPath, err))
 	{
-		if (!entry.is_directory()) {
+		if (!entry.is_directory())
+		{
 			std::string filename = entry.path().filename().string();
 			if (ends_with(filename, ".pal"))
 			{
@@ -251,8 +969,11 @@ void Settings::fillPalettes(const std::string& folderPath)
 					}
 					else
 					{
-						filename.pop_back(); filename.pop_back(); filename.pop_back(); filename.pop_back();
-						palettes.push_back({ toUpperCase(filename), (unsigned int)(palData.size() / sizeof(COLOR3)), NULL });
+						filename.pop_back();
+						filename.pop_back();
+						filename.pop_back();
+						filename.pop_back();
+						palettes.push_back({toUpperCase(filename), (unsigned int)(palData.size() / sizeof(COLOR3)), NULL});
 						memcpy(palettes[palettes.size() - 1].data, palData.data(), palData.size());
 					}
 				}
@@ -329,7 +1050,8 @@ void Settings::loadSettings()
 
 	palette_name = "quake_1";
 
-	if (settings_ini->ParseError() != 0) {
+	if (settings_ini->ParseError() != 0)
+	{
 		print_log(PRINT_RED, "Can't load {}\n", g_settings_path);
 		return;
 	}
@@ -372,7 +1094,8 @@ void Settings::loadSettings()
 
 	std::string mapBoundColStr = settings_ini->Get<std::string>("GRAPHICS", "map_boundary_color", "0 255 0");
 	std::vector<std::string> mapBoundColParts = splitString(mapBoundColStr, " ");
-	if (mapBoundColParts.size() == 3) {
+	if (mapBoundColParts.size() == 3)
+	{
 		g_settings.mapBoundaryColor.r = (unsigned char)atoi(mapBoundColParts[0].c_str());
 		g_settings.mapBoundaryColor.g = (unsigned char)atoi(mapBoundColParts[1].c_str());
 		g_settings.mapBoundaryColor.b = (unsigned char)atoi(mapBoundColParts[2].c_str());
@@ -381,22 +1104,24 @@ void Settings::loadSettings()
 	g_settings.fontSize = settings_ini->Get<float>("GRAPHICS", "font_size", 22.0f);
 	g_settings.fpslimit = settings_ini->Get<int>("GRAPHICS", "fpslimit", 60);
 
-
 	g_settings.mark_unused_texinfos = settings_ini->Get<int>("OPTIMIZE", "mark_unused_texinfos", 0) != 0;
 	g_settings.merge_verts = settings_ini->Get<int>("OPTIMIZE", "merge_verts", 0) != 0;
 	g_settings.merge_edges = settings_ini->Get<int>("OPTIMIZE", "merge_edges", 0) != 0;
 
-	if (g_settings.fpslimit < 30) {
+	if (g_settings.fpslimit < 30)
+	{
 		g_settings.fpslimit = 30;
 	}
-	if (g_settings.fpslimit > 1000) {
+	if (g_settings.fpslimit > 1000)
+	{
 		g_settings.fpslimit = 1000;
 	}
 
 	g_settings.moveSpeed = settings_ini->Get<float>("INPUT", "move_speed", 500.0f);
 	g_settings.grid_snap_level = settings_ini->Get<int>("INPUT", "grid_snap_level", 1);
 
-	if (g_settings.moveSpeed < 100) {
+	if (g_settings.moveSpeed < 100)
+	{
 		print_log(get_localized_string(LANG_0927));
 		g_settings.moveSpeed = 500;
 	}
@@ -412,9 +1137,11 @@ void Settings::loadSettings()
 	if (fgdCount)
 		g_settings.fgdPaths.clear();
 
-	for (int i = 1; i <= fgdCount; ++i) {
+	for (int i = 1; i <= fgdCount; ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("FGD", std::to_string(i), "");
-		if (!item.empty() && (starts_with(item, "enabled?") || starts_with(item, "disabled?"))) {
+		if (!item.empty() && (starts_with(item, "enabled?") || starts_with(item, "disabled?")))
+		{
 			g_settings.fgdPaths.emplace_back(item.substr(item.find('?') + 1), starts_with(item, "enabled?"));
 		}
 	}
@@ -423,9 +1150,11 @@ void Settings::loadSettings()
 	if (resCount)
 		g_settings.resPaths.clear();
 
-	for (int i = 1; i <= resCount; ++i) {
+	for (int i = 1; i <= resCount; ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("RES", std::to_string(i), "");
-		if (!item.empty() && (starts_with(item, "enabled?") || starts_with(item, "disabled?"))) {
+		if (!item.empty() && (starts_with(item, "enabled?") || starts_with(item, "disabled?")))
+		{
 			g_settings.resPaths.emplace_back(item.substr(item.find('?') + 1), starts_with(item, "enabled?"));
 		}
 	}
@@ -453,7 +1182,7 @@ void Settings::loadSettings()
 		limitsMap.clear();
 		for (int i = 0; i < limitEngines; i++)
 		{
-			std::string engineName = settings_ini->Get<std::string>("ENGINE", "name" + std::to_string(i+1), "half-life1");
+			std::string engineName = settings_ini->Get<std::string>("ENGINE", "name" + std::to_string(i + 1), "half-life1");
 
 			limitsMap[engineName].engineName = engineName;
 			limitsMap[engineName].fltMaxCoord = settings_ini->Get<float>(engineName, "FLT_MAX_COORD", 16384.0f);
@@ -472,7 +1201,6 @@ void Settings::loadSettings()
 			limitsMap[engineName].maxTextureSize = ((g_limits.maxTextureDimension * g_limits.maxTextureDimension * 2 * 3) / 2);
 			limitsMap[engineName].maxMapBoundary = settings_ini->Get<float>(engineName, "MAX_MAP_BOUNDARY", 4096.0f);
 			limitsMap[engineName].textureStep = settings_ini->Get<int>(engineName, "TEXTURE_STEP", 16);
-
 		}
 
 		try
@@ -499,61 +1227,78 @@ void Settings::loadSettings()
 	transparentTextures.clear();
 	transparentEntities.clear();
 
-	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_COND_ENTS", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_COND_ENTS", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("OPTIMIZER_COND_ENTS", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			conditionalPointEntTriggers.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_NO_HULLS_ENTS", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_NO_HULLS_ENTS", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("OPTIMIZER_NO_HULLS_ENTS", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			entsThatNeverNeedAnyHulls.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_NO_COLLISION_ENTS", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_NO_COLLISION_ENTS", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("OPTIMIZER_NO_COLLISION_ENTS", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			entsThatNeverNeedCollision.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_PASSABLE_ENTS", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_PASSABLE_ENTS", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("OPTIMIZER_PASSABLE_ENTS", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			passableEnts.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_PLAYER_HULL_ENTS", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_PLAYER_HULL_ENTS", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("OPTIMIZER_PLAYER_HULL_ENTS", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			playerOnlyTriggers.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_MONSTER_HULL_ENTS", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_MONSTER_HULL_ENTS", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("OPTIMIZER_MONSTER_HULL_ENTS", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			monsterOnlyTriggers.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("NEGATIVE_PITCH_ENTS", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("NEGATIVE_PITCH_ENTS", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("NEGATIVE_PITCH_ENTS", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			entsNegativePitchPrefix.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("TRANSPARENT_TEXTURES", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("TRANSPARENT_TEXTURES", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("TRANSPARENT_TEXTURES", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			transparentTextures.push_back(item);
 		}
 	}
-	for (int i = 1; i <= settings_ini->Get<int>("TRANSPARENT_ENTITIES", "count", 0); ++i) {
+	for (int i = 1; i <= settings_ini->Get<int>("TRANSPARENT_ENTITIES", "count", 0); ++i)
+	{
 		std::string item = settings_ini->Get<std::string>("TRANSPARENT_ENTITIES", std::to_string(i), "");
-		if (!item.empty()) {
+		if (!item.empty())
+		{
 			transparentEntities.push_back(item);
 		}
 	}
-
 
 	if (g_settings.windowY == -32000 &&
 		g_settings.windowX == -32000)
@@ -610,7 +1355,7 @@ void Settings::loadSettings()
 			entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
 			entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
 			entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
-			entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
+			entsThatNeverNeedAnyHulls.push_back("trigger_autosave");   // obsolete in sven
 			entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
 		}
 		if (entsThatNeverNeedCollision.empty())
@@ -669,12 +1414,11 @@ void Settings::loadSettings()
 		transparentEntities.push_back("func_buyzone");
 	}
 
-
 	FixupAllSystemPaths();
 	reload_ents_list = false;
 }
 
-void Settings::saveSettings(std::string path) 
+void Settings::saveSettings(std::string path)
 {
 	std::lock_guard<std::mutex> lock(Sync::Settings);
 
@@ -682,7 +1426,7 @@ void Settings::saveSettings(std::string path)
 
 	std::ofstream iniFile(path, std::ios::binary);
 
-	if (!iniFile.is_open()) 
+	if (!iniFile.is_open())
 	{
 		print_log(PRINT_RED, "Can't open " + path + " for writing\n");
 		return;
@@ -747,14 +1491,16 @@ void Settings::saveSettings(std::string path)
 
 	iniData << "[FGD]\n";
 	iniData << "count=" << g_settings.fgdPaths.size() << "\n";
-	for (size_t i = 0; i < g_settings.fgdPaths.size(); ++i) {
+	for (size_t i = 0; i < g_settings.fgdPaths.size(); ++i)
+	{
 		iniData << (i + 1) << "=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << "\n";
 	}
 	iniData << "\n";
 
 	iniData << "[RES]\n";
 	iniData << "count=" << g_settings.resPaths.size() << "\n";
-	for (size_t i = 0; i < g_settings.resPaths.size(); ++i) {
+	for (size_t i = 0; i < g_settings.resPaths.size(); ++i)
+	{
 		iniData << (i + 1) << "=" << (g_settings.resPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.resPaths[i].path << "\n";
 	}
 	iniData << "\n";
@@ -770,8 +1516,8 @@ void Settings::saveSettings(std::string path)
 
 	if (lastOpened.size())
 		std::reverse(lastOpened.begin(), lastOpened.end());
-	
-	for (auto & file : lastOpened)
+
+	for (auto& file : lastOpened)
 	{
 		if (fileExists(file))
 		{
@@ -806,7 +1552,8 @@ void Settings::saveSettings(std::string path)
 	iniData << "[ENGINE]\n";
 	iniData << "count=" << limitsMap.size() << "\n";
 
-	for (const auto& pair : limitsMap) {
+	for (const auto& pair : limitsMap)
+	{
 		iniData << "name" + std::to_string(id) << "=" << pair.first << "\n";
 		id++;
 	}
@@ -814,7 +1561,8 @@ void Settings::saveSettings(std::string path)
 	iniData << "selected=" << g_limits.engineName << "\n\n";
 
 	id = 1;
-	for (const auto& pair : limitsMap) {
+	for (const auto& pair : limitsMap)
+	{
 		const std::string engineName = pair.first;
 		const BSPLimits& limits = pair.second;
 
@@ -835,17 +1583,19 @@ void Settings::saveSettings(std::string path)
 		iniData << "MAX_MAP_BOUNDARY=" << limits.maxMapBoundary << "\n";
 		iniData << "TEXTURE_STEP=" << limits.textureStep << "\n";
 		iniData << "\n";
-		id ++;
+		id++;
 	}
 
-	auto writeListSection = [&iniData](const std::string& section, const std::vector<std::string>& list) {
+	auto writeListSection = [&iniData](const std::string& section, const std::vector<std::string>& list)
+	{
 		iniData << "[" << section << "]\n";
 		iniData << "count=" << list.size() << "\n";
-		for (size_t i = 0; i < list.size(); ++i) {
+		for (size_t i = 0; i < list.size(); ++i)
+		{
 			iniData << (i + 1) << "=" << list[i] << "\n";
 		}
 		iniData << "\n";
-		};
+	};
 
 	writeListSection("OPTIMIZER_COND_ENTS", conditionalPointEntTriggers);
 	writeListSection("OPTIMIZER_NO_HULLS_ENTS", entsThatNeverNeedAnyHulls);
@@ -874,7 +1624,8 @@ void Settings::saveSettings()
 	saveSettings(g_settings_path);
 }
 
-std::string convertToSection(std::string& key) {
+std::string convertToSection(std::string& key)
+{
 	if (key == "window_width" || key == "window_height" || key == "window_x" ||
 		key == "window_y" || key == "window_maximized" || key == "save_windows" ||
 		key == "debug_open" || key == "keyvalue_open" || key == "transform_open" ||
@@ -883,24 +1634,29 @@ std::string convertToSection(std::string& key) {
 		key == "start_at_entity" || key == "savebackup" || key == "save_crc" ||
 		key == "save_cam" || key == "auto_import_ent" || key == "same_dir_for_ent" ||
 		key == "reload_ents_list" || key == "strip_wad_path" || key == "default_is_empty" ||
-		key == "undo_levels" || key == "language") {
+		key == "undo_levels" || key == "language")
+	{
 		if (key == "language")
 			key = "lang";
 		return "GENERAL";
 	}
 	if (key == "vsync" || key == "fov" || key == "zfar" || key == "renders_flags" ||
 		key == "font_size" || key == "fpslimit" || key == "mark_unused_texinfos" ||
-		key == "merge_verts" || key == "merge_edges") {
+		key == "merge_verts" || key == "merge_edges")
+	{
 		return "GRAPHICS";
 	}
-	if (key == "move_speed" || key == "rot_speed") {
+	if (key == "move_speed" || key == "rot_speed")
+	{
 		return "INPUT";
 	}
 	if (key == "gamedir" || key == "workingdir" || key == "lastdir" ||
-		key == "hlrad_path" || key == "palette") {
+		key == "hlrad_path" || key == "palette")
+	{
 		return "PATHS";
 	}
-	if (key == "fgd" || key == "res") {
+	if (key == "fgd" || key == "res")
+	{
 		return toUpperCase(key);
 	}
 	if (key == "g_limits.fltMaxCoord" || key == "g_limits.maxMapModels" || key == "g_limits.maxSurfaceExtent" ||
@@ -908,27 +1664,33 @@ std::string convertToSection(std::string& key) {
 		key == "g_limits.maxMapVisdata" || key == "g_limits.maxMapEnts" || key == "g_limits.maxMapSurfedges" ||
 		key == "g_limits.maxMapEdges" || key == "g_limits.maxMapTextures" || key == "g_limits.maxMapLightdata" ||
 		key == "g_limits.maxTextureDimension" || key == "g_limits.maxTextureSize" || key == "g_limits.maxMapBoundary" ||
-		key == "g_limits.textureStep") {
+		key == "g_limits.textureStep")
+	{
 		return "LIMITS";
 	}
 	if (key == "optimizer_cond_ents" || key == "optimizer_no_hulls_ents" || key == "optimizer_no_collision_ents" ||
 		key == "optimizer_passable_ents" || key == "optimizer_player_hull_ents" || key == "optimizer_monster_hull_ents" ||
-		key == "negative_pitch_ents" || key == "transparent_textures" || key == "transparent_entities") {
+		key == "negative_pitch_ents" || key == "transparent_textures" || key == "transparent_entities")
+	{
 		return toUpperCase(key);
 	}
-	if (key == "verbose_logs") {
+	if (key == "verbose_logs")
+	{
 		return "DEBUG";
 	}
 	return "GENERAL";
 }
 
-std::string ConvertFromCFGtoINI(const std::string& cfgData) {
+std::string ConvertFromCFGtoINI(const std::string& cfgData)
+{
 	std::istringstream cfgStream(cfgData);
 	std::string line;
 	std::map<std::string, std::vector<std::string>> cfgMap;
 
-	while (getline(cfgStream, line)) {
-		if (line.empty() || line.find('=') == std::string::npos) {
+	while (getline(cfgStream, line))
+	{
+		if (line.empty() || line.find('=') == std::string::npos)
+		{
 			continue;
 		}
 
@@ -942,32 +1704,40 @@ std::string ConvertFromCFGtoINI(const std::string& cfgData) {
 	std::ostringstream iniStream;
 	std::map<std::string, std::ostringstream> sections;
 
-	for (const auto& entry : cfgMap) {
+	for (const auto& entry : cfgMap)
+	{
 		std::string key = entry.first;
 		std::string section = convertToSection(key);
-		if (sections.find(section) == sections.end()) {
+		if (sections.find(section) == sections.end())
+		{
 			sections[section] << "[" << section << "]\n";
 		}
-		if (entry.second.size() > 1 || section == toUpperCase(key)) {
+		if (entry.second.size() > 1 || section == toUpperCase(key))
+		{
 			sections[section] << "count = " << entry.second.size() << "\n";
-			for (size_t i = 0; i < entry.second.size(); ++i) {
+			for (size_t i = 0; i < entry.second.size(); ++i)
+			{
 				sections[section] << (i + 1) << " = " << entry.second[i] << "\n";
 			}
 		}
-		else {
+		else
+		{
 			sections[section] << key << " = " << entry.second[0] << "\n";
 		}
 	}
 
-	std::vector<std::string> order = { "GENERAL", "GRAPHICS", "INPUT", "LIMITS", "PATHS" };
-	for (const auto& section : order) {
-		if (sections.find(section) != sections.end()) {
+	std::vector<std::string> order = {"GENERAL", "GRAPHICS", "INPUT", "LIMITS", "PATHS"};
+	for (const auto& section : order)
+	{
+		if (sections.find(section) != sections.end())
+		{
 			iniStream << sections[section].str() << "\n";
 			sections.erase(section);
 		}
 	}
 
-	for (const auto& section : sections) {
+	for (const auto& section : sections)
+	{
 		iniStream << section.second.str() << "\n";
 	}
 

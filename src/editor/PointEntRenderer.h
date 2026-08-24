@@ -12,7 +12,7 @@ struct EntCube
 
 	VertexBuffer* axesBuffer;
 	VertexBuffer* cubeBuffer;
-	VertexBuffer* selectBuffer; // red coloring for selected ents
+	VertexBuffer* selectBuffer;	   // red coloring for selected ents
 	VertexBuffer* wireframeBuffer; // yellow outline for selected ents
 
 	bool Textured;
@@ -22,14 +22,14 @@ struct EntCube
 		axesBuffer = cubeBuffer = selectBuffer = wireframeBuffer = NULL;
 		mins = maxs = vec3();
 		color = COLOR4(255, 255, 255, 255);
-		sel_color = { 255, 255, 0, 255 };
+		sel_color = {255, 255, 0, 255};
 		Textured = false;
 	}
 };
 
 class PointEntRenderer
 {
-public:
+  public:
 	Fgd* fgd;
 
 	PointEntRenderer(Fgd* fgd);
@@ -43,6 +43,7 @@ public:
 	void genPointEntCubes();
 	EntCube* getCubeMatchingProps(EntCube* entCube);
 	void genCubeBuffers(EntCube* entCube);
-private:
+
+  private:
 	bool defaultCubeGen = false;
 };

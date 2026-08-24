@@ -19,7 +19,7 @@ Shader::Shader(const char* sourceCode, int shaderType)
 		char* log = new char[512];
 		int len;
 		glGetShaderInfoLog(ID, 512, &len, log);
-		print_log(get_localized_string(LANG_0959),shaderType);
+		print_log(get_localized_string(LANG_0959), shaderType);
 		print_log(log);
 		if (len > 512)
 			print_log(get_localized_string(LANG_0960));
@@ -27,9 +27,7 @@ Shader::Shader(const char* sourceCode, int shaderType)
 	}
 }
 
-
 Shader::~Shader(void)
 {
 	glDeleteShader(ID);
 }
-

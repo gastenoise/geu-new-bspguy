@@ -57,12 +57,12 @@ struct FaceMath
 
 struct RenderEnt
 {
-	mat4x4 modelMat4x4; // model matrix for rendering
+	mat4x4 modelMat4x4;		   // model matrix for rendering
 	mat4x4 modelMat4x4_angles; // model matrix for rendering with angles
 	mat4x4 modelMat4x4_calc;
 	mat4x4 modelMat4x4_calc_angles;
-	vec3 offset; // vertex transformations for picking
-	vec3 angles; // support angles
+	vec3 offset;  // vertex transformations for picking
+	vec3 angles;  // support angles
 	int modelIdx; // -1 = point entity
 	EntCube* pointEntCube;
 	bool needAngles;
@@ -71,7 +71,8 @@ struct RenderEnt
 	Sprite* spr;
 	std::string mdlFileName;
 	bool isTransparentByList;
-	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
+	RenderEnt()
+		: modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
 	{
 		isDuplicateModel = false;
 		needAngles = false;
@@ -107,7 +108,6 @@ struct RenderGroup
 		}
 	}
 };
-
 
 struct RenderFace
 {
@@ -177,7 +177,7 @@ struct RenderClipnodes
 
 class PickInfo
 {
-public:
+  public:
 	std::vector<int> selectedEnts;
 	std::vector<int> selectedFaces;
 
@@ -202,7 +202,7 @@ enum Entity_RefreshFlags : int
 
 class BspRenderer
 {
-public:
+  public:
 	Bsp* map;
 	vec3 mapOffset;
 	vec3 renderOffset;
@@ -210,7 +210,7 @@ public:
 
 	int curLeafIdx;
 
-	bool lightEnableFlags[4] = { true,true,true,true };
+	bool lightEnableFlags[4] = {true, true, true, true};
 	std::vector<Wad*> wads;
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
@@ -263,13 +263,13 @@ public:
 
 	LightmapInfo* lightmaps;
 	std::vector<RenderEnt> renderEnts;
-	std::vector<RenderModel *> renderModels;
+	std::vector<RenderModel*> renderModels;
 	std::vector<RenderClipnodes> renderClipnodes;
 	std::vector<FaceMath> faceMaths;
 
 	EntCube* leafCube;
-	EntCube* nodeCube;/*
-	EntCube* nodePlaneCube;*/
+	EntCube* nodeCube; /*
+	 EntCube* nodePlaneCube;*/
 
 	int numRenderLightmapInfos;
 	std::vector<Polygon3D> debugFaces;
@@ -295,7 +295,7 @@ public:
 	void addNewRenderFace();
 	void loadClipnodes();
 	void generateClipnodeBufferForHull(int modelIdx, int hullId);
-	void generateClipnodeBuffer(int modelIdx);	
+	void generateClipnodeBuffer(int modelIdx);
 	void generateNavMeshBuffer();
 	void generateLeafNavMeshBuffer();
 	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
@@ -308,7 +308,7 @@ public:
 	int getBestClipnodeHull(int modelIdx);
 
 	size_t undoMemoryUsageZip = 0; // approximate space used by undo+redo history (compressed)
-	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
+	size_t undoMemoryUsage = 0;	   // approximate space used by undo+redo history
 
 	std::vector<EditBspCommand*> undoHistory;
 	std::vector<EditBspCommand*> redoHistory;
@@ -332,8 +332,8 @@ public:
 
 	vec3 intersectVec;
 	float intersectDist;
-private:
 
+  private:
 	void pushUndoCommand(EditBspCommand* cmd);
 
 	struct nodeBuffStr

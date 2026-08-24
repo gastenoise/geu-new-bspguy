@@ -6,15 +6,16 @@ class Bsp;
 class LeafOctree;
 
 // generates a navigation mesh for a BSP
-class LeafNavMeshGenerator {
-public:
+class LeafNavMeshGenerator
+{
+  public:
 	LeafNavMeshGenerator() = default;
 
 	// generate a nav mesh from the bsp
 	// returns polygons used to construct the mesh
 	LeafNavMesh* generate(Bsp* map);
 
-private:
+  private:
 	int octreeDepth = 6;
 
 	// get leaves of the bsp tree with the given contents

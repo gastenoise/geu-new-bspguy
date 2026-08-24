@@ -12,7 +12,7 @@ struct mat4x4
 	void perspective(float fov, float aspect, float near, float far);
 
 	void perspective(float left, float right, float bottom, float top,
-		float znear, float zfar);
+					 float znear, float zfar);
 
 	// Set up an orthographic projection matrix
 	void ortho(float left, float right, float bottom, float top, float near, float far);
@@ -32,16 +32,16 @@ struct mat4x4
 	// converts row-major matrix to column-major (for OpenGL)
 	mat4x4 transpose();
 
-	mat4x4 invert(bool * result = NULL);
+	mat4x4 invert(bool* result = NULL);
 
 	float determinant() const;
 
-	float& operator ()(int idx)
+	float& operator()(int idx)
 	{
 		return m[idx];
 	}
 
-	float operator ()(int idx) const
+	float operator()(int idx) const
 	{
 		return m[idx];
 	}
@@ -57,11 +57,11 @@ struct mat4x4
 		return *this;
 	}
 
-private:
+  private:
 	void mult(float mat[16]);
 };
 
-void loadEmptyMat4x4(float * m);
+void loadEmptyMat4x4(float* m);
 
 mat4x4 operator*(const mat4x4& m1, const mat4x4& m2);
 vec4 operator*(const mat4x4& mat, const vec4& vec);

@@ -41,9 +41,9 @@ void PointEntRenderer::genPointEntCubes()
 	if (!defaultCubeGen)
 	{
 		EntCube* defaultCube = new EntCube();
-		defaultCube->color = { 220, 0, 220, 255 };
-		defaultCube->mins = { -8, -8, -8 };
-		defaultCube->maxs = { 8, 8, 8 };
+		defaultCube->color = {220, 0, 220, 255};
+		defaultCube->mins = {-8, -8, -8};
+		defaultCube->maxs = {8, 8, 8};
 		defaultCube->Textured = false;
 		genCubeBuffers(defaultCube);
 		entCubes.push_back(defaultCube);
@@ -92,10 +92,7 @@ EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube)
 {
 	for (size_t i = 0; i < entCubes.size(); i++)
 	{
-		if (entCubes[i]->mins == entCube->mins
-			&& entCubes[i]->maxs == entCube->maxs
-			&& entCubes[i]->color == entCube->color
-			&& entCubes[i]->Textured == entCube->Textured)
+		if (entCubes[i]->mins == entCube->mins && entCubes[i]->maxs == entCube->maxs && entCubes[i]->color == entCube->color && entCubes[i]->Textured == entCube->Textured)
 		{
 			return entCubes[i];
 		}
@@ -122,15 +119,15 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 		cube->right.setColor(entCube->color * 0.93f);
 		cube->top.setColor(entCube->color * 0.40f);
 		cube->back.setColor(entCube->color * 0.53f);
-		entCube->cubeBuffer = new VertexBuffer(g_app->colorShader, cube, (6 * 6), GL_TRIANGLES,true);
+		entCube->cubeBuffer = new VertexBuffer(g_app->colorShader, cube, (6 * 6), GL_TRIANGLES, true);
 	}
 	else
 	{
-		tCube* cube = new tCube({ -1.0,min.y,min.z }, { 1.0,max.y, max.z });
-		entCube->cubeBuffer = new VertexBuffer(g_app->modelShader, cube, 8, GL_QUADS,true);
+		tCube* cube = new tCube({-1.0, min.y, min.z}, {1.0, max.y, max.z});
+		entCube->cubeBuffer = new VertexBuffer(g_app->modelShader, cube, 8, GL_QUADS, true);
 	}
 
-	COLOR4 selectColor = { 220, 0, 0, 255 };
+	COLOR4 selectColor = {220, 0, 0, 255};
 	cCube* selectCube = new cCube(min, max, selectColor);
 	// colors not where expected due to HL coordinate system
 	selectCube->left.setColor(selectColor * 0.66f);
@@ -140,13 +137,12 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 
 	delete entCube->selectBuffer;
 
-	entCube->selectBuffer = new VertexBuffer(g_app->colorShader, selectCube, (6 * 6), GL_TRIANGLES,true);
+	entCube->selectBuffer = new VertexBuffer(g_app->colorShader, selectCube, (6 * 6), GL_TRIANGLES, true);
 
 	delete entCube->axesBuffer;
 
 	cCubeAxes* axescube = new cCubeAxes(min, max);
-	entCube->axesBuffer = new VertexBuffer(g_app->colorShader, axescube, (6 * 6), GL_TRIANGLES,true);
-
+	entCube->axesBuffer = new VertexBuffer(g_app->colorShader, axescube, (6 * 6), GL_TRIANGLES, true);
 
 	vec3 vcube[8] = {
 		vec3(min.x, min.y, min.z), // front-left-bottom
@@ -175,7 +171,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 		cVert(vcube[0], entCube->sel_color), cVert(vcube[4], entCube->sel_color), // front-left-pillar
 		cVert(vcube[1], entCube->sel_color), cVert(vcube[5], entCube->sel_color), // front-right-pillar
 		cVert(vcube[2], entCube->sel_color), cVert(vcube[6], entCube->sel_color), // back-right-pillar
-		cVert(vcube[3], entCube->sel_color), cVert(vcube[7], entCube->sel_color) // back-left-pillar
+		cVert(vcube[3], entCube->sel_color), cVert(vcube[7], entCube->sel_color)  // back-left-pillar
 	};
 
 	cVert* selectWireframeBuf = new cVert[12 * 2];
@@ -183,5 +179,5 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 
 	delete entCube->wireframeBuffer;
 
-	entCube->wireframeBuffer = new VertexBuffer(g_app->colorShader, selectWireframeBuf, 2 * 12, GL_LINES,true);
+	entCube->wireframeBuffer = new VertexBuffer(g_app->colorShader, selectWireframeBuf, 2 * 12, GL_LINES, true);
 }

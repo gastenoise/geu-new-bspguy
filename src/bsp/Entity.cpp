@@ -5,7 +5,7 @@
 
 size_t totalEntityStructs = 0;
 
-void Entity::addKeyvalue(const std::string & key, const std::string & value, bool multisupport)
+void Entity::addKeyvalue(const std::string& key, const std::string& value, bool multisupport)
 {
 	if (!nullstrlen(key))
 		return;
@@ -59,7 +59,7 @@ void Entity::addKeyvalue(const std::string & key, const std::string & value, boo
 	if (key == "model")
 		cachedModelIdx = -2;
 
-	if (starts_with(key,"render"))
+	if (starts_with(key, "render"))
 		updateRenderModes();
 }
 
@@ -83,7 +83,6 @@ void Entity::removeKeyvalue(const std::string& key)
 	if (key == "model")
 		cachedModelIdx = -2;
 
-
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
 		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
 
@@ -91,7 +90,7 @@ void Entity::removeKeyvalue(const std::string& key)
 
 	targetsCached = false;
 
-	if (starts_with(key,"render"))
+	if (starts_with(key, "render"))
 		updateRenderModes();
 }
 
@@ -112,7 +111,7 @@ bool Entity::renameKey(int idx, const std::string& newName)
 		}
 	}
 
-	if (starts_with(keyName,"render"))
+	if (starts_with(keyName, "render"))
 		updateRenderModes();
 
 	if (keyName == "origin" || newName == "origin")
@@ -136,7 +135,6 @@ bool Entity::renameKey(int idx, const std::string& newName)
 		cachedModelIdx = -2;
 	}
 	targetsCached = false;
-
 
 	if (keyName == "classname" && newName != "classname")
 		classname = "";
@@ -169,7 +167,7 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 	if (idx == -1)
 		return false;
 
-	if (starts_with(oldName,"render") || starts_with(newName,"render"))
+	if (starts_with(oldName, "render") || starts_with(newName, "render"))
 		updateRenderModes();
 
 	if (oldName == "origin" || newName == "origin")
@@ -195,12 +193,10 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 
 	targetsCached = false;
 
-
 	if (oldName == "classname" && newName != "classname")
 		classname = "";
 	else if (newName == "classname" && oldName != "classname")
 		classname = keyvalues["classname"];
-
 
 	return true;
 }
@@ -228,8 +224,9 @@ void Entity::clearEmptyKeyvalues()
 
 bool Entity::hasKey(const std::string& key)
 {
-	if (keyvalues.empty() || keyOrder.empty()) {
-		return false; 
+	if (keyvalues.empty() || keyOrder.empty())
+	{
+		return false;
 	}
 	return keyvalues.find(key) != keyvalues.end() && std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end();
 }
@@ -502,8 +499,7 @@ std::vector<std::string> potential_tergetname_keys = {
 	"pass_return_item_name",
 	"pass_return_item_group",
 	"pass_destroy_item_name",
-	"pass_destroy_item_group"
-};
+	"pass_destroy_item_group"};
 
 // This needs to be kept in sync with the FGD
 
@@ -517,9 +513,9 @@ std::vector<std::string> Entity::getTargets()
 	std::vector<std::string> targets;
 
 	for (size_t i = 1; i < potential_tergetname_keys.size(); i++)
-	{ 
+	{
 		// skip targetname
-		auto & key = potential_tergetname_keys[i];
+		auto& key = potential_tergetname_keys[i];
 		if (hasKey(key))
 		{
 			targets.push_back(keyvalues[key]);
@@ -573,7 +569,7 @@ void Entity::renameTargetnameValues(const std::string& oldTargetname, const std:
 {
 	for (size_t i = 0; i < potential_tergetname_keys.size(); i++)
 	{
-		auto & key = potential_tergetname_keys[i];
+		auto& key = potential_tergetname_keys[i];
 		if (keyvalues.find(key) != keyvalues.end() && keyvalues[key] == oldTargetname)
 		{
 			keyvalues[key] = newTargetname;
@@ -626,11 +622,13 @@ size_t Entity::getMemoryUsage()
 	return size;
 }
 
-vec3 Entity::getHullOrigin(Bsp* map) {
+vec3 Entity::getHullOrigin(Bsp* map)
+{
 	vec3 ori = origin;
 	int modelIdx = getBspModelIdx();
 
-	if (modelIdx != -1) {
+	if (modelIdx != -1)
+	{
 		vec3 mins, maxs;
 		map->get_model_vertex_bounds(modelIdx, mins, maxs);
 		ori += (maxs + mins) * 0.5f;
@@ -664,7 +662,8 @@ void Entity::updateRenderModes()
 	}
 }
 
-bool Entity::isEverVisible() {
+bool Entity::isEverVisible()
+{
 	std::string cname = keyvalues["classname"];
 	std::string tname = hasKey("targetname") ? keyvalues["targetname"] : "";
 
@@ -697,12 +696,15 @@ bool Entity::isEverVisible() {
 		"player_respawn_zone",
 	};
 
-	if (invisibleEnts.count(cname)) {
+	if (invisibleEnts.count(cname))
+	{
 		return false;
 	}
 
-	if (!tname.length() && hasKey("rendermode") && atoi(keyvalues["rendermode"].c_str()) != 0) {
-		if (!hasKey("renderamt") || atoi(keyvalues["renderamt"].c_str()) == 0) {
+	if (!tname.length() && hasKey("rendermode") && atoi(keyvalues["rendermode"].c_str()) != 0)
+	{
+		if (!hasKey("renderamt") || atoi(keyvalues["renderamt"].c_str()) == 0)
+		{
 			// starts invisible and likely nothing will change that because it has no targetname
 			return false;
 		}
@@ -711,13 +713,14 @@ bool Entity::isEverVisible() {
 	return true;
 }
 
-std::string Entity::serialize() 
+std::string Entity::serialize()
 {
 	std::stringstream ent_data;
 
 	ent_data << "{\n";
 
-	for (size_t k = 0; k < keyOrder.size(); k++) {
+	for (size_t k = 0; k < keyOrder.size(); k++)
+	{
 		std::string key = keyOrder[k];
 		ent_data << "\"" << key << "\" \"" << keyvalues[key] << "\"\n";
 	}
@@ -726,4 +729,3 @@ std::string Entity::serialize()
 
 	return ent_data.str();
 }
-

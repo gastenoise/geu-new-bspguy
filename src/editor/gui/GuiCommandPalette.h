@@ -5,7 +5,7 @@ class Gui;
 
 class GuiCommandPalette
 {
-public:
+  public:
 	static GuiCommandPalette& getInstance();
 
 	void open();
@@ -15,11 +15,11 @@ public:
 
 	void draw(Gui* gui);
 
-private:
+  private:
 	GuiCommandPalette() = default;
 
 	bool isOpen = false;
-	char searchBuffer[256] = { 0 };
+	char searchBuffer[256] = {0};
 	int selectedIdx = 0;
 	bool requestFocus = false;
 };

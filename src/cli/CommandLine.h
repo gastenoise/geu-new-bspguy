@@ -3,7 +3,7 @@
 
 class CommandLine
 {
-public:
+  public:
 	std::string command;
 	std::string bspfile;
 	std::vector<std::string> options;
@@ -21,7 +21,7 @@ public:
 	std::vector<vec3> getOptionVectorList(const std::string& optionName);
 	std::vector<std::string> getOptionList(const std::string& optionName);
 
-private:
+  private:
 	hashmap optionVals;
 };
 

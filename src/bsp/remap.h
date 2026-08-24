@@ -4,7 +4,7 @@ class Bsp;
 // excludes entities
 class STRUCTCOUNT
 {
-public:
+  public:
 	unsigned int planes;
 	unsigned int texInfos;
 	unsigned int leaves;
@@ -34,7 +34,7 @@ public:
 // used to mark structures that are in use by a model
 class STRUCTUSAGE
 {
-public:
+  public:
 	std::vector<bool> nodes;
 	std::vector<bool> clipnodes;
 	std::vector<bool> leaves;
@@ -62,7 +62,7 @@ public:
 // used to remap structure indexes to new locations
 class STRUCTREMAP
 {
-public:
+  public:
 	std::vector<int> nodes;
 	std::vector<int> clipnodes;
 	std::vector<int> leaves;

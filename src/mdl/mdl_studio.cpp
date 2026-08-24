@@ -8,8 +8,7 @@
 
 void StudioModel::CalcBoneAdj()
 {
-	mstudiobonecontroller_t* pbonecontroller = (mstudiobonecontroller_t*)
-		((unsigned char*)m_pstudiohdr + m_pstudiohdr->bonecontrollerindex);
+	mstudiobonecontroller_t* pbonecontroller = (mstudiobonecontroller_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bonecontrollerindex);
 
 	for (int j = 0; j < m_pstudiohdr->numbonecontrollers; j++)
 	{
@@ -25,31 +24,34 @@ void StudioModel::CalcBoneAdj()
 			else
 			{
 				value = m_controller[i] / 255.0f;
-				if (value < 0.0f) value = 0.0f;
-				if (value > 1.0f) value = 1.0f;
+				if (value < 0.0f)
+					value = 0.0f;
+				if (value > 1.0f)
+					value = 1.0f;
 				value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
 		}
 		else
 		{
 			value = m_mouth / 64.0f;
-			if (value > 1.0f) value = 1.0f;
+			if (value > 1.0f)
+				value = 1.0f;
 			value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
 		{
-		case STUDIO_XR:
-		case STUDIO_YR:
-		case STUDIO_ZR:
-			m_adj[j] = value * (HL_PI / 180.0f);
-			break;
-		case STUDIO_X:
-		case STUDIO_Y:
-		case STUDIO_Z:
-			m_adj[j] = value;
-			break;
-		default:
-			break;
+			case STUDIO_XR:
+			case STUDIO_YR:
+			case STUDIO_ZR:
+				m_adj[j] = value * (HL_PI / 180.0f);
+				break;
+			case STUDIO_X:
+			case STUDIO_Y:
+			case STUDIO_Z:
+				m_adj[j] = value;
+				break;
+			default:
+				break;
 		}
 	}
 }
@@ -126,11 +128,10 @@ void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, m
 	}
 }
 
-
 void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec3& pos)
 {
 	// Valve
-	int					j, k;
+	int j, k;
 	mstudioanimvalue_t* panimvalue;
 
 	for (j = 0; j < 3; j++)
@@ -180,12 +181,11 @@ void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mst
 	}
 }
 
-
 void StudioModel::CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f)
 {
 	// Valve
-	int		i, frame;
-	float		s;
+	int i, frame;
+	float s;
 	mstudiobone_t* pbone;
 
 	// bah, fix this bug with changing sequences too fast
@@ -219,7 +219,6 @@ void StudioModel::CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, 
 		pos[pseqdesc->motionbone][2] = 0.0f;
 }
 
-
 mstudioanim_t* StudioModel::GetAnim(mstudioseqdesc_t* pseqdesc)
 {
 	// Valve
@@ -234,16 +233,17 @@ mstudioanim_t* StudioModel::GetAnim(mstudioseqdesc_t* pseqdesc)
 	return (mstudioanim_t*)((unsigned char*)m_panimhdr[pseqdesc->seqgroup] + pseqdesc->animindex);
 }
 
-
 void StudioModel::SlerpBones(vec4* q1, vec3* pos1, vec4* q2, vec3* pos2, float s)
 {
 	// Valve
-	int			i;
-	vec4		q3;
-	float		s1;
+	int i;
+	vec4 q3;
+	float s1;
 
-	if (s < 0.0f) s = +0.0f;
-	else if (s > 1.0) s = 1.0f;
+	if (s < 0.0f)
+		s = +0.0f;
+	else if (s > 1.0)
+		s = 1.0f;
 
 	s1 = 1.0f - s;
 
@@ -260,35 +260,36 @@ void StudioModel::SlerpBones(vec4* q1, vec3* pos1, vec4* q2, vec3* pos2, float s
 	}
 }
 
-
 void StudioModel::AdvanceFrame(float dt)
 {
-	if (!m_pstudiohdr) return;
+	if (!m_pstudiohdr)
+		return;
 
-	auto* pseqdesc = (mstudioseqdesc_t*)(
-		(unsigned char*)(m_pstudiohdr)+m_pstudiohdr->seqindex) + m_sequence;
+	auto* pseqdesc = (mstudioseqdesc_t*)((unsigned char*)(m_pstudiohdr) + m_pstudiohdr->seqindex) + m_sequence;
 
 	m_frame += dt * pseqdesc->fps;
 
-	if (pseqdesc->numframes > 1) {
+	if (pseqdesc->numframes > 1)
+	{
 		m_frame = (float)std::fmod(m_frame, pseqdesc->numframes - 1);
 	}
 
-	if (m_frame >= pseqdesc->numframes) {
+	if (m_frame >= pseqdesc->numframes)
+	{
 		m_frame = 0;
 	}
 }
 void StudioModel::SetUpBones(void)
 {
 	// valve
-	int					i;
+	int i;
 
 	mstudiobone_t* pbones;
 	mstudioseqdesc_t* pseqdesc;
 	mstudioanim_t* panim;
 
-
-	if (m_sequence >= m_pstudiohdr->numseq) {
+	if (m_sequence >= m_pstudiohdr->numseq)
+	{
 		m_sequence = 0;
 	}
 
@@ -299,7 +300,7 @@ void StudioModel::SetUpBones(void)
 
 	if (pseqdesc->numblends > 1)
 	{
-		float				s;
+		float s;
 
 		panim += m_pstudiohdr->numbones;
 		CalcRotations(static_pos2, static_q2, pseqdesc, panim, m_frame);
@@ -325,23 +326,24 @@ void StudioModel::SetUpBones(void)
 
 	pbones = (mstudiobone_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->boneindex);
 
-	for (i = 0; i < m_pstudiohdr->numbones; i++) {
+	for (i = 0; i < m_pstudiohdr->numbones; i++)
+	{
 		QuaternionMatrix(static_q1[i], static_bonematrix);
 
 		static_bonematrix[0][3] = static_pos1[i][0];
 		static_bonematrix[1][3] = static_pos1[i][1];
 		static_bonematrix[2][3] = static_pos1[i][2];
 
-		if (pbones[i].parent == -1) {
+		if (pbones[i].parent == -1)
+		{
 			memcpy(g_bonetransform[i], static_bonematrix, sizeof(float) * 12);
 		}
-		else {
+		else
+		{
 			R_ConcatTransforms(g_bonetransform[pbones[i].parent], static_bonematrix, g_bonetransform[i]);
 		}
 	}
 }
-
-
 
 /*
 Not used
@@ -436,7 +438,8 @@ void StudioModel::SetupLighting()
 
 void StudioModel::SetupModel(int bodypart)
 {
-	if (!m_pstudiohdr) return;
+	if (!m_pstudiohdr)
+		return;
 
 	if (bodypart >= m_pstudiohdr->numbodyparts || bodypart < 0)
 	{
@@ -476,32 +479,31 @@ void StudioModel::SetupModel(int bodypart)
 		m_pmodel = (mstudiomodel_t*)((unsigned char*)m_pstudiohdr + pbodypart->modelindex) + index;
 	}
 
-	//if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
+	// if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
 	//{
 	//	print_log(get_localized_string(LANG_0981), m_ptexturehdr->skinindex);
-	//}
+	// }
 
-	//if (m_pmodel->normindex < 0)
+	// if (m_pmodel->normindex < 0)
 	//{
 	//	print_log(get_localized_string(LANG_0982), m_pmodel->normindex);
-	//}
+	// }
 
-	//if (m_pmodel->vertindex < 0)
+	// if (m_pmodel->vertindex < 0)
 	//{
 	//	print_log(get_localized_string(LANG_0983), m_pmodel->vertindex);
-	//}
+	// }
 
-	//if (m_pmodel->vertinfoindex < 0)
+	// if (m_pmodel->vertinfoindex < 0)
 	//{
 	//	print_log(get_localized_string(LANG_0984), m_pmodel->vertinfoindex);
-	//}
+	// }
 
-	//if (m_ptexturehdr && m_ptexturehdr->textureindex < 0)
+	// if (m_ptexturehdr && m_ptexturehdr->textureindex < 0)
 	//{
 	//	print_log(get_localized_string(LANG_0985), m_ptexturehdr->textureindex);
-	//}
+	// }
 }
-
 
 void StudioModel::UpdateModelMeshList()
 {
@@ -679,7 +681,6 @@ void StudioModel::RefreshMeshList(int body)
 			mdl_mesh_groups[body][j].texture = NULL;
 		}
 
-
 		int totalElements = 0;
 		int texCoordIdx = 0;
 		int vertexIdx = 0;
@@ -700,13 +701,15 @@ void StudioModel::RefreshMeshList(int body)
 
 			for (; i > 0; i--, ptricmds += 4)
 			{
-				if (elementsThisStrip++ >= 3) {
+				if (elementsThisStrip++ >= 3)
+				{
 					int v1PosIdx = fanStartVertIdx;
 					int v2PosIdx = vertexIdx - 3 * 1;
 					int v1TexIdx = fanStartTexIdx;
 					int v2TexIdx = texCoordIdx - 2 * 1;
 
-					if (drawMode == GL_TRIANGLE_STRIP) {
+					if (drawMode == GL_TRIANGLE_STRIP)
+					{
 						v1PosIdx = vertexIdx - 3 * 2;
 						v2PosIdx = vertexIdx - 3 * 1;
 						v1TexIdx = texCoordIdx - 2 * 2;
@@ -775,8 +778,10 @@ void StudioModel::RefreshMeshList(int body)
 
 				totalElements++;
 			}
-			if (drawMode == GL_TRIANGLE_STRIP) {
-				for (int p = 1; p < polies; p += 2) {
+			if (drawMode == GL_TRIANGLE_STRIP)
+			{
+				for (int p = 1; p < polies; p += 2)
+				{
 					int polyOffset = p * 3;
 
 					for (int k = 0; k < 3; k++)
@@ -813,7 +818,7 @@ void StudioModel::RefreshMeshList(int body)
 			if (needForceUpdate)
 			{
 				expandBoundingBox(vec3(vertexData[z * 3 + 0], vertexData[z * 3 + 1], vertexData[z * 3 + 2]),
-					mins, maxs);
+								  mins, maxs);
 			}
 		}
 	}
@@ -834,7 +839,7 @@ void StudioModel::RefreshMeshList(int body)
 		else
 		{
 			mdl_cube = new EntCube();
-			mdl_cube->color = { 255, 255, 0, 255 };
+			mdl_cube->color = {255, 255, 0, 255};
 			mdl_cube->mins = mins;
 			mdl_cube->maxs = maxs;
 			g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
@@ -865,9 +870,9 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 			out[i] = pal[data[i]];
 		}
 	}
-	//print_log("Texture name {} texture flags {}\n", ptexture->name, ptexture->flags);
-	// ptexture->width = outwidth;
-	// ptexture->height = outheight;
+	// print_log("Texture name {} texture flags {}\n", ptexture->name, ptexture->flags);
+	//  ptexture->width = outwidth;
+	//  ptexture->height = outheight;
 
 	Texture* texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name[0] != '\0' ? stripExt(ptexture->name) : "UNNAMED", true);
 	texture->setWadName("model_textures");
@@ -875,9 +880,6 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 	ptexture->index = (int)mdl_textures.size();
 	mdl_textures.push_back(texture);
 }
-
-
-
 
 bool StudioModel::LoadModel(const std::string& modelname, bool IsTexture)
 {
@@ -887,7 +889,8 @@ bool StudioModel::LoadModel(const std::string& modelname, bool IsTexture)
 		print_log(get_localized_string(LANG_0986), modelname);
 		return false;
 	}
-	if (data.size() < sizeof(studiohdr_t)) {
+	if (data.size() < sizeof(studiohdr_t))
+	{
 		print_log("File too small: {}", modelname);
 		return false;
 	}
@@ -903,7 +906,8 @@ bool StudioModel::LoadModel(const std::string& modelname, bool IsTexture)
 
 	if (phdr->textureindex < 0 || phdr->textureindex >= data.size())
 	{
-		print_log("{} : Bad textureindex {}", modelname, phdr->textureindex); return false;
+		print_log("{} : Bad textureindex {}", modelname, phdr->textureindex);
+		return false;
 	}
 
 	if (phdr->textureindex != 0)
@@ -913,7 +917,8 @@ bool StudioModel::LoadModel(const std::string& modelname, bool IsTexture)
 		for (int i = 0; i < phdr->numtextures; i++)
 		{
 			if (ptexture[i].index < 0 ||
-				ptexture[i].index + ptexture[i].width * ptexture[i].height > data.size()) {
+				ptexture[i].index + ptexture[i].width * ptexture[i].height > data.size())
+			{
 				print_log("{} : Bad texture data {}", modelname, i);
 				return NULL;
 			}
@@ -937,7 +942,6 @@ bool StudioModel::LoadModel(const std::string& modelname, bool IsTexture)
 	}
 	return true;
 }
-
 
 bool StudioModel::LoadDemandSequences(const std::string& modelname, int seqid)
 {
@@ -1001,7 +1005,6 @@ void StudioModel::DrawMDL(int meshnum)
 	}
 
 	needForceUpdate = false;
-
 
 	if (meshnum >= 0)
 	{
@@ -1192,8 +1195,6 @@ void StudioModel::ExtractBBox(vec3& _mins, vec3& _maxs)
 	_maxs[2] = pseqdesc[m_sequence].bbmax[2];
 }
 
-
-
 void StudioModel::GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed)
 {
 	mstudioseqdesc_t* pseqdesc;
@@ -1212,7 +1213,6 @@ void StudioModel::GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed)
 		*pflGroundSpeed = 0.0f;
 	}
 }
-
 
 float StudioModel::SetController(int iController, float flValue)
 {
@@ -1256,14 +1256,15 @@ float StudioModel::SetController(int iController, float flValue)
 
 	float setting = 255.0f * (flValue - pbonecontroller->start) / (pbonecontroller->end - pbonecontroller->start);
 
-	if (setting < 0.0f) setting = 0.0f;
-	if (setting > 255.0f) setting = 255.0f;
+	if (setting < 0.0f)
+		setting = 0.0f;
+	if (setting > 255.0f)
+		setting = 255.0f;
 
 	m_controller[iController] = FixBounds(setting);
 
 	return setting * (1.0f / 255.0f) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
 }
-
 
 float StudioModel::SetMouth(float flValue)
 {
@@ -1304,14 +1305,15 @@ float StudioModel::SetMouth(float flValue)
 
 	float setting = 64.0f * (flValue - pbonecontroller->start) / (pbonecontroller->end - pbonecontroller->start);
 
-	if (setting < 0.0f) setting = 0.0f;
-	if (setting > 64.0f) setting = 64.0f;
+	if (setting < 0.0f)
+		setting = 0.0f;
+	if (setting > 64.0f)
+		setting = 64.0f;
 
 	m_mouth = FixBounds(setting);
 
 	return setting * (1.0f / 64.0f) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
 }
-
 
 float StudioModel::SetBlending(int iBlender, float flValue)
 {
@@ -1340,15 +1342,15 @@ float StudioModel::SetBlending(int iBlender, float flValue)
 
 	float setting = 255.0f * (flValue - pseqdesc->blendstart[iBlender]) / (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]);
 
-	if (setting < 0.0f) setting = 0.0f;
-	if (setting > 255.0f) setting = 255.0f;
+	if (setting < 0.0f)
+		setting = 0.0f;
+	if (setting > 255.0f)
+		setting = 255.0f;
 
 	m_blending[iBlender] = FixBounds(setting);
 
 	return setting * (1.0f / 255.0f) * (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]) + pseqdesc->blendstart[iBlender];
 }
-
-
 
 int StudioModel::SetBodygroup(int iGroup, int iValue)
 {

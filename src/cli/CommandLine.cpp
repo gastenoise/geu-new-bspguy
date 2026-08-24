@@ -28,7 +28,7 @@ CommandLine::CommandLine(int argc, char* argv[])
 			int nArgs;
 			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
 			bspfile = std::filesystem::path(szArglist[i]).string();
-#else 
+#else
 			bspfile = std::filesystem::path(argv[i]).string();
 #endif
 		}
@@ -37,7 +37,7 @@ CommandLine::CommandLine(int argc, char* argv[])
 			options.push_back(arg);
 		}
 
-		if ((i == 1 || i == 2) && starts_with(larg,"help") || starts_with(larg,"/?") || starts_with(larg,"--help") || starts_with(larg, "-help") || starts_with(larg, "/help"))
+		if ((i == 1 || i == 2) && starts_with(larg, "help") || starts_with(larg, "/?") || starts_with(larg, "--help") || starts_with(larg, "-help") || starts_with(larg, "/help"))
 		{
 			askingForHelp = true;
 		}
@@ -89,7 +89,7 @@ bool CommandLine::hasOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		print_log(get_localized_string(LANG_0265),optionName);
+		print_log(get_localized_string(LANG_0265), optionName);
 		FlushConsoleLog(true);
 		return false;
 	}
@@ -114,7 +114,7 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		print_log(get_localized_string(LANG_1045),optionName);
+		print_log(get_localized_string(LANG_1045), optionName);
 		FlushConsoleLog(true);
 		return ret;
 	}

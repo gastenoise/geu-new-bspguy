@@ -6,15 +6,16 @@ class Bsp;
 class PolygonOctree;
 
 // generates a navigation mesh for a BSP
-class NavMeshGenerator {
-public:
+class NavMeshGenerator
+{
+  public:
 	NavMeshGenerator() = default;
 
 	// generate a nav mesh from the bsp
 	// returns polygons used to construct the mesh
 	NavMesh* generate(Bsp* map, int hull);
 
-private:
+  private:
 	int octreeDepth = 6;
 
 	// get faces of the hull that form the borders of the map

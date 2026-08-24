@@ -4,8 +4,7 @@
 
 class ProgressMeter
 {
-public:
-
+  public:
 	std::string progress_title;
 	int progress;
 	int progress_total;
@@ -24,6 +23,6 @@ public:
 	// backspace the progress meter until the line is blank
 	void clear();
 
-private:
+  private:
 	std::chrono::system_clock::time_point last_progress;
 };

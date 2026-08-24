@@ -23,7 +23,6 @@
 
 extern float g_tooltip_delay;
 
-
 void Gui::drawSettings()
 {
 	ImGui::SetNextWindowSize(ImVec2(790.f, 340.f), ImGuiCond_FirstUseEver);
@@ -43,7 +42,6 @@ void Gui::drawSettings()
 		static int resSelected = 0;
 		static int fgdSelected = 0;
 
-
 		std::string tab_titles[settings_tabs] = {
 			get_localized_string("LANG_SETTINGS_GENERAL"),
 			get_localized_string("LANG_SETTINGS_FGDPATH"),
@@ -51,8 +49,7 @@ void Gui::drawSettings()
 			get_localized_string("LANG_SETTINGS_OPTIMIZE"),
 			get_localized_string("LANG_SETTINGS_LIMITS"),
 			get_localized_string("LANG_SETTINGS_RENDER"),
-			get_localized_string("LANG_SETTINGS_CONTROL")
-		};
+			get_localized_string("LANG_SETTINGS_CONTROL")};
 
 		// left
 		ImGui::BeginChild(get_localized_string(LANG_0709).c_str(), ImVec2(150, 0), true);
@@ -65,7 +62,6 @@ void Gui::drawSettings()
 
 		ImGui::Separator();
 
-
 		ImGui::Dummy(ImVec2(0, 60));
 		ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
 		bool clicked_1 = ImGui::Button(get_localized_string(LANG_0710).c_str());
@@ -76,7 +72,6 @@ void Gui::drawSettings()
 		}
 
 		ImGui::EndChild();
-
 
 		ImGui::SameLine();
 
@@ -272,14 +267,16 @@ void Gui::drawSettings()
 			ImGui::SameLine();
 
 			ImGui::Checkbox(get_localized_string(LANG_0728).c_str(), &g_settings.auto_import_ent);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0729).c_str());
 				ImGui::EndTooltip();
 			}
 
 			ImGui::Checkbox(get_localized_string(LANG_0730).c_str(), &g_settings.same_dir_for_ent);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0731).c_str());
 				ImGui::EndTooltip();
@@ -300,7 +297,8 @@ void Gui::drawSettings()
 			}
 
 			ImGui::Checkbox(get_localized_string(LANG_0734).c_str(), &g_settings.default_is_empty);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0735).c_str());
 				ImGui::TextUnformatted(get_localized_string(LANG_0736).c_str());
@@ -310,12 +308,12 @@ void Gui::drawSettings()
 			ImGui::SameLine();
 
 			ImGui::Checkbox(get_localized_string(LANG_0737).c_str(), &g_settings.start_at_entity);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0738).c_str());
 				ImGui::EndTooltip();
 			}
-
 
 			ImGui::Checkbox("Save map cam pos", &g_settings.save_cam);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -324,7 +322,6 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted("Save camera position to map and load it at open.");
 				ImGui::EndTooltip();
 			}
-
 
 			ImGui::Separator();
 			ImGui::TextUnformatted("Language:");
@@ -355,7 +352,6 @@ void Gui::drawSettings()
 				ImGui::EndCombo();
 			}
 			ImGui::Separator();
-
 
 			ImGui::TextUnformatted("RAD Executable:");
 			ImGui::SetNextItemWidth(pathWidth * 0.80f);
@@ -389,7 +385,8 @@ void Gui::drawSettings()
 			ImGui::PopStyleColor(1);
 			if (clicked_6)
 			{
-				g_settings.loadDefaultSettings();;
+				g_settings.loadDefaultSettings();
+				;
 			}
 
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -493,7 +490,6 @@ void Gui::drawSettings()
 					g_settings.resPaths.erase(g_settings.resPaths.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
-
 			}
 
 			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
@@ -508,7 +504,8 @@ void Gui::drawSettings()
 		{
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::Checkbox(get_localized_string(LANG_0743).c_str(), &g_settings.strip_wad_path);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0744).c_str());
 				ImGui::EndTooltip();
@@ -517,7 +514,8 @@ void Gui::drawSettings()
 
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::Checkbox(get_localized_string(LANG_0745).c_str(), &g_settings.mark_unused_texinfos);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0746).c_str());
 				ImGui::EndTooltip();
@@ -526,7 +524,8 @@ void Gui::drawSettings()
 
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::Checkbox(get_localized_string(LANG_0747).c_str(), &g_settings.merge_verts);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0748).c_str());
 				ImGui::EndTooltip();
@@ -534,7 +533,8 @@ void Gui::drawSettings()
 
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::Checkbox("Merge edges [WIP]", &g_settings.merge_edges);
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Warning! This option can add visual glitches to map.");
 				ImGui::EndTooltip();
@@ -721,7 +721,6 @@ void Gui::drawSettings()
 						{
 							engForSelect = g_limits.engineName;
 						}
-
 					}
 				}
 				ImGui::EndCombo();
@@ -950,8 +949,9 @@ void Gui::drawSettings()
 
 			ImGui::Separator();
 
-			float mapBoundCol[3] = { g_settings.mapBoundaryColor.r / 255.0f, g_settings.mapBoundaryColor.g / 255.0f, g_settings.mapBoundaryColor.b / 255.0f };
-			if (ImGui::ColorEdit3("Map boundary color", mapBoundCol)) {
+			float mapBoundCol[3] = {g_settings.mapBoundaryColor.r / 255.0f, g_settings.mapBoundaryColor.g / 255.0f, g_settings.mapBoundaryColor.b / 255.0f};
+			if (ImGui::ColorEdit3("Map boundary color", mapBoundCol))
+			{
 				g_settings.mapBoundaryColor.r = (unsigned char)(mapBoundCol[0] * 255.0f);
 				g_settings.mapBoundaryColor.g = (unsigned char)(mapBoundCol[1] * 255.0f);
 				g_settings.mapBoundaryColor.b = (unsigned char)(mapBoundCol[2] * 255.0f);
@@ -961,7 +961,8 @@ void Gui::drawSettings()
 			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
 			bool clicked_18 = ImGui::Button("Reset##resetMapBoundCol");
 			ImGui::PopStyleColor(1);
-			if (clicked_18) {
+			if (clicked_18)
+			{
 				g_settings.mapBoundaryColor = COLOR3(0, 255, 0);
 				g_settings_changed = true;
 			}
@@ -1022,7 +1023,6 @@ void Gui::drawSettings()
 				g_settings.transparentEntities.emplace_back(std::string());
 			}
 
-
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0797).c_str());
 
@@ -1063,7 +1063,6 @@ void Gui::drawSettings()
 		ImGui::EndGroup();
 	}
 	ImGui::End();
-
 
 	if ((oldShowSettings && !showSettingsWidget) || apply_settings_pressed)
 	{
@@ -1447,7 +1446,6 @@ void Gui::drawImportMapWidget()
 			ifd::FileDialog::Instance().Close();
 		}
 
-
 		ImGui::InputText(get_localized_string(LANG_0833).c_str(), &mapPath);
 		ImGui::SameLine();
 
@@ -1527,4 +1525,3 @@ void Gui::drawImportMapWidget()
 	}
 	ImGui::End();
 }
-

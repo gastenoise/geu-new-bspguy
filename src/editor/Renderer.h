@@ -87,9 +87,7 @@ extern Texture* aaatriggerTex;
 extern Texture* skyTex_rgba;
 extern Texture* clipTex_rgba;
 
-
-
-extern int pickCount; 
+extern int pickCount;
 extern int vertPickCount;
 
 extern int g_drawFrameId;
@@ -103,13 +101,12 @@ class Renderer
 	friend class Gui;
 	friend class EditBspCommand;
 
-public:
-
+  public:
 	vec3 debugPoint;
 	vec3 debugVec1;
 	vec3 debugVec2;
 	vec3 debugVec3;
-	
+
 	vec3 debugLine0;
 	vec3 debugLine1;
 	Line2D debugCut;
@@ -122,7 +119,6 @@ public:
 	TraceResult debugTrace;
 	MergeResult mergeResult;
 
-
 	unsigned int colorShaderMultId;
 	ShaderProgram* modelShader;
 	ShaderProgram* colorShader;
@@ -133,7 +129,6 @@ public:
 
 	int gl_max_texture_size;
 
-
 	Gui* gui;
 
 	GLFWwindow* window;
@@ -143,7 +138,7 @@ public:
 	bool hideGui = false;
 	bool isHovered = false;
 	bool isIconified = false;
-	
+
 	bool isModelsReloading = false;
 
 	Renderer();
@@ -181,7 +176,7 @@ public:
 	void clearSelection();
 	void updateEnts();
 	bool isEntTransparent(const char* classname);
-	
+
 	Bsp* SelectedMap = NULL;
 	PointEntRenderer* pointEntRenderer;
 	PointEntRenderer* swapPointEntRenderer = NULL;
@@ -215,7 +210,7 @@ public:
 	TransformAxes moveAxes = TransformAxes();
 	TransformAxes scaleAxes = TransformAxes();
 	int hoverAxis; // axis being hovered
-	//int draggingAxis = -1; // axis currently being dragged by the mouse
+	// int draggingAxis = -1; // axis currently being dragged by the mouse
 	bool gridSnappingEnabled = true;
 	int gridSnapLevel = 1;
 	float snapSize = 0.01f;
@@ -224,7 +219,7 @@ public:
 	int pickMode = PICK_OBJECT;
 	bool anyPopupOpened = false;
 	int last_face_idx = 0;
-	//bool blockMoving = false;
+	// bool blockMoving = false;
 	bool showDragAxes = false;
 	bool saveTranformResult = false;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object
@@ -243,7 +238,7 @@ public:
 	bool drawingMoveAxes = false;
 
 	int modelTransform = -1;
-	std::vector<TransformVert> modelVerts; // control points for invisible plane intersection verts in HULL 0
+	std::vector<TransformVert> modelVerts;	   // control points for invisible plane intersection verts in HULL 0
 	std::vector<TransformVert> modelFaceVerts; // control points for visible face verts
 	std::vector<HullEdge> modelEdges;
 	cCube* modelVertCubes = NULL;
@@ -314,12 +309,12 @@ public:
 	void vertexEditControls();
 	void cameraRotationControls();
 	void cameraObjectHovering();
-	void cameraContextMenus(); // right clicking on ents and things
-	void moveGrabbedEnt(); // translates the grabbed ent
-	void shortcutControls(); // hotkeys for menus and things
+	void cameraContextMenus();	   // right clicking on ents and things
+	void moveGrabbedEnt();		   // translates the grabbed ent
+	void shortcutControls();	   // hotkeys for menus and things
 	void globalShortcutControls(); // these work even with the UI selected
-	void pickObject(); // select stuff with the mouse
-	bool transformAxisControls(); // true if grabbing axes
+	void pickObject();			   // select stuff with the mouse
+	bool transformAxisControls();  // true if grabbing axes
 	void applyTransform(Bsp* map, bool forceUpdate = false);
 	void setupView(int forceW = 0, int forceH = 0);
 	void setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bboxMax);
@@ -346,9 +341,9 @@ public:
 
 	void updateDragAxes();
 	void updateModelVerts();
-	void updateSelectionSize(Bsp * map, int modelIdx);
+	void updateSelectionSize(Bsp* map, int modelIdx);
 	void updateEntConnections();
-	void updateEntConnectionPositions(); // only updates positions in the buffer
+	void updateEntConnectionPositions();												  // only updates positions in the buffer
 	bool getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, Solid& outSolid); // calculate face vertices from plane intersections
 	void moveSelectedVerts(const vec3& delta);
 	bool splitModelFace();
@@ -386,5 +381,5 @@ public:
 	std::vector<std::string> glExteralTextures_names;
 	std::vector<Texture*> glExteralTextures_textures;
 	std::vector<std::string> glExteralTextures_wads;
-	Texture* giveMeTexture(const std::string& texname, const std::string & wadPart = std::string());
+	Texture* giveMeTexture(const std::string& texname, const std::string& wadPart = std::string());
 };

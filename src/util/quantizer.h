@@ -4,7 +4,6 @@
 
 #include "bsptypes.h"
 
-
 class Quantizer
 {
 	typedef struct tagNode
@@ -19,7 +18,7 @@ class Quantizer
 		struct tagNode* pNext;
 	} Node;
 
-protected:
+  protected:
 	Node* m_pTree;
 	unsigned int m_nLeafCount;
 	Node* m_pReducibleNodes[256];
@@ -28,7 +27,7 @@ protected:
 	unsigned int m_lastIndex;
 	COLOR3* m_pPalette;
 
-public:
+  public:
 	Quantizer(unsigned int nMaxColors, unsigned char nColorBits);
 	virtual ~Quantizer();
 	void ProcessImage(COLOR3* image, unsigned int size);
@@ -45,7 +44,7 @@ public:
 	COLOR3 GetNearestColorFast(COLOR3 c, COLOR3* pal);
 	unsigned int GetNearestIndexDither(COLOR3& color, COLOR3* pal);
 
-protected:
+  protected:
 	unsigned int GetLeafCount(Node* pTree);
 	void GenColorTable();
 	void AddColor(Node** ppNode, COLOR3 c, int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes);
@@ -56,4 +55,3 @@ protected:
 	unsigned int GetNextBestLeaf(Node** pTree, unsigned int nLevel, COLOR3 c, COLOR3* pal);
 	bool ColorsAreEqual(COLOR3 a, COLOR3 b);
 };
-

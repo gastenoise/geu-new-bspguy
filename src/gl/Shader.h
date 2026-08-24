@@ -1,9 +1,8 @@
 #pragma once
 
-
 class Shader
 {
-public:
+  public:
 	unsigned int ID;
 
 	/*
@@ -13,4 +12,3 @@ public:
 	Shader(const char* sourceCode, int shaderType);
 	~Shader(void);
 };
-

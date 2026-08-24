@@ -29,13 +29,23 @@ extern std::string g_version_string;
 #define fopen_s(pFile, filename, mode) (*(pFile) = fopen((filename), (mode)), (*(pFile) != NULL ? 0 : errno))
 #endif
 
-static const vec3  s_baseaxis[18] = {
-	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},                      // floor
-	{0, 0, -1}, {1, 0, 0}, {0, -1, 0},                     // ceiling
-	{1, 0, 0}, {0, 1, 0}, {0, 0, -1},                      // west wall
-	{-1, 0, 0}, {0, 1, 0}, {0, 0, -1},                     // east wall
-	{0, 1, 0}, {1, 0, 0}, {0, 0, -1},                      // south wall
-	{0, -1, 0}, {1, 0, 0}, {0, 0, -1},                     // north wall
+static const vec3 s_baseaxis[18] = {
+	{0, 0, 1}, {1, 0, 0}, {0, -1, 0}, // floor
+	{0, 0, -1},
+	{1, 0, 0},
+	{0, -1, 0}, // ceiling
+	{1, 0, 0},
+	{0, 1, 0},
+	{0, 0, -1}, // west wall
+	{-1, 0, 0},
+	{0, 1, 0},
+	{0, 0, -1}, // east wall
+	{0, 1, 0},
+	{1, 0, 0},
+	{0, 0, -1}, // south wall
+	{0, -1, 0},
+	{1, 0, 0},
+	{0, 0, -1}, // north wall
 };
 
 extern bool DebugKeyPressed;
@@ -125,7 +135,6 @@ bool pointInBox(const vec3& p, const vec3& mins, const vec3& maxs);
 
 bool isBoxContained(const vec3& innerMins, const vec3& innerMaxs, const vec3& outerMins, const vec3& outerMaxs);
 
-
 // get verts from the given set that form a triangle (no duplicates and not colinear)
 std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts);
 
@@ -161,7 +170,7 @@ int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
 vec3 AxisFromTextureAngle(float angle, bool x, int type);
 
-size_t nullstrlen(const std::string & str);
+size_t nullstrlen(const std::string& str);
 
 int GetImageColors(COLOR3* image, int size, int max_colors = 256);
 int ColorDistance(COLOR3 color, COLOR3 other);
@@ -171,26 +180,18 @@ bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpat
 void FixupAllSystemPaths();
 
 int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p);
-#define BOX_ON_PLANE_SIDE( emins, emaxs, p )			\
-	((( p )->type < 3 ) ?				\
-	(						\
-		((p)->dist <= (emins)[(p)->type]) ?		\
-			1				\
-		:					\
-		(					\
-			((p)->dist >= (emaxs)[(p)->type]) ?	\
-				2			\
-			:				\
-				3			\
-		)					\
-	)						\
-	:						\
-		BoxOnPlaneSide(( emins ), ( emaxs ), ( p )))
+#define BOX_ON_PLANE_SIDE(emins, emaxs, p)                                                                 \
+	(((p)->type < 3) ? (                                                                                   \
+						   ((p)->dist <= (emins)[(p)->type]) ? 1                                           \
+															 : (                                           \
+																   ((p)->dist >= (emaxs)[(p)->type]) ? 2   \
+																									 : 3)) \
+					 : BoxOnPlaneSide((emins), (emaxs), (p)))
 
 void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
-	int inputWidth, int inputHeight, int outputWidth, int outputHeight);
+				int inputWidth, int inputHeight, int outputWidth, int outputHeight);
 void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
-	int inputWidth, int inputHeight, int outputWidth, int outputHeight);
+				int inputWidth, int inputHeight, int outputWidth, int outputHeight);
 
 float floatRound(float f);
 
@@ -201,7 +202,6 @@ std::vector<vec3> scaleVerts(const std::vector<vec3>& vertices, float stretch_va
 std::vector<cVert> scaleVerts(const std::vector<cVert>& vertices, float stretch_value);
 
 BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force = false);
-
 
 // true if value begins a group of strings separated by spaces
 bool stringGroupStarts(const std::string& s);
@@ -217,17 +217,13 @@ std::vector<std::string> groupParts(std::vector<std::string>& ungrouped);
 
 std::string getValueInQuotes(std::string s);
 
-
 std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& points);
 
 void removeColinearPoints(std::vector<vec3>& vertices, float epsilon);
 
-
 bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2Mins, const vec3& obj2Maxs);
 
-
 // author https://gist.github.com/multiplemonomials/1d1806062a3809ffe26f7a232757ecb6
-
 
 #include <string>
 #include <vector>
@@ -239,7 +235,7 @@ class Process
 	bool quoteArgs = false;
 	std::string quoteIfNecessary(std::string toQuote);
 
-public:
+  public:
 	Process(std::string program);
 	Process& arg(const std::string& arg);
 	std::string getCommandlineString();
@@ -248,7 +244,6 @@ public:
 std::vector<double> solve_uv_matrix_svd(const std::vector<std::vector<double>>& matrix, const std::vector<double>& vector);
 bool calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vertices, const std::vector<vec2>& uvs);
 void getTrueTexSize(int& width, int& height, int maxsize = 512);
-
 
 vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge);
 
@@ -265,10 +260,8 @@ bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles);
 std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3>& gl_triangles, int& max_row);
 vec3 findBestBrushCenter(std::vector<vec3>& points);
 
-
 float getMaxDistPoints(std::vector<vec3>& points);
 int calcMipsSize(int w, int h);
-
 
 int str_to_int(const std::string& s);
 float str_to_float(const std::string& s);
@@ -289,20 +282,16 @@ bool ends_with(const std::string& str, char suffix);
 bool ends_with(const std::wstring& str, wchar_t suffix);
 void mapFixLightEnts(Bsp* map);
 
-void ExportModel(Bsp* src_map, const std::string & export_path, int model_id, int ExportType, bool movemodel);
+void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int ExportType, bool movemodel);
 int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip);
-
 
 unsigned char FixBounds(int i);
 unsigned char FixBounds(unsigned int i);
 unsigned char FixBounds(float i);
 unsigned char FixBounds(double i);
 
-
 std::vector<Entity*> load_ents(const std::string& entLump, const std::string& mapName);
 int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_name);
-
-
 
 void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& dirList, bool relative = false);
 void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative = false);
@@ -310,7 +299,7 @@ void findFilesWithExtension(const fs::path& rootPath, const std::string& extensi
 void W_CleanupName(const char* in, char* out);
 int calcMipsSize(int w, int h);
 WADTEX create_wadtex(const char* name, COLOR3* data, int width, int height);
-COLOR3* ConvertWadTexToRGB(const WADTEX & wadTex, COLOR3* palette = NULL);
+COLOR3* ConvertWadTexToRGB(const WADTEX& wadTex, COLOR3* palette = NULL);
 COLOR3* ConvertMipTexToRGB(BSPMIPTEX* wadTex, COLOR3* palette = NULL);
 COLOR4* ConvertWadTexToRGBA(const WADTEX& wadTex, COLOR3* palette = NULL, int colors = 256);
 COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette = NULL, int colors = 256);
