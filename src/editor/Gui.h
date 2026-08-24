@@ -1,19 +1,18 @@
-#include <GL/glew.h>
+#include "Entity.h"
+#include "Texture.h"
+#include "bsptypes.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_internal.h"
-#include "Entity.h"
-#include "remap.h"
-#include "bsptypes.h"
-#include "Texture.h"
 #include "qtools/rad.h"
+#include "remap.h"
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-constexpr ImVec4 COLOR_DEEP_OBSIDIAN    = ImVec4(0.043f, 0.047f, 0.063f, 1.000f);
-constexpr ImVec4 COLOR_BLOOD_CRIMSON    = ImVec4(0.545f, 0.078f, 0.165f, 1.000f);
+constexpr ImVec4 COLOR_DEEP_OBSIDIAN = ImVec4(0.043f, 0.047f, 0.063f, 1.000f);
+constexpr ImVec4 COLOR_BLOOD_CRIMSON = ImVec4(0.545f, 0.078f, 0.165f, 1.000f);
 constexpr ImVec4 COLOR_NIGHTMARE_PURPLE = ImVec4(0.149f, 0.161f, 0.290f, 1.000f);
-
 
 class BspRenderer;
 
@@ -58,13 +57,13 @@ class Gui
 {
 	friend class Renderer;
 
-public:
-	Renderer* app;
+  public:
+	Renderer *app;
 
 	bool settingLoaded = false;
 	bool updateTransformWidget = true;
 
-	Gui(Renderer* app);
+	Gui(Renderer *app);
 
 	void init();
 	void setupTheme();
@@ -78,8 +77,7 @@ public:
 	void copyLightmap();
 	void pasteLightmap();
 	void refresh();
-	void OpenFile(const std::string& file);
-
+	void OpenFile(const std::string &file);
 
 	bool polycount = false;
 	bool showDebugWidget = false;
@@ -114,22 +112,22 @@ public:
 	bool entityListChanged = true;
 	bool limitsInvalidated = true;
 
-private:
-	ImGuiIO* imgui_io = NULL;
+  private:
+	ImGuiIO *imgui_io = NULL;
 	int settingsTab = 0;
 
-	ImFont* defaultFont;
-	ImFont* smallFont;
-	ImFont* largeFont;
-	ImFont* consoleFont;
-	ImFont* consoleFontLarge;
+	ImFont *defaultFont;
+	ImFont *smallFont;
+	ImFont *largeFont;
+	ImFont *consoleFont;
+	ImFont *consoleFontLarge;
 	float fontSize = 22.f;
 	bool shouldReloadFonts = false;
 	bool shouldReloadTextureInfo = false;
 
-	Texture* objectIconTexture;
-	Texture* faceIconTexture;
-	Texture* leafIconTexture;
+	Texture *objectIconTexture;
+	Texture *faceIconTexture;
+	Texture *leafIconTexture;
 
 	bool badSurfaceExtents = false;
 	bool lightmapTooLarge = false;
@@ -194,18 +192,19 @@ private:
 	void drawLimits();
 	void drawLightMapTool();
 	void drawFaceEditorWidget();
-	void drawLimitTab(Bsp* map, int sortMode);
-	void drawUndoMemUsage(BspRenderer * rend);
+	void drawLimitTab(Bsp *map, int sortMode);
+	void drawUndoMemUsage(BspRenderer *rend);
 	void drawEntityReport();
 	StatInfo calcStat(std::string name, unsigned int val, unsigned int max, bool isMem);
-	ModelInfo calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val, unsigned int max, bool isMem);
+	ModelInfo calcModelStat(Bsp *map, STRUCTUSAGE *modelInfo, unsigned int val, unsigned int max, bool isMem);
 	void checkValidHulls();
 	void reloadLimits();
-	void ExportOneBigLightmap(Bsp* map);
-	void ExportFaceModel(Bsp* src_map, const std::string& export_path, const std::vector<int>& faceIdxs, int ExportType, bool movemodel);
+	void ExportOneBigLightmap(Bsp *map);
+	void ExportFaceModel(Bsp *src_map, const std::string &export_path, const std::vector<int> &faceIdxs, int ExportType,
+						 bool movemodel);
 	void loadFonts();
 	void checkFaceErrors();
 };
 
 ImVec4 imguiColorFromConsole(unsigned int colors);
-int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip = false);
+int ImportModel(Bsp *map, const std::string &mdl_path, bool noclip = false);

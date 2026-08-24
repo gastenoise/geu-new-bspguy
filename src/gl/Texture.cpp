@@ -1,221 +1,222 @@
-#include "lang.h"
-#include "Wad.h"
-#include <GL/glew.h>
 #include "Texture.h"
+#include "MutexManager.h"
+#include "Renderer.h"
+#include "Settings.h"
+#include "Wad.h"
+#include "lang.h"
 #include "lodepng.h"
 #include "log.h"
-#include "Settings.h"
-#include "Renderer.h"
-#include "MutexManager.h"
+#include <GL/glew.h>
 
-std::vector<Texture*> g_all_Textures;
+std::vector<Texture *> g_all_Textures;
 
-Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba, bool _owndata)
+Texture::Texture(GLsizei _width, GLsizei _height, unsigned char *data, const std::string &name, bool rgba,
+				 bool _owndata)
 {
-    tex_owndata = _owndata;
-    wad_name = "";
-    this->width = _width;
-    this->height = _height;
+	tex_owndata = _owndata;
+	wad_name = "";
+	this->width = _width;
+	this->height = _height;
 
-    if (!(g_render_flags & RENDER_TEXTURES_NOFILTER))
-    {
-        nearFilter = GL_LINEAR;
-        farFilter = GL_LINEAR;
-    }
-    else
-    {
-        nearFilter = GL_NEAREST;
-        farFilter = GL_NEAREST;
-    }
-    this->data = data;
-    dataLen = static_cast<unsigned int>(width * height * (rgba ? sizeof(COLOR4) : sizeof(COLOR3)));
-    id = 0xFFFFFFFF;
-    format = rgba ? GL_RGBA : GL_RGB;
-    this->texName = name;
-    uploaded = false;
+	if (!(g_render_flags & RENDER_TEXTURES_NOFILTER))
+	{
+		nearFilter = GL_LINEAR;
+		farFilter = GL_LINEAR;
+	}
+	else
+	{
+		nearFilter = GL_NEAREST;
+		farFilter = GL_NEAREST;
+	}
+	this->data = data;
+	dataLen = static_cast<unsigned int>(width * height * (rgba ? sizeof(COLOR4) : sizeof(COLOR3)));
+	id = 0xFFFFFFFF;
+	format = rgba ? GL_RGBA : GL_RGB;
+	this->texName = name;
+	uploaded = false;
 
-    type = -1;
+	type = -1;
 
-    if (g_settings.verboseLogs)
-        print_log(get_localized_string(LANG_0970), name, width, height);
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0970), name, width, height);
 
-    this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
+	this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
 
-    if (!name.empty() && name[0] == '{')
-    {
-        this->transparentMode = 2;
-    }
-    std::lock_guard<std::mutex> lock(Sync::TexturesList);
-    g_all_Textures.push_back(this);
+	if (!name.empty() && name[0] == '{')
+	{
+		this->transparentMode = 2;
+	}
+	std::lock_guard<std::mutex> lock(Sync::TexturesList);
+	g_all_Textures.push_back(this);
 }
 
 Texture::~Texture()
 {
-    wad_name.clear();
+	wad_name.clear();
 
-    if (id != 0xFFFFFFFF)
-        glDeleteTextures(1, &id);
+	if (id != 0xFFFFFFFF)
+		glDeleteTextures(1, &id);
 
-    if (tex_owndata && data != NULL)
-        delete[] data;
+	if (tex_owndata && data != NULL)
+		delete[] data;
 
-    std::lock_guard<std::mutex> lock(Sync::TexturesList);
-    auto it = std::remove(g_all_Textures.begin(), g_all_Textures.end(), this);
-    if (it != g_all_Textures.end())
-    {
-        g_all_Textures.erase(it);
-    }
-    else if (g_settings.verboseLogs)
-    {
-        print_log(PRINT_RED, "MISSING TEX BUFF IN TOTAL TEXTURES BUFF!\n");
-    }
+	std::lock_guard<std::mutex> lock(Sync::TexturesList);
+	auto it = std::remove(g_all_Textures.begin(), g_all_Textures.end(), this);
+	if (it != g_all_Textures.end())
+	{
+		g_all_Textures.erase(it);
+	}
+	else if (g_settings.verboseLogs)
+	{
+		print_log(PRINT_RED, "MISSING TEX BUFF IN TOTAL TEXTURES BUFF!\n");
+	}
 }
 
-unsigned char* Texture::getData()
+unsigned char *Texture::getData()
 {
-    if (data == NULL)
-    {
-        tex_owndata = true;
-        data = new unsigned char[dataLen];
-        if (id != 0xFFFFFFFF)
-        {
-            memset(binded_tex, 0, sizeof(binded_tex));
-            glBindTexture(GL_TEXTURE_2D, id);
-            glPixelStorei(GL_PACK_ALIGNMENT, 1);
-#ifdef GL_PACK_ROW_LENGTH 
-            glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+	if (data == NULL)
+	{
+		tex_owndata = true;
+		data = new unsigned char[dataLen];
+		if (id != 0xFFFFFFFF)
+		{
+			memset(binded_tex, 0, sizeof(binded_tex));
+			glBindTexture(GL_TEXTURE_2D, id);
+			glPixelStorei(GL_PACK_ALIGNMENT, 1);
+#ifdef GL_PACK_ROW_LENGTH
+			glPixelStorei(GL_PACK_ROW_LENGTH, 0);
 #endif
-            glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, data);
-        }
-        else
-        {
-            std::fill_n(data, dataLen, (unsigned char)255);
-        }
-    }
-    return data;
+			glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, data);
+		}
+		else
+		{
+			std::fill_n(data, dataLen, (unsigned char)255);
+		}
+	}
+	return data;
 }
 
 void Texture::upload(int _type)
 {
-    this->type = _type;
-    getData();
+	this->type = _type;
+	getData();
 
-    if (id != 0xFFFFFFFF)
-    {
-        glDeleteTextures(1, &id);
-    }
+	if (id != 0xFFFFFFFF)
+	{
+		glDeleteTextures(1, &id);
+	}
 
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
 
-    // Set up filters and wrap mode
-    switch (type)
-    {
-    case TYPE_LIGHTMAP:
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-        if (!(g_render_flags & RENDER_LIGHTMAPS_NOFILTER))
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        }
-        else
-        {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        }
-        break;
-    case TYPE_LIGHTMAP_NOFILTER:
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        break;
-    case TYPE_TEXTURE:
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->farFilter);
-        break;
-    case TYPE_DECAL:
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->farFilter);
-        break;
-    default:
-        break;
-    }
+	// Set up filters and wrap mode
+	switch (type)
+	{
+		case TYPE_LIGHTMAP:
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			if (!(g_render_flags & RENDER_LIGHTMAPS_NOFILTER))
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			}
+			else
+			{
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			}
+			break;
+		case TYPE_LIGHTMAP_NOFILTER:
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			break;
+		case TYPE_TEXTURE:
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->farFilter);
+			break;
+		case TYPE_DECAL:
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->farFilter);
+			break;
+		default:
+			break;
+	}
 
-    if (make_screenshot)
-    {
-        if (GLEW_EXT_texture_filter_anisotropic)
-        {
-            GLfloat maxAniso = 0.0f;
-            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, static_cast<GLint>(maxAniso));
-        }
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
+	if (make_screenshot)
+	{
+		if (GLEW_EXT_texture_filter_anisotropic)
+		{
+			GLfloat maxAniso = 0.0f;
+			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, static_cast<GLint>(maxAniso));
+		}
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
 
-    if (texName[0] == '{' && format == GL_RGB)
-    {
-        format = GL_RGBA;
-        auto* rgbData = (COLOR3*)(data);
-        auto pixelCount = width * height;
-        auto* rgbaData = new COLOR4[pixelCount];
-        for (int i = 0; i < pixelCount; i++)
-        {
-            rgbaData[i] = rgbData[i];
-            if (rgbaData[i].r == 0 && rgbaData[i].g == 0 && rgbaData[i].b > 250)
-            {
-                rgbaData[i] = COLOR4(0, 0, 0, 0);
-            }
-        }
-        if (tex_owndata && data != nullptr)
-            delete[] data;
-        data = (unsigned char*)(rgbaData);
-        tex_owndata = true;
-        dataLen = (unsigned int)(width * height * sizeof(COLOR4));
-    }
+	if (texName[0] == '{' && format == GL_RGB)
+	{
+		format = GL_RGBA;
+		auto *rgbData = (COLOR3 *)(data);
+		auto pixelCount = width * height;
+		auto *rgbaData = new COLOR4[pixelCount];
+		for (int i = 0; i < pixelCount; i++)
+		{
+			rgbaData[i] = rgbData[i];
+			if (rgbaData[i].r == 0 && rgbaData[i].g == 0 && rgbaData[i].b > 250)
+			{
+				rgbaData[i] = COLOR4(0, 0, 0, 0);
+			}
+		}
+		if (tex_owndata && data != nullptr)
+			delete[] data;
+		data = (unsigned char *)(rgbaData);
+		tex_owndata = true;
+		dataLen = (unsigned int)(width * height * sizeof(COLOR4));
+	}
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
-#ifdef GL_UNPACK_ROW_LENGTH 
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#ifdef GL_UNPACK_ROW_LENGTH
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-    //glGenerateMipmap(GL_TEXTURE_2D);
-    if (g_settings.verboseLogs)
-        print_log(get_localized_string(LANG_0971), texName, width, height);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	// glGenerateMipmap(GL_TEXTURE_2D);
+	if (g_settings.verboseLogs)
+		print_log(get_localized_string(LANG_0971), texName, width, height);
 
-    if (tex_owndata)
-    {
-        delete[] data;
-        data = NULL;
-    }
+	if (tex_owndata)
+	{
+		delete[] data;
+		data = NULL;
+	}
 }
 
-Texture* binded_tex[64];
+Texture *binded_tex[64];
 
 void Texture::bind(GLuint texnum)
 {
-    if (binded_tex[texnum] != this)
-    {
-        glActiveTexture(GL_TEXTURE0 + texnum);
-        glBindTexture(GL_TEXTURE_2D, id);
-        binded_tex[texnum] = this;
-    }
+	if (binded_tex[texnum] != this)
+	{
+		glActiveTexture(GL_TEXTURE0 + texnum);
+		glBindTexture(GL_TEXTURE_2D, id);
+		binded_tex[texnum] = this;
+	}
 }
 
-bool IsTextureTransparent(const std::string& texname)
+bool IsTextureTransparent(const std::string &texname)
 {
-    if (texname.empty())
-        return false;
-    for (const auto& s : g_settings.transparentTextures)
-    {
-        if (strcasecmp(s.c_str(), texname.c_str()) == 0)
-            return true;
-    }
-    return false;
+	if (texname.empty())
+		return false;
+	for (const auto &s : g_settings.transparentTextures)
+	{
+		if (strcasecmp(s.c_str(), texname.c_str()) == 0)
+			return true;
+	}
+	return false;
 }

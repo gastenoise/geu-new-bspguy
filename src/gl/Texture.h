@@ -1,11 +1,11 @@
 #pragma once
-#include <GL/glew.h>
 #include "bsplimits.h"
 #include "util.h"
+#include <GL/glew.h>
 
 class Texture
 {
-public:
+  public:
 	unsigned int id; // OpenGL texture ID
 	int type;
 	GLsizei height, width;
@@ -24,7 +24,8 @@ public:
 		TYPE_DECAL
 	};
 
-	Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba = false, bool tex_owndata = true);
+	Texture(GLsizei _width, GLsizei _height, unsigned char *data, const std::string &name, bool rgba = false,
+			bool tex_owndata = true);
 	~Texture();
 
 	// upload the texture with the specified settings
@@ -32,22 +33,20 @@ public:
 	void upload(int type = TYPE_TEXTURE);
 
 	// get data (if deleted, then fill it from texture)
-	unsigned char* getData();
+	unsigned char *getData();
 
-	void setWadName(const std::string& s) {
-		wad_name = s;
-	}
+	void setWadName(const std::string &s) { wad_name = s; }
 
 	// use this texture for rendering
 	void bind(GLuint texnum);
 
 	int dataLen;
-private:
 
+  private:
 	bool uploaded;
-	unsigned char* data; // RGB(A) data
+	unsigned char *data; // RGB(A) data
 	bool tex_owndata;
 };
-extern std::vector<Texture*> g_all_Textures;
-bool IsTextureTransparent(const std::string& texname);
-extern Texture* binded_tex[64];
+extern std::vector<Texture *> g_all_Textures;
+bool IsTextureTransparent(const std::string &texname);
+extern Texture *binded_tex[64];

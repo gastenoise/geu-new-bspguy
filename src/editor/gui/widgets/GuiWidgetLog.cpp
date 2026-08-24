@@ -27,7 +27,8 @@ void Gui::drawLog()
 		}
 	}
 
-	ImGui::BeginChild(get_localized_string(LANG_0706).c_str(), ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::BeginChild(get_localized_string(LANG_0706).c_str(), ImVec2(0, 0), false,
+					  ImGuiWindowFlags_HorizontalScrollbar);
 
 	bool copy = false;
 	if (ImGui::BeginPopupContextWindow())
@@ -44,7 +45,6 @@ void Gui::drawLog()
 		}
 		if (ImGui::MenuItem(get_localized_string(LANG_0708).c_str(), NULL, &AutoScroll))
 		{
-
 		}
 		ImGui::EndPopup();
 	}
@@ -55,7 +55,7 @@ void Gui::drawLog()
 	if (copy)
 	{
 		std::string logStr;
-		for (const auto& str : log_buffer_copy)
+		for (const auto &str : log_buffer_copy)
 		{
 			logStr += str + "\n";
 		}

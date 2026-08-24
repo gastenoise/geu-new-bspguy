@@ -2,28 +2,28 @@
 #include "mat4x4.h"
 #include "util.h"
 
-void vec3::operator-=(const vec3& v)
+void vec3::operator-=(const vec3 &v)
 {
 	x -= v.x;
 	y -= v.y;
 	z -= v.z;
 }
 
-void vec3::operator+=(const vec3& v)
+void vec3::operator+=(const vec3 &v)
 {
 	x += v.x;
 	y += v.y;
 	z += v.z;
 }
 
-void vec3::operator*=(const vec3& v)
+void vec3::operator*=(const vec3 &v)
 {
 	x *= v.x;
 	y *= v.y;
 	z *= v.z;
 }
 
-void vec3::operator/=(const vec3& v)
+void vec3::operator/=(const vec3 &v)
 {
 	x /= v.x;
 	y /= v.y;
@@ -58,11 +58,13 @@ void vec3::operator/=(float f)
 	z /= f;
 }
 
-vec3 operator*(float lhs, const vec3& rhs) {
+vec3 operator*(float lhs, const vec3 &rhs)
+{
 	return vec3(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z);
 }
 
-vec3 operator/(float lhs, const vec3& rhs) {
+vec3 operator/(float lhs, const vec3 &rhs)
+{
 	return vec3(lhs / rhs.x, lhs / rhs.y, lhs / rhs.z);
 }
 
@@ -79,7 +81,7 @@ float crossProduct(vec2 v1, vec2 v2)
 	return (v1.x * v2.y) - (v1.y * v2.x);
 }
 
-vec3 crossProduct(const vec3& v1, const vec3& v2)
+vec3 crossProduct(const vec3 &v1, const vec3 &v2)
 {
 	float x = v1.y * v2.z - v2.y * v1.z;
 	float y = v2.x * v1.z - v1.x * v2.z;
@@ -87,20 +89,22 @@ vec3 crossProduct(const vec3& v1, const vec3& v2)
 	return vec3(x, y, z);
 }
 
-float dotProduct(const vec3& v1, const vec3& v2)
+float dotProduct(const vec3 &v1, const vec3 &v2)
 {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
-float dotProduct(vec2 v1, vec2 v2) {
+float dotProduct(vec2 v1, vec2 v2)
+{
 	return v1.x * v2.x + v1.y * v2.y;
 }
 
-float distanceToPlane(const vec3& point, const vec3& planeNormal, float planeDist) {
+float distanceToPlane(const vec3 &point, const vec3 &planeNormal, float planeDist)
+{
 	return std::fabs(planeNormal.dot(point) - planeDist);
 }
 
-bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices)
+bool isPointInFace(const vec3 &point, const std::vector<vec3> &faceVertices)
 {
 	vec3 v0 = faceVertices[1] - faceVertices[0];
 	vec3 v1 = faceVertices[2] - faceVertices[0];
@@ -119,7 +123,7 @@ bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices)
 	return (u >= 0) && (v >= 0) && (u + v < 1);
 }
 
-void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
+void makeVectors(const vec3 &angles, vec3 &forward, vec3 &right, vec3 &up)
 {
 	mat4x4 rotMat;
 	rotMat.loadIdentity();
@@ -221,9 +225,10 @@ std::string vec3::toString()
 	return std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z);
 }
 
-std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z)
+std::string vec3::toKeyvalueString(bool truncate, const std::string &suffix_x, const std::string &suffix_y,
+								   const std::string &suffix_z)
 {
-	std::string parts[3] = { std::to_string(x) ,std::to_string(y), std::to_string(z) };
+	std::string parts[3] = {std::to_string(x), std::to_string(y), std::to_string(z)};
 
 	// remove trailing zeros to save some space
 	for (int i = 0; i < 3; i++)
@@ -239,11 +244,11 @@ std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, c
 		if (truncate)
 		{
 			size_t dotPosition = parts[i].find('.');
-			if (dotPosition != std::string::npos) {
+			if (dotPosition != std::string::npos)
+			{
 				parts[i] = parts[i].substr(0, dotPosition);
 			}
 		}
-
 	}
 
 	return parts[0] + suffix_x + parts[1] + suffix_y + parts[2] + suffix_z;
@@ -269,7 +274,6 @@ vec3 vec3::unflipUV()
 	return flip();
 }
 
-
 float vec3::size_test()
 {
 	return (x + y) * (z / 256.0f);
@@ -285,7 +289,7 @@ float vec3::dist(vec3 to) const
 	return sqrt(pow(x - to.x, 2.0f) + pow(y - to.y, 2.0f) + pow(z - to.z, 2.0f));
 }
 
-bool operator==(const vec2& v1, const vec2& v2)
+bool operator==(const vec2 &v1, const vec2 &v2)
 {
 	vec2 v = v1 - v2;
 	if (std::fabs(v.x) >= EPSILON)
@@ -295,33 +299,33 @@ bool operator==(const vec2& v1, const vec2& v2)
 	return true;
 }
 
-bool operator!=(const vec2& v1, const vec2& v2)
+bool operator!=(const vec2 &v1, const vec2 &v2)
 {
 	return std::fabs(v1.x - v2.x) >= EPSILON || std::fabs(v1.y - v2.y) >= EPSILON;
 }
 
-vec2 operator-(vec2 v1, const vec2& v2)
+vec2 operator-(vec2 v1, const vec2 &v2)
 {
 	v1.x -= v2.x;
 	v1.y -= v2.y;
 	return v1;
 }
 
-vec2 operator+(vec2 v1, const vec2& v2)
+vec2 operator+(vec2 v1, const vec2 &v2)
 {
 	v1.x += v2.x;
 	v1.y += v2.y;
 	return v1;
 }
 
-vec2 operator*(vec2 v1, const vec2& v2)
+vec2 operator*(vec2 v1, const vec2 &v2)
 {
 	v1.x *= v2.x;
 	v1.y *= v2.y;
 	return v1;
 }
 
-vec2 operator/(vec2 v1, const vec2& v2)
+vec2 operator/(vec2 v1, const vec2 &v2)
 {
 	v1.x /= v2.x;
 	v1.y /= v2.y;
@@ -356,25 +360,25 @@ vec2 operator/(vec2 v, float f)
 	return v;
 }
 
-void vec2::operator-=(const vec2& v)
+void vec2::operator-=(const vec2 &v)
 {
 	x -= v.x;
 	y -= v.y;
 }
 
-void vec2::operator+=(const vec2& v)
+void vec2::operator+=(const vec2 &v)
 {
 	x += v.x;
 	y += v.y;
 }
 
-void vec2::operator*=(const vec2& v)
+void vec2::operator*=(const vec2 &v)
 {
 	x *= v.x;
 	y *= v.y;
 }
 
-void vec2::operator/=(const vec2& v)
+void vec2::operator/=(const vec2 &v)
 {
 	x /= v.x;
 	y /= v.y;
@@ -422,22 +426,18 @@ vec2 vec2::swap()
 	return vec2(y, x);
 }
 
-
-
-bool operator==(const vec4& v1, const vec4& v2)
+bool operator==(const vec4 &v1, const vec4 &v2)
 {
 	vec4 v = v1 - v2;
 	return std::fabs(v.x) < EPSILON && std::fabs(v.y) < EPSILON && std::fabs(v.z) < EPSILON && std::fabs(v.w) < EPSILON;
 }
 
-
-bool operator!=(const vec4& v1, const vec4& v2)
+bool operator!=(const vec4 &v1, const vec4 &v2)
 {
 	return !(v1 == v2);
 }
 
-
-vec4 operator+(vec4 v1, const vec4& v2)
+vec4 operator+(vec4 v1, const vec4 &v2)
 {
 	v1.x += v2.x;
 	v1.y += v2.y;
@@ -455,10 +455,10 @@ vec4 operator+(vec4 v, float f)
 	return v;
 }
 
-std::string vec4::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z, const std::string& suffix_w)
+std::string vec4::toKeyvalueString(bool truncate, const std::string &suffix_x, const std::string &suffix_y,
+								   const std::string &suffix_z, const std::string &suffix_w)
 {
-	std::string parts[4] = { std::to_string(x) ,std::to_string(y), std::to_string(z) , std::to_string(w) };
-
+	std::string parts[4] = {std::to_string(x), std::to_string(y), std::to_string(z), std::to_string(w)};
 
 	// remove trailing zeros to save some space
 	for (int i = 0; i < 4; i++)
@@ -473,17 +473,17 @@ std::string vec4::toKeyvalueString(bool truncate, const std::string& suffix_x, c
 		if (truncate)
 		{
 			size_t dotPosition = parts[i].find('.');
-			if (dotPosition != std::string::npos) {
+			if (dotPosition != std::string::npos)
+			{
 				parts[i] = parts[i].substr(0, dotPosition);
 			}
 		}
-
 	}
 
 	return parts[0] + suffix_x + parts[1] + suffix_y + parts[2] + suffix_z + parts[3] + suffix_w;
 }
 
-vec4 operator*(vec4 v1, const vec4& v2)
+vec4 operator*(vec4 v1, const vec4 &v2)
 {
 	v1.x *= v2.x;
 	v1.y *= v2.y;
@@ -501,9 +501,7 @@ vec4 operator*(vec4 v, float f)
 	return v;
 }
 
-
-
-vec4 operator/(vec4 v1, const vec4& v2)
+vec4 operator/(vec4 v1, const vec4 &v2)
 {
 	v1.x /= v2.x;
 	v1.y /= v2.y;
@@ -521,8 +519,7 @@ vec4 operator/(vec4 v, float f)
 	return v;
 }
 
-
-vec4 operator-(vec4 v1, const vec4& v2)
+vec4 operator-(vec4 v1, const vec4 &v2)
 {
 	v1.x -= v2.x;
 	v1.y -= v2.y;
@@ -550,13 +547,9 @@ vec2 vec4::xy()
 	return vec2(x, y);
 }
 
-
-
-
-
-bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon)
+bool VectorCompare(const vec3 &v1, const vec3 &v2, float epsilon)
 {
-	int		i;
+	int i;
 
 	for (i = 0; i < 3; i++)
 		if (std::fabs(v1[i] - v2[i]) > epsilon)
@@ -565,12 +558,10 @@ bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon)
 	return true;
 }
 
-
-
-void AngleQuaternion(const vec3& angles, vec4& quaternion)
+void AngleQuaternion(const vec3 &angles, vec4 &quaternion)
 {
-	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
+	float angle;
+	float sr, sp, sy, cr, cp, cy;
 
 	// FIXME: rescale the inputs to 1/2 angle
 	angle = angles[2] * 0.5f;
@@ -589,7 +580,7 @@ void AngleQuaternion(const vec3& angles, vec4& quaternion)
 	quaternion[3] = cr * cp * cy + sr * sp * sy; // W
 }
 
-void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt)
+void QuaternionSlerp(const vec4 &p, vec4 &q, float t, vec4 &qt)
 {
 	int i;
 	float omega, cosom, sinom, sclp, sclq;
@@ -646,7 +637,7 @@ void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt)
 	}
 }
 
-void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4])
+void QuaternionMatrix(const vec4 &quaternion, float (*matrix)[4])
 {
 	matrix[0][0] = 1.0f - 2.0f * quaternion[1] * quaternion[1] - 2.0f * quaternion[2] * quaternion[2];
 	matrix[1][0] = 2.0f * quaternion[0] * quaternion[1] + 2.0f * quaternion[3] * quaternion[2];
@@ -663,43 +654,31 @@ void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4])
 
 void R_ConcatTransforms(float in1[][4], float in2[][4], float out[][4])
 {
-	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
-		in1[0][2] * in2[2][0];
-	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
-		in1[0][2] * in2[2][1];
-	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
-		in1[0][2] * in2[2][2];
-	out[0][3] = in1[0][0] * in2[0][3] + in1[0][1] * in2[1][3] +
-		in1[0][2] * in2[2][3] + in1[0][3];
-	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +
-		in1[1][2] * in2[2][0];
-	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] +
-		in1[1][2] * in2[2][1];
-	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +
-		in1[1][2] * in2[2][2];
-	out[1][3] = in1[1][0] * in2[0][3] + in1[1][1] * in2[1][3] +
-		in1[1][2] * in2[2][3] + in1[1][3];
-	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +
-		in1[2][2] * in2[2][0];
-	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +
-		in1[2][2] * in2[2][1];
-	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +
-		in1[2][2] * in2[2][2];
-	out[2][3] = in1[2][0] * in2[0][3] + in1[2][1] * in2[1][3] +
-		in1[2][2] * in2[2][3] + in1[2][3];
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] + in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] + in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] + in1[0][2] * in2[2][2];
+	out[0][3] = in1[0][0] * in2[0][3] + in1[0][1] * in2[1][3] + in1[0][2] * in2[2][3] + in1[0][3];
+	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] + in1[1][2] * in2[2][0];
+	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] + in1[1][2] * in2[2][1];
+	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] + in1[1][2] * in2[2][2];
+	out[1][3] = in1[1][0] * in2[0][3] + in1[1][1] * in2[1][3] + in1[1][2] * in2[2][3] + in1[1][3];
+	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] + in1[2][2] * in2[2][0];
+	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] + in1[2][2] * in2[2][1];
+	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] + in1[2][2] * in2[2][2];
+	out[2][3] = in1[2][0] * in2[0][3] + in1[2][1] * in2[1][3] + in1[2][2] * in2[2][3] + in1[2][3];
 }
 
-void VectorScale(const vec3& v, float scale, vec3& out)
+void VectorScale(const vec3 &v, float scale, vec3 &out)
 {
 	out[0] = v[0] * scale;
 	out[1] = v[1] * scale;
 	out[2] = v[2] * scale;
 }
 
-float VectorNormalize(vec3& v)
+float VectorNormalize(vec3 &v)
 {
-	int		i;
-	float	length;
+	int i;
+	float length;
 
 	if (std::fabs(v[1] - 0.000215956f) < 0.0001f)
 		i = 1;
@@ -717,18 +696,18 @@ float VectorNormalize(vec3& v)
 	return length;
 }
 
-void VectorTransform(const vec3& in1, const float in2[3][4], vec3& out)
+void VectorTransform(const vec3 &in1, const float in2[3][4], vec3 &out)
 {
 	out[0] = dotProduct(in1, vec3(in2[0][0], in2[0][1], in2[0][2])) + in2[0][3];
 	out[1] = dotProduct(in1, vec3(in2[1][0], in2[1][1], in2[1][2])) + in2[1][3];
 	out[2] = dotProduct(in1, vec3(in2[2][0], in2[2][1], in2[2][2])) + in2[2][3];
 }
 
-int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv)
+int TextureAxisFromPlane(const BSPPLANE &pln, vec3 &xv, vec3 &yv)
 {
-	int             bestaxis;
-	float           dot, best;
-	int             i;
+	int bestaxis;
+	float dot, best;
+	int i;
 
 	best = 0;
 	bestaxis = 0;
@@ -749,11 +728,11 @@ int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv)
 	return bestaxis;
 }
 
-int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv)
+int TextureAxisFromPlane(const vec3 &pln, vec3 &xv, vec3 &yv)
 {
-	int             bestaxis;
-	float           dot, best;
-	int             i;
+	int bestaxis;
+	float dot, best;
+	int i;
 
 	best = 0;
 	bestaxis = 0;
@@ -774,13 +753,13 @@ int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv)
 	return bestaxis;
 }
 
-float VectorLength(const vec3& v)
+float VectorLength(const vec3 &v)
 {
-	int		i;
-	float	length = +0.0f;
+	int i;
+	float length = +0.0f;
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
-	length = sqrt(length);		// FIXME
+	length = sqrt(length); // FIXME
 
 	return length;
 }
@@ -790,61 +769,61 @@ float Q_rint(float in)
 	return floor(in + 0.5f);
 }
 
-void mVectorMA(const vec3& va, float scale, const vec3& vb, vec3& vc)
+void mVectorMA(const vec3 &va, float scale, const vec3 &vb, vec3 &vc)
 {
 	vc[0] = va[0] + scale * vb[0];
 	vc[1] = va[1] + scale * vb[1];
 	vc[2] = va[2] + scale * vb[2];
 }
 
-float _DotProduct(const vec3& v1, const vec3& v2)
+float _DotProduct(const vec3 &v1, const vec3 &v2)
 {
 	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
-void _VectorSubtract(const vec3& va, const vec3& vb, vec3& out)
+void _VectorSubtract(const vec3 &va, const vec3 &vb, vec3 &out)
 {
 	out[0] = va[0] - vb[0];
 	out[1] = va[1] - vb[1];
 	out[2] = va[2] - vb[2];
 }
 
-void _VectorAdd(const vec3& va, const vec3& vb, vec3& out)
+void _VectorAdd(const vec3 &va, const vec3 &vb, vec3 &out)
 {
 	out[0] = va[0] + vb[0];
 	out[1] = va[1] + vb[1];
 	out[2] = va[2] + vb[2];
 }
 
-void _VectorCopy(const vec3& in, vec3& out)
+void _VectorCopy(const vec3 &in, vec3 &out)
 {
 	out[0] = in[0];
 	out[1] = in[1];
 	out[2] = in[2];
 }
 
-void _VectorScale(const vec3& v, float scale, vec3& out)
+void _VectorScale(const vec3 &v, float scale, vec3 &out)
 {
 	out[0] = v[0] * scale;
 	out[1] = v[1] * scale;
 	out[2] = v[2] * scale;
 }
 
-void VectorInverse(vec3& v)
+void VectorInverse(vec3 &v)
 {
 	v = -v;
 }
 
-void ClearBounds(vec3& mins, vec3& maxs)
+void ClearBounds(vec3 &mins, vec3 &maxs)
 {
 	mins[0] = mins[1] = mins[2] = 99999.0f;
 	maxs[0] = maxs[1] = maxs[2] = -99999.0f;
 }
 
-void AddPointToBounds(const vec3& v, vec3& mins, vec3& maxs)
+void AddPointToBounds(const vec3 &v, vec3 &mins, vec3 &maxs)
 {
-	int		i;
-	float	val;
+	int i;
+	float val;
 
 	for (i = 0; i < 3; i++)
 	{
@@ -856,10 +835,10 @@ void AddPointToBounds(const vec3& v, vec3& mins, vec3& maxs)
 	}
 }
 
-void AngleMatrix(const vec3& angles, float(*matrix)[4])
+void AngleMatrix(const vec3 &angles, float (*matrix)[4])
 {
-	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
+	float angle;
+	float sr, sp, sy, cr, cp, cy;
 	float multipl = (Q_PI * 2.0f / 360.0f);
 	angle = angles[2] * multipl;
 	sy = sin(angle);
@@ -886,10 +865,10 @@ void AngleMatrix(const vec3& angles, float(*matrix)[4])
 	matrix[2][3] = 0.0f;
 }
 
-void AngleIMatrix(const vec3& angles, float matrix[3][4])
+void AngleIMatrix(const vec3 &angles, float matrix[3][4])
 {
-	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
+	float angle;
+	float sr, sp, sy, cr, cp, cy;
 
 	float multipl = (Q_PI * 2.0f / 360.0f);
 
@@ -918,21 +897,21 @@ void AngleIMatrix(const vec3& angles, float matrix[3][4])
 	matrix[2][3] = 0.0f;
 }
 
-void VectorRotate(const vec3& in1, const float in2[3][4], vec3& out)
+void VectorRotate(const vec3 &in1, const float in2[3][4], vec3 &out)
 {
 	out[0] = dotProduct(in1, vec3(in2[0][0], in2[0][1], in2[0][2]));
 	out[1] = dotProduct(in1, vec3(in2[1][0], in2[1][1], in2[1][2]));
 	out[2] = dotProduct(in1, vec3(in2[2][0], in2[2][1], in2[2][2]));
 }
 
-void mCrossProduct(const vec3& v1, const vec3& v2, vec3& cross)
+void mCrossProduct(const vec3 &v1, const vec3 &v2, vec3 &cross)
 {
 	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
 	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
 	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
-void VectorIRotate(const vec3& in1, const float in2[3][4], vec3& out)
+void VectorIRotate(const vec3 &in1, const float in2[3][4], vec3 &out)
 {
 	out[0] = in1[0] * in2[0][0] + in1[1] * in2[1][0] + in1[2] * in2[2][0];
 	out[1] = in1[0] * in2[0][1] + in1[1] * in2[1][1] + in1[2] * in2[2][1];
@@ -952,9 +931,9 @@ float clamp(float val, float min, float max)
 	return val;
 }
 
-void VectorAngles(const vec3 & forward, vec3 & angles)
+void VectorAngles(const vec3 &forward, vec3 &angles)
 {
-	float	tmp, yaw, pitch;
+	float tmp, yaw, pitch;
 
 	if (forward[1] == 0 && forward[0] == 0)
 	{
@@ -980,7 +959,6 @@ void VectorAngles(const vec3 & forward, vec3 & angles)
 	angles[1] = yaw;
 	angles[2] = 0;
 }
-
 
 unsigned char FixBounds(int i)
 {

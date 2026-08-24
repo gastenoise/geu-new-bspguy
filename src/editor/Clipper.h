@@ -1,7 +1,7 @@
-#include "util.h"
+#include "VertexBuffer.h"
 #include "bsptypes.h"
 #include "primitives.h"
-#include "VertexBuffer.h"
+#include "util.h"
 
 // https://www.geometrictools.com/Documentation/ClipMesh.pdf
 
@@ -64,18 +64,17 @@ struct CMesh
 
 class Clipper
 {
-public:
-
+  public:
 	Clipper();
 
 	// clips a box against the list of clipping planes, in order, to create a convex volume
-	CMesh clip(std::vector<BSPPLANE>& clips);
+	CMesh clip(std::vector<BSPPLANE> &clips);
 
-private:
-	int clipVertices(CMesh& mesh, BSPPLANE& clip);
-	void clipEdges(CMesh& mesh/*, BSPPLANE& clip*/);
-	void clipFaces(CMesh& mesh, BSPPLANE& clip);
-	bool getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final);
+  private:
+	int clipVertices(CMesh &mesh, BSPPLANE &clip);
+	void clipEdges(CMesh &mesh /*, BSPPLANE& clip*/);
+	void clipFaces(CMesh &mesh, BSPPLANE &clip);
+	bool getOpenPolyline(CMesh &mesh, CFace &face, int &start, int &final);
 
 	CMesh createMaxSizeVolume();
 };

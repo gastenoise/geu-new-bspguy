@@ -13,7 +13,7 @@
 ;
 */
 
-inih::INIReader* lang_ini = NULL;
+inih::INIReader *lang_ini = NULL;
 
 std::map<int, std::string> lang_db;
 std::map<std::string, std::string> lang_db_str;
@@ -36,15 +36,15 @@ std::string get_localized_string(int id)
 			std::string value = fmt::format("NO LANG_{:04}", id);
 			try
 			{
-				std::string tmp_value = lang_ini->Get<std::string>(g_settings.selected_lang, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
+				std::string tmp_value = lang_ini->Get<std::string>(
+					g_settings.selected_lang, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
 				replaceAll(tmp_value, "\\n", "\n");
 				replaceAll(tmp_value, "\\r", "\r");
 
 				value = std::move(tmp_value);
 			}
-			catch(...)
+			catch (...)
 			{
-
 			}
 			lang_db[id] = value;
 			return value;
@@ -55,7 +55,7 @@ std::string get_localized_string(int id)
 	return "LANG_ERROR_INDEX\n";
 }
 
-std::string get_localized_string(const std::string& str_id)
+std::string get_localized_string(const std::string &str_id)
 {
 	if (lang_ini == NULL)
 	{
@@ -71,14 +71,14 @@ std::string get_localized_string(const std::string& str_id)
 			std::string value = fmt::format("NO {}", str_id);
 			try
 			{
-				std::string tmp_value = lang_ini->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
+				std::string tmp_value =
+					lang_ini->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
 				replaceAll(tmp_value, "\\n", "\n");
 				replaceAll(tmp_value, "\\r", "\r");
 				value = std::move(tmp_value);
 			}
 			catch (...)
 			{
-
 			}
 			lang_db_str[str_id] = value;
 			return value;
@@ -89,7 +89,7 @@ std::string get_localized_string(const std::string& str_id)
 	return "LANG_ERROR_STRING\n";
 }
 
-void set_localize_lang(const std::string & lang)
+void set_localize_lang(const std::string &lang)
 {
 	static std::string last_lang = "";
 
@@ -116,9 +116,10 @@ void set_localize_lang(const std::string & lang)
 			{
 				lang_ini = new inih::INIReader(langfile);
 			}
-			catch (std::runtime_error & runtime)
+			catch (std::runtime_error &runtime)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", langfile, runtime.what());
+				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", langfile,
+						  runtime.what());
 				delete lang_ini;
 				lang_ini = NULL;
 			}

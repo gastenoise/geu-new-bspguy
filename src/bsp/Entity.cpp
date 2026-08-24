@@ -1,11 +1,11 @@
 #include "Entity.h"
-#include "util.h"
 #include "Bsp.h"
+#include "util.h"
 #include <set>
 
 size_t totalEntityStructs = 0;
 
-void Entity::addKeyvalue(const std::string & key, const std::string & value, bool multisupport)
+void Entity::addKeyvalue(const std::string &key, const std::string &value, bool multisupport)
 {
 	if (!nullstrlen(key))
 		return;
@@ -59,11 +59,11 @@ void Entity::addKeyvalue(const std::string & key, const std::string & value, boo
 	if (key == "model")
 		cachedModelIdx = -2;
 
-	if (starts_with(key,"render"))
+	if (starts_with(key, "render"))
 		updateRenderModes();
 }
 
-void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
+void Entity::setOrAddKeyvalue(const std::string &key, const std::string &value)
 {
 	if (!key.size())
 		return;
@@ -71,7 +71,7 @@ void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
 	addKeyvalue(key, value);
 }
 
-void Entity::removeKeyvalue(const std::string& key)
+void Entity::removeKeyvalue(const std::string &key)
 {
 	if (!key.size())
 		return;
@@ -83,7 +83,6 @@ void Entity::removeKeyvalue(const std::string& key)
 	if (key == "model")
 		cachedModelIdx = -2;
 
-
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
 		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
 
@@ -91,11 +90,11 @@ void Entity::removeKeyvalue(const std::string& key)
 
 	targetsCached = false;
 
-	if (starts_with(key,"render"))
+	if (starts_with(key, "render"))
 		updateRenderModes();
 }
 
-bool Entity::renameKey(int idx, const std::string& newName)
+bool Entity::renameKey(int idx, const std::string &newName)
 {
 	if (idx < 0 || idx >= (int)keyOrder.size() || newName.empty())
 	{
@@ -112,7 +111,7 @@ bool Entity::renameKey(int idx, const std::string& newName)
 		}
 	}
 
-	if (starts_with(keyName,"render"))
+	if (starts_with(keyName, "render"))
 		updateRenderModes();
 
 	if (keyName == "origin" || newName == "origin")
@@ -137,7 +136,6 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	}
 	targetsCached = false;
 
-
 	if (keyName == "classname" && newName != "classname")
 		classname = "";
 	else if (newName == "classname" && keyName != "classname")
@@ -146,7 +144,7 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	return true;
 }
 
-bool Entity::renameKey(const std::string& oldName, const std::string& newName)
+bool Entity::renameKey(const std::string &oldName, const std::string &newName)
 {
 	if (oldName.empty() || newName.empty())
 	{
@@ -169,7 +167,7 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 	if (idx == -1)
 		return false;
 
-	if (starts_with(oldName,"render") || starts_with(newName,"render"))
+	if (starts_with(oldName, "render") || starts_with(newName, "render"))
 		updateRenderModes();
 
 	if (oldName == "origin" || newName == "origin")
@@ -195,12 +193,10 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 
 	targetsCached = false;
 
-
 	if (oldName == "classname" && newName != "classname")
 		classname = "";
 	else if (newName == "classname" && oldName != "classname")
 		classname = keyvalues["classname"];
-
 
 	return true;
 }
@@ -226,10 +222,11 @@ void Entity::clearEmptyKeyvalues()
 	keyOrder = std::move(newKeyOrder);
 }
 
-bool Entity::hasKey(const std::string& key)
+bool Entity::hasKey(const std::string &key)
 {
-	if (keyvalues.empty() || keyOrder.empty()) {
-		return false; 
+	if (keyvalues.empty() || keyOrder.empty())
+	{
+		return false;
 	}
 	return keyvalues.find(key) != keyvalues.end() && std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end();
 }
@@ -308,80 +305,53 @@ bool Entity::isWorldSpawn()
 
 std::vector<std::string> potential_tergetname_keys = {
 	// common target-related keys
-	"targetname",
-	"target",
-	"killtarget",
-	"master",
-	"netname",
+	"targetname", "target", "killtarget", "master", "netname",
 	"message", // not always an entity, but unlikely a .wav file or something will match an entity name
 
 	// monster_* and monster spawners
-	"TriggerTarget",
-	"path_name",
-	"guard_ent",
-	"trigger_target",
-	"xenmaker",
-	"squadname",
+	"TriggerTarget", "path_name", "guard_ent", "trigger_target", "xenmaker", "squadname",
 
 	// OpenClosable
-	"fireonopening",
-	"fireonclosing",
-	"fireonopened",
-	"fireonclosed",
+	"fireonopening", "fireonclosing", "fireonopened", "fireonclosed",
 
 	// breakables
 	"fireonbreak",
 
 	// Trackchange
-	"train",
-	"toptrack",
-	"bottomtrack",
+	"train", "toptrack", "bottomtrack",
 
 	// scripted sequences
-	"m_iszEntity",
-	"entity",
+	"m_iszEntity", "entity",
 	//"listener", // TODO: what is this?
 
 	// BaseCharger
-	"TriggerOnEmpty",
-	"TriggerOnRecharged",
+	"TriggerOnEmpty", "TriggerOnRecharged",
 
 	// Beams
-	"LightningStart",
-	"LightningEnd",
-	"LaserTarget",
-	"laserentity",
+	"LightningStart", "LightningEnd", "LaserTarget", "laserentity",
 
 	// func_rot_button
 	"changetarget",
 
 	// game_zone_player
-	"intarget",
-	"outtarget",
+	"intarget", "outtarget",
 
 	// info_bigmomma
-	"reachtarget",
-	"presequence",
+	"reachtarget", "presequence",
 
 	// info_monster_goal
 	"enemy",
 
 	// path_condition_controller
-	"conditions_reference",
-	"starttrigger",
+	"conditions_reference", "starttrigger",
 	// TODO: support lists of targetnames
 	//"pathcondition_list",
 	//"waypoint_list",
 	//"m_szASConditionsName", // TODO: what is this?
 
 	// path_waypoint
-	"alternate_target",
-	"trigger_on_arrival",
-	"trigger_after_arrival",
-	"wait_master",
-	"trigger_on_departure",
-	"overflow_waypoint",
-	"stop_trigger",
+	"alternate_target", "trigger_on_arrival", "trigger_after_arrival", "wait_master", "trigger_on_departure",
+	"overflow_waypoint", "stop_trigger",
 
 	// path_track
 	"altpath",
@@ -389,23 +359,10 @@ std::vector<std::string> potential_tergetname_keys = {
 	// trigger_camera + trigger_cameratarget
 	"moveto",
 	// TODO: parameters are not always entities(?)
-	"mouse_param_0_0",
-	"mouse_param_0_1",
-	"mouse_param_1_0",
-	"mouse_param_1_1",
-	"mouse_param_2_0",
-	"mouse_param_2_1",
-	"m_iszOverridePlayerTargetname",
-	"m_iszTargetWhenPlayerStartsUsing",
-	"m_iszTargetWhenPlayerStopsUsing",
-	"m_iszTurnedOffTarget",
-	"max_player_target",
-	"mouse_target_0_0",
-	"mouse_target_0_1",
-	"mouse_target_1_0",
-	"mouse_target_1_1",
-	"mouse_target_2_0",
-	"mouse_target_2_1",
+	"mouse_param_0_0", "mouse_param_0_1", "mouse_param_1_0", "mouse_param_1_1", "mouse_param_2_0", "mouse_param_2_1",
+	"m_iszOverridePlayerTargetname", "m_iszTargetWhenPlayerStartsUsing", "m_iszTargetWhenPlayerStopsUsing",
+	"m_iszTurnedOffTarget", "max_player_target", "mouse_target_0_0", "mouse_target_0_1", "mouse_target_1_0",
+	"mouse_target_1_1", "mouse_target_2_0", "mouse_target_2_1",
 
 	// trigger_changelevel
 	"changetarget",
@@ -424,29 +381,14 @@ std::vector<std::string> potential_tergetname_keys = {
 	"section", // TODO: what is this?
 
 	// trigger_entity_iterator
-	"name_filter",
-	"trigger_after_run",
+	"name_filter", "trigger_after_run",
 
 	// trigger_load/save
 	"m_iszTrigger",
 
 	// BaseRandom
-	"target1",
-	"target2",
-	"target3",
-	"target4",
-	"target5",
-	"target6",
-	"target7",
-	"target8",
-	"target9",
-	"target10",
-	"target11",
-	"target12",
-	"target13",
-	"target14",
-	"target15",
-	"target16",
+	"target1", "target2", "target3", "target4", "target5", "target6", "target7", "target8", "target9", "target10",
+	"target11", "target12", "target13", "target14", "target15", "target16",
 
 	// trigger_setorigin
 	"copypointer",
@@ -457,53 +399,19 @@ std::vector<std::string> potential_tergetname_keys = {
 	"m_iszTeleportDestination",
 
 	// item_inventory
-	"item_name",
-	"item_group",
-	"filter_targetnames",
-	"item_name_moved",
-	"item_name_not_moved",
-	"target_on_collect",
-	"target_on_collect_team",
-	"target_on_collect_other",
-	"target_cant_collect",
-	"target_cant_collect_team",
-	"target_cant_collect_other",
-	"target_on_drop",
-	"target_on_drop_team",
-	"target_on_drop_other",
-	"target_cant_drop",
-	"target_cant_drop_team",
-	"target_cant_drop_other",
-	"target_on_activate",
-	"target_on_activate_team",
-	"target_on_activate_other",
-	"target_cant_activate",
-	"target_cant_activate_team",
-	"target_cant_activate_other",
-	"target_on_use",
-	"target_on_use_team",
-	"target_on_use_other",
-	"target_on_wearing_out",
-	"target_on_wearing_out_team",
-	"target_on_wearing_out_other",
-	"target_on_return",
-	"target_on_return_team",
-	"target_on_return_other",
-	"target_on_materialise",
-	"target_on_destroy",
+	"item_name", "item_group", "filter_targetnames", "item_name_moved", "item_name_not_moved", "target_on_collect",
+	"target_on_collect_team", "target_on_collect_other", "target_cant_collect", "target_cant_collect_team",
+	"target_cant_collect_other", "target_on_drop", "target_on_drop_team", "target_on_drop_other", "target_cant_drop",
+	"target_cant_drop_team", "target_cant_drop_other", "target_on_activate", "target_on_activate_team",
+	"target_on_activate_other", "target_cant_activate", "target_cant_activate_team", "target_cant_activate_other",
+	"target_on_use", "target_on_use_team", "target_on_use_other", "target_on_wearing_out", "target_on_wearing_out_team",
+	"target_on_wearing_out_other", "target_on_return", "target_on_return_team", "target_on_return_other",
+	"target_on_materialise", "target_on_destroy",
 
 	// inventory rules
-	"item_name_required",
-	"item_group_required",
-	"item_name_canthave",
-	"item_group_canthave",
-	"pass_drop_item_name",
-	"pass_drop_item_group",
-	"pass_return_item_name",
-	"pass_return_item_group",
-	"pass_destroy_item_name",
-	"pass_destroy_item_group"
-};
+	"item_name_required", "item_group_required", "item_name_canthave", "item_group_canthave", "pass_drop_item_name",
+	"pass_drop_item_group", "pass_return_item_name", "pass_return_item_group", "pass_destroy_item_name",
+	"pass_destroy_item_group"};
 
 // This needs to be kept in sync with the FGD
 
@@ -517,9 +425,9 @@ std::vector<std::string> Entity::getTargets()
 	std::vector<std::string> targets;
 
 	for (size_t i = 1; i < potential_tergetname_keys.size(); i++)
-	{ 
+	{
 		// skip targetname
-		auto & key = potential_tergetname_keys[i];
+		auto &key = potential_tergetname_keys[i];
 		if (hasKey(key))
 		{
 			targets.push_back(keyvalues[key]);
@@ -555,7 +463,7 @@ std::vector<std::string> Entity::getTargets()
 	return targets;
 }
 
-bool Entity::hasTarget(const std::string& checkTarget)
+bool Entity::hasTarget(const std::string &checkTarget)
 {
 	std::vector<std::string> targets = getTargets();
 	for (size_t i = 0; i < targets.size(); i++)
@@ -569,11 +477,11 @@ bool Entity::hasTarget(const std::string& checkTarget)
 	return false;
 }
 
-void Entity::renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname)
+void Entity::renameTargetnameValues(const std::string &oldTargetname, const std::string &newTargetname)
 {
 	for (size_t i = 0; i < potential_tergetname_keys.size(); i++)
 	{
-		auto & key = potential_tergetname_keys[i];
+		auto &key = potential_tergetname_keys[i];
 		if (keyvalues.find(key) != keyvalues.end() && keyvalues[key] == oldTargetname)
 		{
 			keyvalues[key] = newTargetname;
@@ -618,7 +526,7 @@ size_t Entity::getMemoryUsage()
 	{
 		size += keyOrder[i].size();
 	}
-	for (const auto& entry : keyvalues)
+	for (const auto &entry : keyvalues)
 	{
 		size += entry.first.size() + entry.second.size();
 	}
@@ -626,11 +534,13 @@ size_t Entity::getMemoryUsage()
 	return size;
 }
 
-vec3 Entity::getHullOrigin(Bsp* map) {
+vec3 Entity::getHullOrigin(Bsp *map)
+{
 	vec3 ori = origin;
 	int modelIdx = getBspModelIdx();
 
-	if (modelIdx != -1) {
+	if (modelIdx != -1)
+	{
 		vec3 mins, maxs;
 		map->get_model_vertex_bounds(modelIdx, mins, maxs);
 		ori += (maxs + mins) * 0.5f;
@@ -664,7 +574,8 @@ void Entity::updateRenderModes()
 	}
 }
 
-bool Entity::isEverVisible() {
+bool Entity::isEverVisible()
+{
 	std::string cname = keyvalues["classname"];
 	std::string tname = hasKey("targetname") ? keyvalues["targetname"] : "";
 
@@ -697,12 +608,15 @@ bool Entity::isEverVisible() {
 		"player_respawn_zone",
 	};
 
-	if (invisibleEnts.count(cname)) {
+	if (invisibleEnts.count(cname))
+	{
 		return false;
 	}
 
-	if (!tname.length() && hasKey("rendermode") && atoi(keyvalues["rendermode"].c_str()) != 0) {
-		if (!hasKey("renderamt") || atoi(keyvalues["renderamt"].c_str()) == 0) {
+	if (!tname.length() && hasKey("rendermode") && atoi(keyvalues["rendermode"].c_str()) != 0)
+	{
+		if (!hasKey("renderamt") || atoi(keyvalues["renderamt"].c_str()) == 0)
+		{
 			// starts invisible and likely nothing will change that because it has no targetname
 			return false;
 		}
@@ -711,13 +625,14 @@ bool Entity::isEverVisible() {
 	return true;
 }
 
-std::string Entity::serialize() 
+std::string Entity::serialize()
 {
 	std::stringstream ent_data;
 
 	ent_data << "{\n";
 
-	for (size_t k = 0; k < keyOrder.size(); k++) {
+	for (size_t k = 0; k < keyOrder.size(); k++)
+	{
 		std::string key = keyOrder[k];
 		ent_data << "\"" << key << "\" \"" << keyvalues[key] << "\"\n";
 	}
@@ -726,4 +641,3 @@ std::string Entity::serialize()
 
 	return ent_data.str();
 }
-

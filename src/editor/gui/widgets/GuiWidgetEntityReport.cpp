@@ -4,7 +4,7 @@
 void Gui::drawEntityReport()
 {
 	ImGui::SetNextWindowSize(ImVec2(1200.f, 630.f), ImGuiCond_FirstUseEver);
-	Bsp* map = app->getSelectedMap();
+	Bsp *map = app->getSelectedMap();
 
 	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
 
@@ -20,7 +20,7 @@ void Gui::drawEntityReport()
 			static int MAX_FILTERS = 1;
 			static std::vector<std::string> keyFilter = {""};
 			static std::vector<std::string> valueFilter = {""};
-			static std::vector<int> opFilter = {0}; // 0: =, 1: !=
+			static std::vector<int> opFilter = {0};					  // 0: =, 1: !=
 			static std::vector<int> logicFilter = std::vector<int>(); // 0: AND, 1: OR
 			static int lastSelect = -1;
 			static std::vector<int> visibleEnts;
@@ -39,8 +39,7 @@ void Gui::drawEntityReport()
 			{
 				for (int i = 0; i < MAX_FILTERS; i++)
 				{
-					if (keyFilter[i] != lastKeyFilters[i] ||
-						valueFilter[i] != lastValueFilters[i] ||
+					if (keyFilter[i] != lastKeyFilters[i] || valueFilter[i] != lastValueFilters[i] ||
 						opFilter[i] != lastOpFilters[i] ||
 						(i < MAX_FILTERS - 1 && logicFilter[i] != lastLogicFilters[i]))
 					{
@@ -75,7 +74,7 @@ void Gui::drawEntityReport()
 							}
 							else if (key.empty())
 							{
-								for (const auto& kv : map->ents[i]->keyvalues)
+								for (const auto &kv : map->ents[i]->keyvalues)
 								{
 									if (kv.second == val)
 									{
@@ -102,7 +101,7 @@ void Gui::drawEntityReport()
 							else if (key.empty())
 							{
 								currentFilterMatch = true;
-								for (const auto& kv : map->ents[i]->keyvalues)
+								for (const auto &kv : map->ents[i]->keyvalues)
 								{
 									if (kv.second == val)
 									{
@@ -128,7 +127,7 @@ void Gui::drawEntityReport()
 							}
 							else if (key.empty())
 							{
-								for (const auto& kv : map->ents[i]->keyvalues)
+								for (const auto &kv : map->ents[i]->keyvalues)
 								{
 									if (kv.second.find(val) != std::string::npos)
 									{
@@ -176,7 +175,8 @@ void Gui::drawEntityReport()
 			}
 
 			// Table rendering
-			if (ImGui::BeginTable("##EntityReportTable", 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders))
+			if (ImGui::BeginTable("##EntityReportTable", 4,
+								  ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders))
 			{
 				ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 40.0f);
 				ImGui::TableSetupColumn("Classname", ImGuiTableColumnFlags_WidthStretch);
@@ -192,7 +192,7 @@ void Gui::drawEntityReport()
 					for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
 					{
 						int entIdx = visibleEnts[row];
-						Entity* ent = map->ents[entIdx];
+						Entity *ent = map->ents[entIdx];
 
 						ImGui::TableNextRow();
 						ImGui::TableSetColumnIndex(0);
@@ -200,7 +200,9 @@ void Gui::drawEntityReport()
 						bool isSelected = app->pickInfo.IsSelectedEnt(entIdx);
 						std::string rowLabel = fmt::format("{}##row{}", entIdx, row);
 
-						if (ImGui::Selectable(rowLabel.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick))
+						if (ImGui::Selectable(rowLabel.c_str(), isSelected,
+											  ImGuiSelectableFlags_SpanAllColumns |
+												  ImGuiSelectableFlags_AllowDoubleClick))
 						{
 							if (ImGui::GetIO().KeyCtrl)
 							{
@@ -221,7 +223,8 @@ void Gui::drawEntityReport()
 						}
 
 						ImGui::TableSetColumnIndex(1);
-						ImGui::TextUnformatted(ent->hasKey("classname") ? ent->keyvalues["classname"].c_str() : "unknown");
+						ImGui::TextUnformatted(ent->hasKey("classname") ? ent->keyvalues["classname"].c_str()
+																		: "unknown");
 
 						ImGui::TableSetColumnIndex(2);
 						ImGui::TextUnformatted(ent->hasKey("targetname") ? ent->keyvalues["targetname"].c_str() : "-");

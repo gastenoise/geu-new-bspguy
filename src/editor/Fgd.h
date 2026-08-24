@@ -1,7 +1,7 @@
 #pragma once
-#include "util.h"
-#include "Wad.h"
 #include "Entity.h"
+#include "Wad.h"
+#include "util.h"
 
 enum FGD_CLASS_TYPES : int
 {
@@ -91,7 +91,7 @@ struct FgdClass
 		// default to the purple cube
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
-		color = { 220, 0, 220 };
+		color = {220, 0, 220};
 		offset = vec3();
 		modelSkin = modelBody = modelSequence = 0;
 		scale = 1.0f;
@@ -99,21 +99,21 @@ struct FgdClass
 
 	// get parent classes from youngest to oldest, in right-to-left order
 	// reversing the std::vector changes order to oldest to youngest, left-to-right order
-	void getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList);
+	void getBaseClasses(Fgd *fgd, std::vector<FgdClass *> &inheritanceList);
 };
 
 struct FgdGroup
 {
-	std::vector<FgdClass*> classes;
+	std::vector<FgdClass *> classes;
 	std::string groupName;
 };
 
 class Fgd
 {
-public:
+  public:
 	std::string path;
 	std::string name;
-	std::vector<FgdClass*> classes;
+	std::vector<FgdClass *> classes;
 
 	std::vector<FgdGroup> pointEntGroups;
 	std::vector<FgdGroup> solidEntGroups;
@@ -131,18 +131,18 @@ public:
 	~Fgd();
 
 	bool parse();
-	void merge(Fgd* other);
+	void merge(Fgd *other);
 
-	FgdClass* getFgdClass(const std::string& cname);
-	FgdClass* getFgdClass(const std::string& cname, int type);
+	FgdClass *getFgdClass(const std::string &cname);
+	FgdClass *getFgdClass(const std::string &cname, int type);
 
-private:
+  private:
 	int lineNum = 0;
 	std::string line; // current line being parsed
 
-	void parseClassHeader(FgdClass& fgdClass);
-	void parseKeyvalue(FgdClass& outClass);
-	void parseChoicesOrFlags(KeyvalueDef& outKey);
+	void parseClassHeader(FgdClass &fgdClass);
+	void parseKeyvalue(FgdClass &outClass);
+	void parseChoicesOrFlags(KeyvalueDef &outKey);
 
 	void processClassInheritance();
 

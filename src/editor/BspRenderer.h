@@ -1,19 +1,19 @@
 #pragma once
 #include "Bsp.h"
-#include "Texture.h"
-#include "ShaderProgram.h"
+#include "LeafNavMeshGenerator.h"
 #include "LightmapNode.h"
+#include "NavMeshGenerator.h"
+#include "PointEntRenderer.h"
+#include "ShaderProgram.h"
+#include "Texture.h"
 #include "VertexBuffer.h"
 #include "primitives.h"
-#include "PointEntRenderer.h"
-#include "NavMeshGenerator.h"
-#include "LeafNavMeshGenerator.h"
 
-#include <future>
-#include "mdl_studio.h"
 #include "Sprite.h"
+#include "mdl_studio.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <future>
 #include <imgui.h>
 
 class EditBspCommand;
@@ -57,21 +57,23 @@ struct FaceMath
 
 struct RenderEnt
 {
-	mat4x4 modelMat4x4; // model matrix for rendering
+	mat4x4 modelMat4x4;		   // model matrix for rendering
 	mat4x4 modelMat4x4_angles; // model matrix for rendering with angles
 	mat4x4 modelMat4x4_calc;
 	mat4x4 modelMat4x4_calc_angles;
-	vec3 offset; // vertex transformations for picking
-	vec3 angles; // support angles
+	vec3 offset;  // vertex transformations for picking
+	vec3 angles;  // support angles
 	int modelIdx; // -1 = point entity
-	EntCube* pointEntCube;
+	EntCube *pointEntCube;
 	bool needAngles;
 	bool isDuplicateModel;
-	StudioModel* mdl;
-	Sprite* spr;
+	StudioModel *mdl;
+	Sprite *spr;
 	std::string mdlFileName;
 	bool isTransparentByList;
-	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
+	RenderEnt()
+		: modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()),
+		  modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
 	{
 		isDuplicateModel = false;
 		needAngles = false;
@@ -86,11 +88,11 @@ struct RenderEnt
 
 struct RenderGroup
 {
-	std::vector<Texture*> textures;
+	std::vector<Texture *> textures;
 	double frametime;
 	short frameid;
-	Texture* lightmapAtlas[MAX_LIGHTMAPS];
-	VertexBuffer* buffer;
+	Texture *lightmapAtlas[MAX_LIGHTMAPS];
+	VertexBuffer *buffer;
 	bool transparent;
 	bool special;
 	bool isTransparentByList;
@@ -108,16 +110,12 @@ struct RenderGroup
 	}
 };
 
-
 struct RenderFace
 {
 	int group;
 	int vertOffset;
 	int vertCount;
-	RenderFace()
-	{
-		group = vertOffset = vertCount = 0;
-	}
+	RenderFace() { group = vertOffset = vertCount = 0; }
 };
 
 struct RenderModel
@@ -125,7 +123,7 @@ struct RenderModel
 	std::vector<RenderFace> renderFaces;
 	std::vector<RenderGroup> renderGroups;
 
-	VertexBuffer* wireframeBuffer;
+	VertexBuffer *wireframeBuffer;
 
 	bool highlighted;
 
@@ -141,7 +139,7 @@ struct RenderModel
 	{
 		delete wireframeBuffer;
 
-		for (auto& g : renderGroups)
+		for (auto &g : renderGroups)
 		{
 			if (g.buffer)
 			{
@@ -153,8 +151,8 @@ struct RenderModel
 
 struct RenderClipnodes
 {
-	VertexBuffer* clipnodeBuffer[MAX_MAP_HULLS];
-	VertexBuffer* wireframeClipnodeBuffer[MAX_MAP_HULLS];
+	VertexBuffer *clipnodeBuffer[MAX_MAP_HULLS];
+	VertexBuffer *wireframeClipnodeBuffer[MAX_MAP_HULLS];
 	std::vector<FaceMath> faceMaths[MAX_MAP_HULLS];
 	RenderClipnodes()
 	{
@@ -177,7 +175,7 @@ struct RenderClipnodes
 
 class PickInfo
 {
-public:
+  public:
 	std::vector<int> selectedEnts;
 	std::vector<int> selectedFaces;
 
@@ -202,33 +200,33 @@ enum Entity_RefreshFlags : int
 
 class BspRenderer
 {
-public:
-	Bsp* map;
+  public:
+	Bsp *map;
 	vec3 mapOffset;
 	vec3 renderOffset;
 	vec3 localCameraOrigin;
 
 	int curLeafIdx;
 
-	bool lightEnableFlags[4] = { true,true,true,true };
-	std::vector<Wad*> wads;
+	bool lightEnableFlags[4] = {true, true, true, true};
+	std::vector<Wad *> wads;
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
 
-	BspRenderer(Bsp* map);
+	BspRenderer(Bsp *map);
 	~BspRenderer();
 
 	void render(bool highlightAlwaysOnTop, int clipnodeHull);
 
-	void drawModel(RenderEnt* ent, int transparent, bool highlight, bool edgesOnly);
+	void drawModel(RenderEnt *ent, int transparent, bool highlight, bool edgesOnly);
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
 	void drawPointEntities(std::vector<int> highlightEnts, int pass);
 
-	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp** map);
-	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
-	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
+	bool pickPoly(vec3 start, const vec3 &dir, int hullIdx, PickInfo &pickInfo, Bsp **map);
+	bool pickModelPoly(vec3 start, const vec3 &dir, vec3 offset, int modelIdx, int hullIdx, PickInfo &pickInfo);
+	bool pickFaceMath(const vec3 &start, const vec3 &dir, FaceMath &faceMath, float &bestDist);
 
-	bool setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles);
+	bool setRenderAngles(const std::string &classname, mat4x4 &outmat, vec3 &outangles);
 	void refreshEnt(int entIdx, int refreshFlags = Entity_RefreshAll);
 	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
 	bool refreshModelClipnodes(int modelIdx);
@@ -238,7 +236,7 @@ public:
 	void reload(); // reloads all geometry, textures, and lightmaps
 	void reloadLightmaps();
 	void reloadClipnodes();
-	RenderClipnodes* addClipnodeModel(int modelIdx);
+	RenderClipnodes *addClipnodeModel(int modelIdx);
 
 	// calculate vertex positions and uv coordinates once for faster rendering
 	// also combines faces that share similar properties into a single buffer
@@ -254,33 +252,33 @@ public:
 	bool isFinishedLoading();
 
 	void highlightFace(int faceIdx, int highlight, bool reupload = true);
-	void updateFaceUVs(int faceIdx, const BSPTEXTUREINFO* overrideTexInfo = nullptr, bool reupload = true);
+	void updateFaceUVs(int faceIdx, const BSPTEXTUREINFO *overrideTexInfo = nullptr, bool reupload = true);
 	unsigned int getFaceTextureId(int faceIdx);
 
-	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);
+	bool getRenderPointers(int faceIdx, RenderFace **renderFace, RenderGroup **renderGroup);
 
 	vec3 old_rend_offs;
 
-	LightmapInfo* lightmaps;
+	LightmapInfo *lightmaps;
 	std::vector<RenderEnt> renderEnts;
 	std::vector<RenderModel *> renderModels;
 	std::vector<RenderClipnodes> renderClipnodes;
 	std::vector<FaceMath> faceMaths;
 
-	EntCube* leafCube;
-	EntCube* nodeCube;/*
-	EntCube* nodePlaneCube;*/
+	EntCube *leafCube;
+	EntCube *nodeCube; /*
+	 EntCube* nodePlaneCube;*/
 
 	int numRenderLightmapInfos;
 	std::vector<Polygon3D> debugFaces;
-	NavMesh* debugNavMesh;
+	NavMesh *debugNavMesh;
 
-	std::vector<std::vector<Texture*>> glTextures{};
+	std::vector<std::vector<Texture *>> glTextures{};
 
 	// textures loaded in a separate thread
-	std::vector<std::vector<Texture*>> glTexturesSwap{};
+	std::vector<std::vector<Texture *>> glTexturesSwap{};
 
-	std::vector<Texture*> glLightmapTextures{};
+	std::vector<Texture *> glLightmapTextures{};
 	std::future<void> texturesFuture;
 
 	bool lightmapsGenerated = false;
@@ -295,10 +293,10 @@ public:
 	void addNewRenderFace();
 	void loadClipnodes();
 	void generateClipnodeBufferForHull(int modelIdx, int hullId);
-	void generateClipnodeBuffer(int modelIdx);	
+	void generateClipnodeBuffer(int modelIdx);
 	void generateNavMeshBuffer();
 	void generateLeafNavMeshBuffer();
-	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
+	void deleteRenderModelClipnodes(RenderClipnodes *renderClip);
 	void deleteRenderClipnodes();
 	void deleteRenderFaces();
 	void deleteTextures();
@@ -308,17 +306,17 @@ public:
 	int getBestClipnodeHull(int modelIdx);
 
 	size_t undoMemoryUsageZip = 0; // approximate space used by undo+redo history (compressed)
-	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
+	size_t undoMemoryUsage = 0;	   // approximate space used by undo+redo history
 
-	std::vector<EditBspCommand*> undoHistory;
-	std::vector<EditBspCommand*> redoHistory;
+	std::vector<EditBspCommand *> undoHistory;
+	std::vector<EditBspCommand *> redoHistory;
 	LumpState undoLumpState;
 
 	ImGuiID delayEntUndo = 0;
 	std::string delayEntUndoDesc = "undo";
 
-	void pushUndoState(const std::string& actionDesc, unsigned int targets);
-	void pushEntityUndoStateDelay(const std::string& desc);
+	void pushUndoState(const std::string &actionDesc, unsigned int targets);
+	void pushEntityUndoStateDelay(const std::string &desc);
 
 	void undo();
 	void redo();
@@ -332,9 +330,9 @@ public:
 
 	vec3 intersectVec;
 	float intersectDist;
-private:
 
-	void pushUndoCommand(EditBspCommand* cmd);
+  private:
+	void pushUndoCommand(EditBspCommand *cmd);
 
 	struct nodeBuffStr
 	{

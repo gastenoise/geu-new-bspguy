@@ -2,23 +2,22 @@
 #include <algorithm>
 #include <cctype>
 
-static std::string toLowerString(const std::string& str)
+static std::string toLowerString(const std::string &str)
 {
 	std::string result = str;
-	std::transform(result.begin(), result.end(), result.begin(),
-		[](unsigned char c) { return (char)std::tolower(c); });
+	std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return (char)std::tolower(c); });
 	return result;
 }
 
-ActionRegistry& ActionRegistry::getInstance()
+ActionRegistry &ActionRegistry::getInstance()
 {
 	static ActionRegistry instance;
 	return instance;
 }
 
-void ActionRegistry::registerAction(const ActionItem& action)
+void ActionRegistry::registerAction(const ActionItem &action)
 {
-	for (auto& a : actions)
+	for (auto &a : actions)
 	{
 		if (a.id == action.id)
 		{
@@ -29,7 +28,7 @@ void ActionRegistry::registerAction(const ActionItem& action)
 	actions.push_back(action);
 }
 
-std::vector<ActionItem> ActionRegistry::searchActions(const std::string& query) const
+std::vector<ActionItem> ActionRegistry::searchActions(const std::string &query) const
 {
 	if (query.empty())
 		return actions;
@@ -37,17 +36,15 @@ std::vector<ActionItem> ActionRegistry::searchActions(const std::string& query) 
 	std::string lowerQuery = toLowerString(query);
 	std::vector<ActionItem> results;
 
-	for (const auto& a : actions)
+	for (const auto &a : actions)
 	{
 		std::string lowerTitle = toLowerString(a.title);
 		std::string lowerCat = toLowerString(a.category);
 		std::string lowerDesc = toLowerString(a.description);
 		std::string lowerShortcut = toLowerString(a.shortcut);
 
-		if (lowerTitle.find(lowerQuery) != std::string::npos ||
-			lowerCat.find(lowerQuery) != std::string::npos ||
-			lowerDesc.find(lowerQuery) != std::string::npos ||
-			lowerShortcut.find(lowerQuery) != std::string::npos)
+		if (lowerTitle.find(lowerQuery) != std::string::npos || lowerCat.find(lowerQuery) != std::string::npos ||
+			lowerDesc.find(lowerQuery) != std::string::npos || lowerShortcut.find(lowerQuery) != std::string::npos)
 		{
 			results.push_back(a);
 		}
@@ -56,9 +53,9 @@ std::vector<ActionItem> ActionRegistry::searchActions(const std::string& query) 
 	return results;
 }
 
-bool ActionRegistry::executeAction(const std::string& id)
+bool ActionRegistry::executeAction(const std::string &id)
 {
-	for (const auto& a : actions)
+	for (const auto &a : actions)
 	{
 		if (a.id == id)
 		{

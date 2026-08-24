@@ -1,6 +1,6 @@
 #include "bsptypes.h"
-#include <cstring>
 #include <cmath>
+#include <cstring>
 
 BSPEDGE16::BSPEDGE16()
 {
@@ -40,17 +40,20 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 	if (fx > 1.0f - EPSILON && fy < EPSILON && fz < EPSILON)
 	{
 		planeType = PLANE_X;
-		if (newNormal.x < 0.0f) shouldFlip = true;
+		if (newNormal.x < 0.0f)
+			shouldFlip = true;
 	}
 	else if (fy > 1.0f - EPSILON && fz < EPSILON && fx < EPSILON)
 	{
 		planeType = PLANE_Y;
-		if (newNormal.y < 0.0f) shouldFlip = true;
+		if (newNormal.y < 0.0f)
+			shouldFlip = true;
 	}
 	else if (fz > 1.0f - EPSILON && fx < EPSILON && fy < EPSILON)
 	{
 		planeType = PLANE_Z;
-		if (newNormal.z < 0.0f) shouldFlip = true;
+		if (newNormal.z < 0.0f)
+			shouldFlip = true;
 	}
 	else
 	{
@@ -82,12 +85,10 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 	return shouldFlip;
 }
 
-
 bool BSPPLANE::update_plane(bool flip)
 {
 	return update_plane(vNormal, fDist, flip);
 }
-
 
 bool BSPLEAF16::isEmpty()
 {
@@ -97,7 +98,6 @@ bool BSPLEAF16::isEmpty()
 
 	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF16)) == 0;
 }
-
 
 bool BSPLEAF32::isEmpty()
 {
@@ -117,7 +117,7 @@ bool BSPLEAF32A::isEmpty()
 	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF32A)) == 0;
 }
 
-std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
+std::vector<int> getDiffModels(LumpState &oldLump, LumpState &newLump)
 {
 	std::vector<int> updateModels{};
 	if (newLump.lumps[LUMP_MODELS].empty())
@@ -136,7 +136,8 @@ std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 	if (newLump.lumps[LUMP_MODELS].size() > oldLump.lumps[LUMP_MODELS].size())
 	{
 		int curModelCount = (int)(oldLump.lumps[LUMP_MODELS].size() / sizeof(BSPMODEL));
-		int addModelCount = (int)((newLump.lumps[LUMP_MODELS].size() - oldLump.lumps[LUMP_MODELS].size()) / sizeof(BSPMODEL));
+		int addModelCount =
+			(int)((newLump.lumps[LUMP_MODELS].size() - oldLump.lumps[LUMP_MODELS].size()) / sizeof(BSPMODEL));
 		for (int i = curModelCount; i < curModelCount + addModelCount; i++)
 		{
 			updateModels.push_back(i);
@@ -147,8 +148,8 @@ std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 
 	modelLumpCount /= sizeof(BSPMODEL);
 
-	BSPMODEL* listOld = (BSPMODEL*)oldLump.lumps[LUMP_MODELS].data();
-	BSPMODEL* listNew = (BSPMODEL*)newLump.lumps[LUMP_MODELS].data();
+	BSPMODEL *listOld = (BSPMODEL *)oldLump.lumps[LUMP_MODELS].data();
+	BSPMODEL *listNew = (BSPMODEL *)newLump.lumps[LUMP_MODELS].data();
 
 	for (size_t i = 0; i < modelLumpCount; i++)
 	{
@@ -161,8 +162,7 @@ std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 	return updateModels;
 }
 
-
-std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump)
+std::vector<int> getDiffFaces(LumpState &oldLump, LumpState &newLump)
 {
 	std::vector<int> updateFaces{};
 	if (newLump.lumps[LUMP_FACES].empty())
@@ -181,7 +181,8 @@ std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump)
 	if (newLump.lumps[LUMP_FACES].size() > oldLump.lumps[LUMP_FACES].size())
 	{
 		int curModelCount = (int)(oldLump.lumps[LUMP_FACES].size() / sizeof(BSPFACE32));
-		int addModelCount = (int)((newLump.lumps[LUMP_FACES].size() - oldLump.lumps[LUMP_FACES].size()) / sizeof(BSPFACE32));
+		int addModelCount =
+			(int)((newLump.lumps[LUMP_FACES].size() - oldLump.lumps[LUMP_FACES].size()) / sizeof(BSPFACE32));
 		for (int i = curModelCount; i < curModelCount + addModelCount; i++)
 		{
 			updateFaces.push_back(i);
@@ -192,8 +193,8 @@ std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump)
 
 	modelLumpCount /= sizeof(BSPFACE32);
 
-	BSPFACE32* listOld = (BSPFACE32*)oldLump.lumps[LUMP_FACES].data();
-	BSPFACE32* listNew = (BSPFACE32*)newLump.lumps[LUMP_FACES].data();
+	BSPFACE32 *listOld = (BSPFACE32 *)oldLump.lumps[LUMP_FACES].data();
+	BSPFACE32 *listNew = (BSPFACE32 *)newLump.lumps[LUMP_FACES].data();
 
 	for (size_t i = 0; i < modelLumpCount; i++)
 	{

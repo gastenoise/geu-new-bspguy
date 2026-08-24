@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
-#include "vectors.h"
 #include "Wad.h"
 #include "bsplimits.h"
+#include "vectors.h"
+#include <vector>
 
 #pragma pack(push, 1)
 
@@ -14,12 +14,9 @@ struct tVert
 	float u, v;
 
 	tVert() = default;
-	tVert(float x, float y, float z, float u, float v) : u(u), v(v), pos(x, y, z)
-	{}
-	tVert(vec3 p, float u, float v) : u(u), v(v), pos(p.x, p.y, p.z)
-	{}
-	tVert(vec3 p, vec2 uv) : u(uv.x), v(uv.y), pos(p.x, p.y, p.z)
-	{}
+	tVert(float x, float y, float z, float u, float v) : u(u), v(v), pos(x, y, z) {}
+	tVert(vec3 p, float u, float v) : u(u), v(v), pos(p.x, p.y, p.z) {}
+	tVert(vec3 p, vec2 uv) : u(uv.x), v(uv.y), pos(p.x, p.y, p.z) {}
 };
 
 struct modelVert
@@ -27,9 +24,8 @@ struct modelVert
 	vec3 pos;
 	// texture coordinates
 	float u, v;
-	//float r, g, b, a;
+	// float r, g, b, a;
 };
-
 
 struct lightmapVert
 {
@@ -49,10 +45,8 @@ struct cVert
 	vec3 pos;
 
 	cVert() = default;
-	cVert(float x, float y, float z, COLOR4 c) : c(c), pos(x, y, z)
-	{}
-	cVert(vec3 p, COLOR4 c) : c(c), pos(p.x, p.y, p.z)
-	{}
+	cVert(float x, float y, float z, COLOR4 c) : c(c), pos(x, y, z) {}
+	cVert(vec3 p, COLOR4 c) : c(c), pos(p.x, p.y, p.z) {}
 };
 
 struct tTri
@@ -60,8 +54,7 @@ struct tTri
 	tVert v1, v2, v3;
 
 	tTri() = default;
-	tTri(tVert v1, tVert v2, tVert v3) : v1(v1), v2(v2), v3(v3)
-	{}
+	tTri(tVert v1, tVert v2, tVert v3) : v1(v1), v2(v2), v3(v3) {}
 };
 
 struct cTri
@@ -69,8 +62,7 @@ struct cTri
 	cVert v1, v2, v3;
 
 	cTri() = default;
-	cTri(cVert v1, cVert v2, cVert v3) : v1(v1), v2(v2), v3(v3)
-	{}
+	cTri(cVert v1, cVert v2, cVert v3) : v1(v1), v2(v2), v3(v3) {}
 };
 
 // Textured 3D GL_Quad
@@ -92,9 +84,8 @@ struct cQuad
 	cQuad(cVert v1, cVert v2, cVert v3, cVert v4);
 	cQuad(float x, float y, float w, float h, COLOR4 color);
 
-	void setColor(COLOR4 c); // color for the entire quad
+	void setColor(COLOR4 c);								   // color for the entire quad
 	void setColor(COLOR4 c1, COLOR4 c2, COLOR4 c3, COLOR4 c4); // color each vertex in CCW order
-
 };
 
 // Textured 3D Cube
@@ -128,6 +119,5 @@ struct cCubeAxes : cCube
 	cCubeAxes() = default;
 	cCubeAxes(vec3 mins, vec3 maxs);
 };
-
 
 #pragma pack(pop)

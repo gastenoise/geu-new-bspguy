@@ -2,14 +2,14 @@
 #include "Keyvalue.h"
 #include <map>
 
-typedef std::map< std::string, std::string > hashmap;
+typedef std::map<std::string, std::string> hashmap;
 class Bsp;
 
 extern size_t totalEntityStructs;
 
 class Entity
 {
-public:
+  public:
 	hashmap keyvalues;
 	std::vector<std::string> keyOrder;
 
@@ -36,7 +36,7 @@ public:
 		realIdx = totalEntityStructs;
 	}
 
-	Entity(const std::string& _classname)
+	Entity(const std::string &_classname)
 	{
 		setOrAddKeyvalue("classname", _classname);
 		cachedModelIdx = -2;
@@ -51,14 +51,14 @@ public:
 		totalEntityStructs++;
 		realIdx = totalEntityStructs;
 	}
-	void addKeyvalue(const std::string& key, const std::string& value, bool multisupport = false);
-	void removeKeyvalue(const std::string& key);
-	bool renameKey(int idx, const std::string& newName);
-	bool renameKey(const std::string& oldName, const std::string& newName);
+	void addKeyvalue(const std::string &key, const std::string &value, bool multisupport = false);
+	void removeKeyvalue(const std::string &key);
+	bool renameKey(int idx, const std::string &newName);
+	bool renameKey(const std::string &oldName, const std::string &newName);
 	void clearAllKeyvalues();
 	void clearEmptyKeyvalues();
 
-	void setOrAddKeyvalue(const std::string& key, const std::string& value);
+	void setOrAddKeyvalue(const std::string &key, const std::string &value);
 
 	// returns -1 for invalid idx
 	int getBspModelIdx();
@@ -68,27 +68,26 @@ public:
 
 	bool isWorldSpawn();
 
-	bool hasKey(const std::string& key);
+	bool hasKey(const std::string &key);
 
 	std::vector<std::string> getTargets();
 
-	bool hasTarget(const std::string& checkTarget);
+	bool hasTarget(const std::string &checkTarget);
 
-	void renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname);
+	void renameTargetnameValues(const std::string &oldTargetname, const std::string &newTargetname);
 
 	void updateRenderModes();
 
 	size_t getMemoryUsage(); // aproximate
 
-	vec3 origin;	
-	
-	vec3 getHullOrigin(Bsp* map);
+	vec3 origin;
 
-	
+	vec3 getHullOrigin(Bsp *map);
+
 	bool isEverVisible();
 
 	std::string serialize();
-	
+
 	int rendermode;
 	int renderamt;
 	int renderfx;
@@ -96,4 +95,3 @@ public:
 
 	size_t realIdx;
 };
-

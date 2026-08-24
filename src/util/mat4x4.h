@@ -11,8 +11,7 @@ struct mat4x4
 
 	void perspective(float fov, float aspect, float near, float far);
 
-	void perspective(float left, float right, float bottom, float top,
-		float znear, float zfar);
+	void perspective(float left, float right, float bottom, float top, float znear, float zfar);
 
 	// Set up an orthographic projection matrix
 	void ortho(float left, float right, float bottom, float top, float near, float far);
@@ -32,41 +31,32 @@ struct mat4x4
 	// converts row-major matrix to column-major (for OpenGL)
 	mat4x4 transpose();
 
-	mat4x4 invert(bool * result = NULL);
+	mat4x4 invert(bool *result = NULL);
 
 	float determinant() const;
 
-	float& operator ()(int idx)
-	{
-		return m[idx];
-	}
+	float &operator()(int idx) { return m[idx]; }
 
-	float operator ()(int idx) const
-	{
-		return m[idx];
-	}
+	float operator()(int idx) const { return m[idx]; }
 	mat4x4() = default;
 
-	mat4x4(const float newm[16])
-	{
-		memcpy(m, newm, 16 * sizeof(float));
-	}
+	mat4x4(const float newm[16]) { memcpy(m, newm, 16 * sizeof(float)); }
 	mat4x4 operator*(float newm[16])
 	{
 		mult(newm);
 		return *this;
 	}
 
-private:
+  private:
 	void mult(float mat[16]);
 };
 
-void loadEmptyMat4x4(float * m);
+void loadEmptyMat4x4(float *m);
 
-mat4x4 operator*(const mat4x4& m1, const mat4x4& m2);
-vec4 operator*(const mat4x4& mat, const vec4& vec);
-mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z);
-void mat4x4print(const mat4x4& mat);
+mat4x4 operator*(const mat4x4 &m1, const mat4x4 &m2);
+vec4 operator*(const mat4x4 &mat, const vec4 &vec);
+mat4x4 worldToLocalTransform(const vec3 &local_x, const vec3 &local_y, const vec3 &local_z);
+void mat4x4print(const mat4x4 &mat);
 
 extern float m_identity[16];
 extern float m_zero[16];

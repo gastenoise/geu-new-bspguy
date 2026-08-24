@@ -1,8 +1,8 @@
-#include "lang.h"
 #include "ProgressMeter.h"
-#include "log.h"
-#include "Settings.h"
 #include "Renderer.h"
+#include "Settings.h"
+#include "lang.h"
+#include "log.h"
 
 ProgressMeter::ProgressMeter()
 {
@@ -12,7 +12,7 @@ ProgressMeter::ProgressMeter()
 	progress_title = "";
 }
 
-void ProgressMeter::update(const std::string & newTitle, int totalProgressTicks)
+void ProgressMeter::update(const std::string &newTitle, int totalProgressTicks)
 {
 	progress_title = newTitle;
 	progress = 0;
@@ -49,8 +49,9 @@ void ProgressMeter::tick()
 
 	float percent = (progress / (float)progress_total) * 100.0f;
 
-	for (int i = 0; i < 12; i++) print_log("\b\b\b\b");
-		print_log(get_localized_string(LANG_0266),progress_title,percent);
+	for (int i = 0; i < 12; i++)
+		print_log("\b\b\b\b");
+	print_log(get_localized_string(LANG_0266), progress_title, percent);
 }
 
 void ProgressMeter::clear()
@@ -60,7 +61,10 @@ void ProgressMeter::clear()
 		return;
 	}
 	// 50 chars
-	for (int i = 0; i < 6; i++) print_log("\b\b\b\b\b\b\b\b\b\b");
-	for (int i = 0; i < 6; i++) print_log("          ");
-	for (int i = 0; i < 6; i++) print_log("\b\b\b\b\b\b\b\b\b\b");
+	for (int i = 0; i < 6; i++)
+		print_log("\b\b\b\b\b\b\b\b\b\b");
+	for (int i = 0; i < 6; i++)
+		print_log("          ");
+	for (int i = 0; i < 6; i++)
+		print_log("\b\b\b\b\b\b\b\b\b\b");
 }

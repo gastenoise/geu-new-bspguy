@@ -7,16 +7,15 @@ typedef struct IUnknown IUnknown;
 #endif
 #endif
 
-
+#include "ini.h"
 #include "lang_defs.h"
 #include <string>
-#include "ini.h"
 
-extern inih::INIReader * lang_ini;
+extern inih::INIReader *lang_ini;
 
 extern std::map<int, std::string> lang_db;
 
 std::string get_localized_string(int id);
-std::string get_localized_string(const std::string& str_id);
+std::string get_localized_string(const std::string &str_id);
 
-void set_localize_lang(const std::string & lang);
+void set_localize_lang(const std::string &lang);

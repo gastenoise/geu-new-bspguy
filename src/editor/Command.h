@@ -1,18 +1,18 @@
 #pragma once
 
-#include "util.h"
 #include "Bsp.h"
 #include "Entity.h"
-#include "Settings.h"
 #include "Renderer.h"
+#include "Settings.h"
+#include "util.h"
 
-// Undoable actions 
+// Undoable actions
 
-class EditBspCommand 
+class EditBspCommand
 {
-public:
+  public:
 	std::string desc;
-	EditBspCommand(const std::string & desc, LumpState oldLumps, LumpState newLumps, unsigned int targetLumps);
+	EditBspCommand(const std::string &desc, LumpState oldLumps, LumpState newLumps, unsigned int targetLumps);
 	~EditBspCommand() = default;
 
 	void execute();
@@ -22,7 +22,8 @@ public:
 	size_t memoryUsageZip();
 	LumpState oldLumps;
 	LumpState newLumps;
-private:
-	void refresh(BspRenderer* renderer);
+
+  private:
+	void refresh(BspRenderer *renderer);
 	unsigned int targetLumps;
 };

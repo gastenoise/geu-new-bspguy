@@ -1,34 +1,34 @@
+#include "../BspRenderer.h"
 #include "../Gui.h"
 #include "../Renderer.h"
-#include "../BspRenderer.h"
-#include "bsp/Bsp.h"
 #include "../Settings.h"
-#include "lang.h"
-#include "filedialog/ImFileDialog.h"
-#include "imgui_stdlib.h"
-#include "quantizer.h"
-#include "vis.h"
-#include "winding.h"
-#include "util.h"
-#include "log.h"
 #include "BspMerger.h"
 #include "LeafNavMesh.h"
 #include "as.h"
-#include "lodepng.h"
+#include "bsp/Bsp.h"
+#include "filedialog/ImFileDialog.h"
 #include "fmt/format.h"
-#include <filesystem>
+#include "imgui_stdlib.h"
+#include "lang.h"
+#include "lodepng.h"
+#include "log.h"
+#include "quantizer.h"
+#include "util.h"
+#include "vis.h"
+#include "winding.h"
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <unordered_set>
 
 extern float g_tooltip_delay;
 extern std::string g_working_dir;
 extern Settings g_settings;
-extern Renderer* g_app;
+extern Renderer *g_app;
 extern int pickCount;
 extern std::string g_game_dir;
 extern bool g_console_visible;
-extern std::vector<BspRenderer*> mapRenderers;
+extern std::vector<BspRenderer *> mapRenderers;
 extern bool DebugKeyPressed;
 
 enum cell_type : unsigned char
@@ -55,12 +55,15 @@ struct cell
 	cell_type type;
 };
 
-static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer) {
+static int cell_idx(const vec3 &pos, const vec3 &mins, float cell_size, int cell_x, int cell_y, int cell_layers,
+					int layer)
+{
 	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
 	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
 	int lvl = static_cast<int>(std::round((pos.z - mins.z) / cell_size));
 
-	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers) {
+	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers)
+	{
 		return -1;
 	}
 
@@ -72,33 +75,35 @@ static int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell
 	return index;
 }
 
-static inline void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& text)
+static inline void IMGUI_TOOLTIP(ImGuiContext &g, const std::string &text)
 {
-	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+	{
 		ImGui::BeginTooltip();
 		ImGui::TextUnformatted(text.c_str());
 		ImGui::EndTooltip();
 	}
 }
 
-namespace umd_flags {
-	enum {
-		UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
-		UMD_OPTIMIZE_DISABLED = 1 << 1
-	};
+namespace umd_flags
+{
+enum
+{
+	UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
+	UMD_OPTIMIZE_DISABLED = 1 << 1
+};
 }
-
 
 void Gui::drawBspContexMenu()
 {
-	ImGuiContext& g = *GImGui;
+	ImGuiContext &g = *GImGui;
 
-	Bsp* map = app->getSelectedMap();
+	Bsp *map = app->getSelectedMap();
 
 	if (!map)
 		return;
 
-	BspRenderer* rend = map->getBspRender();
+	BspRenderer *rend = map->getBspRender();
 
 	if (!rend)
 		return;
@@ -108,19 +113,18 @@ void Gui::drawBspContexMenu()
 	if (app->originHovered && entIdxs.size())
 	{
 		int entIdx = entIdxs[0];
-		Entity* ent = map->ents[entIdx];
+		Entity *ent = map->ents[entIdx];
 		int modelIdx = ent->getBspModelIdx();
 
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
 			if (modelIdx > 0 && app->transformTarget == TRANSFORM_ORIGIN)
 			{
-				BSPMODEL& model = map->models[modelIdx];
+				BSPMODEL &model = map->models[modelIdx];
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
 				{
-					map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-						map->models[modelIdx].nMaxs);
+					map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 					rend->refreshModel(modelIdx);
 					pickCount++; // force gui refresh
 				}
@@ -129,16 +133,16 @@ void Gui::drawBspContexMenu()
 				{
 					if (ImGui::MenuItem(get_localized_string(LANG_0432).c_str()))
 					{
-						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						map->models[modelIdx].vOrigin =
+							getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.z = model.nMaxs.z;
 						rend->refreshModel(modelIdx);
 						pickCount++;
 					}
 					if (ImGui::MenuItem(get_localized_string(LANG_0433).c_str()))
 					{
-						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						map->models[modelIdx].vOrigin =
+							getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.z = model.nMins.z;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -146,16 +150,16 @@ void Gui::drawBspContexMenu()
 					ImGui::Separator();
 					if (ImGui::MenuItem(get_localized_string(LANG_0434).c_str()))
 					{
-						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						map->models[modelIdx].vOrigin =
+							getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.x = model.nMins.x;
 						rend->refreshModel(modelIdx);
 						pickCount++;
 					}
 					if (ImGui::MenuItem(get_localized_string(LANG_0435).c_str()))
 					{
-						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						map->models[modelIdx].vOrigin =
+							getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.x = model.nMaxs.x;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -163,16 +167,16 @@ void Gui::drawBspContexMenu()
 					ImGui::Separator();
 					if (ImGui::MenuItem(get_localized_string(LANG_0436).c_str()))
 					{
-						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						map->models[modelIdx].vOrigin =
+							getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.y = model.nMins.y;
 						rend->refreshModel(modelIdx);
 						pickCount++;
 					}
 					if (ImGui::MenuItem(get_localized_string(LANG_0437).c_str()))
 					{
-						map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						map->models[modelIdx].vOrigin =
+							getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						map->models[modelIdx].vOrigin.y = model.nMaxs.y;
 						rend->refreshModel(modelIdx);
 						pickCount++;
@@ -187,16 +191,17 @@ void Gui::drawBspContexMenu()
 					rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
 					for (int entIdx : entIdxs)
 					{
-						Entity* sel_ent = map->ents[entIdx];
+						Entity *sel_ent = map->ents[entIdx];
 						int sel_modelIdx = sel_ent->getBspModelIdx();
-						if (sel_modelIdx <= 0) continue;
+						if (sel_modelIdx <= 0)
+							continue;
 
-						BSPMODEL& sel_model = map->models[sel_modelIdx];
+						BSPMODEL &sel_model = map->models[sel_modelIdx];
 						for (int i = 0; i < sel_model.nFaces; i++)
 						{
 							int faceIdx = sel_model.iFirstFace + i;
-							BSPFACE32& face = map->faces[faceIdx];
-							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+							BSPFACE32 &face = map->faces[faceIdx];
+							BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
 							map->fix_transparency(texinfo.iMiptex);
 						}
 						rend->refreshEnt(entIdx);
@@ -208,12 +213,13 @@ void Gui::drawBspContexMenu()
 			}
 			else if (modelIdx > 0)
 			{
-				BSPMODEL& model = map->models[modelIdx];
+				BSPMODEL &model = map->models[modelIdx];
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
 				{
-					ent->setOrAddKeyvalue("origin", (-getCenter(map->models[modelIdx].nMins,
-						map->models[modelIdx].nMaxs)).toKeyvalueString());
+					ent->setOrAddKeyvalue(
+						"origin",
+						(-getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs)).toKeyvalueString());
 					rend->refreshEnt(entIdx);
 					pickCount++; // force gui refresh
 				}
@@ -222,8 +228,7 @@ void Gui::drawBspContexMenu()
 				{
 					if (ImGui::MenuItem(get_localized_string(LANG_0432).c_str()))
 					{
-						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						vec3 vOrigin = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						vOrigin.z = model.nMaxs.z;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -231,8 +236,7 @@ void Gui::drawBspContexMenu()
 					}
 					if (ImGui::MenuItem(get_localized_string(LANG_0433).c_str()))
 					{
-						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						vec3 vOrigin = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						vOrigin.z = model.nMins.z;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -241,8 +245,7 @@ void Gui::drawBspContexMenu()
 					ImGui::Separator();
 					if (ImGui::MenuItem(get_localized_string(LANG_0434).c_str()))
 					{
-						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						vec3 vOrigin = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						vOrigin.x = model.nMins.x;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -250,8 +253,7 @@ void Gui::drawBspContexMenu()
 					}
 					if (ImGui::MenuItem(get_localized_string(LANG_0435).c_str()))
 					{
-						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						vec3 vOrigin = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						vOrigin.x = model.nMaxs.x;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -259,8 +261,7 @@ void Gui::drawBspContexMenu()
 					ImGui::Separator();
 					if (ImGui::MenuItem(get_localized_string(LANG_0436).c_str()))
 					{
-						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						vec3 vOrigin = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						vOrigin.y = model.nMins.y;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -268,8 +269,7 @@ void Gui::drawBspContexMenu()
 					}
 					if (ImGui::MenuItem(get_localized_string(LANG_0437).c_str()))
 					{
-						vec3 vOrigin = getCenter(map->models[modelIdx].nMins,
-							map->models[modelIdx].nMaxs);
+						vec3 vOrigin = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 						vOrigin.y = model.nMaxs.y;
 						ent->setOrAddKeyvalue("origin", (-vOrigin).toKeyvalueString());
 						rend->refreshEnt(entIdx);
@@ -284,16 +284,17 @@ void Gui::drawBspContexMenu()
 					rend->pushUndoState("Fix transparency", FL_ENTITIES | FL_TEXTURES);
 					for (int entIdx : entIdxs)
 					{
-						Entity* sel_ent = map->ents[entIdx];
+						Entity *sel_ent = map->ents[entIdx];
 						int sel_modelIdx = sel_ent->getBspModelIdx();
-						if (sel_modelIdx <= 0) continue;
+						if (sel_modelIdx <= 0)
+							continue;
 
-						BSPMODEL& sel_model = map->models[sel_modelIdx];
+						BSPMODEL &sel_model = map->models[sel_modelIdx];
 						for (int i = 0; i < sel_model.nFaces; i++)
 						{
 							int faceIdx = sel_model.iFirstFace + i;
-							BSPFACE32& face = map->faces[faceIdx];
-							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+							BSPFACE32 &face = map->faces[faceIdx];
+							BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
 							map->fix_transparency(texinfo.iMiptex);
 						}
 						rend->refreshEnt(entIdx);
@@ -351,7 +352,7 @@ void Gui::drawBspContexMenu()
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), get_localized_string(LANG_0441).c_str(), false,
-				copiedMiptex >= 0 && copiedMiptex < map->textureCount))
+								copiedMiptex >= 0 && copiedMiptex < map->textureCount))
 			{
 				pasteTexture();
 			}
@@ -381,7 +382,8 @@ void Gui::drawBspContexMenu()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0445).c_str(), "", false, copiedLightmap.face >= 0 && copiedLightmap.face < map->faceCount))
+			if (ImGui::MenuItem(get_localized_string(LANG_0445).c_str(), "", false,
+								copiedLightmap.face >= 0 && copiedLightmap.face < map->faceCount))
 			{
 				pasteLightmap();
 			}
@@ -392,13 +394,13 @@ void Gui::drawBspContexMenu()
 			{
 				if (g_app->pickInfo.selectedFaces.size())
 				{
-					BSPFACE32& selface = map->faces[g_app->pickInfo.selectedFaces[0]];
-					BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
+					BSPFACE32 &selface = map->faces[g_app->pickInfo.selectedFaces[0]];
+					BSPTEXTUREINFO &seltexinfo = map->texinfos[selface.iTextureInfo];
 					g_app->deselectFaces();
 					for (int i = 0; i < map->faceCount; i++)
 					{
-						BSPFACE32& face = map->faces[i];
-						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+						BSPFACE32 &face = map->faces[i];
+						BSPTEXTUREINFO &texinfo = map->texinfos[face.iTextureInfo];
 						if (texinfo.iMiptex == seltexinfo.iMiptex)
 						{
 							rend->highlightFace(i, 1);
@@ -423,7 +425,7 @@ void Gui::drawBspContexMenu()
 					int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
 					if (modelIdx >= 0)
 					{
-						BSPMODEL& model = map->models[modelIdx];
+						BSPMODEL &model = map->models[modelIdx];
 						for (int i = 0; i < model.nFaces; i++)
 						{
 							int faceIdx = model.iFirstFace + i;
@@ -472,7 +474,8 @@ void Gui::drawBspContexMenu()
 							{
 								BSPFACE32 face = map->faces[f];
 
-								if (std::find(app->pickInfo.selectedFaces.begin(), app->pickInfo.selectedFaces.end(), (int)f) != app->pickInfo.selectedFaces.end())
+								if (std::find(app->pickInfo.selectedFaces.begin(), app->pickInfo.selectedFaces.end(),
+											  (int)f) != app->pickInfo.selectedFaces.end())
 								{
 									continue;
 								}
@@ -509,7 +512,6 @@ void Gui::drawBspContexMenu()
 							}
 						}
 					}
-
 				}
 
 				ImGui::EndMenu();
@@ -517,10 +519,14 @@ void Gui::drawBspContexMenu()
 
 			ImGui::Separator();
 
-			if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading && map && !app->pickInfo.selectedFaces.empty()))
+			if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(),
+								 !app->isLoading && map && !app->pickInfo.selectedFaces.empty()))
 			{
-				std::string timestamp = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-				std::string export_path = g_working_dir + "exported_models/" + map->bsp_name + "/faces_" + timestamp + ".bsp";
+				std::string timestamp = std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
+														   std::chrono::system_clock::now().time_since_epoch())
+														   .count());
+				std::string export_path =
+					g_working_dir + "exported_models/" + map->bsp_name + "/faces_" + timestamp + ".bsp";
 
 				if (ImGui::BeginMenu(get_localized_string(LANG_0467).c_str(), !app->isLoading))
 				{
@@ -573,7 +579,7 @@ void Gui::drawBspContexMenu()
 	{
 		if (!app->originHovered && ImGui::BeginPopup("ent_context") && entIdxs.size())
 		{
-			Entity* ent = map->ents[entIdxs[0]];
+			Entity *ent = map->ents[entIdxs[0]];
 			int modelIdx = ent->getBspModelIdx();
 			if (modelIdx < 0 && ent->isWorldSpawn())
 				modelIdx = 0;
@@ -582,11 +588,15 @@ void Gui::drawBspContexMenu()
 			{
 				if (modelIdx != 0)
 				{
-					if (ImGui::MenuItem(get_localized_string(LANG_0446).c_str(), get_localized_string(LANG_0447).c_str(), false, app->pickInfo.selectedEnts.size()))
+					if (ImGui::MenuItem(get_localized_string(LANG_0446).c_str(),
+										get_localized_string(LANG_0447).c_str(), false,
+										app->pickInfo.selectedEnts.size()))
 					{
 						app->cutEnt();
 					}
-					if (ImGui::MenuItem(get_localized_string(LANG_0448).c_str(), get_localized_string(LANG_0439).c_str(), false, app->pickInfo.selectedEnts.size()))
+					if (ImGui::MenuItem(get_localized_string(LANG_0448).c_str(),
+										get_localized_string(LANG_0439).c_str(), false,
+										app->pickInfo.selectedEnts.size()))
 					{
 						app->copyEnt();
 					}
@@ -596,7 +606,8 @@ void Gui::drawBspContexMenu()
 				{
 					if (ImGui::BeginMenu((get_localized_string(LANG_0449) + "###BeginPaste").c_str()))
 					{
-						if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###BEG_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false))
+						if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###BEG_PASTE1").c_str(),
+											get_localized_string(LANG_0441).c_str(), false))
 						{
 							app->pasteEnt(false);
 						}
@@ -604,7 +615,8 @@ void Gui::drawBspContexMenu()
 						{
 							app->pasteEnt(true);
 						}
-						if (ImGui::MenuItem("Paste with bspmodel###BEG_PASTE2", get_localized_string(LANG_0441).c_str(), false))
+						if (ImGui::MenuItem("Paste with bspmodel###BEG_PASTE2", get_localized_string(LANG_0441).c_str(),
+											false))
 						{
 							app->pasteEnt(false, true);
 						}
@@ -624,7 +636,8 @@ void Gui::drawBspContexMenu()
 
 				if (modelIdx != 0)
 				{
-					if (ImGui::MenuItem(get_localized_string(LANG_0451).c_str(), get_localized_string(LANG_0452).c_str()))
+					if (ImGui::MenuItem(get_localized_string(LANG_0451).c_str(),
+										get_localized_string(LANG_0452).c_str()))
 					{
 						app->deleteEnts();
 					}
@@ -651,12 +664,13 @@ void Gui::drawBspContexMenu()
 			ImGui::Separator();
 			if (modelIdx >= 0)
 			{
-				BSPMODEL& model = map->models[modelIdx];
+				BSPMODEL &model = map->models[modelIdx];
 				if (ImGui::BeginMenu(get_localized_string(LANG_0456).c_str()))
 				{
 					if (modelIdx > 0 || map->is_bsp_model)
 					{
-						if (ImGui::BeginMenu(get_localized_string(LANG_0457).c_str(), !app->invalidSolid && app->isTransformableSolid))
+						if (ImGui::BeginMenu(get_localized_string(LANG_0457).c_str(),
+											 !app->invalidSolid && app->isTransformableSolid))
 						{
 							if (ImGui::MenuItem(get_localized_string(LANG_0458).c_str()))
 							{
@@ -750,7 +764,8 @@ void Gui::drawBspContexMenu()
 							ImGui::EndMenu();
 						}
 
-						bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] || map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
+						bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] ||
+										   map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
 
 						if (ImGui::BeginMenu(get_localized_string(LANG_0462).c_str(), canRedirect && !app->isLoading))
 						{
@@ -764,9 +779,12 @@ void Gui::drawBspContexMenu()
 										if (i == k)
 											continue;
 
-										bool isHullValid = map->models[modelIdx].iHeadnodes[k] >= 0 && map->models[modelIdx].iHeadnodes[k] != map->models[modelIdx].iHeadnodes[i];
+										bool isHullValid =
+											map->models[modelIdx].iHeadnodes[k] >= 0 &&
+											map->models[modelIdx].iHeadnodes[k] != map->models[modelIdx].iHeadnodes[i];
 
-										if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
+										if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false,
+															isHullValid))
 										{
 											map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
 											rend->refreshModelClipnodes(modelIdx);
@@ -809,13 +827,12 @@ void Gui::drawBspContexMenu()
 					ImGui::EndMenu();
 				}
 
-
 				ImGui::Separator();
 
 				bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
 				if (allowDuplicate && app->pickInfo.selectedEnts.size() > 1)
 				{
-					for (auto& tmpentIdx : app->pickInfo.selectedEnts)
+					for (auto &tmpentIdx : app->pickInfo.selectedEnts)
 					{
 						if (map->ents[tmpentIdx]->getBspModelIdx() <= 0)
 						{
@@ -827,15 +844,18 @@ void Gui::drawBspContexMenu()
 
 				if (modelIdx > 0)
 				{
-					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
+					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false,
+										!app->isLoading && allowDuplicate))
 					{
 						print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-						for (auto& tmpentIdx : app->pickInfo.selectedEnts)
+						for (auto &tmpentIdx : app->pickInfo.selectedEnts)
 						{
 							if (map->ents[tmpentIdx]->isBspModel())
 							{
 								app->modelUsesSharedStructures = false;
-								map->ents[tmpentIdx]->setOrAddKeyvalue("model", "*" + std::to_string(map->duplicate_model(map->ents[tmpentIdx]->getBspModelIdx())));
+								map->ents[tmpentIdx]->setOrAddKeyvalue(
+									"model",
+									"*" + std::to_string(map->duplicate_model(map->ents[tmpentIdx]->getBspModelIdx())));
 							}
 						}
 						map->remove_unused_model_structures(CLEAN_LEAVES);
@@ -854,10 +874,11 @@ void Gui::drawBspContexMenu()
 					{
 						ImGui::BeginDisabled();
 					}
-					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false, !app->isLoading && allowDuplicate))
+					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false,
+										!app->isLoading && allowDuplicate))
 					{
 						print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-						for (auto& tmpentIdx : app->pickInfo.selectedEnts)
+						for (auto &tmpentIdx : app->pickInfo.selectedEnts)
 						{
 							if (map->ents[tmpentIdx]->isBspModel())
 							{
@@ -881,18 +902,20 @@ void Gui::drawBspContexMenu()
 						ImGui::EndDisabled();
 					}
 					bool IsValidForMerge = false;
-					std::vector<Entity*> toMerge;
+					std::vector<Entity *> toMerge;
 					if (app->pickInfo.selectedEnts.size() > 1)
 					{
 						IsValidForMerge = true;
 						for (auto tmpentIdx : app->pickInfo.selectedEnts)
 						{
-							if (tmpentIdx < 0 || tmpentIdx >= (int)map->ents.size()) 
+							if (tmpentIdx < 0 || tmpentIdx >= (int)map->ents.size())
 							{
-								IsValidForMerge = false; break; 
+								IsValidForMerge = false;
+								break;
 							}
-							Entity* e = map->ents[tmpentIdx];
-							if (!e->isBspModel() || e->isWorldSpawn()) {
+							Entity *e = map->ents[tmpentIdx];
+							if (!e->isBspModel() || e->isWorldSpawn())
+							{
 								IsValidForMerge = false;
 								break;
 							}
@@ -902,16 +925,18 @@ void Gui::drawBspContexMenu()
 					// fixme
 					if (ImGui::MenuItem("MERGE BSPMODELS (WIP)", 0, false, !app->isLoading && IsValidForMerge))
 					{
-						std::vector<Entity*> toErasePtrs;
+						std::vector<Entity *> toErasePtrs;
 
 						while (toMerge.size() > 1)
 						{
-							Entity* e1 = toMerge[toMerge.size() - 1];
-							Entity* e2 = toMerge[toMerge.size() - 2];
+							Entity *e1 = toMerge[toMerge.size() - 1];
+							Entity *e2 = toMerge[toMerge.size() - 2];
 
 							int newmodelid = map->merge_two_models_ents(e1, e2);
-							if (newmodelid < 0) {
-								print_log(PRINT_RED, "Merge failed for models {} and {}\n", e1->getBspModelIdx(), e2->getBspModelIdx());
+							if (newmodelid < 0)
+							{
+								print_log(PRINT_RED, "Merge failed for models {} and {}\n", e1->getBspModelIdx(),
+										  e2->getBspModelIdx());
 								break;
 							}
 							e2->setOrAddKeyvalue("model", "*" + std::to_string(newmodelid));
@@ -924,9 +949,10 @@ void Gui::drawBspContexMenu()
 							toMerge.pop_back();
 						}
 
-						for (Entity* delent : toErasePtrs) {
+						for (Entity *delent : toErasePtrs)
+						{
 							auto it = std::find(map->ents.begin(), map->ents.end(), delent);
-							if (it != map->ents.end()) 
+							if (it != map->ents.end())
 							{
 								map->ents.erase(it);
 								delete delent;
@@ -945,7 +971,6 @@ void Gui::drawBspContexMenu()
 						rend->pushUndoState("MERGE BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
 						rend->preRenderEnts();
 					}
-
 
 					if (ImGui::IsItemHovered())
 					{
@@ -999,7 +1024,6 @@ void Gui::drawBspContexMenu()
 					ImGui::TextUnformatted(get_localized_string(LANG_0472).c_str());
 					ImGui::EndTooltip();
 				}
-
 			}
 			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_0473).c_str()))
 			{
@@ -1020,7 +1044,6 @@ void Gui::drawBspContexMenu()
 				showKeyvalueWidget = true;
 			}
 
-
 			ImGui::EndPopup();
 		}
 
@@ -1028,7 +1051,8 @@ void Gui::drawBspContexMenu()
 		{
 			bool enabled = app->hasCopiedEnt();
 
-			if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###CONTENT_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false, enabled))
+			if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###CONTENT_PASTE1").c_str(),
+								get_localized_string(LANG_0441).c_str(), false, enabled))
 			{
 				app->pasteEnt(false);
 			}
@@ -1045,7 +1069,6 @@ void Gui::drawBspContexMenu()
 		}
 	}
 }
-
 
 void Gui::drawContextMenu_Entity() {}
 void Gui::drawContextMenu_Face() {}
