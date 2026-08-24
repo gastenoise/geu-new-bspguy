@@ -4,14 +4,16 @@
 #include <lodepng.h>
 #include "log.h"
 
-std::vector<unsigned char> compressData(const std::vector<unsigned char>& data) {
-	unsigned char* out = NULL;
+std::vector<unsigned char> compressData(const std::vector<unsigned char> &data)
+{
+	unsigned char *out = NULL;
 	size_t outsize = 0;
 	LodePNGCompressSettings settings;
 	lodepng_compress_settings_init(&settings);
 
 	unsigned error = lodepng_zlib_compress(&out, &outsize, data.data(), data.size(), &settings);
-	if (error) {
+	if (error)
+	{
 		throw std::runtime_error("Compression failed: " + std::string(lodepng_error_text(error)));
 	}
 
@@ -20,14 +22,16 @@ std::vector<unsigned char> compressData(const std::vector<unsigned char>& data) 
 	return compressedData;
 }
 
-std::vector<unsigned char> decompressData(const std::vector<unsigned char>& compressedData) {
-	unsigned char* out = NULL;
+std::vector<unsigned char> decompressData(const std::vector<unsigned char> &compressedData)
+{
+	unsigned char *out = NULL;
 	size_t outsize = 0;
 	LodePNGDecompressSettings settings;
 	lodepng_decompress_settings_init(&settings);
 
 	unsigned error = lodepng_zlib_decompress(&out, &outsize, compressedData.data(), compressedData.size(), &settings);
-	if (error) {
+	if (error)
+	{
 		throw std::runtime_error("Decompression failed: " + std::string(lodepng_error_text(error)));
 	}
 
@@ -36,9 +40,8 @@ std::vector<unsigned char> decompressData(const std::vector<unsigned char>& comp
 	return decompressedData;
 }
 
-
-EditBspCommand::EditBspCommand(const std::string& desc, LumpState _oldLumps, LumpState _newLumps, unsigned int targetLumps) :
-	desc(desc), oldLumps(std::move(_oldLumps)), newLumps(std::move(_newLumps)), targetLumps(targetLumps), memoryused(0)
+EditBspCommand::EditBspCommand(const std::string &desc, LumpState _oldLumps, LumpState _newLumps, unsigned int targetLumps)
+	: desc(desc), oldLumps(std::move(_oldLumps)), newLumps(std::move(_newLumps)), targetLumps(targetLumps), memoryused(0)
 {
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -59,10 +62,10 @@ EditBspCommand::EditBspCommand(const std::string& desc, LumpState _oldLumps, Lum
 
 void EditBspCommand::execute()
 {
-	Bsp* map = NULL;
-	BspRenderer* renderer = NULL;
+	Bsp *map = NULL;
+	BspRenderer *renderer = NULL;
 
-	for (auto& r : mapRenderers)
+	for (auto &r : mapRenderers)
 	{
 		if (r->map == oldLumps.map)
 		{
@@ -87,14 +90,13 @@ void EditBspCommand::execute()
 		}
 	}
 
-	
 	map->replace_lumps(newLumps);
 
 	refresh(renderer);
 
 	auto mdls = getDiffModels(oldLumps, newLumps);
 	auto faces = getDiffFaces(oldLumps, newLumps);
-	for (auto& face : faces)
+	for (auto &face : faces)
 	{
 		if (std::find(mdls.begin(), mdls.end(), map->get_model_from_face(face)) == mdls.end())
 		{
@@ -117,12 +119,11 @@ void EditBspCommand::execute()
 	{
 		renderer->loadLightmaps();
 	}
-	for (auto& mdl : mdls)
+	for (auto &mdl : mdls)
 	{
 		renderer->refreshModel(mdl, false);
 	}
 	//}
-
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -140,10 +141,10 @@ void EditBspCommand::execute()
 
 void EditBspCommand::undo()
 {
-	Bsp* map = NULL;
-	BspRenderer* renderer = NULL;
+	Bsp *map = NULL;
+	BspRenderer *renderer = NULL;
 
-	for (auto& r : mapRenderers)
+	for (auto &r : mapRenderers)
 	{
 		if (r->map == oldLumps.map)
 		{
@@ -174,7 +175,7 @@ void EditBspCommand::undo()
 
 	auto mdls = getDiffModels(newLumps, oldLumps);
 	auto faces = getDiffFaces(newLumps, oldLumps);
-	for (auto& face : faces)
+	for (auto &face : faces)
 	{
 		if (std::find(mdls.begin(), mdls.end(), map->get_model_from_face(face)) == mdls.end())
 		{
@@ -196,12 +197,11 @@ void EditBspCommand::undo()
 	{
 		renderer->loadLightmaps();
 	}
-	for (auto& mdl : mdls)
+	for (auto &mdl : mdls)
 	{
 		renderer->refreshModel(mdl, false);
 	}
 	//}
-
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -217,7 +217,7 @@ void EditBspCommand::undo()
 	}
 }
 
-void EditBspCommand::refresh(BspRenderer* renderer)
+void EditBspCommand::refresh(BspRenderer *renderer)
 {
 	if (renderer)
 	{

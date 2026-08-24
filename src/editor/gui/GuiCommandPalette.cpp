@@ -5,7 +5,7 @@
 #include "imgui.h"
 #include "fmt/format.h"
 
-GuiCommandPalette& GuiCommandPalette::getInstance()
+GuiCommandPalette &GuiCommandPalette::getInstance()
 {
 	static GuiCommandPalette instance;
 	return instance;
@@ -35,12 +35,12 @@ void GuiCommandPalette::close()
 	requestFocus = false;
 }
 
-void GuiCommandPalette::draw(Gui* gui)
+void GuiCommandPalette::draw(Gui *gui)
 {
 	if (!isOpen)
 		return;
 
-	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGuiViewport *viewport = ImGui::GetMainViewport();
 	ImVec2 center = viewport->GetCenter();
 	float windowWidth = std::min(650.0f, viewport->Size.x - 40.0f);
 	float windowHeight = std::min(450.0f, viewport->Size.y - 80.0f);
@@ -49,9 +49,9 @@ void GuiCommandPalette::draw(Gui* gui)
 	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_Always);
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar |
-		ImGuiWindowFlags_NoResize |
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoSavedSettings;
+							 ImGuiWindowFlags_NoResize |
+							 ImGuiWindowFlags_NoMove |
+							 ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
@@ -122,7 +122,7 @@ void GuiCommandPalette::draw(Gui* gui)
 			{
 				for (int i = 0; i < (int)matches.size(); i++)
 				{
-					const auto& action = matches[i];
+					const auto &action = matches[i];
 					bool enabled = !action.isEnabled || action.isEnabled();
 					bool isSelected = (i == selectedIdx);
 

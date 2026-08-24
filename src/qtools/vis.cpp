@@ -6,7 +6,7 @@
 
 bool g_debug_shift = false;
 
-void printVisRow(unsigned char* vis, int len, int offsetLeaf, int mask)
+void printVisRow(unsigned char *vis, int len, int offsetLeaf, int mask)
 {
 	for (int i = 0; i < len; i++)
 	{
@@ -34,7 +34,7 @@ void printVisRow(unsigned char* vis, int len, int offsetLeaf, int mask)
 	print_log("\n");
 }
 
-int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
+int shiftVis(unsigned char *vis, int len, int offsetLeaf, int shift)
 {
 	int overflow = 0;
 
@@ -149,14 +149,14 @@ int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		// TODO: detect overflows here too
 		if (shift > 0)
 		{
-			unsigned char* temp = new unsigned char[g_limits.maxMapLeaves / 8];
+			unsigned char *temp = new unsigned char[g_limits.maxMapLeaves / 8];
 
 			int startByte = (offsetLeaf + bitShifts) / 8;
 			int moveSize = len - (startByte + byteShifts);
 
-			memcpy(temp, (unsigned char*)vis + startByte, moveSize);
-			memset((unsigned char*)vis + startByte, 0, byteShifts);
-			memcpy((unsigned char*)vis + startByte + byteShifts, temp, moveSize);
+			memcpy(temp, (unsigned char *)vis + startByte, moveSize);
+			memset((unsigned char *)vis + startByte, 0, byteShifts);
+			memcpy((unsigned char *)vis + startByte + byteShifts, temp, moveSize);
 
 			delete[] temp;
 		}
@@ -164,7 +164,6 @@ int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		{
 			// TODO LOL
 		}
-
 	}
 
 	return overflow;
@@ -174,11 +173,11 @@ int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 // iterationLeaves = number of leaves to decompress vis for
 // visDataLeafCount = total leaves in this map (exluding the shared solid leaf 0)
 // newNumLeaves = total leaves that will be in the map after merging is finished (again, excluding solid leaf 0)
-void decompress_vis_lump(Bsp* /*map*/, BSPLEAF32* leafLump, unsigned char* visLump, unsigned char* output,
-	int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
+void decompress_vis_lump(Bsp * /*map*/, BSPLEAF32 *leafLump, unsigned char *visLump, unsigned char *output,
+						 int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
 {
-	unsigned char* dest;
-	//int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
+	unsigned char *dest;
+	// int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
 	int newVisRowSize = ((newNumLeaves + 63) & ~63) >> 3;
 
 	// calculate which bits of an uncompressed visibility row are used/unused
@@ -219,12 +218,12 @@ void decompress_vis_lump(Bsp* /*map*/, BSPLEAF32* leafLump, unsigned char* visLu
 				g_progress = ProgressMeter();
 				return;
 			}
-			// Tracing ... 
+			// Tracing ...
 			// print_log(get_localized_string(LANG_0996),leafLump[i].nVisOffset,visLumpMemSize);
-			if (!DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, newVisRowSize, visDataLeafCount,
-				visLumpMemSize - leafLump[i + 1].nVisOffset))
+			if (!DecompressVis((unsigned char *)(visLump + leafLump[i + 1].nVisOffset), dest, newVisRowSize, visDataLeafCount,
+							   visLumpMemSize - leafLump[i + 1].nVisOffset))
 			{
-				//print_log("Error {} - {}\n", i, iterationLeaves);
+				// print_log("Error {} - {}\n", i, iterationLeaves);
 			}
 
 			// Leaf visibility row lengths are multiples of 64 leaves, so there are usually some unused bits at the end.
@@ -247,8 +246,6 @@ void decompress_vis_lump(Bsp* /*map*/, BSPLEAF32* leafLump, unsigned char* visLu
 		}
 	}
 
-
-
 	g_progress.clear();
 	g_progress = ProgressMeter();
 
@@ -259,40 +256,44 @@ void decompress_vis_lump(Bsp* /*map*/, BSPLEAF32* leafLump, unsigned char* visLu
 // BEGIN COPIED QVIS CODE
 //
 
-bool DecompressVis(unsigned char* src, unsigned char* dest,
-	unsigned int dest_length, unsigned int numLeaves,
-	unsigned int src_length)
+bool DecompressVis(unsigned char *src, unsigned char *dest,
+				   unsigned int dest_length, unsigned int numLeaves,
+				   unsigned int src_length)
 {
 	static int errorCount = 0;
-	unsigned char* startsrc = src;
-	unsigned char* startdst = dest;
+	unsigned char *startsrc = src;
+	unsigned char *startdst = dest;
 
 	int c;
-	unsigned char* out = dest;
+	unsigned char *out = dest;
 	int row = (numLeaves + 7) >> 3;
 
 	while (out - dest < row)
 	{
 		if (src >= startsrc + src_length)
 		{
-			if (errorCount < 10) {
+			if (errorCount < 10)
+			{
 				print_log(PRINT_RED | PRINT_INTENSITY,
-					get_localized_string(LANG_0999),
-					(int)(src - startsrc), src_length);
-				if (++errorCount == 10) print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
+						  get_localized_string(LANG_0999),
+						  (int)(src - startsrc), src_length);
+				if (++errorCount == 10)
+					print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
 			}
 			return false;
 		}
 
-		if (*src) 
+		if (*src)
 		{
 			if (out >= startdst + dest_length)
 			{
-				if (errorCount < 10) {
+				if (errorCount < 10)
+				{
 					print_log(PRINT_RED | PRINT_INTENSITY,
-						get_localized_string(LANG_0998),
-						(int)(out - startdst), dest_length);
-					if (++errorCount == 10) print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
+							  get_localized_string(LANG_0998),
+							  (int)(out - startdst), dest_length);
+					if (++errorCount == 10)
+						print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
 				}
 				return false;
 			}
@@ -303,11 +304,13 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 
 		if (src + 1 >= startsrc + src_length)
 		{
-			if (errorCount < 10) {
+			if (errorCount < 10)
+			{
 				print_log(PRINT_RED | PRINT_INTENSITY,
-					get_localized_string(LANG_0999),
-					(int)(src - startsrc), src_length);
-				if (++errorCount == 10) print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
+						  get_localized_string(LANG_0999),
+						  (int)(src - startsrc), src_length);
+				if (++errorCount == 10)
+					print_log(PRINT_RED | PRINT_INTENSITY, "Too many VIS errors, suppressing further output.\n");
 			}
 			return false;
 		}
@@ -320,8 +323,8 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 			if (out >= startdst + dest_length)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY,
-					get_localized_string(LANG_1142),
-					(int)(out - startdst), dest_length);
+						  get_localized_string(LANG_1142),
+						  (int)(out - startdst), dest_length);
 				return false;
 			}
 
@@ -335,13 +338,11 @@ bool DecompressVis(unsigned char* src, unsigned char* dest,
 	return true;
 }
 
-
-
-int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest, unsigned int dest_length)
+int CompressVis(unsigned char *src, unsigned int src_length, unsigned char *dest, unsigned int dest_length)
 {
-	unsigned int    j;
-	unsigned char* dest_p = dest;
-	unsigned int    current_length = 0;
+	unsigned int j;
+	unsigned char *dest_p = dest;
+	unsigned int current_length = 0;
 
 	for (j = 0; j < src_length; j++)
 	{
@@ -356,13 +357,12 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 		*dest_p = src[j];
 		dest_p++;
 
-
 		if (src[j])
 		{
 			continue;
 		}
 
-		unsigned char   rep = 1;
+		unsigned char rep = 1;
 
 		for (j++; j < src_length; j++)
 		{
@@ -389,20 +389,19 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 	return (int)(dest_p - dest);
 }
 
-int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize, int maxLeafs)
+int CompressAll(BSPLEAF32 *leafs, unsigned char *uncompressed, unsigned char *output, int numLeaves, int iterLeaves, int bufferSize, int maxLeafs)
 {
 	int x = 0;
 
-	unsigned char* dest;
-	unsigned char* src;
+	unsigned char *dest;
+	unsigned char *src;
 	unsigned int g_bitbytes = ((numLeaves + 63) & ~63) >> 3;
 
-	unsigned char* vismap_p = output;
-
+	unsigned char *vismap_p = output;
 
 	g_progress.update("Compress vis", iterLeaves);
 
-	int* sharedRows = new int[iterLeaves];
+	int *sharedRows = new int[iterLeaves];
 	for (int i = 0; i < iterLeaves; i++)
 	{
 		src = uncompressed + i * g_bitbytes;
@@ -414,7 +413,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 			{
 				continue; // already compared in an earlier row
 			}
-			unsigned char* previous = uncompressed + k * g_bitbytes;
+			unsigned char *previous = uncompressed + k * g_bitbytes;
 			if (memcmp(src, previous, g_bitbytes) == 0)
 			{
 				sharedRows[i] = k;
@@ -427,7 +426,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	g_progress.clear();
 	g_progress = ProgressMeter();
 
-	unsigned char* compressed = new unsigned char[g_bitbytes + 1024];
+	unsigned char *compressed = new unsigned char[g_bitbytes + 1024];
 
 	for (int i = 0; i < iterLeaves; i++)
 	{
@@ -464,17 +463,16 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 
 		if (vismap_p >= output + bufferSize)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1003), (void*)vismap_p, (void*)(output + bufferSize));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1003), (void *)vismap_p, (void *)(output + bufferSize));
 
 			delete[] sharedRows;
 			return (int)(vismap_p - output);
 		}
 
-		leafs[i + 1].nVisOffset = (int)(dest - output);            // leaf 0 is a common solid
+		leafs[i + 1].nVisOffset = (int)(dest - output); // leaf 0 is a common solid
 
 		memcpy(dest, compressed, x);
 	}
-
 
 	delete[] compressed;
 	delete[] sharedRows;
@@ -482,11 +480,11 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	return (int)(vismap_p - output);
 }
 
-void DecompressLeafVis(unsigned char* src, unsigned int src_len,
-	unsigned char* dest, unsigned int dest_length)
+void DecompressLeafVis(unsigned char *src, unsigned int src_len,
+					   unsigned char *dest, unsigned int dest_length)
 {
-	unsigned char* out = dest;
-	unsigned char* src_start = src;
+	unsigned char *out = dest;
+	unsigned char *src_start = src;
 	unsigned int src_count = src_len;
 	int c = 0;
 
@@ -497,8 +495,8 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len,
 			if (out >= dest + dest_length)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY,
-					get_localized_string(LANG_1004),
-					(int)(out - dest), dest_length);
+						  get_localized_string(LANG_1004),
+						  (int)(out - dest), dest_length);
 				return;
 			}
 
@@ -513,8 +511,8 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len,
 		if (src >= src_start + src_len)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY,
-				get_localized_string(LANG_1006),
-				(int)(out - dest), dest_length);
+					  get_localized_string(LANG_1006),
+					  (int)(out - dest), dest_length);
 			return;
 		}
 
@@ -523,8 +521,8 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len,
 			if (out >= dest + dest_length)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY,
-					get_localized_string(LANG_1005),
-					(int)(out - dest), dest_length);
+						  get_localized_string(LANG_1005),
+						  (int)(out - dest), dest_length);
 				return;
 			}
 
@@ -535,8 +533,8 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len,
 		if (src + 1 >= src_start + src_len)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY,
-				get_localized_string(LANG_1144),
-				(int)(out - dest), dest_length);
+					  get_localized_string(LANG_1144),
+					  (int)(out - dest), dest_length);
 			return;
 		}
 
@@ -548,8 +546,8 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len,
 			if (out >= dest + dest_length)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY,
-					get_localized_string(LANG_1007),
-					(int)(out - dest), dest_length);
+						  get_localized_string(LANG_1007),
+						  (int)(out - dest), dest_length);
 				return;
 			}
 

@@ -3,25 +3,25 @@
 
 class CommandLine
 {
-public:
+  public:
 	std::string command;
 	std::string bspfile;
 	std::vector<std::string> options;
 	bool askingForHelp;
 
 	CommandLine() = default;
-	CommandLine(int argc, char* argv[]);
+	CommandLine(int argc, char *argv[]);
 
-	bool hasOption(const std::string& optionName);
-	bool hasOptionVector(const std::string& optionName);
+	bool hasOption(const std::string &optionName);
+	bool hasOptionVector(const std::string &optionName);
 
-	std::string getOption(const std::string& optionName);
-	int getOptionInt(const std::string& optionName);
-	vec3 getOptionVector(const std::string& optionName);
-	std::vector<vec3> getOptionVectorList(const std::string& optionName);
-	std::vector<std::string> getOptionList(const std::string& optionName);
+	std::string getOption(const std::string &optionName);
+	int getOptionInt(const std::string &optionName);
+	vec3 getOptionVector(const std::string &optionName);
+	std::vector<vec3> getOptionVectorList(const std::string &optionName);
+	std::vector<std::string> getOptionList(const std::string &optionName);
 
-private:
+  private:
 	hashmap optionVals;
 };
 

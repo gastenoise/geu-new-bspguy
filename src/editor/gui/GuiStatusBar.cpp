@@ -7,27 +7,27 @@
 #include "fmt/format.h"
 
 extern Settings g_settings;
-extern Renderer* g_app;
+extern Renderer *g_app;
 
 void Gui::drawStatusBar()
 {
 	if (!app)
 		return;
 
-	Bsp* map = app->getSelectedMap();
-	BspRenderer* rend = map ? map->getBspRender() : nullptr;
+	Bsp *map = app->getSelectedMap();
+	BspRenderer *rend = map ? map->getBspRender() : nullptr;
 
-	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGuiViewport *viewport = ImGui::GetMainViewport();
 	float statusBarHeight = ImGui::GetFrameHeight() + 6.0f;
 
 	ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + viewport->Size.y - statusBarHeight));
 	ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, statusBarHeight));
 
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
-		ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoBringToFrontOnFocus |
-		ImGuiWindowFlags_NoNav |
-		ImGuiWindowFlags_NoSavedSettings;
+							 ImGuiWindowFlags_NoMove |
+							 ImGuiWindowFlags_NoBringToFrontOnFocus |
+							 ImGuiWindowFlags_NoNav |
+							 ImGuiWindowFlags_NoSavedSettings;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 3.0f));
@@ -61,7 +61,7 @@ void Gui::drawStatusBar()
 					int entIdx = app->pickInfo.selectedEnts[0];
 					if (entIdx >= 0 && entIdx < (int)map->ents.size())
 					{
-						Entity* ent = map->ents[entIdx];
+						Entity *ent = map->ents[entIdx];
 						std::string cname = ent->hasKey("classname") ? ent->keyvalues["classname"] : "unknown";
 						std::string tname = ent->hasKey("targetname") ? (" (\"" + ent->keyvalues["targetname"] + "\")") : "";
 						int mdlIdx = ent->getBspModelIdx();
@@ -72,13 +72,13 @@ void Gui::drawStatusBar()
 							map->get_bounding_box(mdlIdx, mins, maxs);
 							vec3 size = maxs - mins;
 							ImGui::Text("Ent #%d: %s%s | Model *%d | Size: %.0fx%.0fx%.0f",
-								entIdx, cname.c_str(), tname.c_str(), mdlIdx, size.x, size.y, size.z);
+										entIdx, cname.c_str(), tname.c_str(), mdlIdx, size.x, size.y, size.z);
 						}
 						else
 						{
 							vec3 origin = ent->hasKey("origin") ? parseVector(ent->keyvalues["origin"]) : vec3();
 							ImGui::Text("Ent #%d: %s%s | Pos: (%.0f, %.0f, %.0f)",
-								entIdx, cname.c_str(), tname.c_str(), origin.x, origin.y, origin.z);
+										entIdx, cname.c_str(), tname.c_str(), origin.x, origin.y, origin.z);
 						}
 					}
 				}
@@ -92,24 +92,24 @@ void Gui::drawStatusBar()
 				if (app->pickInfo.selectedFaces.empty())
 				{
 					ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s | Ready",
-						app->pickMode == PICK_FACE ? "Mode: Faces" : "Mode: Leaf Faces");
+									   app->pickMode == PICK_FACE ? "Mode: Faces" : "Mode: Leaf Faces");
 				}
 				else if (app->pickInfo.selectedFaces.size() == 1)
 				{
 					int faceIdx = app->pickInfo.selectedFaces[0];
 					if (faceIdx >= 0 && faceIdx < map->faceCount)
 					{
-						BSPFACE32& face = map->faces[faceIdx];
+						BSPFACE32 &face = map->faces[faceIdx];
 						std::string texName = "unknown";
 						if (face.iTextureInfo < map->texinfoCount)
 						{
-							BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
+							BSPTEXTUREINFO &info = map->texinfos[face.iTextureInfo];
 							if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
 							{
-								int texOffset = ((int*)map->textures)[info.iMiptex + 1];
+								int texOffset = ((int *)map->textures)[info.iMiptex + 1];
 								if (texOffset >= 0)
 								{
-									BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+									BSPMIPTEX &tex = *((BSPMIPTEX *)(map->textures + texOffset));
 									texName = fmt::format("{} ({}x{})", tex.szName, tex.nWidth, tex.nHeight);
 								}
 							}
@@ -135,9 +135,9 @@ void Gui::drawStatusBar()
 				std::string leafStr = rend->curLeafIdx >= 0 ? fmt::format("Leaf: {}", rend->curLeafIdx) : "Leaf: -";
 
 				ImGui::Text("Hit: [%.0f, %.0f, %.0f] | Ang: [%.0f, %.0f, %.0f] | %s",
-					floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z),
-					floatRound(hlAngles.x), floatRound(hlAngles.y), floatRound(hlAngles.z),
-					leafStr.c_str());
+							floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z),
+							floatRound(hlAngles.x), floatRound(hlAngles.y), floatRound(hlAngles.z),
+							leafStr.c_str());
 			}
 
 			// Column 3: Grid Snapping & System Status

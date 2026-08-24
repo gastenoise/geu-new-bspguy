@@ -4,7 +4,7 @@ class Bsp;
 // excludes entities
 class STRUCTCOUNT
 {
-public:
+  public:
 	unsigned int planes;
 	unsigned int texInfos;
 	unsigned int leaves;
@@ -22,11 +22,11 @@ public:
 	unsigned int visdata;
 
 	STRUCTCOUNT();
-	STRUCTCOUNT(Bsp* map);
+	STRUCTCOUNT(Bsp *map);
 	~STRUCTCOUNT();
 
-	void add(const STRUCTCOUNT& other);
-	void sub(const STRUCTCOUNT& other);
+	void add(const STRUCTCOUNT &other);
+	void sub(const STRUCTCOUNT &other);
 	bool allZero();
 	void print_delete_stats(int indent);
 };
@@ -34,7 +34,7 @@ public:
 // used to mark structures that are in use by a model
 class STRUCTUSAGE
 {
-public:
+  public:
 	std::vector<bool> nodes;
 	std::vector<bool> clipnodes;
 	std::vector<bool> leaves;
@@ -53,7 +53,7 @@ public:
 	int modelIdx;
 
 	STRUCTUSAGE();
-	STRUCTUSAGE(Bsp* map);
+	STRUCTUSAGE(Bsp *map);
 	~STRUCTUSAGE() = default;
 
 	void compute_sum();
@@ -62,7 +62,7 @@ public:
 // used to remap structure indexes to new locations
 class STRUCTREMAP
 {
-public:
+  public:
 	std::vector<int> nodes;
 	std::vector<int> clipnodes;
 	std::vector<int> leaves;
@@ -83,6 +83,6 @@ public:
 
 	STRUCTCOUNT count; // size of each array
 	STRUCTREMAP();
-	STRUCTREMAP(Bsp* map);
+	STRUCTREMAP(Bsp *map);
 	~STRUCTREMAP() = default;
 };

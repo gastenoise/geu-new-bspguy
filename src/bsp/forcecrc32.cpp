@@ -21,10 +21,10 @@
 
 #include "forcecrc32.h"
 
- // Public library function. Returns NULL if successful, a string starting with "I/O error: "
- // if an I/O error occurred (please see perror()), or a string if some other error occurred.
+// Public library function. Returns NULL if successful, a string starting with "I/O error: "
+// if an I/O error occurred (please see perror()), or a string if some other error occurred.
 
-unsigned int ReplaceCrc32InMemory(unsigned char* data, unsigned int len, unsigned int offset, unsigned int newcrc, unsigned int oldcrc)
+unsigned int ReplaceCrc32InMemory(unsigned char *data, unsigned int len, unsigned int offset, unsigned int newcrc, unsigned int oldcrc)
 {
 	unsigned int crc = GetCrc32InMemory(data, len, oldcrc);
 	PathCrc32InMemory(data, len, offset, crc, newcrc);
@@ -35,7 +35,7 @@ unsigned int ReplaceCrc32InMemory(unsigned char* data, unsigned int len, unsigne
 // Generator polynomial. Do not modify, because there are many dependencies
 const uint64_t POLYNOMIAL = UINT64_C(0x104C11DB7);
 
-void PathCrc32InMemory(unsigned char* data, unsigned int len, unsigned int offset, unsigned int oldcrc, unsigned int newcrc)
+void PathCrc32InMemory(unsigned char *data, unsigned int len, unsigned int offset, unsigned int oldcrc, unsigned int newcrc)
 {
 	unsigned int delta = oldcrc ^ newcrc;
 	delta = (unsigned int)multiply_mod(reciprocal_mod(pow_mod(2, (len - offset) * 8)), delta);
@@ -48,7 +48,7 @@ void PathCrc32InMemory(unsigned char* data, unsigned int len, unsigned int offse
 	}
 }
 
-unsigned int GetCrc32InMemory(unsigned char* f, unsigned int length, unsigned int oldcrc)
+unsigned int GetCrc32InMemory(unsigned char *f, unsigned int length, unsigned int oldcrc)
 {
 	unsigned int crc = oldcrc;
 	for (size_t i = 0; i < length; i++)
@@ -74,13 +74,12 @@ unsigned int reverse_bits(unsigned int x)
 	return result;
 }
 
-
 /*---- Polynomial arithmetic ----*/
 
 // Returns polynomial x multiplied by polynomial y modulo the generator polynomial.
 uint64_t multiply_mod(uint64_t x, uint64_t y)
 {
-// Russian peasant multiplication algorithm
+	// Russian peasant multiplication algorithm
 	uint64_t z = 0;
 	while (y != 0)
 	{
@@ -93,11 +92,10 @@ uint64_t multiply_mod(uint64_t x, uint64_t y)
 	return z;
 }
 
-
 // Returns polynomial x to the power of natural number y modulo the generator polynomial.
 uint64_t pow_mod(uint64_t x, uint64_t y)
 {
-// Exponentiation by squaring
+	// Exponentiation by squaring
 	uint64_t z = 1;
 	while (y != 0)
 	{
@@ -109,9 +107,8 @@ uint64_t pow_mod(uint64_t x, uint64_t y)
 	return z;
 }
 
-
 // Computes polynomial x divided by polynomial y, returning the quotient and remainder.
-void divide_and_remainder(uint64_t x, uint64_t y, uint64_t* q, uint64_t* r)
+void divide_and_remainder(uint64_t x, uint64_t y, uint64_t *q, uint64_t *r)
 {
 	if (y == 0)
 	{
@@ -141,7 +138,7 @@ void divide_and_remainder(uint64_t x, uint64_t y, uint64_t* q, uint64_t* r)
 // Returns the reciprocal of polynomial x with respect to the generator polynomial.
 uint64_t reciprocal_mod(uint64_t x)
 {
-// Based on a simplification of the extended Euclidean algorithm
+	// Based on a simplification of the extended Euclidean algorithm
 	uint64_t y = x;
 	x = POLYNOMIAL;
 	uint64_t a = 0;
@@ -164,7 +161,6 @@ uint64_t reciprocal_mod(uint64_t x)
 	}
 }
 
-
 int get_degree(uint64_t x)
 {
 	int result = -1;
@@ -172,4 +168,3 @@ int get_degree(uint64_t x)
 		result++;
 	return result;
 }
-

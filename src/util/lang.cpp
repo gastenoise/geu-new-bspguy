@@ -13,7 +13,7 @@
 ;
 */
 
-inih::INIReader* lang_ini = NULL;
+inih::INIReader *lang_ini = NULL;
 
 std::map<int, std::string> lang_db;
 std::map<std::string, std::string> lang_db_str;
@@ -42,9 +42,8 @@ std::string get_localized_string(int id)
 
 				value = std::move(tmp_value);
 			}
-			catch(...)
+			catch (...)
 			{
-
 			}
 			lang_db[id] = value;
 			return value;
@@ -55,7 +54,7 @@ std::string get_localized_string(int id)
 	return "LANG_ERROR_INDEX\n";
 }
 
-std::string get_localized_string(const std::string& str_id)
+std::string get_localized_string(const std::string &str_id)
 {
 	if (lang_ini == NULL)
 	{
@@ -78,7 +77,6 @@ std::string get_localized_string(const std::string& str_id)
 			}
 			catch (...)
 			{
-
 			}
 			lang_db_str[str_id] = value;
 			return value;
@@ -89,7 +87,7 @@ std::string get_localized_string(const std::string& str_id)
 	return "LANG_ERROR_STRING\n";
 }
 
-void set_localize_lang(const std::string & lang)
+void set_localize_lang(const std::string &lang)
 {
 	static std::string last_lang = "";
 
@@ -116,7 +114,7 @@ void set_localize_lang(const std::string & lang)
 			{
 				lang_ini = new inih::INIReader(langfile);
 			}
-			catch (std::runtime_error & runtime)
+			catch (std::runtime_error &runtime)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", langfile, runtime.what());
 				delete lang_ini;

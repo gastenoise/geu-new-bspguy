@@ -11,12 +11,14 @@
 
 #pragma pack(push, 1)
 
-enum synctype_t {
+enum synctype_t
+{
 	ST_SYNC = 0,
 	ST_RAND
 };
 
-struct SPRITE_HEADER {
+struct SPRITE_HEADER
+{
 	int ident;
 	int version;
 	int type;
@@ -40,13 +42,13 @@ struct SPRITE_HEADER {
 #define SPR_INDEXALPHA 2
 #define SPR_ALPHTEST 3
 
-struct dspriteframe_t {
+struct dspriteframe_t
+{
 	int origin[2];
 	int width;
 	int height;
 };
 #pragma pack(pop)
-
 
 struct SpriteImage
 {
@@ -54,8 +56,8 @@ struct SpriteImage
 	std::vector<COLOR4> image;
 	COLOR3 last_color;
 	float interval;
-	Texture* texture;
-	EntCube* spriteCube;
+	Texture *texture;
+	EntCube *spriteCube;
 };
 
 struct SpriteGroup
@@ -66,9 +68,10 @@ struct SpriteGroup
 	double currentinterval;
 };
 
-class Sprite {
-public:
-	Sprite(const std::string& filename, const vec3 & mins = vec3(), const vec3 & maxs = vec3(), float scale = 1.0f, bool useOwnSettigns = false);
+class Sprite
+{
+  public:
+	Sprite(const std::string &filename, const vec3 &mins = vec3(), const vec3 &maxs = vec3(), float scale = 1.0f, bool useOwnSettigns = false);
 	~Sprite();
 	std::string name;
 	SPRITE_HEADER header;
@@ -80,7 +83,8 @@ public:
 	void DrawSprite();
 	void DrawBBox();
 	void DrawAxes();
-private:
+
+  private:
 	void set_missing_sprite();
 	void animate_frame();
 	double anim_time;
@@ -88,7 +92,7 @@ private:
 
 void TestSprite();
 
-extern std::map<unsigned int, Sprite*> spr_models;
-Sprite* AddNewSpriteToRender(const std::string & path, unsigned int sum = 0);
-Sprite* AddNewSpriteToRender(const std::string& path, float scale);
-Sprite* AddNewSpriteToRender(const std::string& path, vec3 mins, vec3 maxs, float scale);
+extern std::map<unsigned int, Sprite *> spr_models;
+Sprite *AddNewSpriteToRender(const std::string &path, unsigned int sum = 0);
+Sprite *AddNewSpriteToRender(const std::string &path, float scale);
+Sprite *AddNewSpriteToRender(const std::string &path, vec3 mins, vec3 maxs, float scale);

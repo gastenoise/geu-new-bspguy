@@ -25,9 +25,9 @@
 #include "../../add_on/scriptfile/scriptfile.h"
 #include "../../add_on/scriptfile/scriptfilesystem.h"
 
-void RegisterNatives(asIScriptEngine* engine);
-void RegisterStructs(asIScriptEngine* engine);
-void RegisterClasses(asIScriptEngine* engine);
+void RegisterNatives(asIScriptEngine *engine);
+void RegisterStructs(asIScriptEngine *engine);
+void RegisterClasses(asIScriptEngine *engine);
 
 enum AS_FUNCS : int
 {
@@ -42,19 +42,17 @@ enum AS_FUNCS : int
 	AS_FUNC_COUNT
 };
 
-const char* funcNames[AS_FUNC_COUNT] =
-{
-	"string GetScriptName()",
-	"string GetScriptDirectory()",
-	"string GetScriptDescription()",
-	"void OnMapChange()",
-	"void OnMenuCall()",
-	"void OnFrameTick()",
-	"void OnEnd()"
-};
+const char *funcNames[AS_FUNC_COUNT] =
+	{
+		"string GetScriptName()",
+		"string GetScriptDirectory()",
+		"string GetScriptDescription()",
+		"void OnMapChange()",
+		"void OnMenuCall()",
+		"void OnFrameTick()",
+		"void OnEnd()"};
 
 std::vector<std::string> funcNamesStr(std::begin(funcNames), std::end(funcNames));
-
 
 struct AScript
 {
@@ -64,15 +62,16 @@ struct AScript
 	std::string category_name;
 	std::string description;
 	std::string bsp_name;
-	asIScriptEngine* engine;
-	asIScriptContext* ctx;
-	asIScriptModule* module;
-	asIScriptFunction* funcs[AS_FUNC_COUNT];
+	asIScriptEngine *engine;
+	asIScriptContext *ctx;
+	asIScriptModule *module;
+	asIScriptFunction *funcs[AS_FUNC_COUNT];
 
 	bool isBad;
 	bool isActive;
 
-	AScript(std::string file) : path(std::move(file)) 
+	AScript(std::string file)
+		: path(std::move(file))
 	{
 		isBad = true;
 		isActive = false;
@@ -82,23 +81,26 @@ struct AScript
 		memset(funcs, 0, sizeof(funcs));
 
 		modulename.erase(std::remove_if(modulename.begin(), modulename.end(),
-			[](unsigned char c) { return !std::isalnum(c); }),
-			modulename.end());
+										[](unsigned char c)
+										{ return !std::isalnum(c); }),
+						 modulename.end());
 
-		if (!modulename.empty() && std::isdigit(modulename[0])) {
+		if (!modulename.empty() && std::isdigit(modulename[0]))
+		{
 			modulename.insert(modulename.begin(), 'm');
 		}
 
-		if (modulename.length() < 2) {
+		if (modulename.length() < 2)
+		{
 			modulename = "m" + std::to_string((unsigned long long)(this));
 		}
 
-        engine = asCreateScriptEngine();
+		engine = asCreateScriptEngine();
 		ctx = NULL;
 		module = NULL;
 		bsp_name = "";
 
-		if (engine) 
+		if (engine)
 		{
 			// Register the string type
 			RegisterStdString(engine);
@@ -123,7 +125,7 @@ struct AScript
 			if (r >= 0)
 			{
 				r = builder.AddSectionFromFile(path.c_str());
-				if (r >= 0) 
+				if (r >= 0)
 				{
 					r = builder.BuildModule();
 					if (r >= 0)
@@ -157,7 +159,7 @@ struct AScript
 				print_log(PRINT_RED, "[StartNewModule] Error {} loading path:{}\n", r, path);
 			}
 
-			if (isBad) 
+			if (isBad)
 			{
 				if (ctx)
 				{
@@ -185,17 +187,17 @@ struct AScript
 
 static std::vector<AScript *> scriptList{};
 
-void PrintString(const std::string& str)
+void PrintString(const std::string &str)
 {
 	print_log("{}", str);
 }
 
-void PrintError(const std::string& str)
+void PrintError(const std::string &str)
 {
 	print_log(PRINT_RED, "{}", str);
 }
 
-void PrintColored(int color, const std::string& str)
+void PrintColored(int color, const std::string &str)
 {
 	print_log(color, "{}", str);
 }
@@ -227,7 +229,7 @@ int Native_GetSelectedEnt()
 
 std::string Native_GetMapName(int map)
 {
-	for (auto& rend : mapRenderers)
+	for (auto &rend : mapRenderers)
 	{
 		if (rend->map && rend->map->realIdx == map)
 		{
@@ -239,7 +241,7 @@ std::string Native_GetMapName(int map)
 
 std::string Native_GetEntClassname(int entIdx)
 {
-	for (auto& rend : mapRenderers)
+	for (auto &rend : mapRenderers)
 	{
 		if (rend->map)
 		{
@@ -260,9 +262,9 @@ std::string Native_GetWorkDir()
 	return g_working_dir;
 }
 
-int Native_CreateEntity(int mapIdx, const std::string& classname)
+int Native_CreateEntity(int mapIdx, const std::string &classname)
 {
-	for (auto& rend : mapRenderers)
+	for (auto &rend : mapRenderers)
 	{
 		if (rend->map && rend->map->realIdx == mapIdx)
 		{
@@ -277,7 +279,7 @@ int Native_CreateEntity(int mapIdx, const std::string& classname)
 
 bool Native_RemoveEntity(int entIdx)
 {
-	for (auto& rend : mapRenderers)
+	for (auto &rend : mapRenderers)
 	{
 		if (rend->map)
 		{
@@ -297,9 +299,9 @@ bool Native_RemoveEntity(int entIdx)
 	return false;
 }
 
-void Native_SetEntKeyVal(int entIdx, const std::string& key, const std::string& val)
+void Native_SetEntKeyVal(int entIdx, const std::string &key, const std::string &val)
 {
-	for (auto& rend : mapRenderers)
+	for (auto &rend : mapRenderers)
 	{
 		if (rend->map)
 		{
@@ -317,7 +319,7 @@ void Native_SetEntKeyVal(int entIdx, const std::string& key, const std::string& 
 
 void Native_RefreshEnt(int entIdx, int flags)
 {
-	for (auto& rend : mapRenderers)
+	for (auto &rend : mapRenderers)
 	{
 		if (rend->map)
 		{
@@ -333,13 +335,13 @@ void Native_RefreshEnt(int entIdx, int flags)
 	}
 }
 
-int Native_FindEntityByKeyVal(int mapIdx, const std::string& key, const std::string& val)
+int Native_FindEntityByKeyVal(int mapIdx, const std::string &key, const std::string &val)
 {
-	for (auto& rend : mapRenderers)
+	for (auto &rend : mapRenderers)
 	{
 		if (rend->map && rend->map->realIdx == mapIdx)
 		{
-			for (auto & ent : rend->map->ents)
+			for (auto &ent : rend->map->ents)
 			{
 				if (ent->hasKey(key) && ent->keyvalues[key] == val)
 				{
@@ -358,96 +360,138 @@ float Native_GetFrameTime()
 	return (float)(AS_flLastFrameTime);
 }
 
-void RegisterNatives(asIScriptEngine* engine)
+void RegisterNatives(asIScriptEngine *engine)
 {
 	int r = engine->RegisterGlobalFunction("void PrintString(const string &in)",
-		asFUNCTIONPR(PrintString, (const std::string&), void), asCALL_CDECL); print_assert(r >= 0);
+										   asFUNCTIONPR(PrintString, (const std::string &), void), asCALL_CDECL);
+	print_assert(r >= 0);
 
-	r = engine->RegisterGlobalFunction("void PrintError(const string &in)", 
-		asFUNCTIONPR(PrintError, (const std::string&), void), asCALL_CDECL); print_assert(r >= 0);
+	r = engine->RegisterGlobalFunction("void PrintError(const string &in)",
+									   asFUNCTIONPR(PrintError, (const std::string &), void), asCALL_CDECL);
+	print_assert(r >= 0);
 
-	r = engine->RegisterGlobalFunction("void PrintColored(int colorid, const string &in)", 
-		asFUNCTIONPR(PrintColored, (int, const std::string&), void), asCALL_CDECL);	print_assert(r >= 0);
+	r = engine->RegisterGlobalFunction("void PrintColored(int colorid, const string &in)",
+									   asFUNCTIONPR(PrintColored, (int, const std::string &), void), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("int GetSelectedMap()",
-		asFUNCTIONPR(Native_GetSelectedMap, (void), int), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_GetSelectedMap, (void), int), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("int GetSelectedEnt()",
-		asFUNCTIONPR(Native_GetSelectedEnt, (void), int), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_GetSelectedEnt, (void), int), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("string GetMapName(int mapIdx)",
-		asFUNCTIONPR(Native_GetMapName, (int), std::string), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_GetMapName, (int), std::string), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("string GetEntClassname(int entIdx)",
-		asFUNCTIONPR(Native_GetEntClassname, (int), std::string), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_GetEntClassname, (int), std::string), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("string GetWorkDir()",
-		asFUNCTIONPR(Native_GetWorkDir, (void), std::string), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_GetWorkDir, (void), std::string), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("int CreateEntity(int mapIdx, const string &in)",
-		asFUNCTIONPR(Native_CreateEntity, (int, const std::string&), int), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_CreateEntity, (int, const std::string &), int), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("bool RemoveEntity(int entIdx)",
-		asFUNCTIONPR(Native_RemoveEntity, (int), bool), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_RemoveEntity, (int), bool), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("void SetEntKeyVal(int entIdx, const string &in, const string &in)",
-		asFUNCTIONPR(Native_SetEntKeyVal, (int, const std::string&, const std::string&), void), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_SetEntKeyVal, (int, const std::string &, const std::string &), void), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("void RefreshEnt(int entIdx, int flags)",
-		asFUNCTIONPR(Native_RefreshEnt, (int, int), void), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_RefreshEnt, (int, int), void), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("int FindEntityByKeyVal(int mapIdx, const string &in, const string &in)",
-		asFUNCTIONPR(Native_FindEntityByKeyVal, (int, const std::string&, const std::string&), int), asCALL_CDECL); print_assert(r >= 0);
+									   asFUNCTIONPR(Native_FindEntityByKeyVal, (int, const std::string &, const std::string &), int), asCALL_CDECL);
+	print_assert(r >= 0);
 
 	r = engine->RegisterGlobalFunction("float GetLastFrameTime()",
-		asFUNCTIONPR(Native_GetFrameTime, (void), float), asCALL_CDECL); print_assert(r >= 0);
-
-	
+									   asFUNCTIONPR(Native_GetFrameTime, (void), float), asCALL_CDECL);
+	print_assert(r >= 0);
 }
 
-void RegisterStructs(asIScriptEngine* engine)
+void RegisterStructs(asIScriptEngine *engine)
 {
-	int r = engine->RegisterObjectType("vec3", sizeof(vec3), asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CDK); print_assert(r >= 0);
-	r = engine->RegisterObjectProperty("vec3", "float x", asOFFSET(vec3, x)); print_assert(r >= 0);
-	r = engine->RegisterObjectProperty("vec3", "float y", asOFFSET(vec3, y)); print_assert(r >= 0);
-	r = engine->RegisterObjectProperty("vec3", "float z", asOFFSET(vec3, z)); print_assert(r >= 0);
+	int r = engine->RegisterObjectType("vec3", sizeof(vec3), asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CDK);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectProperty("vec3", "float x", asOFFSET(vec3, x));
+	print_assert(r >= 0);
+	r = engine->RegisterObjectProperty("vec3", "float y", asOFFSET(vec3, y));
+	print_assert(r >= 0);
+	r = engine->RegisterObjectProperty("vec3", "float z", asOFFSET(vec3, z));
+	print_assert(r >= 0);
 
-	r = engine->RegisterObjectBehaviour("vec3", asBEHAVE_CONSTRUCT, "void f()", asFUNCTIONPR([](void* memory) { new(memory) vec3(); }, (void*), void), asCALL_CDECL_OBJFIRST); print_assert(r >= 0);
-	r = engine->RegisterObjectBehaviour("vec3", asBEHAVE_CONSTRUCT, "void f(float, float, float)", asFUNCTIONPR([](void* memory, float x, float y, float z) { new(memory) vec3(x, y, z); }, (void*, float, float, float), void), asCALL_CDECL_OBJFIRST); print_assert(r >= 0);
-	r = engine->RegisterObjectBehaviour("vec3", asBEHAVE_DESTRUCT, "void f()", asFUNCTIONPR([](vec3* memory) { memory->~vec3(); }, (vec3*), void), asCALL_CDECL_OBJFIRST); print_assert(r >= 0);
+	r = engine->RegisterObjectBehaviour("vec3", asBEHAVE_CONSTRUCT, "void f()", asFUNCTIONPR([](void *memory)
+																							 { new (memory) vec3(); }, (void *), void),
+										asCALL_CDECL_OBJFIRST);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectBehaviour("vec3", asBEHAVE_CONSTRUCT, "void f(float, float, float)", asFUNCTIONPR([](void *memory, float x, float y, float z)
+																												{ new (memory) vec3(x, y, z); }, (void *, float, float, float), void),
+										asCALL_CDECL_OBJFIRST);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectBehaviour("vec3", asBEHAVE_DESTRUCT, "void f()", asFUNCTIONPR([](vec3 *memory)
+																							{ memory->~vec3(); }, (vec3 *), void),
+										asCALL_CDECL_OBJFIRST);
+	print_assert(r >= 0);
 
-	r = engine->RegisterObjectMethod("vec3", "void Copy(const vec3 &in)", asMETHOD(vec3, Copy), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "vec3& opAssign(const vec3 &in)", asMETHOD(vec3, CopyAssign), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "vec3 opNeg()", asMETHOD(vec3, invert), asCALL_THISCALL); print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void Copy(const vec3 &in)", asMETHOD(vec3, Copy), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "vec3& opAssign(const vec3 &in)", asMETHOD(vec3, CopyAssign), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "vec3 opNeg()", asMETHOD(vec3, invert), asCALL_THISCALL);
+	print_assert(r >= 0);
 
-	r = engine->RegisterObjectMethod("vec3", "void opSubAssign(const vec3 &in)", asMETHODPR(vec3, operator-=, (const vec3&), void), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "void opAddAssign(const vec3 &in)", asMETHODPR(vec3, operator+=, (const vec3&), void), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "void opMulAssign(const vec3 &in)", asMETHODPR(vec3, operator*=, (const vec3&), void), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "void opDivAssign(const vec3 &in)", asMETHODPR(vec3, operator/=, (const vec3&), void), asCALL_THISCALL); print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opSubAssign(const vec3 &in)", asMETHODPR(vec3, operator-=, (const vec3 &), void), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opAddAssign(const vec3 &in)", asMETHODPR(vec3, operator+=, (const vec3 &), void), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opMulAssign(const vec3 &in)", asMETHODPR(vec3, operator*=, (const vec3 &), void), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opDivAssign(const vec3 &in)", asMETHODPR(vec3, operator/=, (const vec3 &), void), asCALL_THISCALL);
+	print_assert(r >= 0);
 
-	r = engine->RegisterObjectMethod("vec3", "void opSubAssign(float)", asMETHODPR(vec3, operator-=, (float), void), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "void opAddAssign(float)", asMETHODPR(vec3, operator+=, (float), void), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "void opMulAssign(float)", asMETHODPR(vec3, operator*=, (float), void), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "void opDivAssign(float)", asMETHODPR(vec3, operator/=, (float), void), asCALL_THISCALL); print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opSubAssign(float)", asMETHODPR(vec3, operator-=, (float), void), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opAddAssign(float)", asMETHODPR(vec3, operator+=, (float), void), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opMulAssign(float)", asMETHODPR(vec3, operator*=, (float), void), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "void opDivAssign(float)", asMETHODPR(vec3, operator/=, (float), void), asCALL_THISCALL);
+	print_assert(r >= 0);
 
-	r = engine->RegisterObjectMethod("vec3", "float& opIndex(int)", asMETHODPR(vec3, operator[], (size_t), float&), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "float opIndex(int) const", asMETHODPR(vec3, operator[], (size_t) const, float), asCALL_THISCALL); print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "float& opIndex(int)", asMETHODPR(vec3, operator[], (size_t), float &), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "float opIndex(int) const", asMETHODPR(vec3, operator[], (size_t) const, float), asCALL_THISCALL);
+	print_assert(r >= 0);
 
-	r = engine->RegisterObjectMethod("vec3", "vec3 opAdd(const vec3 &in) const", asMETHODPR(vec3, operator+, (const vec3&) const, vec3), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "vec3 opSub(const vec3 &in) const", asMETHODPR(vec3, operator-, (const vec3&) const, vec3), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "vec3 opMul(float) const", asMETHODPR(vec3, operator*, (float) const, vec3), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "vec3 opDiv(float) const", asMETHODPR(vec3, operator/, (float) const, vec3), asCALL_THISCALL); print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "vec3 opAdd(const vec3 &in) const", asMETHODPR(vec3, operator+, (const vec3 &) const, vec3), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "vec3 opSub(const vec3 &in) const", asMETHODPR(vec3, operator-, (const vec3 &) const, vec3), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "vec3 opMul(float) const", asMETHODPR(vec3, operator*, (float) const, vec3), asCALL_THISCALL);
+	print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "vec3 opDiv(float) const", asMETHODPR(vec3, operator/, (float) const, vec3), asCALL_THISCALL);
+	print_assert(r >= 0);
 
-	r = engine->RegisterGlobalFunction("vec3 opMul_r(float)", asFUNCTIONPR(operator*, (float, const vec3&), vec3), asCALL_CDECL); print_assert(r >= 0);
+	r = engine->RegisterGlobalFunction("vec3 opMul_r(float)", asFUNCTIONPR(operator*, (float, const vec3 &), vec3), asCALL_CDECL);
+	print_assert(r >= 0);
 }
 
-void RegisterClasses(asIScriptEngine* /*engine*/)
+void RegisterClasses(asIScriptEngine * /*engine*/)
 {
-
 }
 
 template <typename T>
-int ExecuteFunction(AScript * script, AS_FUNCS funcEnum, T& resultVar)
+int ExecuteFunction(AScript *script, AS_FUNCS funcEnum, T &resultVar)
 {
 	int r = asEXECUTION_FINISHED;
 	if (script->funcs[funcEnum])
@@ -456,8 +500,9 @@ int ExecuteFunction(AScript * script, AS_FUNCS funcEnum, T& resultVar)
 		if (r >= 0)
 		{
 			r = script->ctx->Execute();
-			if (r == asEXECUTION_FINISHED) {
-				resultVar = *static_cast<T*>(script->ctx->GetAddressOfReturnValue());
+			if (r == asEXECUTION_FINISHED)
+			{
+				resultVar = *static_cast<T *>(script->ctx->GetAddressOfReturnValue());
 				return r;
 			}
 			else
@@ -469,7 +514,7 @@ int ExecuteFunction(AScript * script, AS_FUNCS funcEnum, T& resultVar)
 	return r;
 }
 
-int ExecuteFunctionNoRet(const AScript * script, AS_FUNCS funcEnum)
+int ExecuteFunctionNoRet(const AScript *script, AS_FUNCS funcEnum)
 {
 	int r = asEXECUTION_FINISHED;
 	if (script->funcs[funcEnum])
@@ -478,7 +523,7 @@ int ExecuteFunctionNoRet(const AScript * script, AS_FUNCS funcEnum)
 		if (r >= 0)
 		{
 			r = script->ctx->Execute();
-			if (r == asEXECUTION_FINISHED) 
+			if (r == asEXECUTION_FINISHED)
 			{
 				return r;
 			}
@@ -498,8 +543,10 @@ void InitializeAngelScripts()
 	// load all scripts from ./scripts/global directory with extension '.as'
 	if (dirExists("./scripts/global"))
 	{
-		for (const auto& entry : fs::recursive_directory_iterator("./scripts/global", ec)) {
-			if (entry.is_regular_file() && entry.path().extension() == ".as") {
+		for (const auto &entry : fs::recursive_directory_iterator("./scripts/global", ec))
+		{
+			if (entry.is_regular_file() && entry.path().extension() == ".as")
+			{
 				scriptList.push_back(new AScript(entry.path().string()));
 				if (scriptList.back()->isBad)
 				{
@@ -514,23 +561,24 @@ void InitializeAngelScripts()
 			}
 		}
 	}
-	if (ec) {
+	if (ec)
+	{
 		PrintError("Error loading global scripts: " + ec.message());
 	}
 	ec = {};
 
 	// Load all scripts from ./scripts/maps/ directory
-	if (dirExists("./scripts/maps")) 
+	if (dirExists("./scripts/maps"))
 	{
-		for (const auto& dirEntry : fs::directory_iterator("./scripts/maps", ec)) 
+		for (const auto &dirEntry : fs::directory_iterator("./scripts/maps", ec))
 		{
-			if (dirEntry.is_directory()) 
+			if (dirEntry.is_directory())
 			{
 				std::string bsp_name = dirEntry.path().filename().string();
 				std::string mapScriptsPath = dirEntry.path().string();
-				for (const auto& entry : fs::recursive_directory_iterator(mapScriptsPath, ec)) 
+				for (const auto &entry : fs::recursive_directory_iterator(mapScriptsPath, ec))
 				{
-					if (entry.is_regular_file() && entry.path().extension() == ".as") 
+					if (entry.is_regular_file() && entry.path().extension() == ".as")
 					{
 						scriptList.push_back(new AScript(entry.path().string()));
 						scriptList.back()->bsp_name = bsp_name;
@@ -546,11 +594,12 @@ void InitializeAngelScripts()
 		}
 	}
 
-	if (ec) {
+	if (ec)
+	{
 		PrintError("Error loading map scripts: " + ec.message());
 	}
 
-	for (auto& script : scriptList) 
+	for (auto &script : scriptList)
 	{
 		ExecuteFunction(script, AS_FUNC_GET_NAME, script->name);
 		ExecuteFunction(script, AS_FUNC_GET_CATEGORY, script->category_name);
@@ -558,14 +607,14 @@ void InitializeAngelScripts()
 	}
 }
 
-static Bsp* AS_LastSelectedMap = NULL;
+static Bsp *AS_LastSelectedMap = NULL;
 
 void AS_OnMapChange()
 {
 	if (!g_app)
 		return;
 
-	for (const auto& script : scriptList)
+	for (const auto &script : scriptList)
 	{
 		if (!script->isActive)
 		{
@@ -585,7 +634,7 @@ void AS_OnMapChange()
 			bspName = AS_LastSelectedMap->bsp_name;
 		}
 
-		for (auto& s : scriptList)
+		for (auto &s : scriptList)
 		{
 			s->isActive = s->bsp_name.empty() || s->bsp_name == bspName;
 		}
@@ -594,12 +643,12 @@ void AS_OnMapChange()
 
 void AS_OnGuiTick()
 {
-	if (ImGui::BeginMenu("Scripts###ScriptsMenu", !scriptList.empty())) 
+	if (ImGui::BeginMenu("Scripts###ScriptsMenu", !scriptList.empty()))
 	{
 		std::set<std::string> globalCategories;
 		std::set<std::string> mapCategories;
 
-		for (const auto& script : scriptList) 
+		for (const auto &script : scriptList)
 		{
 			if (!script->isActive)
 			{
@@ -609,19 +658,19 @@ void AS_OnGuiTick()
 			{
 				globalCategories.insert(script->category_name);
 			}
-			else 
+			else
 			{
 				mapCategories.insert(script->bsp_name);
 			}
 		}
 
-		if (ImGui::BeginMenu("Global###GlobalMenu", !globalCategories.empty())) 
+		if (ImGui::BeginMenu("Global###GlobalMenu", !globalCategories.empty()))
 		{
-			for (const auto& category : globalCategories) 
+			for (const auto &category : globalCategories)
 			{
-				if (ImGui::BeginMenu((category + "###GlobalCategory_" + category).c_str())) 
+				if (ImGui::BeginMenu((category + "###GlobalCategory_" + category).c_str()))
 				{
-					for (const auto& script : scriptList) 
+					for (const auto &script : scriptList)
 					{
 						if (!script->isActive)
 						{
@@ -647,13 +696,13 @@ void AS_OnGuiTick()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Map Scripts###MapScriptsMenu", !mapCategories.empty())) 
+		if (ImGui::BeginMenu("Map Scripts###MapScriptsMenu", !mapCategories.empty()))
 		{
-			for (const auto& bspName : mapCategories) 
+			for (const auto &bspName : mapCategories)
 			{
-				if (ImGui::BeginMenu((bspName + "###MapBsp_" + bspName).c_str())) 
+				if (ImGui::BeginMenu((bspName + "###MapBsp_" + bspName).c_str()))
 				{
-					for (const auto& script : scriptList) 
+					for (const auto &script : scriptList)
 					{
 						if (!script->isActive)
 						{
@@ -681,7 +730,7 @@ void AS_OnGuiTick()
 
 		if (ImGui::MenuItem("Hot reload"))
 		{
-			for (auto& s : scriptList)
+			for (auto &s : scriptList)
 			{
 				ExecuteFunctionNoRet(s, AS_FUNC_ON_END);
 				delete s;
@@ -709,7 +758,7 @@ void AS_OnFrameTick(double msec)
 {
 	AS_flLastFrameTime = msec;
 
-	for (const auto& script : scriptList)
+	for (const auto &script : scriptList)
 	{
 		if (!script->isActive)
 		{

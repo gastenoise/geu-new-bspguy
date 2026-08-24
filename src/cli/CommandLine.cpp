@@ -10,7 +10,7 @@
 #endif
 #endif
 
-CommandLine::CommandLine(int argc, char* argv[])
+CommandLine::CommandLine(int argc, char *argv[])
 {
 	askingForHelp = false;
 	for (int i = 0; i < argc; i++)
@@ -26,9 +26,9 @@ CommandLine::CommandLine(int argc, char* argv[])
 		{
 #ifdef WIN32
 			int nArgs;
-			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+			LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
 			bspfile = std::filesystem::path(szArglist[i]).string();
-#else 
+#else
 			bspfile = std::filesystem::path(argv[i]).string();
 #endif
 		}
@@ -37,7 +37,7 @@ CommandLine::CommandLine(int argc, char* argv[])
 			options.push_back(arg);
 		}
 
-		if ((i == 1 || i == 2) && starts_with(larg,"help") || starts_with(larg,"/?") || starts_with(larg,"--help") || starts_with(larg, "-help") || starts_with(larg, "/help"))
+		if ((i == 1 || i == 2) && starts_with(larg, "help") || starts_with(larg, "/?") || starts_with(larg, "--help") || starts_with(larg, "-help") || starts_with(larg, "/help"))
 		{
 			askingForHelp = true;
 		}
@@ -66,7 +66,7 @@ CommandLine::CommandLine(int argc, char* argv[])
 	{
 #ifdef WIN32
 		int nArgs;
-		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
 		bspfile = std::filesystem::path(szArglist[1]).string();
 #else
 		bspfile = std::filesystem::path(argv[1]).string();
@@ -74,12 +74,12 @@ CommandLine::CommandLine(int argc, char* argv[])
 	}
 }
 
-bool CommandLine::hasOption(const std::string& optionName)
+bool CommandLine::hasOption(const std::string &optionName)
 {
 	return optionVals.find(optionName) != optionVals.end();
 }
 
-bool CommandLine::hasOptionVector(const std::string& optionName)
+bool CommandLine::hasOptionVector(const std::string &optionName)
 {
 	if (!hasOption(optionName))
 		return false;
@@ -89,7 +89,7 @@ bool CommandLine::hasOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		print_log(get_localized_string(LANG_0265),optionName);
+		print_log(get_localized_string(LANG_0265), optionName);
 		FlushConsoleLog(true);
 		return false;
 	}
@@ -97,24 +97,24 @@ bool CommandLine::hasOptionVector(const std::string& optionName)
 	return true;
 }
 
-std::string CommandLine::getOption(const std::string& optionName)
+std::string CommandLine::getOption(const std::string &optionName)
 {
 	return optionVals[optionName];
 }
 
-int CommandLine::getOptionInt(const std::string& optionName)
+int CommandLine::getOptionInt(const std::string &optionName)
 {
 	return str_to_int(optionVals[optionName]);
 }
 
-vec3 CommandLine::getOptionVector(const std::string& optionName)
+vec3 CommandLine::getOptionVector(const std::string &optionName)
 {
 	vec3 ret;
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");
 
 	if (parts.size() != 3)
 	{
-		print_log(get_localized_string(LANG_1045),optionName);
+		print_log(get_localized_string(LANG_1045), optionName);
 		FlushConsoleLog(true);
 		return ret;
 	}
@@ -126,7 +126,7 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 	return ret;
 }
 
-std::vector<vec3> CommandLine::getOptionVectorList(const std::string& optionName)
+std::vector<vec3> CommandLine::getOptionVectorList(const std::string &optionName)
 {
 	std::vector<vec3> ret;
 	std::vector<std::string> parts = splitString(optionVals[optionName], ";");
@@ -147,7 +147,7 @@ std::vector<vec3> CommandLine::getOptionVectorList(const std::string& optionName
 	return ret;
 }
 
-std::vector<std::string> CommandLine::getOptionList(const std::string& optionName)
+std::vector<std::string> CommandLine::getOptionList(const std::string &optionName)
 {
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");
 

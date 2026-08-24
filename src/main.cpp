@@ -33,7 +33,6 @@ namespace fs = std::filesystem;
 
 std::string g_version_string = "NewBSPGuy v4.71";
 
-
 #ifdef WIN32
 #ifdef APIENTRY
 #undef APIENTRY
@@ -42,12 +41,11 @@ std::string g_version_string = "NewBSPGuy v4.71";
 #ifdef WIN_XP_86
 #include <shellapi.h>
 #endif
-#else 
+#else
 #include <csignal>
 #endif
 
-
-bool start_viewer(const char* map)
+bool start_viewer(const char *map)
 {
 	if (map && map[0] != '\0' && !fileExists(map))
 	{
@@ -75,11 +73,11 @@ bool start_viewer(const char* map)
 
 int test()
 {
-	std::vector<Bsp*> maps;
+	std::vector<Bsp *> maps;
 
 	for (int i = 1; i < 22; i++)
 	{
-		Bsp* map = new Bsp("2nd/saving_the_2nd_amendment" + (i > 1 ? std::to_string(i) : "") + ".bsp");
+		Bsp *map = new Bsp("2nd/saving_the_2nd_amendment" + (i > 1 ? std::to_string(i) : "") + ".bsp");
 		maps.push_back(map);
 	}
 
@@ -99,7 +97,7 @@ int test()
 		}
 		print_log(get_localized_string(LANG_0002), maps[i]->bsp_name);
 		maps[i]->delete_hull(2, 1);
-		//removed.add(maps[i]->delete_unused_hulls());
+		// removed.add(maps[i]->delete_unused_hulls());
 		removed.add(maps[i]->remove_unused_model_structures());
 
 		if (!maps[i]->validate())
@@ -134,7 +132,7 @@ int merge_maps()
 		return 1;
 	}
 
-	std::vector<Bsp*> maps;
+	std::vector<Bsp *> maps;
 
 	for (size_t i = 0; i < input_maps.size(); i++)
 	{
@@ -143,7 +141,7 @@ int merge_maps()
 			input_maps[i] = g_startup_dir + input_maps[i];
 		}
 
-		Bsp* map = new Bsp(input_maps[i]);
+		Bsp *map = new Bsp(input_maps[i]);
 		if (!map->bsp_valid)
 		{
 			delete map;
@@ -177,17 +175,19 @@ int merge_maps()
 		print_log("\n");
 	}
 
-
 	std::string output_name = g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile;
 
 	BspMerger merger;
 	std::vector<vec3> overlapGaps;
-	if (g_cmdLine.hasOption("-overlapgap")) {
+	if (g_cmdLine.hasOption("-overlapgap"))
+	{
 		overlapGaps = g_cmdLine.getOptionVectorList("-overlapgap");
 	}
-	else {
+	else
+	{
 		// Default behavior or single vector compatibility
-		for (size_t i = 0; i < maps.size(); i++) {
+		for (size_t i = 0; i < maps.size(); i++)
+		{
 			overlapGaps.push_back(vec3(0, 0, 512.0f) * (float)i);
 		}
 	}
@@ -211,7 +211,7 @@ int merge_maps()
 
 int print_info()
 {
-	Bsp* map = new Bsp(g_cmdLine.bspfile);
+	Bsp *map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		bool limitMode = false;
@@ -261,7 +261,7 @@ int print_info()
 
 int noclip()
 {
-	Bsp* map = new Bsp(g_cmdLine.bspfile);
+	Bsp *map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int model = -1;
@@ -392,7 +392,7 @@ int noclip()
 
 int simplify()
 {
-	Bsp* map = new Bsp(g_cmdLine.bspfile);
+	Bsp *map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int hull = 0;
@@ -473,7 +473,7 @@ int simplify()
 
 int deleteCmd()
 {
-	Bsp* map = new Bsp(g_cmdLine.bspfile);
+	Bsp *map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		STRUCTCOUNT removed = map->remove_unused_model_structures();
@@ -514,7 +514,7 @@ int deleteCmd()
 
 int transform()
 {
-	Bsp* map = new Bsp(g_cmdLine.bspfile);
+	Bsp *map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		vec3 move;
@@ -524,7 +524,7 @@ int transform()
 			move = g_cmdLine.getOptionVector("-move");
 
 			print_log(fmt::format(fmt::runtime(get_localized_string("APPLY_OFFSET_STR")),
-				move.x, move.y, move.z));
+								  move.x, move.y, move.z));
 
 			map->move(move);
 		}
@@ -549,7 +549,7 @@ int transform()
 
 int unembed()
 {
-	Bsp* map = new Bsp(g_cmdLine.bspfile);
+	Bsp *map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
@@ -576,7 +576,7 @@ int modent()
 
 	if (dirExists(target))
 	{
-		for (const auto& entry : fs::directory_iterator(target))
+		for (const auto &entry : fs::directory_iterator(target))
 		{
 			if (entry.is_regular_file() && entry.path().extension() == ".bsp")
 			{
@@ -624,9 +624,9 @@ int modent()
 		return 1;
 	}
 
-	for (const auto& file : files)
+	for (const auto &file : files)
 	{
-		Bsp* map = new Bsp(file);
+		Bsp *map = new Bsp(file);
 		if (!map->bsp_valid)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "Failed to load BSP: {}\n", file);
@@ -638,35 +638,37 @@ int modent()
 
 		if (doDelete)
 		{
-			auto it = std::remove_if(map->ents.begin(), map->ents.end(), [&](Entity* ent) {
+			auto it = std::remove_if(map->ents.begin(), map->ents.end(), [&](Entity *ent)
+									 {
 				if (ent->isWorldSpawn()) return false;
 				if (query.evaluate(ent)) {
 					delete ent;
 					modifiedCount++;
 					return true;
 				}
-				return false;
-			});
+				return false; });
 			map->ents.erase(it, map->ents.end());
 		}
 		else
 		{
-			for (Entity* ent : map->ents)
+			for (Entity *ent : map->ents)
 			{
 				if (query.evaluate(ent))
 				{
 					if (!setVal.empty())
 					{
 						std::vector<std::string> pairs = splitStringIgnoringQuotes(setVal, ",");
-						for (auto& pair : pairs)
+						for (auto &pair : pairs)
 						{
 							size_t eqPos = pair.find('=');
 							if (eqPos != std::string::npos)
 							{
 								std::string k = trimSpaces(pair.substr(0, eqPos));
 								std::string v = trimSpaces(pair.substr(eqPos + 1));
-								if (k.size() >= 2 && k.front() == '"' && k.back() == '"') k = k.substr(1, k.size() - 2);
-								if (v.size() >= 2 && v.front() == '"' && v.back() == '"') v = v.substr(1, v.size() - 2);
+								if (k.size() >= 2 && k.front() == '"' && k.back() == '"')
+									k = k.substr(1, k.size() - 2);
+								if (v.size() >= 2 && v.front() == '"' && v.back() == '"')
+									v = v.substr(1, v.size() - 2);
 								ent->setOrAddKeyvalue(k, v);
 							}
 						}
@@ -675,7 +677,8 @@ int modent()
 					else if (!removeKey.empty())
 					{
 						std::string k = removeKey;
-						if (k.size() >= 2 && k.front() == '"' && k.back() == '"') k = k.substr(1, k.size() - 2);
+						if (k.size() >= 2 && k.front() == '"' && k.back() == '"')
+							k = k.substr(1, k.size() - 2);
 						ent->removeKeyvalue(k);
 						modifiedCount++;
 					}
@@ -724,270 +727,253 @@ int modent()
 	return 0;
 }
 
-void print_help(const std::string& command)
+void print_help(const std::string &command)
 {
 	if (command == "merge")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"merge - Merges two or more maps together\n\n"
+				  "merge - Merges two or more maps together\n\n"
 
-			"Usage:   bspguy merge <mapname> -maps \"map1, map2, ... mapN\" [options]\n"
-			"Example: bspguy merge merged.bsp -maps \"svencoop1, svencoop2\"\n"
+				  "Usage:   bspguy merge <mapname> -maps \"map1, map2, ... mapN\" [options]\n"
+				  "Example: bspguy merge merged.bsp -maps \"svencoop1, svencoop2\"\n"
 
-			"\n[Options]\n"
-			"  -optimize    : Deletes unused model hulls before merging.\n"
-			"                 This can be risky and crash the game if assumptions about\n"
-			"                 entity visibility/solidity are wrong.\n"
-			"  -nohull2     : Forces redirection of hull 2 to hull 1 in each map before merging.\n"
-			"                 This reduces clipnodes at the expense of less accurate collision\n"
-			"                 for large monsters and pushables.\n"
-			"  -noripent    : By default, the input maps are assumed to be part of a series.\n"
-			"                 Level changes and other things are updated so that the merged\n"
-			"                 maps can be played one after another. This flag prevents any\n"
-			"                 entity edits from being made (except for origins).\n"
-			"  -noscript    : By default, the output map is expected to run with the bspguy\n"
-			"                 map script loaded, which ensures only entities for the current\n"
-			"                 map section are active. This flag replaces that script with less\n"
-			"                 effective entity logic. This may cause lag in maps with lots of\n"
-			"                 entities, and some ents might not spawn properly. The benefit\n"
-			"                 to this flag is that you don't have deal with script setup.\n"
-			"  -overlapgap \"X,Y,Z;X2,Y2,Z2;...\" : Overlap positions for each map (default \"0,0,0;0,0,512;0,0,1024;...\").\n"
-			"  -v\n"
-			"  -verbose     : Verbose console output.\n"
-		);
+				  "\n[Options]\n"
+				  "  -optimize    : Deletes unused model hulls before merging.\n"
+				  "                 This can be risky and crash the game if assumptions about\n"
+				  "                 entity visibility/solidity are wrong.\n"
+				  "  -nohull2     : Forces redirection of hull 2 to hull 1 in each map before merging.\n"
+				  "                 This reduces clipnodes at the expense of less accurate collision\n"
+				  "                 for large monsters and pushables.\n"
+				  "  -noripent    : By default, the input maps are assumed to be part of a series.\n"
+				  "                 Level changes and other things are updated so that the merged\n"
+				  "                 maps can be played one after another. This flag prevents any\n"
+				  "                 entity edits from being made (except for origins).\n"
+				  "  -noscript    : By default, the output map is expected to run with the bspguy\n"
+				  "                 map script loaded, which ensures only entities for the current\n"
+				  "                 map section are active. This flag replaces that script with less\n"
+				  "                 effective entity logic. This may cause lag in maps with lots of\n"
+				  "                 entities, and some ents might not spawn properly. The benefit\n"
+				  "                 to this flag is that you don't have deal with script setup.\n"
+				  "  -overlapgap \"X,Y,Z;X2,Y2,Z2;...\" : Overlap positions for each map (default \"0,0,0;0,0,512;0,0,1024;...\").\n"
+				  "  -v\n"
+				  "  -verbose     : Verbose console output.\n");
 	}
 	else if (command == "info")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"info - Show BSP data summary\n\n"
+				  "info - Show BSP data summary\n\n"
 
-			"Usage:   bspguy info <mapname> [options]\n"
-			"Example: bspguy info svencoop1.bsp -limit clipnodes -all\n"
+				  "Usage:   bspguy info <mapname> [options]\n"
+				  "Example: bspguy info svencoop1.bsp -limit clipnodes -all\n"
 
-			"\n[Options]\n"
-			"  -limit <name> : List the models contributing most to the named limit.\n"
-			"                  <name> can be one of: [clipnodes, nodes, faces, vertexes]\n"
-			"  -all          : Show the full list of models when using -limit.\n"
-		);
+				  "\n[Options]\n"
+				  "  -limit <name> : List the models contributing most to the named limit.\n"
+				  "                  <name> can be one of: [clipnodes, nodes, faces, vertexes]\n"
+				  "  -all          : Show the full list of models when using -limit.\n");
 	}
 	else if (command == "noclip")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"noclip - Delete some clipnodes from the BSP\n\n"
+				  "noclip - Delete some clipnodes from the BSP\n\n"
 
-			"Usage:   bspguy noclip <mapname> [options]\n"
-			"Example: bspguy noclip svencoop1.bsp -hull 2\n"
+				  "Usage:   bspguy noclip <mapname> [options]\n"
+				  "Example: bspguy noclip svencoop1.bsp -hull 2\n"
 
-			"\n[Options]\n"
-			"  -model #    : Model to strip collision from. By default, all models are stripped.\n"
-			"  -hull #     : Collision hull to delete (0-3). By default, hulls 1-3 are deleted.\n"
-			"                0 = Point-sized entities. Required for rendering\n"
-			"                1 = Human-sized monsters and standing players\n"
-			"                2 = Large monsters and pushables\n"
-			"                3 = Small monsters, crouching players, and melee attacks\n"
-			"  -redirect # : Redirect to this hull after deleting the target hull's clipnodes.\n"
-			"                For example, redirecting hull 2 to hull 1 would allow large\n"
-			"                monsters to function normally instead of falling out of the world.\n"
-			"                Must be used with the -hull option.\n"
-			"  -o <file>   : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "\n[Options]\n"
+				  "  -model #    : Model to strip collision from. By default, all models are stripped.\n"
+				  "  -hull #     : Collision hull to delete (0-3). By default, hulls 1-3 are deleted.\n"
+				  "                0 = Point-sized entities. Required for rendering\n"
+				  "                1 = Human-sized monsters and standing players\n"
+				  "                2 = Large monsters and pushables\n"
+				  "                3 = Small monsters, crouching players, and melee attacks\n"
+				  "  -redirect # : Redirect to this hull after deleting the target hull's clipnodes.\n"
+				  "                For example, redirecting hull 2 to hull 1 would allow large\n"
+				  "                monsters to function normally instead of falling out of the world.\n"
+				  "                Must be used with the -hull option.\n"
+				  "  -o <file>   : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "simplify")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"simplify - Replaces model hulls with a simple bounding box\n\n"
+				  "simplify - Replaces model hulls with a simple bounding box\n\n"
 
-			"Usage:   bspguy simplify <mapname> [options]\n"
-			"Example: bspguy simplify svencoop1.bsp -model 3\n"
+				  "Usage:   bspguy simplify <mapname> [options]\n"
+				  "Example: bspguy simplify svencoop1.bsp -model 3\n"
 
-			"\n[Options]\n"
-			"  -model #    : Model to simplify. Required.\n"
-			"  -hull #     : Collision hull to simplify. By default, all hulls are simplified.\n"
-			"                1 = Human-sized monsters and standing players\n"
-			"                2 = Large monsters and pushables\n"
-			"                3 = Small monsters, crouching players, and melee attacks\n"
-			"  -o <file>   : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "\n[Options]\n"
+				  "  -model #    : Model to simplify. Required.\n"
+				  "  -hull #     : Collision hull to simplify. By default, all hulls are simplified.\n"
+				  "                1 = Human-sized monsters and standing players\n"
+				  "                2 = Large monsters and pushables\n"
+				  "                3 = Small monsters, crouching players, and melee attacks\n"
+				  "  -o <file>   : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "delete")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"delete - Delete BSP models.\n\n"
+				  "delete - Delete BSP models.\n\n"
 
-			"Usage:   bspguy delete <mapname> [options]\n"
-			"Example: bspguy delete svencoop1.bsp -model 3\n"
+				  "Usage:   bspguy delete <mapname> [options]\n"
+				  "Example: bspguy delete svencoop1.bsp -model 3\n"
 
-			"\n[Options]\n"
-			"  -model #  : Model to delete. Entities that reference the deleted\n"
-			"              model will be updated to use error.mdl instead.\n"
-			"  -o <file> : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "\n[Options]\n"
+				  "  -model #  : Model to delete. Entities that reference the deleted\n"
+				  "              model will be updated to use error.mdl instead.\n"
+				  "  -o <file> : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "transform")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"transform - Apply 3D transformations\n\n"
+				  "transform - Apply 3D transformations\n\n"
 
-			"Usage:   bspguy transform <mapname> [options]\n"
-			"Example: bspguy transform svencoop1.bsp -move \"0,0,1024\"\n"
+				  "Usage:   bspguy transform <mapname> [options]\n"
+				  "Example: bspguy transform svencoop1.bsp -move \"0,0,1024\"\n"
 
-			"\n[Options]\n"
-			"  -move \"X,Y,Z\" : Units to move the map on each axis.\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "\n[Options]\n"
+				  "  -move \"X,Y,Z\" : Units to move the map on each axis.\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "unembed")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"unembed - Deletes embedded texture data, so that they reference WADs instead.\n\n"
+				  "unembed - Deletes embedded texture data, so that they reference WADs instead.\n\n"
 
-			"Usage:   bspguy unembed <mapname>\n"
-			"Example: bspguy unembed c1a0.bsp\n"
-			"\n[Options]\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "Usage:   bspguy unembed <mapname>\n"
+				  "Example: bspguy unembed c1a0.bsp\n"
+				  "\n[Options]\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "exportobj")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"exportobj - Export bsp geometry to obj [WIP].\n\n"
+				  "exportobj - Export bsp geometry to obj [WIP].\n\n"
 
-			"Usage:   bspguy exportobj -scale \"-16\" <mapname>\n"
-			"Example: bspguy exportobj c1a0.bsp\n"
-		);
+				  "Usage:   bspguy exportobj -scale \"-16\" <mapname>\n"
+				  "Example: bspguy exportobj c1a0.bsp\n");
 	}
 	else if (command == "exportlit")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"exportlit   : Export .lit (Quake) lightdata file.\n\n"
+				  "exportlit   : Export .lit (Quake) lightdata file.\n\n"
 
-			"Usage:   bspguy exportlit <mapname>\n"
-			"Example: bspguy exportlit c1a0.bsp\n"
-			"\n[Options]\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "Usage:   bspguy exportlit <mapname>\n"
+				  "Example: bspguy exportlit c1a0.bsp\n"
+				  "\n[Options]\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "exportrad")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"exportrad   : Export RAD.exe .ext & .wa_ files.\n\n"
+				  "exportrad   : Export RAD.exe .ext & .wa_ files.\n\n"
 
-			"Usage:   bspguy exportrad <mapname>\n"
-			"Example: bspguy exportrad c1a0.bsp\n"
-			"\n[Options]\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "Usage:   bspguy exportrad <mapname>\n"
+				  "Example: bspguy exportrad c1a0.bsp\n"
+				  "\n[Options]\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "exportwad")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"exportwad   : Export all map textures to .wad file.\n\n"
+				  "exportwad   : Export all map textures to .wad file.\n\n"
 
-			"Usage:   bspguy exportwad <mapname>\n"
-			"Example: bspguy exportwad c1a0.bsp\n"
-			"\n[Options]\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "Usage:   bspguy exportwad <mapname>\n"
+				  "Example: bspguy exportwad c1a0.bsp\n"
+				  "\n[Options]\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "importwad")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"importwad   : Import all .wad textures to map.\n\n"
+				  "importwad   : Import all .wad textures to map.\n\n"
 
-			"Usage:   bspguy importwad <mapname>\n"
-			"Example: bspguy importwad c1a0.bsp\n"
-			"\n[Options]\n"
-			"  -i <file>     : Input file. By default, <mapname> is overwritten.\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "Usage:   bspguy importwad <mapname>\n"
+				  "Example: bspguy importwad c1a0.bsp\n"
+				  "\n[Options]\n"
+				  "  -i <file>     : Input file. By default, <mapname> is overwritten.\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "screenshot")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"screenshot   : Create screenshot and close map.\n\n"
+				  "screenshot   : Create screenshot and close map.\n\n"
 
-			"Usage:   bspguy screenshot <mapname> [options]\n"
-			"Example: bspguy screenshot c1a0.bsp -count 5 -w 256 -h 256\n"
-			"\n[Options]\n"
-			"  -count <num>   : Screenshots number.\n"
-			"  -w <width>   : Screenshot width.\n"
-			"  -h <height>   : Screenshot height.\n"
-			"  -out <dir>     : Output directory. By default used workdir.\n"
-		);
+				  "Usage:   bspguy screenshot <mapname> [options]\n"
+				  "Example: bspguy screenshot c1a0.bsp -count 5 -w 256 -h 256\n"
+				  "\n[Options]\n"
+				  "  -count <num>   : Screenshots number.\n"
+				  "  -w <width>   : Screenshot width.\n"
+				  "  -h <height>   : Screenshot height.\n"
+				  "  -out <dir>     : Output directory. By default used workdir.\n");
 	}
 	else if (command == "importlit")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"importlit   : Import .lit (Quake) lightdata file to map.\n\n"
+				  "importlit   : Import .lit (Quake) lightdata file to map.\n\n"
 
-			"Usage:   bspguy importlit <mapname>\n"
-			"Example: bspguy importlit c1a0.bsp\n"
-			"\n[Options]\n"
-			"  -i <file>     : Input file. By default, <mapname> is overwritten.\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "Usage:   bspguy importlit <mapname>\n"
+				  "Example: bspguy importlit c1a0.bsp\n"
+				  "\n[Options]\n"
+				  "  -i <file>     : Input file. By default, <mapname> is overwritten.\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "cullfaces")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"cullfaces - Remove leaf faces from map.\n\n"
+				  "cullfaces - Remove leaf faces from map.\n\n"
 
-			"Usage:   bspguy cullfaces -leaf \"0\" <mapname>\n"
-			"Example: bspguy cullfaces c1a0.bsp - clean solid outside faces\n"
-			"\n[Options]\n"
-			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
-		);
+				  "Usage:   bspguy cullfaces -leaf \"0\" <mapname>\n"
+				  "Example: bspguy cullfaces c1a0.bsp - clean solid outside faces\n"
+				  "\n[Options]\n"
+				  "  -o <file>     : Output file. By default, <mapname> is overwritten.\n");
 	}
 	else if (command == "modent")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"modent - Modify entities using a search query\n\n"
+				  "modent - Modify entities using a search query\n\n"
 
-			"Usage:   bspguy modent <mapname|directory> --query \"<query>\" [action]\n"
-			"Example: bspguy modent . --query \"classname=monster_* AND targetname=\" --delete\n"
-			"Example: bspguy modent svencoop1.bsp --query \"classname=monster_*\" --set \"targetname=monstruo\"\n"
+				  "Usage:   bspguy modent <mapname|directory> --query \"<query>\" [action]\n"
+				  "Example: bspguy modent . --query \"classname=monster_* AND targetname=\" --delete\n"
+				  "Example: bspguy modent svencoop1.bsp --query \"classname=monster_*\" --set \"targetname=monstruo\"\n"
 
-			"\n[Actions]\n"
-			"  --delete          : Delete matched entities.\n"
-			"  --set \"k=v, ...\"  : Set or add keyvalues.\n"
-			"  --removekey \"k\"   : Remove a keyvalue.\n"
+				  "\n[Actions]\n"
+				  "  --delete          : Delete matched entities.\n"
+				  "  --set \"k=v, ...\"  : Set or add keyvalues.\n"
+				  "  --removekey \"k\"   : Remove a keyvalue.\n"
 
-			"\n[Options]\n"
-			"  -o <file|dir>     : Output file or directory. Default is bspguy_work/modent/UNIX_TIME/\n"
-		);
+				  "\n[Options]\n"
+				  "  -o <file|dir>     : Output file or directory. Default is bspguy_work/modent/UNIX_TIME/\n");
 	}
 	else
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, "{}\n\n", g_version_string);
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			std::string("This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
-				"Usage: bspguy <command> <mapname> [options]\n"
+				  std::string("This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
+							  "Usage: bspguy <command> <mapname> [options]\n"
 
-				"\n<Commands>\n"
-				"  info        : Show BSP data summary\n"
-				"  merge       : Merges two or more maps together\n"
-				"  noclip      : Delete some clipnodes/nodes from the BSP\n"
-				"  delete      : Delete BSP models\n"
-				"  simplify    : Simplify BSP models\n"
-				"  transform   : Apply 3D transformations to the BSP\n"
-				"  unembed     : Deletes embedded texture data\n"
-				"  modent      : Modify entities using a search query\n"
-				"  exportobj   : Export bsp geometry to obj [WIP]\n"
-				"  cullfaces   : Remove leaf faces from map.\n"
-				"  exportlit   : Export .lit (Quake) lightdata file.\n"
-				"  importlit   : Import .lit (Quake) lightdata file to map.\n"
-				"  exportrad   : Export RAD.exe .ext & .wa_ files.\n"
-				"  exportwad   : Export all map textures to .wad file.\n"
-				"  importwad   : Import all .wad textures to map.\n"
-				"  screenshot  : Create screenshots and close map.\n"
-				" "
-				" "
-				"  no command  : Open empty bspguy window\n"
+							  "\n<Commands>\n"
+							  "  info        : Show BSP data summary\n"
+							  "  merge       : Merges two or more maps together\n"
+							  "  noclip      : Delete some clipnodes/nodes from the BSP\n"
+							  "  delete      : Delete BSP models\n"
+							  "  simplify    : Simplify BSP models\n"
+							  "  transform   : Apply 3D transformations to the BSP\n"
+							  "  unembed     : Deletes embedded texture data\n"
+							  "  modent      : Modify entities using a search query\n"
+							  "  exportobj   : Export bsp geometry to obj [WIP]\n"
+							  "  cullfaces   : Remove leaf faces from map.\n"
+							  "  exportlit   : Export .lit (Quake) lightdata file.\n"
+							  "  importlit   : Import .lit (Quake) lightdata file to map.\n"
+							  "  exportrad   : Export RAD.exe .ext & .wa_ files.\n"
+							  "  exportwad   : Export all map textures to .wad file.\n"
+							  "  importwad   : Import all .wad textures to map.\n"
+							  "  screenshot  : Create screenshots and close map.\n"
+							  " "
+							  " "
+							  "  no command  : Open empty bspguy window\n"
 
-				"\nRun 'bspguy <command> help' to read about a specific command.\n"
-				"\nTo launch the 3D editor. Drag and drop a .bsp file onto the executable,\n"
-				"or run 'bspguy <mapname>'")
-		);
+							  "\nRun 'bspguy <command> help' to read about a specific command.\n"
+							  "\nTo launch the 3D editor. Drag and drop a .bsp file onto the executable,\n"
+							  "or run 'bspguy <mapname>'"));
 	}
 	FlushConsoleLog(true);
 }
@@ -996,13 +982,12 @@ void print_help(const std::string& command)
 
 #include <Dbghelp.h>
 
-
 int crashdumps = 2;
-void make_minidump(EXCEPTION_POINTERS* e)
+void make_minidump(EXCEPTION_POINTERS *e)
 {
 	if (!e)
 	{
-		e = new	_EXCEPTION_POINTERS();
+		e = new _EXCEPTION_POINTERS();
 	}
 	if (!e->ContextRecord)
 	{
@@ -1025,7 +1010,6 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	GetSystemTime(&t);
 	createDir("./crashes");
 	std::string name = fmt::format("./crashes/{}_{:04}{:02}{:02}_{:02}{:02}{:02}{:02}.dmp", "bspguy", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
-
 
 	print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0030), name);
 
@@ -1050,7 +1034,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	CloseHandle(hFile);
 }
 
-LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
+LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS *e)
 {
 	if (e)
 	{
@@ -1083,7 +1067,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 
 			if (crashdumps > 0)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void*)GetModuleHandleA(0));
+				print_log(PRINT_RED | PRINT_INTENSITY, "Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void *)GetModuleHandleA(0));
 
 				crashdumps--;
 				make_minidump(e);
@@ -1094,14 +1078,15 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 	return ExceptionContinueExecution;
 }
 #endif
-#else 
-void signalHandler(int signal) {
+#else
+void signalHandler(int signal)
+{
 	print_log("Caught signal: {}", signal);
 	exit(signal);
 }
 #endif
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, ".utf8");
 	setlocale(LC_NUMERIC, "C");
@@ -1124,7 +1109,7 @@ int main(int argc, char* argv[])
 		AddVectoredExceptionHandler(1, unhandled_handler);
 #endif
 		DisableProcessWindowsGhosting();
-#else 
+#else
 		signal(SIGSEGV, signalHandler);
 		signal(SIGFPE, signalHandler);
 		signal(SIGBUS, signalHandler);
@@ -1134,7 +1119,7 @@ int main(int argc, char* argv[])
 
 #ifdef WIN32
 		int nArgs;
-		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
 		bspguy_dir = GetExecutableDir(szArglist[0]);
 #else
 		if (argv && argv[0])
@@ -1157,7 +1142,6 @@ int main(int argc, char* argv[])
 			}
 			catch (...)
 			{
-
 			}
 		}
 
@@ -1167,7 +1151,7 @@ int main(int argc, char* argv[])
 			std::vector<unsigned char> oldCFG;
 			if (readFile("./bspguy.cfg", oldCFG))
 			{
-				std::string bspgu_cfgToIni = ConvertFromCFGtoINI((char*)oldCFG.data());
+				std::string bspgu_cfgToIni = ConvertFromCFGtoINI((char *)oldCFG.data());
 				writeFile(g_settings_path, bspgu_cfgToIni);
 			}
 			removeFile("./bspguy.cfg");
@@ -1195,10 +1179,10 @@ int main(int argc, char* argv[])
 		}
 
 		if constexpr (sizeof(vec4) != 16 ||
-			sizeof(vec3) != 12 ||
-			sizeof(vec2) != 8 ||
-			sizeof(COLOR3) != 3 ||
-			sizeof(COLOR4) != 4)
+					  sizeof(vec3) != 12 ||
+					  sizeof(vec2) != 8 ||
+					  sizeof(COLOR3) != 3 ||
+					  sizeof(COLOR4) != 4)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "sizeof() fatal error!\n");
 			FlushConsoleLog(true);
@@ -1212,7 +1196,6 @@ int main(int argc, char* argv[])
 			print_help(g_cmdLine.command);
 			return 0;
 		}
-
 
 		int retval = 0;
 
@@ -1245,7 +1228,6 @@ int main(int argc, char* argv[])
 				ortho_tga_h = 768;
 			}
 
-
 			if (g_cmdLine.hasOption("-out"))
 			{
 				make_screenshot_dir = getValueInQuotes(g_cmdLine.getOption("-h"));
@@ -1262,7 +1244,6 @@ int main(int argc, char* argv[])
 			{
 				make_screenshot_dir = "";
 			}
-
 
 			if (ortho_tga_w < 128)
 			{
@@ -1282,7 +1263,6 @@ int main(int argc, char* argv[])
 				ortho_tga_h = 4096;
 			}
 
-
 			if (make_screenshot < 1)
 				make_screenshot = 1;
 			if (make_screenshot > 10)
@@ -1299,21 +1279,21 @@ int main(int argc, char* argv[])
 			{
 				scale = str_to_int(getValueInQuotes(g_cmdLine.getOption("-scale")));
 			}
-			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportToObjWIP(g_cmdLine.bspfile, scale);
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "exportlit")
 		{
-			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportLightFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "importlit")
 		{
-			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ImportLightFile(g_cmdLine.hasOption("-i") ? g_cmdLine.getOption("-i") : g_cmdLine.bspfile);
 			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
@@ -1322,21 +1302,21 @@ int main(int argc, char* argv[])
 		else if (g_cmdLine.command == "exportrad")
 		{
 			std::string newpath;
-			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportExtFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile, newpath);
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "exportwad")
 		{
-			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportEmbeddedWad(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile + ".wad");
 			delete tmpBsp;
 			retval = 0;
 		}
 		else if (g_cmdLine.command == "importwad")
 		{
-			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ImportWad(g_cmdLine.hasOption("-i") ? g_cmdLine.getOption("-i") : g_cmdLine.bspfile + ".wad");
 			tmpBsp->validate();
 			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
@@ -1350,7 +1330,7 @@ int main(int argc, char* argv[])
 			{
 				leafIdx = str_to_int(getValueInQuotes(g_cmdLine.getOption("-leaf")));
 			}
-			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			Bsp *tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->cull_leaf_faces(leafIdx);
 			if (tmpBsp->validate() && tmpBsp->isValid())
 				tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
@@ -1449,17 +1429,18 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 	}
-	catch (std::filesystem::filesystem_error& ex)
+	catch (std::filesystem::filesystem_error &ex)
 	{
-		std::cout << "std::filesystem fatal error." << std::endl << "what():  " << ex.what() << '\n'
-			<< "path1(): " << ex.path1() << '\n'
-			<< "path2(): " << ex.path2() << '\n'
-			<< "code().value():    " << ex.code().value() << '\n'
-			<< "code().message():  " << ex.code().message() << '\n'
-			<< "code().category(): " << ex.code().category().name() << '\n';
+		std::cout << "std::filesystem fatal error." << std::endl
+				  << "what():  " << ex.what() << '\n'
+				  << "path1(): " << ex.path1() << '\n'
+				  << "path2(): " << ex.path2() << '\n'
+				  << "code().value():    " << ex.code().value() << '\n'
+				  << "code().message():  " << ex.code().message() << '\n'
+				  << "code().category(): " << ex.code().category().name() << '\n';
 		return 1;
 	}
-	catch (std::exception& ex)
+	catch (std::exception &ex)
 	{
 		std::cout << g_version_string << "FATAL ERROR \"" << ex.what() << "\"" << std::endl;
 		return 1;
@@ -1471,4 +1452,3 @@ int main(int argc, char* argv[])
 	}
 	return 0;
 }
-

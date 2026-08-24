@@ -4,32 +4,30 @@
 #include "Renderer.h"
 #include <cstdint>
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int _numVerts, int primitive, bool takeOwnership)
+VertexBuffer::VertexBuffer(ShaderProgram *shaderProgram, void *dat, int _numVerts, int primitive, bool takeOwnership)
 	: frameId(-1),
-	uploaded(false),
-	vboId(0),
-	vaoId(0),
-	data((unsigned char*)dat),
-	numVerts(_numVerts),
-	ownData(takeOwnership),
-	shaderProgram(shaderProgram),
-	primitive(primitive)
+	  uploaded(false),
+	  vboId(0),
+	  vaoId(0),
+	  data((unsigned char *)dat),
+	  numVerts(_numVerts),
+	  ownData(takeOwnership),
+	  shaderProgram(shaderProgram),
+	  primitive(primitive)
 {
-
 }
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int primitive)
+VertexBuffer::VertexBuffer(ShaderProgram *shaderProgram, int primitive)
 	: frameId(-1),
-	uploaded(false),
-	vboId(0),
-	vaoId(0),
-	data(nullptr),
-	numVerts(0),
-	ownData(false),
-	shaderProgram(shaderProgram),
-	primitive(primitive)
+	  uploaded(false),
+	  vboId(0),
+	  vaoId(0),
+	  data(nullptr),
+	  numVerts(0),
+	  ownData(false),
+	  shaderProgram(shaderProgram),
+	  primitive(primitive)
 {
-
 }
 
 VertexBuffer::~VertexBuffer()
@@ -51,19 +49,19 @@ VertexBuffer::~VertexBuffer()
 	}
 }
 
-void VertexBuffer::setData(void* _data, int _numVerts, bool takeOwnership)
+void VertexBuffer::setData(void *_data, int _numVerts, bool takeOwnership)
 {
 	if (ownData && data)
 	{
 		delete[] data;
 	}
-	data = static_cast<unsigned char*>(_data);
+	data = static_cast<unsigned char *>(_data);
 	numVerts = _numVerts;
 	ownData = takeOwnership;
 	uploaded = false;
 }
 
-unsigned char* VertexBuffer::getData()
+unsigned char *VertexBuffer::getData()
 {
 	if (data == nullptr)
 	{
@@ -129,18 +127,18 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 	}
 
 	GLintptr offset = 0;
-	for (const VertexAttr& a : shaderProgram->attribs)
+	for (const VertexAttr &a : shaderProgram->attribs)
 	{
 		if (a.handle == -1)
 			continue;
 
 		glEnableVertexAttribArray(a.handle);
 		glVertexAttribPointer(a.handle,
-			a.numValues,
-			a.valueType,
-			a.normalized != 0,
-			shaderProgram->elementSize,
-			(const void*)(uintptr_t)offset);
+							  a.numValues,
+							  a.valueType,
+							  a.normalized != 0,
+							  shaderProgram->elementSize,
+							  (const void *)(uintptr_t)offset);
 		if (!hideErrors)
 		{
 			GLenum err = glGetError();

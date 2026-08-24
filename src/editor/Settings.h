@@ -4,7 +4,7 @@
 #include <string>
 #include "ini.h"
 
-extern inih::INIReader* settings_ini;
+extern inih::INIReader *settings_ini;
 
 extern std::string g_settings_path;
 extern std::string g_game_dir;
@@ -14,7 +14,7 @@ extern std::string g_startup_dir;
 extern int g_render_flags;
 
 class Renderer;
-extern Renderer* g_app;
+extern Renderer *g_app;
 
 enum RenderFlags : unsigned int
 {
@@ -38,13 +38,14 @@ enum RenderFlags : unsigned int
 	RENDER_LIGHTMAPS_NOFILTER = 1 << 17
 };
 
-struct PathToggleStruct 
+struct PathToggleStruct
 {
 	std::string path;
 	bool enabled;
 
 	PathToggleStruct(std::string filePath, bool isEnable)
-		: enabled(isEnable), path(std::move(filePath)) {
+		: enabled(isEnable), path(std::move(filePath))
+	{
 	}
 };
 
@@ -137,10 +138,10 @@ struct Settings
 	void loadSettings();
 	void saveSettings();
 	void saveSettings(std::string path);
-	void fillLanguages(const std::string& folderPath);
-	void fillPalettes(const std::string& folderPath);
-	void AddRecentFile(const std::string& file);
+	void fillLanguages(const std::string &folderPath);
+	void fillPalettes(const std::string &folderPath);
+	void AddRecentFile(const std::string &file);
 };
 
 extern Settings g_settings;
-std::string ConvertFromCFGtoINI(const std::string& cfgData);
+std::string ConvertFromCFGtoINI(const std::string &cfgData);

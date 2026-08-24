@@ -7,28 +7,26 @@ float m_identity[16] = {
 	1.0f, 0.0f, 0.0f, 0.0f,
 	0.0f, 1.0f, 0.0f, 0.0f,
 	0.0f, 0.0f, 1.0f, 0.0f,
-	0.0f, 0.0f, 0.0f, 1.0f
-};
+	0.0f, 0.0f, 0.0f, 1.0f};
 
 float m_zero[16] = {
 	0.0f, 0.0f, 0.0f, 0.0f,
 	0.0f, 0.0f, 0.0f, 0.0f,
 	0.0f, 0.0f, 0.0f, 0.0f,
-	0.0f, 0.0f, 0.0f, 0.0f
-};
+	0.0f, 0.0f, 0.0f, 0.0f};
 
 void mat4x4::loadIdentity()
 {
 	memcpy(m, m_identity, sizeof(m_identity));
 }
 
-void loadEmptyMat4x4(float* m)
+void loadEmptyMat4x4(float *m)
 {
 	memcpy(m, m_zero, sizeof(m_zero));
 }
 
-void glhFrustumf2(float* matrix, float left, float right, float bottom, float top,
-	float znear, float zfar)
+void glhFrustumf2(float *matrix, float left, float right, float bottom, float top,
+				  float znear, float zfar)
 {
 	float temp, temp2, temp3, temp4;
 	temp = 2.0f * znear;
@@ -54,12 +52,11 @@ void mat4x4::perspective(float fov, float aspect, float near, float far)
 }
 
 void mat4x4::perspective(float left, float right, float bottom, float top,
-	float znear, float zfar)
+						 float znear, float zfar)
 {
 	loadIdentity();
 	glhFrustumf2(m, left, right, bottom, top, znear, zfar);
 }
-
 
 void mat4x4::ortho(float left, float right, float bottom, float top, float near, float far)
 {
@@ -85,24 +82,48 @@ void mat4x4::ortho(float left, float right, float bottom, float top, float near,
 void mat4x4::translate(float x, float y, float z)
 {
 	float tmat[16] =
-	{
-		1, 0, 0, x,
-		0, 1, 0, y,
-		0, 0, 1, z,
-		0, 0, 0, 1,
-	};
+		{
+			1,
+			0,
+			0,
+			x,
+			0,
+			1,
+			0,
+			y,
+			0,
+			0,
+			1,
+			z,
+			0,
+			0,
+			0,
+			1,
+		};
 	mult(tmat);
 }
 
 void mat4x4::scale(float x, float y, float z)
 {
 	float tmat[16] =
-	{
-		x, 0, 0, 0,
-		0, y, 0, 0,
-		0, 0, z, 0,
-		0, 0, 0, 1,
-	};
+		{
+			x,
+			0,
+			0,
+			0,
+			0,
+			y,
+			0,
+			0,
+			0,
+			0,
+			z,
+			0,
+			0,
+			0,
+			0,
+			1,
+		};
 	mult(tmat);
 }
 
@@ -111,12 +132,24 @@ void mat4x4::rotateX(float r)
 	float c = cosf(r);
 	float s = sinf(r);
 	float rmat[16] =
-	{
-		1, 0, 0, 0,
-		0, c,-s, 0,
-		0, s, c, 0,
-		0, 0, 0, 1,
-	};
+		{
+			1,
+			0,
+			0,
+			0,
+			0,
+			c,
+			-s,
+			0,
+			0,
+			s,
+			c,
+			0,
+			0,
+			0,
+			0,
+			1,
+		};
 	mult(rmat);
 }
 
@@ -125,12 +158,24 @@ void mat4x4::rotateY(float r)
 	float c = cosf(r);
 	float s = sinf(r);
 	float rmat[16] =
-	{
-		c, 0, s, 0,
-		0, 1, 0, 0,
-		-s, 0, c, 0,
-		0, 0, 0, 1,
-	};
+		{
+			c,
+			0,
+			s,
+			0,
+			0,
+			1,
+			0,
+			0,
+			-s,
+			0,
+			c,
+			0,
+			0,
+			0,
+			0,
+			1,
+		};
 	mult(rmat);
 }
 
@@ -139,12 +184,24 @@ void mat4x4::rotateZ(float r)
 	float c = cosf(r);
 	float s = sinf(r);
 	float rmat[16] =
-	{
-		c,-s, 0, 0,
-		s, c, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1,
-	};
+		{
+			c,
+			-s,
+			0,
+			0,
+			s,
+			c,
+			0,
+			0,
+			0,
+			0,
+			1,
+			0,
+			0,
+			0,
+			0,
+			1,
+		};
 	mult(rmat);
 }
 
@@ -163,7 +220,7 @@ void mat4x4::rotate(float pitch, float yaw, float roll)
 	sr = sin(angle);
 	cr = cos(angle);
 
-	float mat[16] = { 0.0f };
+	float mat[16] = {0.0f};
 	mat[0 * 4 + 0] = cp * cy;
 	mat[1 * 4 + 0] = cp * sy;
 	mat[2 * 4 + 0] = -sp;
@@ -183,37 +240,37 @@ void mat4x4::rotate(float pitch, float yaw, float roll)
 	mat[3 * 4 + 3] = 1.0f;
 
 	mult(mat);
-}/*
-void mat4x4::rotate(float pitch, float yaw, float roll)
-{
-	float tmp_ch = cosf(-yaw);
-	float tmp_sh = sinf(-yaw);
-	float tmp_cp = cosf(-pitch);
-	float tmp_sp = sinf(-pitch);
-	float tmp_cb = cosf(roll);
-	float tmp_sb = sinf(roll);
+} /*
+ void mat4x4::rotate(float pitch, float yaw, float roll)
+ {
+	 float tmp_ch = cosf(-yaw);
+	 float tmp_sh = sinf(-yaw);
+	 float tmp_cp = cosf(-pitch);
+	 float tmp_sp = sinf(-pitch);
+	 float tmp_cb = cosf(roll);
+	 float tmp_sb = sinf(roll);
 
-	float rmat[16] = {0};
+	 float rmat[16] = {0};
 
-	rmat[0 * 4 + 0] = tmp_ch * tmp_cb + tmp_sh * tmp_sp * tmp_sb;
-	rmat[0 * 4 + 1] = tmp_sb * tmp_cp;
-	rmat[0 * 4 + 2] = -tmp_sh * tmp_cb + tmp_ch * tmp_sp * tmp_sb;
-	rmat[0 * 4 + 3] = 0.0f;
-	rmat[1 * 4 + 0] = -tmp_ch * tmp_sb + tmp_sh * tmp_sp * tmp_cb;
-	rmat[1 * 4 + 1] = tmp_cb * tmp_cp;
-	rmat[1 * 4 + 2] = tmp_sb * tmp_sh + tmp_ch * tmp_sp * tmp_cb;
-	rmat[1 * 4 + 3] = 0.0f;
-	rmat[2 * 4 + 0] = tmp_sh * tmp_cp;
-	rmat[2 * 4 + 1] = -tmp_sp;
-	rmat[2 * 4 + 2] = tmp_ch * tmp_cp;
-	rmat[2 * 4 + 3] = 0.0f;
-	rmat[3 * 4 + 0] = 0.0f;
-	rmat[3 * 4 + 1] = 0.0f;
-	rmat[3 * 4 + 2] = 0.0f;
-	rmat[3 * 4 + 3] = 1.0f;
+	 rmat[0 * 4 + 0] = tmp_ch * tmp_cb + tmp_sh * tmp_sp * tmp_sb;
+	 rmat[0 * 4 + 1] = tmp_sb * tmp_cp;
+	 rmat[0 * 4 + 2] = -tmp_sh * tmp_cb + tmp_ch * tmp_sp * tmp_sb;
+	 rmat[0 * 4 + 3] = 0.0f;
+	 rmat[1 * 4 + 0] = -tmp_ch * tmp_sb + tmp_sh * tmp_sp * tmp_cb;
+	 rmat[1 * 4 + 1] = tmp_cb * tmp_cp;
+	 rmat[1 * 4 + 2] = tmp_sb * tmp_sh + tmp_ch * tmp_sp * tmp_cb;
+	 rmat[1 * 4 + 3] = 0.0f;
+	 rmat[2 * 4 + 0] = tmp_sh * tmp_cp;
+	 rmat[2 * 4 + 1] = -tmp_sp;
+	 rmat[2 * 4 + 2] = tmp_ch * tmp_cp;
+	 rmat[2 * 4 + 3] = 0.0f;
+	 rmat[3 * 4 + 0] = 0.0f;
+	 rmat[3 * 4 + 1] = 0.0f;
+	 rmat[3 * 4 + 2] = 0.0f;
+	 rmat[3 * 4 + 3] = 1.0f;
 
-	mult(rmat);
-}*/
+	 mult(rmat);
+ }*/
 /*
 void mat4x4::rotate(float x, float y, float z)
 {
@@ -246,7 +303,7 @@ void mat4x4::rotate(float x, float y, float z)
 	mult(rmat);
 }*/
 
-mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z)
+mat4x4 worldToLocalTransform(const vec3 &local_x, const vec3 &local_y, const vec3 &local_z)
 {
 	const vec3 world_x(1, 0, 0);
 	const vec3 world_y(0, 1, 0);
@@ -293,23 +350,22 @@ mat4x4 mat4x4::transpose()
 
 float mat4x4::determinant() const
 {
-	return
-		m[12] * m[9] * m[6] * m[3] - m[8] * m[13] * m[6] * m[3] -
-		m[12] * m[5] * m[10] * m[3] + m[4] * m[13] * m[10] * m[3] +
-		m[8] * m[5] * m[14] * m[3] - m[4] * m[9] * m[14] * m[3] -
-		m[12] * m[9] * m[2] * m[7] + m[8] * m[13] * m[2] * m[7] +
-		m[12] * m[1] * m[10] * m[7] - m[0] * m[13] * m[10] * m[7] -
-		m[8] * m[1] * m[14] * m[7] + m[0] * m[9] * m[14] * m[7] +
-		m[12] * m[5] * m[2] * m[11] - m[4] * m[13] * m[2] * m[11] -
-		m[12] * m[1] * m[6] * m[11] + m[0] * m[13] * m[6] * m[11] +
-		m[4] * m[1] * m[14] * m[11] - m[0] * m[5] * m[14] * m[11] -
-		m[8] * m[5] * m[2] * m[15] + m[4] * m[9] * m[2] * m[15] +
-		m[8] * m[1] * m[6] * m[15] - m[0] * m[9] * m[6] * m[15] -
-		m[4] * m[1] * m[10] * m[15] + m[0] * m[5] * m[10] * m[15];
+	return m[12] * m[9] * m[6] * m[3] - m[8] * m[13] * m[6] * m[3] -
+		   m[12] * m[5] * m[10] * m[3] + m[4] * m[13] * m[10] * m[3] +
+		   m[8] * m[5] * m[14] * m[3] - m[4] * m[9] * m[14] * m[3] -
+		   m[12] * m[9] * m[2] * m[7] + m[8] * m[13] * m[2] * m[7] +
+		   m[12] * m[1] * m[10] * m[7] - m[0] * m[13] * m[10] * m[7] -
+		   m[8] * m[1] * m[14] * m[7] + m[0] * m[9] * m[14] * m[7] +
+		   m[12] * m[5] * m[2] * m[11] - m[4] * m[13] * m[2] * m[11] -
+		   m[12] * m[1] * m[6] * m[11] + m[0] * m[13] * m[6] * m[11] +
+		   m[4] * m[1] * m[14] * m[11] - m[0] * m[5] * m[14] * m[11] -
+		   m[8] * m[5] * m[2] * m[15] + m[4] * m[9] * m[2] * m[15] +
+		   m[8] * m[1] * m[6] * m[15] - m[0] * m[9] * m[6] * m[15] -
+		   m[4] * m[1] * m[10] * m[15] + m[0] * m[5] * m[10] * m[15];
 }
 
 // http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
-mat4x4 mat4x4::invert(bool* result)
+mat4x4 mat4x4::invert(bool *result)
 {
 	mat4x4 out;
 	loadEmptyMat4x4(out.m);
@@ -317,116 +373,116 @@ mat4x4 mat4x4::invert(bool* result)
 	float inv[16];
 
 	inv[0] = m[5] * m[10] * m[15] -
-		m[5] * m[11] * m[14] -
-		m[9] * m[6] * m[15] +
-		m[9] * m[7] * m[14] +
-		m[13] * m[6] * m[11] -
-		m[13] * m[7] * m[10];
+			 m[5] * m[11] * m[14] -
+			 m[9] * m[6] * m[15] +
+			 m[9] * m[7] * m[14] +
+			 m[13] * m[6] * m[11] -
+			 m[13] * m[7] * m[10];
 
 	inv[4] = -m[4] * m[10] * m[15] +
-		m[4] * m[11] * m[14] +
-		m[8] * m[6] * m[15] -
-		m[8] * m[7] * m[14] -
-		m[12] * m[6] * m[11] +
-		m[12] * m[7] * m[10];
+			 m[4] * m[11] * m[14] +
+			 m[8] * m[6] * m[15] -
+			 m[8] * m[7] * m[14] -
+			 m[12] * m[6] * m[11] +
+			 m[12] * m[7] * m[10];
 
 	inv[8] = m[4] * m[9] * m[15] -
-		m[4] * m[11] * m[13] -
-		m[8] * m[5] * m[15] +
-		m[8] * m[7] * m[13] +
-		m[12] * m[5] * m[11] -
-		m[12] * m[7] * m[9];
+			 m[4] * m[11] * m[13] -
+			 m[8] * m[5] * m[15] +
+			 m[8] * m[7] * m[13] +
+			 m[12] * m[5] * m[11] -
+			 m[12] * m[7] * m[9];
 
 	inv[12] = -m[4] * m[9] * m[14] +
-		m[4] * m[10] * m[13] +
-		m[8] * m[5] * m[14] -
-		m[8] * m[6] * m[13] -
-		m[12] * m[5] * m[10] +
-		m[12] * m[6] * m[9];
+			  m[4] * m[10] * m[13] +
+			  m[8] * m[5] * m[14] -
+			  m[8] * m[6] * m[13] -
+			  m[12] * m[5] * m[10] +
+			  m[12] * m[6] * m[9];
 
 	inv[1] = -m[1] * m[10] * m[15] +
-		m[1] * m[11] * m[14] +
-		m[9] * m[2] * m[15] -
-		m[9] * m[3] * m[14] -
-		m[13] * m[2] * m[11] +
-		m[13] * m[3] * m[10];
+			 m[1] * m[11] * m[14] +
+			 m[9] * m[2] * m[15] -
+			 m[9] * m[3] * m[14] -
+			 m[13] * m[2] * m[11] +
+			 m[13] * m[3] * m[10];
 
 	inv[5] = m[0] * m[10] * m[15] -
-		m[0] * m[11] * m[14] -
-		m[8] * m[2] * m[15] +
-		m[8] * m[3] * m[14] +
-		m[12] * m[2] * m[11] -
-		m[12] * m[3] * m[10];
+			 m[0] * m[11] * m[14] -
+			 m[8] * m[2] * m[15] +
+			 m[8] * m[3] * m[14] +
+			 m[12] * m[2] * m[11] -
+			 m[12] * m[3] * m[10];
 
 	inv[9] = -m[0] * m[9] * m[15] +
-		m[0] * m[11] * m[13] +
-		m[8] * m[1] * m[15] -
-		m[8] * m[3] * m[13] -
-		m[12] * m[1] * m[11] +
-		m[12] * m[3] * m[9];
+			 m[0] * m[11] * m[13] +
+			 m[8] * m[1] * m[15] -
+			 m[8] * m[3] * m[13] -
+			 m[12] * m[1] * m[11] +
+			 m[12] * m[3] * m[9];
 
 	inv[13] = m[0] * m[9] * m[14] -
-		m[0] * m[10] * m[13] -
-		m[8] * m[1] * m[14] +
-		m[8] * m[2] * m[13] +
-		m[12] * m[1] * m[10] -
-		m[12] * m[2] * m[9];
+			  m[0] * m[10] * m[13] -
+			  m[8] * m[1] * m[14] +
+			  m[8] * m[2] * m[13] +
+			  m[12] * m[1] * m[10] -
+			  m[12] * m[2] * m[9];
 
 	inv[2] = m[1] * m[6] * m[15] -
-		m[1] * m[7] * m[14] -
-		m[5] * m[2] * m[15] +
-		m[5] * m[3] * m[14] +
-		m[13] * m[2] * m[7] -
-		m[13] * m[3] * m[6];
+			 m[1] * m[7] * m[14] -
+			 m[5] * m[2] * m[15] +
+			 m[5] * m[3] * m[14] +
+			 m[13] * m[2] * m[7] -
+			 m[13] * m[3] * m[6];
 
 	inv[6] = -m[0] * m[6] * m[15] +
-		m[0] * m[7] * m[14] +
-		m[4] * m[2] * m[15] -
-		m[4] * m[3] * m[14] -
-		m[12] * m[2] * m[7] +
-		m[12] * m[3] * m[6];
+			 m[0] * m[7] * m[14] +
+			 m[4] * m[2] * m[15] -
+			 m[4] * m[3] * m[14] -
+			 m[12] * m[2] * m[7] +
+			 m[12] * m[3] * m[6];
 
 	inv[10] = m[0] * m[5] * m[15] -
-		m[0] * m[7] * m[13] -
-		m[4] * m[1] * m[15] +
-		m[4] * m[3] * m[13] +
-		m[12] * m[1] * m[7] -
-		m[12] * m[3] * m[5];
+			  m[0] * m[7] * m[13] -
+			  m[4] * m[1] * m[15] +
+			  m[4] * m[3] * m[13] +
+			  m[12] * m[1] * m[7] -
+			  m[12] * m[3] * m[5];
 
 	inv[14] = -m[0] * m[5] * m[14] +
-		m[0] * m[6] * m[13] +
-		m[4] * m[1] * m[14] -
-		m[4] * m[2] * m[13] -
-		m[12] * m[1] * m[6] +
-		m[12] * m[2] * m[5];
+			  m[0] * m[6] * m[13] +
+			  m[4] * m[1] * m[14] -
+			  m[4] * m[2] * m[13] -
+			  m[12] * m[1] * m[6] +
+			  m[12] * m[2] * m[5];
 
 	inv[3] = -m[1] * m[6] * m[11] +
-		m[1] * m[7] * m[10] +
-		m[5] * m[2] * m[11] -
-		m[5] * m[3] * m[10] -
-		m[9] * m[2] * m[7] +
-		m[9] * m[3] * m[6];
+			 m[1] * m[7] * m[10] +
+			 m[5] * m[2] * m[11] -
+			 m[5] * m[3] * m[10] -
+			 m[9] * m[2] * m[7] +
+			 m[9] * m[3] * m[6];
 
 	inv[7] = m[0] * m[6] * m[11] -
-		m[0] * m[7] * m[10] -
-		m[4] * m[2] * m[11] +
-		m[4] * m[3] * m[10] +
-		m[8] * m[2] * m[7] -
-		m[8] * m[3] * m[6];
+			 m[0] * m[7] * m[10] -
+			 m[4] * m[2] * m[11] +
+			 m[4] * m[3] * m[10] +
+			 m[8] * m[2] * m[7] -
+			 m[8] * m[3] * m[6];
 
 	inv[11] = -m[0] * m[5] * m[11] +
-		m[0] * m[7] * m[9] +
-		m[4] * m[1] * m[11] -
-		m[4] * m[3] * m[9] -
-		m[8] * m[1] * m[7] +
-		m[8] * m[3] * m[5];
+			  m[0] * m[7] * m[9] +
+			  m[4] * m[1] * m[11] -
+			  m[4] * m[3] * m[9] -
+			  m[8] * m[1] * m[7] +
+			  m[8] * m[3] * m[5];
 
 	inv[15] = m[0] * m[5] * m[10] -
-		m[0] * m[6] * m[9] -
-		m[4] * m[1] * m[10] +
-		m[4] * m[2] * m[9] +
-		m[8] * m[1] * m[6] -
-		m[8] * m[2] * m[5];
+			  m[0] * m[6] * m[9] -
+			  m[4] * m[1] * m[10] +
+			  m[4] * m[2] * m[9] +
+			  m[8] * m[1] * m[6] -
+			  m[8] * m[2] * m[5];
 
 	float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
 
@@ -465,8 +521,8 @@ mat4x4 mat4x4::invert(bool* result)
 void mat4x4::mult(float mat[16])
 {
 	float a[16];
-	memcpy(a, m, sizeof(a)); 
-	const float* b = mat;
+	memcpy(a, m, sizeof(a));
+	const float *b = mat;
 
 	m[0] = a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12];
 	m[1] = a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13];
@@ -486,13 +542,13 @@ void mat4x4::mult(float mat[16])
 	m[15] = a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15];
 }
 
-mat4x4 operator*(const mat4x4& m1, const mat4x4& m2)
+mat4x4 operator*(const mat4x4 &m1, const mat4x4 &m2)
 {
 	mat4x4 result;
 
-	const float* a = m1.m;
-	const float* b = m2.m;
-	float* m = result.m;
+	const float *a = m1.m;
+	const float *b = m2.m;
+	float *m = result.m;
 
 	m[0] = a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12];
 	m[1] = a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13];
@@ -514,7 +570,7 @@ mat4x4 operator*(const mat4x4& m1, const mat4x4& m2)
 	return result;
 }
 
-vec4 operator*(const mat4x4& mat, const vec4& vec)
+vec4 operator*(const mat4x4 &mat, const vec4 &vec)
 {
 	vec4 res;
 	res.x = mat.m[0] * vec.x + mat.m[4] * vec.y + mat.m[8] * vec.z + mat.m[12] * vec.w;
@@ -524,7 +580,7 @@ vec4 operator*(const mat4x4& mat, const vec4& vec)
 	return res;
 }
 
-void mat4x4print(const mat4x4& mat)
+void mat4x4print(const mat4x4 &mat)
 {
 	print_log("{} {} {} {}\n", mat.m[0], mat.m[1], mat.m[2], mat.m[3]);
 	print_log("{} {} {} {}\n", mat.m[4], mat.m[5], mat.m[6], mat.m[7]);

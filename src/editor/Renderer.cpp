@@ -30,8 +30,8 @@
 
 #include "as.h"
 
-Renderer* g_app = NULL;
-std::vector<BspRenderer*> mapRenderers{};
+Renderer *g_app = NULL;
+std::vector<BspRenderer *> mapRenderers{};
 
 int current_fps = 0;
 int ortho_overview = 0;
@@ -65,27 +65,27 @@ int vertPickCount = 0; // used to refresh solid state
 
 int g_drawFrameId = 0;
 
-Texture* whiteTex = NULL;
-Texture* redTex = NULL;
-Texture* yellowTex = NULL;
-Texture* greyTex = NULL;
-Texture* blackTex = NULL;
-Texture* blueTex = NULL;
-Texture* missingTex = NULL;
-Texture* missingTex_rgba = NULL;
-Texture* aaatriggerTex_rgba = NULL;
-Texture* aaatriggerTex = NULL;
-Texture* skyTex_rgba = NULL;
-Texture* clipTex_rgba = NULL;
+Texture *whiteTex = NULL;
+Texture *redTex = NULL;
+Texture *yellowTex = NULL;
+Texture *greyTex = NULL;
+Texture *blackTex = NULL;
+Texture *blueTex = NULL;
+Texture *missingTex = NULL;
+Texture *missingTex_rgba = NULL;
+Texture *aaatriggerTex_rgba = NULL;
+Texture *aaatriggerTex = NULL;
+Texture *skyTex_rgba = NULL;
+Texture *clipTex_rgba = NULL;
 
 std::future<void> Renderer::fgdFuture;
 
-void error_callback(int error, const char* description)
+void error_callback(int error, const char *description)
 {
 	print_log(get_localized_string(LANG_0895), error, description);
 }
 
-void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
+void key_callback(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
@@ -100,7 +100,7 @@ void key_callback(GLFWwindow* /*window*/, int key, int /*scancode*/, int action,
 
 bool g_settings_changed = false;
 
-void drop_callback(GLFWwindow* /*window*/, int count, const char** paths)
+void drop_callback(GLFWwindow * /*window*/, int count, const char **paths)
 {
 	if (!g_app->isLoading && count > 0 && paths[0] && paths[0][0] != '\0')
 	{
@@ -125,10 +125,9 @@ void drop_callback(GLFWwindow* /*window*/, int count, const char** paths)
 	}
 }
 
-void window_size_callback(GLFWwindow* /*window*/, int width, int height)
+void window_size_callback(GLFWwindow * /*window*/, int width, int height)
 {
-	if (g_settings.maximized || width == 0 || height == 0
-		|| (g_settings.windowWidth == width && g_settings.windowHeight == height))
+	if (g_settings.maximized || width == 0 || height == 0 || (g_settings.windowWidth == width && g_settings.windowHeight == height))
 	{
 		return; // ignore size change when maximized, or else iconifying doesn't change size at all
 	}
@@ -137,7 +136,7 @@ void window_size_callback(GLFWwindow* /*window*/, int width, int height)
 	g_settings_changed = true;
 }
 
-void window_pos_callback(GLFWwindow* /*window*/, int x, int y)
+void window_pos_callback(GLFWwindow * /*window*/, int x, int y)
 {
 	if (g_settings.windowX != x || g_settings.windowY != y)
 	{
@@ -147,7 +146,7 @@ void window_pos_callback(GLFWwindow* /*window*/, int x, int y)
 	}
 }
 
-void window_maximize_callback(GLFWwindow* /*window*/, int maximized)
+void window_maximize_callback(GLFWwindow * /*window*/, int maximized)
 {
 	bool maximize = maximized == GLFW_TRUE;
 
@@ -158,24 +157,24 @@ void window_maximize_callback(GLFWwindow* /*window*/, int maximized)
 	}
 }
 
-void window_minimize_callback(GLFWwindow* /*window*/, int iconified)
+void window_minimize_callback(GLFWwindow * /*window*/, int iconified)
 {
 	g_app->is_minimized = iconified == GLFW_TRUE;
 }
 
-void window_focus_callback(GLFWwindow* /*window*/, int focused)
+void window_focus_callback(GLFWwindow * /*window*/, int focused)
 {
 	g_app->is_focused = focused == GLFW_TRUE;
 }
 
-void window_close_callback(GLFWwindow* /*window*/)
+void window_close_callback(GLFWwindow * /*window*/)
 {
 	g_app->is_closing = true;
 }
 
 int g_scroll = 0;
 
-void scroll_callback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset)
+void scroll_callback(GLFWwindow * /*window*/, double /*xoffset*/, double yoffset)
 {
 	g_scroll += (int)round(yoffset);
 }
@@ -246,7 +245,7 @@ Renderer::Renderer()
 	GLenum err = glewInit();
 	if (GLEW_OK != err)
 	{
-		print_log("Glew: {}", (const char*)glewGetErrorString(err));
+		print_log("Glew: {}", (const char *)glewGetErrorString(err));
 		FlushConsoleLog(true);
 		return;
 	}
@@ -256,18 +255,22 @@ Renderer::Renderer()
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
 	glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
 
-	//unsigned char* img_dat = NULL;
-	//unsigned int w, h;
+	// unsigned char* img_dat = NULL;
+	// unsigned int w, h;
 
-	auto loadTexHelper = [&](const char* path, const char* name, bool rgba) {
-		unsigned char* img_malloc = NULL;
+	auto loadTexHelper = [&](const char *path, const char *name, bool rgba)
+	{
+		unsigned char *img_malloc = NULL;
 		unsigned int width, height;
 		unsigned int bpp = rgba ? 4 : 3;
-		if (rgba) lodepng_decode32_file(&img_malloc, &width, &height, path);
-		else lodepng_decode24_file(&img_malloc, &width, &height, path);
+		if (rgba)
+			lodepng_decode32_file(&img_malloc, &width, &height, path);
+		else
+			lodepng_decode24_file(&img_malloc, &width, &height, path);
 
-		unsigned char* img_new = NULL;
-		if (img_malloc) {
+		unsigned char *img_new = NULL;
+		if (img_malloc)
+		{
 			img_new = new unsigned char[width * height * bpp];
 			memcpy(img_new, img_malloc, width * height * bpp);
 			free(img_malloc);
@@ -301,9 +304,9 @@ Renderer::Renderer()
 	blackTex->upload();
 	blueTex->upload();
 
-	//GLuint in;
-	//glGenVertexArrays(1, &in);
-	//glBindVertexArray(in);
+	// GLuint in;
+	// glGenVertexArrays(1, &in);
+	// glBindVertexArray(in);
 	glGetFloatv(GL_LINE_WIDTH_RANGE, lineWidthRange);
 	glLineWidth(1.3f);
 
@@ -389,7 +392,8 @@ void Renderer::updateWindowTitle(double _curTime)
 		if (SelectedMap)
 		{
 			std::string smallPath = SelectedMap->bsp_path;
-			if (smallPath.length() > 51) {
+			if (smallPath.length() > 51)
+			{
 				smallPath = smallPath.substr(0, 18) + "..." + smallPath.substr(smallPath.length() - 32);
 			}
 			if (g_progress.progress_total > 0)
@@ -426,36 +430,36 @@ void Renderer::renderLoop()
 	}
 
 	{
-		moveAxes.dimColor[0] = { 110, 0, 160, 255 };
-		moveAxes.dimColor[1] = { 0, 0, 220, 255 };
-		moveAxes.dimColor[2] = { 0, 160, 0, 255 };
-		moveAxes.dimColor[3] = { 160, 160, 160, 255 };
+		moveAxes.dimColor[0] = {110, 0, 160, 255};
+		moveAxes.dimColor[1] = {0, 0, 220, 255};
+		moveAxes.dimColor[2] = {0, 160, 0, 255};
+		moveAxes.dimColor[3] = {160, 160, 160, 255};
 
-		moveAxes.hoverColor[0] = { 128, 64, 255, 255 };
-		moveAxes.hoverColor[1] = { 64, 64, 255, 255 };
-		moveAxes.hoverColor[2] = { 64, 255, 64, 255 };
-		moveAxes.hoverColor[3] = { 255, 255, 255, 255 };
+		moveAxes.hoverColor[0] = {128, 64, 255, 255};
+		moveAxes.hoverColor[1] = {64, 64, 255, 255};
+		moveAxes.hoverColor[2] = {64, 255, 64, 255};
+		moveAxes.hoverColor[3] = {255, 255, 255, 255};
 		// flipped for HL coords
 		moveAxes.buffer = new VertexBuffer(colorShader, &moveAxes.model, 6 * 6 * 4, GL_TRIANGLES, false);
 		moveAxes.numAxes = 4;
 	}
 
 	{
-		scaleAxes.dimColor[0] = { 110, 0, 160, 255 };
-		scaleAxes.dimColor[1] = { 0, 0, 220, 255 };
-		scaleAxes.dimColor[2] = { 0, 160, 0, 255 };
+		scaleAxes.dimColor[0] = {110, 0, 160, 255};
+		scaleAxes.dimColor[1] = {0, 0, 220, 255};
+		scaleAxes.dimColor[2] = {0, 160, 0, 255};
 
-		scaleAxes.dimColor[3] = { 110, 0, 160, 255 };
-		scaleAxes.dimColor[4] = { 0, 0, 220, 255 };
-		scaleAxes.dimColor[5] = { 0, 160, 0, 255 };
+		scaleAxes.dimColor[3] = {110, 0, 160, 255};
+		scaleAxes.dimColor[4] = {0, 0, 220, 255};
+		scaleAxes.dimColor[5] = {0, 160, 0, 255};
 
-		scaleAxes.hoverColor[0] = { 128, 64, 255, 255 };
-		scaleAxes.hoverColor[1] = { 64, 64, 255, 255 };
-		scaleAxes.hoverColor[2] = { 64, 255, 64, 255 };
+		scaleAxes.hoverColor[0] = {128, 64, 255, 255};
+		scaleAxes.hoverColor[1] = {64, 64, 255, 255};
+		scaleAxes.hoverColor[2] = {64, 255, 64, 255};
 
-		scaleAxes.hoverColor[3] = { 128, 64, 255, 255 };
-		scaleAxes.hoverColor[4] = { 64, 64, 255, 255 };
-		scaleAxes.hoverColor[5] = { 64, 255, 64, 255 };
+		scaleAxes.hoverColor[3] = {128, 64, 255, 255};
+		scaleAxes.hoverColor[4] = {64, 64, 255, 255};
+		scaleAxes.hoverColor[5] = {64, 255, 64, 255};
 		// flipped for HL coords
 		scaleAxes.buffer = new VertexBuffer(colorShader, &scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES, false);
 		scaleAxes.numAxes = 6;
@@ -471,8 +475,8 @@ void Renderer::renderLoop()
 	memset(pressed, 0, sizeof(pressed));
 	memset(oldPressed, 0, sizeof(oldPressed));
 
-	//glEnable(GL_DEPTH_CLAMP);
-	//glEnable(GL_STENCIL_TEST);
+	// glEnable(GL_DEPTH_CLAMP);
+	// glEnable(GL_STENCIL_TEST);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
@@ -550,7 +554,6 @@ void Renderer::renderLoop()
 
 			GLuint fbo = NULL, texture, rbo;
 
-
 			if (ortho_save_tga || ortho_save_bmp || ortho_save_png_full || (make_screenshot && !isLoading))
 			{
 				int captureW = ortho_tga_w;
@@ -574,13 +577,11 @@ void Renderer::renderLoop()
 				}
 
 				glHint(GL_FRAGMENT_SHADER_DERIVATIVE_HINT, GL_NICEST);
-				
 
-				//for (auto& tex : g_all_Textures)
+				// for (auto& tex : g_all_Textures)
 				//{
 				//	tex->upload(tex->type);
-				//}
-
+				// }
 
 				glGenFramebuffers(1, &fbo);
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -588,7 +589,7 @@ void Renderer::renderLoop()
 				glGenTextures(1, &texture);
 				glBindTexture(GL_TEXTURE_2D, texture);
 				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-#ifdef GL_UNPACK_ROW_LENGTH 
+#ifdef GL_UNPACK_ROW_LENGTH
 				glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, captureW, captureH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -610,12 +611,12 @@ void Renderer::renderLoop()
 
 				if (make_screenshot)
 				{
-					Bsp* map = SelectedMap;
+					Bsp *map = SelectedMap;
 					if (map)
 					{
 						int tries = make_screenshot_target + 1;
-						BspRenderer* rend = SelectedMap->getBspRender();
-						Entity* foundEnt = NULL;
+						BspRenderer *rend = SelectedMap->getBspRender();
+						Entity *foundEnt = NULL;
 
 						bool foundCam = false;
 
@@ -716,7 +717,7 @@ void Renderer::renderLoop()
 							else
 							{
 								auto targets = foundEnt->getTargets();
-								Entity* targetEnt = NULL;
+								Entity *targetEnt = NULL;
 								for (auto ent2 : map->ents)
 								{
 									if (targetEnt)
@@ -756,8 +757,6 @@ void Renderer::renderLoop()
 				}
 			}
 
-
-
 			if (ortho_overview)
 			{
 				if (ortho_save_tga || ortho_save_bmp)
@@ -796,7 +795,7 @@ void Renderer::renderLoop()
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			//Update keyboard / mouse state 
+			// Update keyboard / mouse state
 			oldLeftMouse = curLeftMouse;
 			curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 			oldRightMouse = curRightMouse;
@@ -816,7 +815,7 @@ void Renderer::renderLoop()
 
 			int modelIdx = -1;
 			auto entIdx = pickInfo.selectedEnts;
-			Entity* ent = NULL;
+			Entity *ent = NULL;
 			if (SelectedMap && entIdx.size() && entIdx[0] < (int)SelectedMap->ents.size())
 			{
 				ent = SelectedMap->ents[entIdx[0]];
@@ -839,7 +838,7 @@ void Renderer::renderLoop()
 				if (pickMode != PICK_OBJECT)
 				{
 					pickInfo.selectedEnts.clear();
-					for (auto& f : pickInfo.selectedFaces)
+					for (auto &f : pickInfo.selectedFaces)
 					{
 						int mdl = SelectedMap->get_model_from_face(f);
 						if (mdl > 0 && mdl < SelectedMap->modelCount)
@@ -867,8 +866,7 @@ void Renderer::renderLoop()
 
 				isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
 				isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN && modelIdx >= 0;
-				isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
-					|| (isTransformableSolid && isScalingObject);
+				isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) || (isTransformableSolid && isScalingObject);
 				isTransformingWorld = modelIdx == 0 || (ent && ent->isWorldSpawn());
 
 				invalidSolid = false;
@@ -910,7 +908,7 @@ void Renderer::renderLoop()
 
 				mapRenderers[i]->clearDrawCache();
 
-				Bsp* curMap = mapRenderers[i]->map;
+				Bsp *curMap = mapRenderers[i]->map;
 				if (!curMap || !curMap->bsp_name.size())
 					continue;
 
@@ -974,13 +972,13 @@ void Renderer::renderLoop()
 							if (n == i)
 								continue;
 
-							Bsp* anotherMap = mapRenderers[n]->map;
+							Bsp *anotherMap = mapRenderers[n]->map;
 							if (anotherMap && anotherMap->ents.size())
 							{
 								vec3 anotherMapOrigin = anotherMap->ents[0]->origin;
 								for (int s = 0; s < (int)anotherMap->ents.size(); s++)
 								{
-									Entity* tmpEnt = anotherMap->ents[s];
+									Entity *tmpEnt = anotherMap->ents[s];
 									if (tmpEnt && tmpEnt->hasKey("model"))
 									{
 										if (!modelidskip.count(s))
@@ -1001,7 +999,6 @@ void Renderer::renderLoop()
 
 				mapRenderers[i]->render(transformTarget == TRANSFORM_VERTEX, clipnodeRenderHull);
 
-
 				if (!mapRenderers[i]->isFinishedLoading())
 				{
 					isLoading = true;
@@ -1016,7 +1013,7 @@ void Renderer::renderLoop()
 					vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx.size() ? SelectedMap->ents[entIdx[0]]->origin : vec3())).flip();
 					matmodel.translate(offset.x, offset.y, offset.z);
 					mat_upload();
-					BSPMODEL& pickModel = SelectedMap->models[modelIdx];
+					BSPMODEL &pickModel = SelectedMap->models[modelIdx];
 					int currentPlane = 0;
 					glDisable(GL_CULL_FACE);
 					drawClipnodes(SelectedMap, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
@@ -1030,7 +1027,7 @@ void Renderer::renderLoop()
 					vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx.size() > 0 ? SelectedMap->ents[entIdx[0]]->origin : vec3())).flip();
 					matmodel.translate(offset.x, offset.y, offset.z);
 					mat_upload();
-					BSPMODEL& pickModel = SelectedMap->models[modelIdx];
+					BSPMODEL &pickModel = SelectedMap->models[modelIdx];
 					int currentPlane = 0;
 					glDisable(GL_CULL_FACE);
 					drawNodes(SelectedMap, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
@@ -1062,7 +1059,8 @@ void Renderer::renderLoop()
 						originBuf.drawFull();
 					}
 
-					if (g_render_flags & RENDER_MAP_BOUNDARY) {
+					if (g_render_flags & RENDER_MAP_BOUNDARY)
+					{
 						vec3 center = SelectedMap->ents[0]->origin * -1 + SelectedMap->getBspRender()->mapOffset;
 						float width = g_limits.maxMapBoundary * 2;
 						drawBox(center, width, COLOR4(g_settings.mapBoundaryColor, 64));
@@ -1071,13 +1069,13 @@ void Renderer::renderLoop()
 						glLineWidth(1.3f);
 					}
 
-					if (hasCullbox) {
+					if (hasCullbox)
+					{
 						drawBox(cullMins, cullMaxs, COLOR4(255, 0, 0, 64));
 					}
 					glEnable(GL_CULL_FACE);
 				}
 			}
-
 
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_ALWAYS);
@@ -1132,22 +1130,24 @@ void Renderer::renderLoop()
 				if (debugTraceStart != vec3())
 				{
 					glLineWidth(128.0f);
-					drawLine(debugLine0, debugLine1, { 255, 0, 0, 255 });
+					drawLine(debugLine0, debugLine1, {255, 0, 0, 255});
 					drawLine(debugTraceStart, debugTrace.vecEndPos, COLOR4(255, 0, 0, 255));
 				}
 
 				if (debugNavMesh && debugNavPoly != -1)
 				{
 					glLineWidth(1);
-					NavNode& node = debugNavMesh->nodes[debugNavPoly];
-					Polygon3D& poly = debugNavMesh->polys[debugNavPoly];
+					NavNode &node = debugNavMesh->nodes[debugNavPoly];
+					Polygon3D &poly = debugNavMesh->polys[debugNavPoly];
 
-					for (int i = 0; i < MAX_NAV_LINKS; i++) {
-						NavLink& link = node.links[i];
-						if (link.node == -1) {
+					for (int i = 0; i < MAX_NAV_LINKS; i++)
+					{
+						NavLink &link = node.links[i];
+						if (link.node == -1)
+						{
 							break;
 						}
-						Polygon3D& linkPoly = debugNavMesh->polys[link.node];
+						Polygon3D &linkPoly = debugNavMesh->polys[link.node];
 
 						vec3 srcMid, dstMid;
 						debugNavMesh->getLinkMidPoints(debugNavPoly, i, srcMid, dstMid);
@@ -1157,8 +1157,9 @@ void Renderer::renderLoop()
 						drawLine(srcMid, dstMid, COLOR4(0, 255, 255, 255));
 						drawLine(dstMid, linkPoly.center, COLOR4(0, 255, 255, 255));
 
-						if (fabs(link.zDist) > NAV_STEP_HEIGHT) {
-							Bsp* map = mapRenderers[0]->map;
+						if (fabs(link.zDist) > NAV_STEP_HEIGHT)
+						{
+							Bsp *map = mapRenderers[0]->map;
 							int n = link.srcEdge;
 							int k = link.dstEdge;
 							int inext = (n + 1) % poly.verts.size();
@@ -1189,25 +1190,30 @@ void Renderer::renderLoop()
 							float stepUnits = 1.0f;
 							float step = stepUnits / flatLen;
 							TraceResult tr;
-							for (float f = 0; f < 0.5f; f += step) {
+							for (float f = 0; f < 0.5f; f += step)
+							{
 								vec3 test1 = mid1 + (delta1 * f) + testOffset;
 								vec3 test2 = mid2 + (delta2 * f) + testOffset;
 								vec3 test3 = mid1 + (delta1 * -f) + testOffset;
 								vec3 test4 = mid2 + (delta2 * -f) + testOffset;
 
 								map->traceHull(test1, test2, 3, &tr);
-								if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.99f) {
+								if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.99f)
+								{
 									drawLine(test1, test2, COLOR4(255, 255, 0, 255));
 								}
-								else {
+								else
+								{
 									drawLine(test1, test2, COLOR4(255, 0, 0, 255));
 								}
 
 								map->traceHull(test3, test4, 3, &tr);
-								if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.99f) {
+								if (!tr.fAllSolid && !tr.fStartSolid && tr.flFraction > 0.99f)
+								{
 									drawLine(test3, test4, COLOR4(255, 255, 0, 255));
 								}
-								else {
+								else
+								{
 									drawLine(test3, test4, COLOR4(255, 0, 0, 255));
 								}
 							}
@@ -1223,63 +1229,77 @@ void Renderer::renderLoop()
 					glLineWidth(currentLineWidth);
 				}
 
-				if (debugLeafNavMesh) {
+				if (debugLeafNavMesh)
+				{
 					glDisable(GL_DEPTH_TEST);
 
-					Bsp* map = mapRenderers[0]->map;
+					Bsp *map = mapRenderers[0]->map;
 					int leafIdx = map->get_leaf(cameraOrigin, 3);
 					int leafNavIdx = -1;
 
-					if (leafIdx >= 0 && leafIdx < MAX_MAP_CLIPNODE_LEAVES) {
+					if (leafIdx >= 0 && leafIdx < MAX_MAP_CLIPNODE_LEAVES)
+					{
 						leafNavIdx = debugLeafNavMesh->leafMap[leafIdx];
 					}
 
-					if (leafNavIdx >= 0 && leafNavIdx < (int)debugLeafNavMesh->nodes.size()) {
+					if (leafNavIdx >= 0 && leafNavIdx < (int)debugLeafNavMesh->nodes.size())
+					{
 
-						if (pickInfo.selectedEnts.size()) {
+						if (pickInfo.selectedEnts.size())
+						{
 
 							int endNode = debugLeafNavMesh->getNodeIdx(map, map->ents[pickInfo.selectedEnts[0]]);
-							//vector<int> route = debugLeafNavMesh->AStarRoute(leafNavIdx, endNode);
+							// vector<int> route = debugLeafNavMesh->AStarRoute(leafNavIdx, endNode);
 							std::vector<int> route = debugLeafNavMesh->dijkstraRoute(leafNavIdx, endNode);
 
-							if (route.size()) {
-								LeafNode* lastNode = &debugLeafNavMesh->nodes[route[0]];
+							if (route.size())
+							{
+								LeafNode *lastNode = &debugLeafNavMesh->nodes[route[0]];
 
 								vec3 lastPos = lastNode->origin;
 								drawBox(lastNode->origin, 2, COLOR4(0, 255, 255, 255));
 
-								for (size_t i = 1; i < route.size(); i++) {
-									LeafNode& node = debugLeafNavMesh->nodes[route[i]];
+								for (size_t i = 1; i < route.size(); i++)
+								{
+									LeafNode &node = debugLeafNavMesh->nodes[route[i]];
 
 									vec3 nodeCenter = node.origin;
 
-									for (size_t k = 0; k < lastNode->links.size(); k++) {
-										LeafLink& link = lastNode->links[k];
+									for (size_t k = 0; k < lastNode->links.size(); k++)
+									{
+										LeafLink &link = lastNode->links[k];
 
-										if (link.node == route[i]) {
+										if (link.node == route[i])
+										{
 											vec3 linkPoint = link.pos;
 
-											if (link.baseCost > 16000) {
+											if (link.baseCost > 16000)
+											{
 												drawLine(lastPos, linkPoint, COLOR4(255, 0, 0, 255));
 												drawLine(linkPoint, node.origin, COLOR4(255, 0, 0, 255));
 											}
-											else if (link.baseCost > 0) {
+											else if (link.baseCost > 0)
+											{
 												drawLine(lastPos, linkPoint, COLOR4(255, 64, 0, 255));
 												drawLine(linkPoint, node.origin, COLOR4(255, 64, 0, 255));
 											}
-											else if (link.costMultiplier > 99.0f) {
+											else if (link.costMultiplier > 99.0f)
+											{
 												drawLine(lastPos, linkPoint, COLOR4(255, 255, 0, 255));
 												drawLine(linkPoint, node.origin, COLOR4(255, 255, 0, 255));
 											}
-											else if (link.costMultiplier > 9.0f) {
+											else if (link.costMultiplier > 9.0f)
+											{
 												drawLine(lastPos, linkPoint, COLOR4(255, 0, 255, 255));
 												drawLine(linkPoint, node.origin, COLOR4(255, 0, 255, 255));
 											}
-											else if (link.costMultiplier > 1.9f) {
+											else if (link.costMultiplier > 1.9f)
+											{
 												drawLine(lastPos, linkPoint, COLOR4(64, 255, 0, 255));
 												drawLine(linkPoint, node.origin, COLOR4(64, 255, 0, 255));
 											}
-											else {
+											else
+											{
 												drawLine(lastPos, linkPoint, COLOR4(0, 255, 255, 255));
 												drawLine(linkPoint, node.origin, COLOR4(0, 255, 255, 255));
 											}
@@ -1295,47 +1315,57 @@ void Renderer::renderLoop()
 								drawLine(lastPos, lastPosEnd, COLOR4(0, 255, 255, 255));
 							}
 						}
-						else {
-							LeafNode& node = debugLeafNavMesh->nodes[leafNavIdx];
+						else
+						{
+							LeafNode &node = debugLeafNavMesh->nodes[leafNavIdx];
 
 							drawBox(node.origin, 2, COLOR4(0, 255, 0, 255));
 
 							std::string linkStr;
 
-							for (size_t i = 0; i < node.links.size(); i++) {
-								LeafLink& link = node.links[i];
-								if (link.node == -1) {
+							for (size_t i = 0; i < node.links.size(); i++)
+							{
+								LeafLink &link = node.links[i];
+								if (link.node == -1)
+								{
 									break;
 								}
-								LeafNode& linkLeaf = debugLeafNavMesh->nodes[link.node];
-								Polygon3D& linkArea = link.linkArea;
+								LeafNode &linkLeaf = debugLeafNavMesh->nodes[link.node];
+								Polygon3D &linkArea = link.linkArea;
 
-								if (link.baseCost > 16000) {
+								if (link.baseCost > 16000)
+								{
 									drawLine(node.origin, link.pos, COLOR4(255, 0, 0, 255));
 									drawLine(link.pos, linkLeaf.origin, COLOR4(255, 0, 0, 255));
 								}
-								else if (link.baseCost > 0) {
+								else if (link.baseCost > 0)
+								{
 									drawLine(node.origin, link.pos, COLOR4(255, 128, 0, 255));
 									drawLine(link.pos, linkLeaf.origin, COLOR4(255, 128, 0, 255));
 								}
-								else if (link.costMultiplier > 99.0f) {
+								else if (link.costMultiplier > 99.0f)
+								{
 									drawLine(node.origin, link.pos, COLOR4(255, 255, 0, 255));
 									drawLine(link.pos, linkLeaf.origin, COLOR4(255, 255, 0, 255));
 								}
-								else if (link.costMultiplier > 9.0f) {
+								else if (link.costMultiplier > 9.0f)
+								{
 									drawLine(node.origin, link.pos, COLOR4(255, 0, 255, 255));
 									drawLine(link.pos, linkLeaf.origin, COLOR4(255, 0, 255, 255));
 								}
-								else if (link.costMultiplier > 1.9f) {
+								else if (link.costMultiplier > 1.9f)
+								{
 									drawLine(node.origin, link.pos, COLOR4(64, 255, 0, 255));
 									drawLine(link.pos, linkLeaf.origin, COLOR4(64, 255, 0, 255));
 								}
-								else {
+								else
+								{
 									drawLine(node.origin, link.pos, COLOR4(0, 255, 255, 255));
 									drawLine(link.pos, linkLeaf.origin, COLOR4(0, 255, 255, 255));
 								}
 
-								for (size_t k = 0; k < linkArea.verts.size(); k++) {
+								for (size_t k = 0; k < linkArea.verts.size(); k++)
+								{
 									drawBox(linkArea.verts[k], 1, COLOR4(255, 255, 0, 255));
 								}
 								drawBox(link.pos, 1, COLOR4(0, 255, 0, 255));
@@ -1351,9 +1381,8 @@ void Renderer::renderLoop()
 								*/
 							}
 
-							//logf("Leaf node idx: %d, links: %s\n", leafNavIdx, linkStr.c_str());
+							// logf("Leaf node idx: %d, links: %s\n", leafNavIdx, linkStr.c_str());
 						}
-
 					}
 
 					/*
@@ -1372,7 +1401,6 @@ void Renderer::renderLoop()
 				}
 				glEnable(GL_CULL_FACE);
 			}
-
 
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
@@ -1393,10 +1421,11 @@ void Renderer::renderLoop()
 				glReadPixels(0, 0, captureW, captureH, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-				for (int line = 0; line != captureH / 2; ++line) {
+				for (int line = 0; line != captureH / 2; ++line)
+				{
 					std::swap_ranges(pixels.begin() + 3 * captureW * line,
-						pixels.begin() + 3 * captureW * (line + 1),
-						pixels.begin() + 3 * captureW * (captureH - line - 1));
+									 pixels.begin() + 3 * captureW * (line + 1),
+									 pixels.begin() + 3 * captureW * (captureH - line - 1));
 				}
 
 				if (ortho_save_tga || ortho_save_png_full || (make_screenshot && !isLoading))
@@ -1405,7 +1434,6 @@ void Renderer::renderLoop()
 					{
 						std::string screenPath = g_working_dir + "screenshots/";
 						createDir(g_working_dir + "screenshots/");
-
 
 						if (make_screenshot_dir.size() && dirExists(make_screenshot_dir))
 						{
@@ -1417,7 +1445,7 @@ void Renderer::renderLoop()
 
 						stbi_write_tga(screenPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
 						print_log("Saved to {} file!\n", screenPath);
-						
+
 						make_screenshot--;
 						make_screenshot_target++;
 
@@ -1446,8 +1474,8 @@ void Renderer::renderLoop()
 				}
 				else
 				{
-					Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-					tmpCQuantizer->ApplyColorTable((COLOR3*)pixels.data(), ortho_tga_w * ortho_tga_h);
+					Quantizer *tmpCQuantizer = new Quantizer(256, 8);
+					tmpCQuantizer->ApplyColorTable((COLOR3 *)pixels.data(), ortho_tga_w * ortho_tga_h);
 					delete tmpCQuantizer;
 
 					int colors = 0;
@@ -1487,7 +1515,6 @@ void Renderer::renderLoop()
 						}
 					}
 
-
 					std::string overPath = g_working_dir + "overviews/";
 					createDir(overPath);
 					std::string finalPath = overPath + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp");
@@ -1496,7 +1523,6 @@ void Renderer::renderLoop()
 					print_log("Saved to {} file!\n", finalPath.c_str());
 				}
 
-
 				glBindFramebuffer(GL_FRAMEBUFFER, 0);
 				glDeleteFramebuffers(1, &fbo);
 				glDeleteTextures(1, &texture);
@@ -1504,7 +1530,7 @@ void Renderer::renderLoop()
 				ortho_save_tga = false;
 				ortho_save_bmp = false;
 				ortho_save_png_full = false;
-				
+
 				// Disable smoothing settings that were enabled for overview capture
 				glDisable(GL_LINE_SMOOTH);
 				glDisable(GL_POLYGON_SMOOTH);
@@ -1539,7 +1565,7 @@ void Renderer::renderLoop()
 				gl_errors++;
 #ifndef NDEBUG
 				std::cout << fmt::format(fmt::runtime(get_localized_string(LANG_0905)), glerror) << std::endl;
-#endif 
+#endif
 				glerror = glGetError();
 			}
 
@@ -1568,7 +1594,6 @@ void Renderer::renderLoop()
 				glfwGetCursorPos(window, &xpos, &ypos);
 			}
 
-
 			if (is_minimized || !is_focused)
 			{
 				using namespace std::chrono_literals;
@@ -1588,10 +1613,10 @@ void Renderer::renderLoop()
 				print_log(get_localized_string(LANG_0901));
 				ClearTempDirectory();
 
-#ifdef MINGW 
+#ifdef MINGW
 				std::set_terminate(NULL);
 				std::terminate();
-#else 
+#else
 				std::quick_exit(0);
 #endif
 			}
@@ -1711,7 +1736,7 @@ void Renderer::loadGuiSettings()
 
 void Renderer::loadFgds()
 {
-	Fgd* mergedFgd = NULL;
+	Fgd *mergedFgd = NULL;
 	for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
 	{
 		if (!g_settings.fgdPaths[i].enabled)
@@ -1719,7 +1744,7 @@ void Renderer::loadFgds()
 		std::string newFgdPath;
 		if (FindPathInAssets(NULL, g_settings.fgdPaths[i].path, newFgdPath))
 		{
-			Fgd* tmp = new Fgd(newFgdPath);
+			Fgd *tmp = new Fgd(newFgdPath);
 			if (!tmp->parse())
 			{
 				print_log(get_localized_string(LANG_0909), g_settings.fgdPaths[i].path);
@@ -1749,16 +1774,16 @@ void Renderer::loadFgds()
 
 void Renderer::drawModelVerts()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 
 	if (!map || entIdx.empty())
 		return;
-	BspRenderer* rend = map->getBspRender();
+	BspRenderer *rend = map->getBspRender();
 	if (!rend)
 		return;
 
-	Entity* ent = map->ents[entIdx[0]];
+	Entity *ent = map->ents[entIdx[0]];
 	if (ent->getBspModelIdx() < 0)
 		return;
 
@@ -1769,18 +1794,18 @@ void Renderer::drawModelVerts()
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	COLOR4 vertDimColor = { 200, 200, 200, 255 };
-	COLOR4 vertHoverColor = { 255, 255, 255, 255 };
-	COLOR4 edgeDimColor = { 255, 128, 0, 255 };
-	COLOR4 edgeHoverColor = { 255, 255, 0, 255 };
-	COLOR4 selectColor = { 0, 128, 255, 255 };
-	COLOR4 hoverSelectColor = { 96, 200, 255, 255 };
+	COLOR4 vertDimColor = {200, 200, 200, 255};
+	COLOR4 vertHoverColor = {255, 255, 255, 255};
+	COLOR4 edgeDimColor = {255, 128, 0, 255};
+	COLOR4 edgeHoverColor = {255, 255, 0, 255};
+	COLOR4 selectColor = {0, 128, 255, 255};
+	COLOR4 hoverSelectColor = {96, 200, 255, 255};
 	vec3 entOrigin = ent->origin;
 
 	if (modelUsesSharedStructures)
 	{
-		vertDimColor = { 32, 32, 32, 255 };
-		edgeDimColor = { 64, 64, 32, 255 };
+		vertDimColor = {32, 32, 32, 255};
+		edgeDimColor = {64, 64, 32, 255};
 	}
 	int cubeIdx = 0;
 	for (size_t i = 0; i < modelVerts.size(); i++, cubeIdx++)
@@ -1849,29 +1874,28 @@ void Renderer::drawModelOrigin(int modelIdx)
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (!map)
 		return;
 
-	BspRenderer* rend = map->getBspRender();
+	BspRenderer *rend = map->getBspRender();
 
 	if (!rend)
 		return;
 
 	vec3 localCameraOrigin = rend->localCameraOrigin;
 
-	//BSPMODEL& modl = map->models[modelIdx];
+	// BSPMODEL& modl = map->models[modelIdx];
 
-	COLOR4 vertDimColor = { 0, 200, 0, 255 };
-	COLOR4 vertHoverColor = { 128, 255, 128, 255 };
-	COLOR4 selectColor = { 0, 128, 255, 255 };
-	COLOR4 hoverSelectColor = { 96, 200, 255, 255 };
+	COLOR4 vertDimColor = {0, 200, 0, 255};
+	COLOR4 vertHoverColor = {128, 255, 128, 255};
+	COLOR4 selectColor = {0, 128, 255, 255};
+	COLOR4 hoverSelectColor = {96, 200, 255, 255};
 
 	if (modelUsesSharedStructures)
 	{
-		vertDimColor = { 32, 32, 32, 255 };
+		vertDimColor = {32, 32, 32, 255};
 	}
-
 
 	float s = (moveAxes.origin - localCameraOrigin).length() * vertExtentFactor;
 	s *= 1.2f;
@@ -1888,7 +1912,7 @@ void Renderer::drawModelOrigin(int modelIdx)
 	{
 		color = originHovered ? vertHoverColor : vertDimColor;
 	}
-	modelOriginCube = new cCube[1]{ cCube(min, max, color) };
+	modelOriginCube = new cCube[1]{cCube(min, max, color)};
 
 	matmodel.loadIdentity();
 	mat_upload();
@@ -1950,7 +1974,7 @@ void Renderer::controls()
 			blockMoving = false;
 	}*/
 
-	if (canControl/* && !blockMoving*/)
+	if (canControl /* && !blockMoving*/)
 	{
 		/*	if (anyCtrlPressed && anyAltPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
 				&& pickMode != PICK_OBJECT && pickInfo.selectedFaces.size() == 1)
@@ -2008,11 +2032,10 @@ void Renderer::controls()
 		{
 			cameraPickingControls();
 		}
-
 	}
 	else
 	{
-		if (oldControl/* && !blockMoving*/ && curLeftMouse == GLFW_PRESS)
+		if (oldControl /* && !blockMoving*/ && curLeftMouse == GLFW_PRESS)
 		{
 			curLeftMouse = GLFW_RELEASE;
 			oldLeftMouse = GLFW_PRESS;
@@ -2061,7 +2084,7 @@ void Renderer::vertexEditControls()
 
 void Renderer::cameraPickingControls()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 
 	if (curLeftMouse == GLFW_RELEASE && oldLeftMouse == GLFW_RELEASE)
@@ -2074,11 +2097,11 @@ void Renderer::cameraPickingControls()
 	if (!pickClickHeld)
 	{
 		bool canTransform = (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS) &&
-			pickMode == pick_modes::PICK_OBJECT &&
-			!movingEnt &&
-			!isTransformingWorld &&
-			!entIdx.empty() &&
-			(isTransformingValid || isMovingOrigin);
+							pickMode == pick_modes::PICK_OBJECT &&
+							!movingEnt &&
+							!isTransformingWorld &&
+							!entIdx.empty() &&
+							(isTransformingValid || isMovingOrigin);
 
 		if (canTransform)
 		{
@@ -2098,11 +2121,11 @@ void Renderer::cameraPickingControls()
 		{
 			if (!anyCtrlPressed)
 			{
-				for (auto& edge : modelEdges)
+				for (auto &edge : modelEdges)
 				{
 					edge.selected = false;
 				}
-				for (auto& vert : modelVerts)
+				for (auto &vert : modelVerts)
 				{
 					vert.selected = false;
 				}
@@ -2117,7 +2140,7 @@ void Renderer::cameraPickingControls()
 				modelEdges[hoverEdge].selected = anyCtrlPressed ? !modelEdges[hoverEdge].selected : true;
 				for (int i = 0; i < 2; ++i)
 				{
-					TransformVert& vert = modelVerts[modelEdges[hoverEdge].verts[i]];
+					TransformVert &vert = modelVerts[modelEdges[hoverEdge].verts[i]];
 					vert.selected = modelEdges[hoverEdge].selected;
 				}
 			}
@@ -2136,7 +2159,7 @@ void Renderer::cameraPickingControls()
 	if (!transforming && hoverAxis == -1)
 	{
 		bool shouldPickObject = ((curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE) ||
-			(pickMode != pick_modes::PICK_OBJECT && curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05));
+								 (pickMode != pick_modes::PICK_OBJECT && curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05));
 
 		if (shouldPickObject)
 		{
@@ -2156,15 +2179,15 @@ void Renderer::cameraPickingControls()
 	}
 }
 
-void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
+void Renderer::revertInvalidSolid(Bsp *map, int modelIdx)
 {
-	for (auto& vert : modelVerts)
+	for (auto &vert : modelVerts)
 	{
 		vert.pos = vert.startPos = vert.undoPos;
 		if (vert.ptr)
 			*vert.ptr = vert.pos;
 	}
-	for (auto& faceVert : modelFaceVerts)
+	for (auto &faceVert : modelFaceVerts)
 	{
 		faceVert.pos = faceVert.startPos = faceVert.undoPos;
 		if (faceVert.ptr)
@@ -2173,7 +2196,7 @@ void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
 	if (map && modelIdx >= 0)
 	{
 		map->vertex_manipulation_sync(modelIdx, modelVerts, false);
-		auto& model = map->models[modelIdx];
+		auto &model = map->models[modelIdx];
 		map->get_model_vertex_bounds(modelIdx, model.nMins, model.nMaxs);
 		map->getBspRender()->refreshModel(modelIdx);
 	}
@@ -2182,11 +2205,11 @@ void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
 	gui->reloadLimits();
 }
 
-void Renderer::applyTransform(Bsp* map, bool forceUpdate)
+void Renderer::applyTransform(Bsp *map, bool forceUpdate)
 {
 	bool transformingVerts = transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_MOVE;
 	bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_SCALE;
-	//bool movingOrigin = transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE;
+	// bool movingOrigin = transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE;
 
 	bool anyVertsChanged = false;
 	for (size_t i = 0; i < modelVerts.size(); i++)
@@ -2232,7 +2255,7 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 		{
 			for (size_t i = 0; i < scaleTexinfos.size(); i++)
 			{
-				BSPTEXTUREINFO& info = map->texinfos[scaleTexinfos[i].texinfoIdx];
+				BSPTEXTUREINFO &info = map->texinfos[scaleTexinfos[i].texinfoIdx];
 				scaleTexinfos[i].oldShiftS = info.shiftS;
 				scaleTexinfos[i].oldShiftT = info.shiftT;
 				scaleTexinfos[i].oldS = info.vS;
@@ -2241,7 +2264,7 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 
 			if (modelTransform >= 0)
 			{
-				BSPMODEL& model = map->models[modelTransform];
+				BSPMODEL &model = map->models[modelTransform];
 				map->get_model_vertex_bounds(modelTransform, model.nMins, model.nMaxs);
 			}
 		}
@@ -2300,9 +2323,8 @@ void Renderer::cameraRotationControls()
 
 void Renderer::cameraObjectHovering()
 {
-	Bsp* map = SelectedMap;
-	if (!map || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT && transformTarget != TRANSFORM_ORIGIN)
-		|| anyPopupOpened)
+	Bsp *map = SelectedMap;
+	if (!map || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT && transformTarget != TRANSFORM_ORIGIN) || anyPopupOpened)
 		return;
 
 	if (pickMode != PICK_OBJECT)
@@ -2319,13 +2341,12 @@ void Renderer::cameraObjectHovering()
 		modelIdx = map->ents[entIdx[0]]->getBspModelIdx();
 	}
 
-	BspRenderer* rend = map->getBspRender();
+	BspRenderer *rend = map->getBspRender();
 	if (!rend)
 		return;
 
 	// axis handle hovering
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
-
+	TransformAxes &activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 
 	vec3 mapOffset = rend->mapOffset;
 	vec3 localCameraOrigin = rend->localCameraOrigin;
@@ -2337,7 +2358,7 @@ void Renderer::cameraObjectHovering()
 		PickInfo vertPick = PickInfo();
 		vertPick.bestDist = g_limits.fltMaxCoord * 2.0f + 1.0f;
 
-		Entity* ent = map->ents[entIdx[0]];
+		Entity *ent = map->ents[entIdx[0]];
 		vec3 entOrigin = ent->origin;
 
 		hoverEdge = -1;
@@ -2470,13 +2491,13 @@ void Renderer::moveGrabbedEnt()
 			grabDist += 16.0f * moveScale;
 		}
 
-		Bsp* map = SelectedMap;
+		Bsp *map = SelectedMap;
 		vec3 mapOffset = map->getBspRender()->mapOffset;
 		vec3 delta = ((cameraOrigin - mapOffset) + cameraForward * grabDist) - grabStartOrigin;
 
-		for (auto& i : entIdx)
+		for (auto &i : entIdx)
 		{
-			Entity* ent = map->ents[i];
+			Entity *ent = map->ents[i];
 
 			vec3 tmpOrigin = grabStartEntOrigin;
 			vec3 offset = map->getEntOffset(ent);
@@ -2497,7 +2518,7 @@ void Renderer::moveGrabbedEnt()
 void Renderer::shortcutControls()
 {
 	bool anyEnterPressed = (pressed[GLFW_KEY_ENTER] && !oldPressed[GLFW_KEY_ENTER]) ||
-		(pressed[GLFW_KEY_KP_ENTER] && !oldPressed[GLFW_KEY_KP_ENTER]);
+						   (pressed[GLFW_KEY_KP_ENTER] && !oldPressed[GLFW_KEY_KP_ENTER]);
 
 	if (pickMode == PICK_OBJECT)
 	{
@@ -2559,7 +2580,7 @@ void Renderer::shortcutControls()
 
 void Renderer::globalShortcutControls()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (!map)
 		return;
 	if (anyCtrlPressed && pressed[GLFW_KEY_Z] && !oldPressed[GLFW_KEY_Z])
@@ -2574,13 +2595,13 @@ void Renderer::globalShortcutControls()
 
 void Renderer::pickObject()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
-	if (!map/* || ortho_overview*/)
+	if (!map /* || ortho_overview*/)
 		return;
 	bool pointEntWasSelected = entIdx.size();
 
-	Entity* ent = NULL;
+	Entity *ent = NULL;
 	if (pointEntWasSelected)
 	{
 		ent = SelectedMap->ents[entIdx[0]];
@@ -2606,8 +2627,7 @@ void Renderer::pickObject()
 
 	}*/
 
-
-	Bsp* oldmap = map;
+	Bsp *oldmap = map;
 
 	PickInfo tmpPickInfo = PickInfo();
 	tmpPickInfo.bestDist = g_limits.fltMaxCoord * 2.0f + 1.0f;
@@ -2626,7 +2646,7 @@ void Renderer::pickObject()
 
 	if (map != oldmap && pickMode != PICK_OBJECT)
 	{
-		for (auto& idx : pickInfo.selectedFaces)
+		for (auto &idx : pickInfo.selectedFaces)
 		{
 			map->getBspRender()->highlightFace(idx, 0);
 		}
@@ -2719,14 +2739,13 @@ void Renderer::pickObject()
 
 bool Renderer::transformAxisControls()
 {
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
-	Bsp* map = SelectedMap;
+	TransformAxes &activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
+	Bsp *map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 
 	bool transformingVerts = transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_MOVE;
 	bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_SCALE;
-	bool movingOrigin = (transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE)
-		|| (transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_MOVE);
+	bool movingOrigin = (transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE) || (transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_MOVE);
 
 	bool canTransform = transformingVerts || scalingObject || movingOrigin;
 
@@ -2735,8 +2754,7 @@ bool Renderer::transformAxisControls()
 		return false;
 	}
 
-
-	Entity* ent = map->ents[entIdx[0]];
+	Entity *ent = map->ents[entIdx[0]];
 	int modelIdx = ent->getBspModelIdx();
 	// axis handle dragging
 
@@ -2782,9 +2800,9 @@ bool Renderer::transformAxisControls()
 			for (int i = 0; i < 3; i++)
 			{
 				if (i != hoverAxis % 3)
-					((float*)&delta)[i] = 0.0f;
+					((float *)&delta)[i] = 0.0f;
 				else
-					((float*)&delta)[i] = clamp(((float*)&delta)[i] * moveScale, -maxDragDist, maxDragDist);
+					((float *)&delta)[i] = clamp(((float *)&delta)[i] * moveScale, -maxDragDist, maxDragDist);
 			}
 			if (delta.IsZero())
 				retval = false;
@@ -2806,7 +2824,7 @@ bool Renderer::transformAxisControls()
 						{
 							for (int tmpentIdx : pickInfo.selectedEnts)
 							{
-								Entity* tmpEnt = map->ents[tmpentIdx];
+								Entity *tmpEnt = map->ents[tmpentIdx];
 								if (!tmpEnt)
 									continue;
 
@@ -2832,14 +2850,14 @@ bool Renderer::transformAxisControls()
 					{
 						for (size_t i = 0; i < pickInfo.selectedEnts.size(); i++)
 						{
-							Entity* tmpent = map->ents[pickInfo.selectedEnts[i]];
+							Entity *tmpent = map->ents[pickInfo.selectedEnts[i]];
 							int tmpmdlidx = tmpent->getBspModelIdx();
 
 							if (tmpent->getBspModelIdx() >= 0)
 							{
 								vec3 neworigin = map->models[tmpmdlidx].vOrigin + delta;
 								map->models[tmpmdlidx].vOrigin = neworigin;
-								//map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
+								// map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
 								map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i], Entity_RefreshAnglesOrigin);
 							}
 
@@ -2932,19 +2950,19 @@ bool Renderer::transformAxisControls()
 
 					for (size_t i = 0; i < pickInfo.selectedEnts.size(); i++)
 					{
-						Entity* tmpent = map->ents[pickInfo.selectedEnts[i]];
+						Entity *tmpent = map->ents[pickInfo.selectedEnts[i]];
 						int tmpmdlidx = tmpent->getBspModelIdx();
 
 						if (tmpent->getBspModelIdx() >= 0)
 						{
 							vec3 neworigin = gridSnappingEnabled ? snapToGrid(map->models[tmpmdlidx].vOrigin) : map->models[tmpmdlidx].vOrigin;
-							map->models[tmpmdlidx].vOrigin = neworigin;/*
-							map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
-							map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);*/
+							map->models[tmpmdlidx].vOrigin = neworigin; /*
+							 map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
+							 map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);*/
 							updateModels = true;
 						}
 
-						//pickCount++;
+						// pickCount++;
 						vertPickCount++;
 					}
 
@@ -2986,7 +3004,6 @@ vec3 Renderer::getMoveDir()
 	vec3 forward, right, up;
 	makeVectors(cameraAngles, forward, right, up);
 
-
 	vec3 wishdir{};
 	if (pressed[GLFW_KEY_A])
 	{
@@ -3012,7 +3029,7 @@ vec3 Renderer::getMoveDir()
 	return wishdir;
 }
 
-void Renderer::getPickRay(vec3& start, vec3& pickDir)
+void Renderer::getPickRay(vec3 &start, vec3 &pickDir)
 {
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
@@ -3030,9 +3047,9 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir)
 
 	vec3 tview = forward.normalize(1.0f);
 	vec3 h = crossProduct(tview, up).normalize(1.0f); // 3D float std::vector
-	vec3 v = crossProduct(h, tview).normalize(1.0f); // 3D float std::vector
+	vec3 v = crossProduct(h, tview).normalize(1.0f);  // 3D float std::vector
 
-	// convert fovy to radians 
+	// convert fovy to radians
 	float rad = fov * (HL_PI / 180.0f);
 	float vLength = tan(rad / 2.0f) * zNear;
 	float hLength = vLength * (windowWidth / (float)windowHeight);
@@ -3047,7 +3064,7 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir)
 	pickDir = (start - cameraOrigin).normalize(1.0f);
 }
 
-Bsp* Renderer::getSelectedMap()
+Bsp *Renderer::getSelectedMap()
 {
 	// auto select if one map
 	if (!SelectedMap && mapRenderers.size() == 1)
@@ -3074,7 +3091,7 @@ int Renderer::getSelectedMapId()
 {
 	for (size_t i = 0; i < mapRenderers.size(); i++)
 	{
-		BspRenderer* s = mapRenderers[i];
+		BspRenderer *s = mapRenderers[i];
 		if (s->map && s->map == getSelectedMap())
 		{
 			return (int)i;
@@ -3087,7 +3104,7 @@ void Renderer::selectMapId(int id)
 {
 	for (size_t i = 0; i < mapRenderers.size(); i++)
 	{
-		BspRenderer* s = mapRenderers[i];
+		BspRenderer *s = mapRenderers[i];
 		if (s->map && (int)i == id)
 		{
 			SelectedMap = s->map;
@@ -3099,7 +3116,7 @@ void Renderer::selectMapId(int id)
 	AS_OnMapChange();
 }
 
-void Renderer::selectMap(Bsp* map)
+void Renderer::selectMap(Bsp *map)
 {
 	SelectedMap = map;
 	AS_OnMapChange();
@@ -3116,11 +3133,11 @@ void Renderer::clearSelection()
 	pickInfo = PickInfo();
 }
 
-BspRenderer* Renderer::getMapContainingCamera()
+BspRenderer *Renderer::getMapContainingCamera()
 {
 	for (size_t i = 0; i < mapRenderers.size(); i++)
 	{
-		Bsp* map = mapRenderers[i]->map;
+		Bsp *map = mapRenderers[i]->map;
 
 		vec3 mins, maxs;
 		map->get_bounding_box(mins, maxs);
@@ -3192,7 +3209,6 @@ void Renderer::setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bbo
 	cameraOrigin.z = distance;
 }
 
-
 void Renderer::setupView(int forceW, int forceH)
 {
 	if (forceW == 0 || forceH == 0)
@@ -3248,7 +3264,7 @@ void Renderer::reloadBspModels()
 		return;
 	}
 
-	std::vector<BspRenderer*> sorted_renders;
+	std::vector<BspRenderer *> sorted_renders;
 
 	for (size_t i = 0; i < mapRenderers.size(); i++)
 	{
@@ -3269,7 +3285,7 @@ void Renderer::reloadBspModels()
 	{
 		if (bsprend)
 		{
-			for (auto const& entity : bsprend->map->ents)
+			for (auto const &entity : bsprend->map->ents)
 			{
 				if (entity->hasKey("model"))
 				{
@@ -3279,12 +3295,12 @@ void Renderer::reloadBspModels()
 						std::string newBspPath;
 						if (FindPathInAssets(bsprend->map, modelPath, newBspPath))
 						{
-							Bsp* tmpBsp = new Bsp(newBspPath);
+							Bsp *tmpBsp = new Bsp(newBspPath);
 							tmpBsp->is_bsp_model = true;
 							tmpBsp->parentMap = bsprend->map;
 							if (tmpBsp->bsp_valid)
 							{
-								BspRenderer* mapRenderer = new BspRenderer(tmpBsp);
+								BspRenderer *mapRenderer = new BspRenderer(tmpBsp);
 								mapRenderers.push_back(mapRenderer);
 							}
 						}
@@ -3302,7 +3318,7 @@ void Renderer::reloadBspModels()
 	isModelsReloading = false;
 }
 
-void Renderer::addMap(Bsp* map)
+void Renderer::addMap(Bsp *map)
 {
 	if (!map->bsp_valid)
 	{
@@ -3316,11 +3332,11 @@ void Renderer::addMap(Bsp* map)
 		deselectObject();
 		clearSelection();
 		/*
-		* TODO: save camera pos
-		*/
+		 * TODO: save camera pos
+		 */
 	}
 
-	BspRenderer* mapRenderer = new BspRenderer(map);
+	BspRenderer *mapRenderer = new BspRenderer(map);
 
 	mapRenderers.push_back(mapRenderer);
 
@@ -3336,10 +3352,9 @@ void Renderer::addMap(Bsp* map)
 	}
 
 	updateCullBox();
-
 }
 
-void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
+void Renderer::drawLine(vec3 &start, vec3 &end, COLOR4 color)
 {
 	line_verts[0].pos = start.flip();
 	line_verts[0].c = color;
@@ -3352,7 +3367,8 @@ void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
 	lineBuf->drawFull();
 }
 
-void Renderer::drawLine2D(vec2 start, vec2 end, COLOR4 color) {
+void Renderer::drawLine2D(vec2 start, vec2 end, COLOR4 color)
+{
 	line_verts[0].pos = vec3(start.x, start.y, 0.0f).flip();
 	line_verts[0].c = color;
 
@@ -3364,7 +3380,8 @@ void Renderer::drawLine2D(vec2 start, vec2 end, COLOR4 color) {
 	lineBuf->drawFull();
 }
 
-void Renderer::drawBox(vec3 center, float width, COLOR4 color) {
+void Renderer::drawBox(vec3 center, float width, COLOR4 color)
+{
 	width *= 0.5f;
 	vec3 sz = vec3(width, width, width);
 	vec3 pos = vec3(center.x, center.z, -center.y);
@@ -3373,7 +3390,8 @@ void Renderer::drawBox(vec3 center, float width, COLOR4 color) {
 	buffer.drawFull();
 }
 
-void Renderer::drawBoxWireframe(vec3 mins, vec3 maxs, COLOR4 color) {
+void Renderer::drawBoxWireframe(vec3 mins, vec3 maxs, COLOR4 color)
+{
 	vec3 flippedMins = vec3(mins.x, mins.z, -mins.y);
 	vec3 flippedMaxs = vec3(maxs.x, maxs.z, -maxs.y);
 
@@ -3389,26 +3407,39 @@ void Renderer::drawBoxWireframe(vec3 mins, vec3 maxs, COLOR4 color) {
 
 	cVert verts[24];
 	// Bottom
-	verts[0] = cVert(v[0], color); verts[1] = cVert(v[1], color);
-	verts[2] = cVert(v[1], color); verts[3] = cVert(v[2], color);
-	verts[4] = cVert(v[2], color); verts[5] = cVert(v[3], color);
-	verts[6] = cVert(v[3], color); verts[7] = cVert(v[0], color);
+	verts[0] = cVert(v[0], color);
+	verts[1] = cVert(v[1], color);
+	verts[2] = cVert(v[1], color);
+	verts[3] = cVert(v[2], color);
+	verts[4] = cVert(v[2], color);
+	verts[5] = cVert(v[3], color);
+	verts[6] = cVert(v[3], color);
+	verts[7] = cVert(v[0], color);
 	// Top
-	verts[8] = cVert(v[4], color); verts[9] = cVert(v[5], color);
-	verts[10] = cVert(v[5], color); verts[11] = cVert(v[6], color);
-	verts[12] = cVert(v[6], color); verts[13] = cVert(v[7], color);
-	verts[14] = cVert(v[7], color); verts[15] = cVert(v[4], color);
+	verts[8] = cVert(v[4], color);
+	verts[9] = cVert(v[5], color);
+	verts[10] = cVert(v[5], color);
+	verts[11] = cVert(v[6], color);
+	verts[12] = cVert(v[6], color);
+	verts[13] = cVert(v[7], color);
+	verts[14] = cVert(v[7], color);
+	verts[15] = cVert(v[4], color);
 	// Sides
-	verts[16] = cVert(v[0], color); verts[17] = cVert(v[4], color);
-	verts[18] = cVert(v[1], color); verts[19] = cVert(v[5], color);
-	verts[20] = cVert(v[2], color); verts[21] = cVert(v[6], color);
-	verts[22] = cVert(v[3], color); verts[23] = cVert(v[7], color);
+	verts[16] = cVert(v[0], color);
+	verts[17] = cVert(v[4], color);
+	verts[18] = cVert(v[1], color);
+	verts[19] = cVert(v[5], color);
+	verts[20] = cVert(v[2], color);
+	verts[21] = cVert(v[6], color);
+	verts[22] = cVert(v[3], color);
+	verts[23] = cVert(v[7], color);
 
 	VertexBuffer buffer(g_app->colorShader, verts, 24, GL_LINES, false);
 	buffer.drawFull();
 }
 
-void Renderer::drawBox(vec3 mins, vec3 maxs, COLOR4 color) {
+void Renderer::drawBox(vec3 mins, vec3 maxs, COLOR4 color)
+{
 	vec3 flippedMins = vec3(mins.x, mins.z, -mins.y);
 	vec3 flippedMaxs = vec3(maxs.x, maxs.z, -maxs.y);
 
@@ -3421,10 +3452,12 @@ void Renderer::drawBox(vec3 mins, vec3 maxs, COLOR4 color) {
 	buffer.drawFull();
 }
 
-void Renderer::drawPolygon3D(Polygon3D& poly, COLOR4 color) {
+void Renderer::drawPolygon3D(Polygon3D &poly, COLOR4 color)
+{
 	static cVert verts[64];
 
-	for (size_t i = 0; i < poly.verts.size() && i < 64; i++) {
+	for (size_t i = 0; i < poly.verts.size() && i < 64; i++)
+	{
 		vec3 pos = poly.verts[i];
 		verts[i].pos = vec3(pos.x, pos.z, -pos.y);
 		verts[i].c = color;
@@ -3434,17 +3467,20 @@ void Renderer::drawPolygon3D(Polygon3D& poly, COLOR4 color) {
 	buffer.drawFull();
 }
 
-float Renderer::drawPolygon2D(Polygon3D poly, vec2 pos, vec2 maxSz, COLOR4 color) {
+float Renderer::drawPolygon2D(Polygon3D poly, vec2 pos, vec2 maxSz, COLOR4 color)
+{
 	vec2 sz = poly.localMaxs - poly.localMins;
 	float scale = std::min(maxSz.y / sz.y, maxSz.x / sz.x);
 
 	vec2 offset = poly.localMins * -scale + pos;
 
-	for (size_t i = 0; i < poly.verts.size(); i++) {
+	for (size_t i = 0; i < poly.verts.size(); i++)
+	{
 		vec2 v1 = poly.localVerts[i];
 		vec2 v2 = poly.localVerts[(i + 1) % poly.verts.size()];
 		drawLine2D(offset + v1 * scale, offset + v2 * scale, color);
-		if (i == 0) {
+		if (i == 0)
+		{
 			drawLine2D(offset + v1 * scale, offset + (v1 + (v2 - v1) * 0.5f) * scale, COLOR4(0, 255, 0, 255));
 		}
 	}
@@ -3455,11 +3491,11 @@ float Renderer::drawPolygon2D(Polygon3D poly, vec2 pos, vec2 maxSz, COLOR4 color
 		drawBox2D(offset + cam * scale, 16, poly.isInside(cam) ? COLOR4(0, 255, 0, 255) : COLOR4(255, 32, 0, 255));
 	}
 
-
 	return scale;
 }
 
-void Renderer::drawBox2D(vec2 center, float width, COLOR4 color) {
+void Renderer::drawBox2D(vec2 center, float width, COLOR4 color)
+{
 	vec2 pos = vec2(center.x, center.y) - vec2(width * 0.5f, width * 0.5f);
 	cQuad cube(pos.x, pos.y, width, width, color);
 
@@ -3467,9 +3503,7 @@ void Renderer::drawBox2D(vec2 center, float width, COLOR4 color) {
 	buffer.drawFull();
 }
 
-
-
-void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
+void Renderer::drawPlane(BSPPLANE &plane, COLOR4 color, vec3 offset)
 {
 	vec3 ori = offset + plane.vNormal * plane.fDist;
 	vec3 crossDir = std::fabs(plane.vNormal.z) > 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
@@ -3498,14 +3532,14 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 	planeBuf->drawFull();
 }
 
-void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset)
+void Renderer::drawClipnodes(Bsp *map, int iNode, int &currentPlane, int activePlane, vec3 offset)
 {
 	if (iNode < 0)
 		return;
-	BSPCLIPNODE32& node = map->clipnodes[iNode];
+	BSPCLIPNODE32 &node = map->clipnodes[iNode];
 
 	if (currentPlane == activePlane)
-		drawPlane(map->planes[node.iPlane], { 255, 255, 255, 255 }, offset);
+		drawPlane(map->planes[node.iPlane], {255, 255, 255, 255}, offset);
 	currentPlane++;
 
 	for (int i = 0; i < 2; i++)
@@ -3517,14 +3551,14 @@ void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activeP
 	}
 }
 
-void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset)
+void Renderer::drawNodes(Bsp *map, int iNode, int &currentPlane, int activePlane, vec3 offset)
 {
 	if (iNode < 0)
 		return;
-	BSPNODE32& node = map->nodes[iNode];
+	BSPNODE32 &node = map->nodes[iNode];
 
 	if (currentPlane == activePlane)
-		drawPlane(map->planes[node.iPlane], { 255, 128, 128, 255 }, offset);
+		drawPlane(map->planes[node.iPlane], {255, 128, 128, 255}, offset);
 	currentPlane++;
 
 	for (int i = 0; i < 2; i++)
@@ -3538,16 +3572,16 @@ void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane
 
 void Renderer::updateDragAxes()
 {
-	Bsp* map = SelectedMap;
-	Entity* ent = NULL;
+	Bsp *map = SelectedMap;
+	Entity *ent = NULL;
 	int modelIdx = -1;
 	vec3 mapOffset;
 	vec3 localCameraOrigin;
-	auto& entIdx = pickInfo.selectedEnts;
+	auto &entIdx = pickInfo.selectedEnts;
 
 	if (map && entIdx.size())
 	{
-		BspRenderer* rend = map->getBspRender();
+		BspRenderer *rend = map->getBspRender();
 		if (rend)
 		{
 			ent = map->ents[entIdx[0]];
@@ -3609,7 +3643,7 @@ void Renderer::updateDragAxes()
 					}
 					vec3 modelOrigin = entMin + (entMax - entMin) * 0.5f;*/
 
-					moveAxes.origin = map->models[modelIdx].vOrigin/* + modelOrigin*/;
+					moveAxes.origin = map->models[modelIdx].vOrigin /* + modelOrigin*/;
 					moveAxes.origin += ent->origin;
 				}
 				else
@@ -3640,12 +3674,18 @@ void Renderer::updateDragAxes()
 				if (modelVerts[i].selected)
 				{
 					vec3 v = modelVerts[i].pos + entOrigin;
-					if (v.x < min.x) min.x = v.x;
-					if (v.y < min.y) min.y = v.y;
-					if (v.z < min.z) min.z = v.z;
-					if (v.x > max.x) max.x = v.x;
-					if (v.y > max.y) max.y = v.y;
-					if (v.z > max.z) max.z = v.z;
+					if (v.x < min.x)
+						min.x = v.x;
+					if (v.y < min.y)
+						min.y = v.y;
+					if (v.z < min.z)
+						min.z = v.z;
+					if (v.x > max.x)
+						max.x = v.x;
+					if (v.y > max.y)
+						max.y = v.y;
+					if (v.z > max.z)
+						max.z = v.z;
 					selectTotal++;
 				}
 			}
@@ -3664,24 +3704,23 @@ void Renderer::updateDragAxes()
 		float s = baseScale;
 		float d = baseScale * 32;
 
-
 		vec3 axisMins[6] = {
-			vec3(0, -s, -s) + vec3(entMax.x,0,0), // x+
-			vec3(-s, 0, -s) + vec3(0,entMax.y,0), // y+
-			vec3(-s, -s, 0) + vec3(0,0,entMax.z), // z+
+			vec3(0, -s, -s) + vec3(entMax.x, 0, 0), // x+
+			vec3(-s, 0, -s) + vec3(0, entMax.y, 0), // y+
+			vec3(-s, -s, 0) + vec3(0, 0, entMax.z), // z+
 
-			vec3(-d, -s, -s) + vec3(entMin.x,0,0), // x-
-			vec3(-s, -d, -s) + vec3(0,entMin.y,0), // y-
-			vec3(-s, -s, -d) + vec3(0,0,entMin.z)  // z-
+			vec3(-d, -s, -s) + vec3(entMin.x, 0, 0), // x-
+			vec3(-s, -d, -s) + vec3(0, entMin.y, 0), // y-
+			vec3(-s, -s, -d) + vec3(0, 0, entMin.z)	 // z-
 		};
 		vec3 axisMaxs[6] = {
-			vec3(d, s, s) + vec3(entMax.x,0,0), // x+
-			vec3(s, d, s) + vec3(0,entMax.y,0), // y+
-			vec3(s, s, d) + vec3(0,0,entMax.z), // z+
+			vec3(d, s, s) + vec3(entMax.x, 0, 0), // x+
+			vec3(s, d, s) + vec3(0, entMax.y, 0), // y+
+			vec3(s, s, d) + vec3(0, 0, entMax.z), // z+
 
-			vec3(0, s, s) + vec3(entMin.x,0,0), // x-
-			vec3(s, 0, s) + vec3(0,entMin.y,0), // y-
-			vec3(s, s, 0) + vec3(0,0,entMin.z)  // z-
+			vec3(0, s, s) + vec3(entMin.x, 0, 0), // x-
+			vec3(s, 0, s) + vec3(0, entMin.y, 0), // y-
+			vec3(s, s, 0) + vec3(0, 0, entMin.z)  // z-
 		};
 
 		scaleAxes.model[0] = cCube(axisMins[0], axisMaxs[0], scaleAxes.dimColor[0]);
@@ -3693,7 +3732,7 @@ void Renderer::updateDragAxes()
 		scaleAxes.model[5] = cCube(axisMins[5], axisMaxs[5], scaleAxes.dimColor[5]);
 
 		// flip to HL coords
-		cVert* verts = (cVert*)scaleAxes.model;
+		cVert *verts = (cVert *)scaleAxes.model;
 		for (int i = 0; i < 6 * 6 * 6; i++)
 		{
 			verts[i].pos = verts[i].pos.flip();
@@ -3702,22 +3741,22 @@ void Renderer::updateDragAxes()
 		// larger mins/maxs so you can be less precise when selecting them
 		s *= 4;
 		vec3 grabAxisMins[6] = {
-			vec3(0, -s, -s) + vec3(entMax.x,0,0), // x+
-			vec3(-s, 0, -s) + vec3(0,entMax.y,0), // y+
-			vec3(-s, -s, 0) + vec3(0,0,entMax.z), // z+
+			vec3(0, -s, -s) + vec3(entMax.x, 0, 0), // x+
+			vec3(-s, 0, -s) + vec3(0, entMax.y, 0), // y+
+			vec3(-s, -s, 0) + vec3(0, 0, entMax.z), // z+
 
-			vec3(-d, -s, -s) + vec3(entMin.x,0,0), // x-
-			vec3(-s, -d, -s) + vec3(0,entMin.y,0), // y-
-			vec3(-s, -s, -d) + vec3(0,0,entMin.z)  // z-
+			vec3(-d, -s, -s) + vec3(entMin.x, 0, 0), // x-
+			vec3(-s, -d, -s) + vec3(0, entMin.y, 0), // y-
+			vec3(-s, -s, -d) + vec3(0, 0, entMin.z)	 // z-
 		};
 		vec3 grabAxisMaxs[6] = {
-			vec3(d, s, s) + vec3(entMax.x,0,0), // x+
-			vec3(s, d, s) + vec3(0,entMax.y,0), // y+
-			vec3(s, s, d) + vec3(0,0,entMax.z), // z+
+			vec3(d, s, s) + vec3(entMax.x, 0, 0), // x+
+			vec3(s, d, s) + vec3(0, entMax.y, 0), // y+
+			vec3(s, s, d) + vec3(0, 0, entMax.z), // z+
 
-			vec3(0, s, s) + vec3(entMin.x,0,0), // x-
-			vec3(s, 0, s) + vec3(0,entMin.y,0), // y-
-			vec3(s, s, 0) + vec3(0,0,entMin.z)  // z-
+			vec3(0, s, s) + vec3(entMin.x, 0, 0), // x-
+			vec3(s, 0, s) + vec3(0, entMin.y, 0), // y-
+			vec3(s, s, 0) + vec3(0, 0, entMin.z)  // z-
 		};
 
 		for (int i = 0; i < 6; i++)
@@ -3725,7 +3764,6 @@ void Renderer::updateDragAxes()
 			scaleAxes.mins[i] = grabAxisMins[i];
 			scaleAxes.maxs[i] = grabAxisMaxs[i];
 		}
-
 
 		if (hoverAxis >= 0 && hoverAxis < scaleAxes.numAxes)
 		{
@@ -3766,7 +3804,6 @@ void Renderer::updateDragAxes()
 		moveAxes.maxs[2] = vec3(s, s, d);
 		moveAxes.maxs[3] = vec3(s2, s2, s2);
 
-
 		if (hoverAxis >= 0 && hoverAxis < moveAxes.numAxes)
 		{
 			moveAxes.model[hoverAxis].setColor(moveAxes.hoverColor[hoverAxis]);
@@ -3787,10 +3824,9 @@ vec3 Renderer::getAxisDragPoint(vec3 origin)
 	getPickRay(pickStart, pickDir);
 
 	vec3 axisNormals[3] = {
-		vec3(1,0,0),
-		vec3(0,1,0),
-		vec3(0,0,1)
-	};
+		vec3(1, 0, 0),
+		vec3(0, 1, 0),
+		vec3(0, 0, 1)};
 
 	// get intersection points between the pick ray and each each movement direction plane
 	float dots[3]{};
@@ -3804,12 +3840,18 @@ vec3 Renderer::getAxisDragPoint(vec3 origin)
 	int bestMovementPlane = 0;
 	switch (hoverAxis % 3)
 	{
-	case 0: bestMovementPlane = dots[1] > dots[2] ? 1 : 2; break;
-	case 1: bestMovementPlane = dots[0] > dots[2] ? 0 : 2; break;
-	case 2: bestMovementPlane = dots[1] > dots[0] ? 1 : 0; break;
+		case 0:
+			bestMovementPlane = dots[1] > dots[2] ? 1 : 2;
+			break;
+		case 1:
+			bestMovementPlane = dots[0] > dots[2] ? 0 : 2;
+			break;
+		case 2:
+			bestMovementPlane = dots[1] > dots[0] ? 1 : 0;
+			break;
 	}
 
-	float fDist = ((float*)&origin)[bestMovementPlane];
+	float fDist = ((float *)&origin)[bestMovementPlane];
 	float intersectDist;
 	rayPlaneIntersect(pickStart, pickDir, axisNormals[bestMovementPlane], fDist, intersectDist);
 
@@ -3824,9 +3866,9 @@ vec3 Renderer::getAxisDragPoint(vec3 origin)
 
 void Renderer::updateModelVerts()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	int modelIdx = -1;
-	Entity* ent = NULL;
+	Entity *ent = NULL;
 	auto entIdx = pickInfo.selectedEnts;
 
 	if (modelOriginBuff)
@@ -3888,7 +3930,7 @@ void Renderer::updateModelVerts()
 		return;
 	}
 
-	//map->getBspRender()->refreshModel(modelIdx);
+	// map->getBspRender()->refreshModel(modelIdx);
 
 	if (!map->is_convex(modelIdx))
 	{
@@ -3928,10 +3970,10 @@ void Renderer::updateModelVerts()
 	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (6 * 6 * (int)numCubes), GL_TRIANGLES, true);
 	updateSelectionSize(map, modelIdx);
 
-	//print_log(get_localized_string(LANG_0913),modelVerts.size());
+	// print_log(get_localized_string(LANG_0913),modelVerts.size());
 }
 
-void Renderer::updateSelectionSize(Bsp* map, int modelIdx)
+void Renderer::updateSelectionSize(Bsp *map, int modelIdx)
 {
 	selectionSize = vec3();
 	if (!map)
@@ -3947,7 +3989,7 @@ void Renderer::updateSelectionSize(Bsp* map, int modelIdx)
 	else
 	{
 		vec3 mins, maxs;
-		//map->get_model_vertex_bounds(modelIdx, mins, maxs);
+		// map->get_model_vertex_bounds(modelIdx, mins, maxs);
 		map->get_bounding_box(modelIdx, mins, maxs);
 		selectionSize = maxs - mins;
 	}
@@ -3963,7 +4005,7 @@ void Renderer::updateEntConnections()
 		entConnectionPoints = NULL;
 	}
 
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 
 	if (!(g_render_flags & RENDER_ENT_CONNECTIONS) || entIdx.empty() || !map)
@@ -3971,12 +4013,12 @@ void Renderer::updateEntConnections()
 		return;
 	}
 
-	Entity* ent = map->ents[entIdx[0]];
+	Entity *ent = map->ents[entIdx[0]];
 
 	std::vector<std::string> targetNames = ent->getTargets();
-	std::vector<Entity*> targets;
-	std::vector<Entity*> callers;
-	std::vector<Entity*> callerAndTarget; // both a target and a caller
+	std::vector<Entity *> targets;
+	std::vector<Entity *> callers;
+	std::vector<Entity *> callerAndTarget; // both a target and a caller
 	std::string thisName;
 
 	if (ent->hasKey("targetname"))
@@ -3986,7 +4028,7 @@ void Renderer::updateEntConnections()
 
 	for (size_t k = 0; k < map->ents.size(); k++)
 	{
-		Entity* tEnt = map->ents[k];
+		Entity *tEnt = map->ents[k];
 
 		if (tEnt == ent)
 			continue;
@@ -4029,12 +4071,12 @@ void Renderer::updateEntConnections()
 	size_t numVerts = targets.size() * 2 + callers.size() * 2 + callerAndTarget.size() * 2;
 	size_t numPoints = callers.size() + targets.size() + callerAndTarget.size();
 
-	cVert* lines = new cVert[numVerts];
-	cCube* points = new cCube[numPoints];
+	cVert *lines = new cVert[numVerts];
+	cCube *points = new cCube[numPoints];
 
-	const COLOR4 targetColor = { 255, 255, 0, 255 };
-	const COLOR4 callerColor = { 0, 255, 255, 255 };
-	const COLOR4 bothColor = { 0, 255, 0, 255 };
+	const COLOR4 targetColor = {255, 255, 0, 255};
+	const COLOR4 callerColor = {0, 255, 255, 255};
+	const COLOR4 bothColor = {0, 255, 0, 255};
 
 	vec3 srcPos = map->getEntOrigin(ent).flip();
 	size_t idx = 0;
@@ -4045,10 +4087,12 @@ void Renderer::updateEntConnections()
 	for (size_t i = 0; i < targets.size(); i++)
 	{
 		vec3 ori = map->getEntOrigin(targets[i]).flip();
-		if (cidx < numPoints) {
+		if (cidx < numPoints)
+		{
 			points[cidx++] = cCube(ori - extent, ori + extent, targetColor);
 		}
-		if (idx + 1 < numVerts) {
+		if (idx + 1 < numVerts)
+		{
 			lines[idx++] = cVert(srcPos, targetColor);
 			lines[idx++] = cVert(ori, targetColor);
 		}
@@ -4056,10 +4100,12 @@ void Renderer::updateEntConnections()
 	for (size_t i = 0; i < callers.size(); i++)
 	{
 		vec3 ori = map->getEntOrigin(callers[i]).flip();
-		if (cidx < numPoints) {
+		if (cidx < numPoints)
+		{
 			points[cidx++] = cCube(ori - extent, ori + extent, callerColor);
 		}
-		if (idx + 1 < numVerts) {
+		if (idx + 1 < numVerts)
+		{
 			lines[idx++] = cVert(srcPos, callerColor);
 			lines[idx++] = cVert(ori, callerColor);
 		}
@@ -4068,10 +4114,12 @@ void Renderer::updateEntConnections()
 	for (size_t i = 0; i < callerAndTarget.size(); i++)
 	{
 		vec3 ori = map->getEntOrigin(callerAndTarget[i]).flip();
-		if (cidx < numPoints) {
+		if (cidx < numPoints)
+		{
 			points[cidx++] = cCube(ori - extent, ori + extent, bothColor);
 		}
-		if (idx + 1 < numVerts) {
+		if (idx + 1 < numVerts)
+		{
 			lines[idx++] = cVert(srcPos, bothColor);
 			lines[idx++] = cVert(ori, bothColor);
 		}
@@ -4087,7 +4135,7 @@ void Renderer::updateEntConnectionPositions()
 	auto entIdx = pickInfo.selectedEnts;
 	if (SelectedMap && entConnections && entIdx.size())
 	{
-		Entity* ent = SelectedMap->ents[entIdx[0]];
+		Entity *ent = SelectedMap->ents[entIdx[0]];
 		vec3 pos = SelectedMap->getEntOrigin(ent).flip();
 
 		if (transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_OBJECT && !moveOrigin && ent->isBspModel())
@@ -4095,7 +4143,7 @@ void Renderer::updateEntConnectionPositions()
 			pos += deltaMoveOffset.flip();
 		}
 
-		cVert* verts = (cVert*)entConnections->getData();
+		cVert *verts = (cVert *)entConnections->getData();
 		for (int i = 0; i < entConnections->numVerts; i += 2)
 		{
 			verts[i].pos = pos;
@@ -4106,14 +4154,18 @@ void Renderer::updateEntConnectionPositions()
 	updateCullBox();
 }
 
-void Renderer::updateCullBox() {
+void Renderer::updateCullBox()
+{
 	cullMins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	cullMaxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	int findCount = 0;
-	for (auto& rend : mapRenderers) {
-		for (Entity* ent : rend->map->ents) {
-			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull") {
+	for (auto &rend : mapRenderers)
+	{
+		for (Entity *ent : rend->map->ents)
+		{
+			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "cull")
+			{
 				expandBoundingBox(ent->origin + rend->mapOffset, cullMins, cullMaxs);
 				findCount++;
 			}
@@ -4123,7 +4175,7 @@ void Renderer::updateCullBox() {
 	hasCullbox = findCount > 1;
 }
 
-bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, Solid& outSolid)
+bool Renderer::getModelSolid(std::vector<TransformVert> &hullVerts, Bsp *map, Solid &outSolid)
 {
 	outSolid.faces.clear();
 	outSolid.hullEdges.clear();
@@ -4148,7 +4200,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 	{
 		int iPlane = it->first;
 		std::vector<int> verts = it->second;
-		BSPPLANE& plane = map->planes[iPlane];
+		BSPPLANE &plane = map->planes[iPlane];
 		if (verts.size() < 2)
 		{
 			if (g_settings.verboseLogs)
@@ -4214,7 +4266,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			for (auto it2 = planeVerts.begin(); it2 != planeVerts.end(); ++it2)
 			{
 				int iPlane2 = it2->first;
-				BSPPLANE& p = map->planes[iPlane2];
+				BSPPLANE &p = map->planes[iPlane2];
 				float dist = dotProduct(midPoint, p.vNormal) - p.fDist;
 				if (std::fabs(dist) < ON_EPSILON)
 				{
@@ -4238,7 +4290,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 	return true;
 }
 
-void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, float z)
+void Renderer::scaleSelectedObject(Bsp *map, int modelIdx, float x, float y, float z)
 {
 	/*vec3 minDist;
 	vec3 maxDist;
@@ -4266,18 +4318,18 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, flo
 	scaleSelectedObject(map, modelIdx, dir, vec3());
 }
 
-void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool /*logging*/)
+void Renderer::scaleSelectedObject(Bsp *map, int modelIdx, vec3 dir, const vec3 &fromDir, bool /*logging*/)
 {
 	bool scaleFromOrigin = std::fabs(fromDir.x) < EPSILON && std::fabs(fromDir.y) < EPSILON && std::fabs(fromDir.z) < EPSILON;
 
 	vec3 minDist(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 	vec3 maxDist(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
-	for (const auto& vert : modelVerts)
+	for (const auto &vert : modelVerts)
 	{
 		expandBoundingBox(vert.startPos, minDist, maxDist);
 	}
-	for (const auto& faceVert : modelFaceVerts)
+	for (const auto &faceVert : modelFaceVerts)
 	{
 		expandBoundingBox(faceVert.startPos, minDist, maxDist);
 	}
@@ -4309,7 +4361,7 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 	}
 
 	// Scale planes
-	for (auto& vert : modelVerts)
+	for (auto &vert : modelVerts)
 	{
 		vec3 stretchFactor = (vert.startPos - scaleFromDist) / distRange;
 		vert.pos += dir * stretchFactor;
@@ -4320,7 +4372,7 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 	}
 
 	// Scale visible faces
-	for (auto& faceVert : modelFaceVerts)
+	for (auto &faceVert : modelFaceVerts)
 	{
 		vec3 stretchFactor = (faceVert.startPos - scaleFromDist) / distRange;
 		faceVert.pos += dir * stretchFactor;
@@ -4339,7 +4391,7 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 		minDist = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 		maxDist = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
-		for (const auto& faceVert : modelFaceVerts)
+		for (const auto &faceVert : modelFaceVerts)
 		{
 			expandBoundingBox(faceVert.pos, minDist, maxDist);
 		}
@@ -4350,9 +4402,9 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 		scaleMat.loadIdentity();
 		scaleMat.scale(scaleFactor.x, scaleFactor.y, scaleFactor.z);
 
-		for (auto& oldinfo : scaleTexinfos)
+		for (auto &oldinfo : scaleTexinfos)
 		{
-			BSPTEXTUREINFO& info = map->texinfos[oldinfo.texinfoIdx];
+			BSPTEXTUREINFO &info = map->texinfos[oldinfo.texinfoIdx];
 
 			info.vS = (scaleMat * vec4(oldinfo.oldS, 1)).xyz();
 			info.vT = (scaleMat * vec4(oldinfo.oldT, 1)).xyz();
@@ -4363,19 +4415,28 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 			for (int k = 0; k < 3; k++)
 			{
 				vec3 stretchDir;
-				if (k == 0) stretchDir = vec3(dir.x, 0, 0).normalize();
-				if (k == 1) stretchDir = vec3(0, dir.y, 0).normalize();
-				if (k == 2) stretchDir = vec3(0, 0, dir.z).normalize();
+				if (k == 0)
+					stretchDir = vec3(dir.x, 0, 0).normalize();
+				if (k == 1)
+					stretchDir = vec3(0, dir.y, 0).normalize();
+				if (k == 2)
+					stretchDir = vec3(0, 0, dir.z).normalize();
 
 				float refDist = 0;
-				if (k == 0) refDist = scaleFromDist.x;
-				if (k == 1) refDist = scaleFromDist.y;
-				if (k == 2) refDist = scaleFromDist.z;
+				if (k == 0)
+					refDist = scaleFromDist.x;
+				if (k == 1)
+					refDist = scaleFromDist.y;
+				if (k == 2)
+					refDist = scaleFromDist.z;
 
 				vec3 texFromDir;
-				if (k == 0) texFromDir = dir * vec3(1, 0, 0);
-				if (k == 1) texFromDir = dir * vec3(0, 1, 0);
-				if (k == 2) texFromDir = dir * vec3(0, 0, 1);
+				if (k == 0)
+					texFromDir = dir * vec3(1, 0, 0);
+				if (k == 1)
+					texFromDir = dir * vec3(0, 1, 0);
+				if (k == 2)
+					texFromDir = dir * vec3(0, 0, 1);
 
 				float dotS = dotProduct(oldinfo.oldS.normalize(), stretchDir);
 				float dotT = dotProduct(oldinfo.oldT.normalize(), stretchDir);
@@ -4412,10 +4473,9 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 	}
 
 	updateSelectionSize(map, modelIdx);
-
 }
 
-void Renderer::moveSelectedVerts(const vec3& delta)
+void Renderer::moveSelectedVerts(const vec3 &delta)
 {
 	if (!SelectedMap)
 	{
@@ -4436,25 +4496,25 @@ void Renderer::moveSelectedVerts(const vec3& delta)
 		}
 	}
 
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 	if (entIdx.size())
 	{
-		Entity* ent = map->ents[entIdx[0]];
+		Entity *ent = map->ents[entIdx[0]];
 		map->getBspRender()->refreshModel(ent->getBspModelIdx());
 	}
 }
 
 bool Renderer::splitModelFace()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 	if (!map)
 	{
 		print_log(get_localized_string(LANG_0916));
 		return false;
 	}
-	BspRenderer* mapRenderer = map->getBspRender();
+	BspRenderer *mapRenderer = map->getBspRender();
 	// find the pseudo-edge to split with
 	std::vector<int> selectedEdges;
 	for (int i = 0; i < (int)modelEdges.size(); i++)
@@ -4474,10 +4534,10 @@ bool Renderer::splitModelFace()
 		print_log(get_localized_string(LANG_0918));
 		return false;
 	}
-	Entity* ent = map->ents[entIdx[0]];
+	Entity *ent = map->ents[entIdx[0]];
 
-	HullEdge& edge1 = modelEdges[selectedEdges[0]];
-	HullEdge& edge2 = modelEdges[selectedEdges[1]];
+	HullEdge &edge1 = modelEdges[selectedEdges[0]];
+	HullEdge &edge2 = modelEdges[selectedEdges[1]];
 	int commonPlane = -1;
 	for (int i = 0; i < 2 && commonPlane == -1; i++)
 	{
@@ -4501,13 +4561,11 @@ bool Renderer::splitModelFace()
 
 	vec3 splitPoints[2] = {
 		getEdgeControlPoint(modelVerts, edge1),
-		getEdgeControlPoint(modelVerts, edge2)
-	};
+		getEdgeControlPoint(modelVerts, edge2)};
 
 	std::vector<int> modelPlanes;
 
-
-	BSPMODEL& tmodel = map->models[ent->getBspModelIdx()];
+	BSPMODEL &tmodel = map->models[ent->getBspModelIdx()];
 	map->getNodePlanes(tmodel.iHeadnodes[0], modelPlanes);
 
 	// find the plane being split
@@ -4556,17 +4614,12 @@ bool Renderer::splitModelFace()
 	// replace split plane with 2 new slightly-angled planes
 	{
 		vec3 planeVerts[2][3] = {
-			{
-				splitPoints[0],
-				modelVerts[edge1.verts[1]].pos,
-				splitPoints[1]
-			},
-			{
-				splitPoints[0],
-				splitPoints[1],
-				modelVerts[edge1.verts[0]].pos
-			}
-		};
+			{splitPoints[0],
+			 modelVerts[edge1.verts[1]].pos,
+			 splitPoints[1]},
+			{splitPoints[0],
+			 splitPoints[1],
+			 modelVerts[edge1.verts[0]].pos}};
 
 		modelPlanes.erase(modelPlanes.begin() + commonPlaneIdx);
 		for (int i = 0; i < 2; i++)
@@ -4576,7 +4629,7 @@ bool Renderer::splitModelFace()
 			vec3 normal = crossProduct(e1, e2).normalize();
 
 			int newPlaneIdx = map->create_plane();
-			BSPPLANE& plane = map->planes[newPlaneIdx];
+			BSPPLANE &plane = map->planes[newPlaneIdx];
 			plane.update_plane(normal, getDistAlongAxis(normal, planeVerts[i][0]));
 			modelPlanes.push_back(newPlaneIdx);
 		}
@@ -4610,7 +4663,7 @@ bool Renderer::splitModelFace()
 		}
 		for (auto it = planeVerts.begin(); it != planeVerts.end(); ++it)
 		{
-			std::vector<vec3>& verts = it->second;
+			std::vector<vec3> &verts = it->second;
 
 			if (verts.size() < 3)
 			{
@@ -4622,16 +4675,16 @@ bool Renderer::splitModelFace()
 
 	// copy textures/UVs from the old model
 	{
-		BSPMODEL& oldModel = map->models[ent->getBspModelIdx()];
+		BSPMODEL &oldModel = map->models[ent->getBspModelIdx()];
 		for (size_t i = 0; i < newSolid.faces.size(); i++)
 		{
-			Face& solidFace = newSolid.faces[i];
-			BSPFACE32* bestMatch = NULL;
+			Face &solidFace = newSolid.faces[i];
+			BSPFACE32 *bestMatch = NULL;
 			float bestdot = -g_limits.fltMaxCoord;
 			for (int k = 0; k < oldModel.nFaces; k++)
 			{
-				BSPFACE32& BSPFACE32 = map->faces[oldModel.iFirstFace + k];
-				BSPPLANE& plane = map->planes[BSPFACE32.iPlane];
+				BSPFACE32 &BSPFACE32 = map->faces[oldModel.iFirstFace + k];
+				BSPPLANE &plane = map->planes[BSPFACE32.iPlane];
 				vec3 bspFaceNormal = BSPFACE32.nPlaneSide ? plane.vNormal.invert() : plane.vNormal;
 				vec3 solidFaceNormal = solidFace.planeSide ? solidFace.plane.vNormal.invert() : solidFace.plane.vNormal;
 				float dot = dotProduct(bspFaceNormal, solidFaceNormal);
@@ -4661,7 +4714,6 @@ bool Renderer::splitModelFace()
 
 	gui->reloadLimits();
 
-
 	map->resize_all_lightmaps();
 	mapRenderer->loadLightmaps();
 	mapRenderer->refreshModel(modelIdx);
@@ -4671,7 +4723,7 @@ bool Renderer::splitModelFace()
 	return true;
 }
 
-void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, float z)
+void Renderer::scaleSelectedVerts(Bsp *map, int modelIdx, float x, float y, float z)
 {
 	if (!map)
 	{
@@ -4679,13 +4731,13 @@ void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, floa
 		return;
 	}
 
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
+	TransformAxes &activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 	vec3 fromOrigin = activeAxes.origin;
 
 	vec3 min(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 	vec3 max(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 	int selectTotal = 0;
-	for (const auto& vert : modelVerts)
+	for (const auto &vert : modelVerts)
 	{
 		if (vert.selected)
 		{
@@ -4704,7 +4756,7 @@ void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, floa
 
 	debugVec1 = fromOrigin;
 
-	for (auto& vert : modelVerts)
+	for (auto &vert : modelVerts)
 	{
 		if (vert.selected)
 		{
@@ -4724,7 +4776,7 @@ void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, floa
 
 void Renderer::updateGridSnap()
 {
-	const float element_values[] = { 0.00001f, 0.01f, 0.1f, 0.5f, 1.f, 2.f, 4.f, 8.f, 16.f, 32.f, 64.f };
+	const float element_values[] = {0.00001f, 0.01f, 0.1f, 0.5f, 1.f, 2.f, 4.f, 8.f, 16.f, 32.f, 64.f};
 	const int grid_snap_modes = sizeof(element_values) / sizeof(float);
 	if (gridSnapLevel >= 0 && gridSnapLevel < grid_snap_modes)
 	{
@@ -4747,7 +4799,7 @@ void Renderer::grabEnt()
 		return;
 	}
 	movingEnt = true;
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	vec3 mapOffset = map->getBspRender()->mapOffset;
 	vec3 localCamOrigin = cameraOrigin - mapOffset;
 	grabDist = (map->getEntOrigin(map->ents[entIdx[0]]) - localCamOrigin).length();
@@ -4757,7 +4809,7 @@ void Renderer::grabEnt()
 
 void Renderer::cutEnt()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (map && pickInfo.selectedEnts.size() > 0)
 	{
 		auto ents = pickInfo.selectedEnts;
@@ -4790,7 +4842,7 @@ void Renderer::copyEnt()
 	std::sort(ents.begin(), ents.end());
 	std::reverse(ents.begin(), ents.end());
 
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (!map)
 		return;
 
@@ -4818,15 +4870,15 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	if (!clipboardText)
 		return;
 
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (!map)
 	{
 		print_log(get_localized_string(LANG_0925));
 		return;
 	}
 
-	BspRenderer* rend = map->getBspRender();
-	std::vector<Entity*> copiedEnts{};
+	BspRenderer *rend = map->getBspRender();
+	std::vector<Entity *> copiedEnts{};
 
 	try
 	{
@@ -4834,7 +4886,6 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	}
 	catch (...)
 	{
-
 	}
 
 	clearSelection();
@@ -4885,15 +4936,15 @@ void Renderer::pasteEntAtOrigin(vec3 origin)
 	if (!clipboardText)
 		return;
 
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (!map)
 	{
 		print_log(get_localized_string(LANG_0925));
 		return;
 	}
 
-	BspRenderer* rend = map->getBspRender();
-	std::vector<Entity*> copiedEnts{};
+	BspRenderer *rend = map->getBspRender();
+	std::vector<Entity *> copiedEnts{};
 
 	try
 	{
@@ -4933,13 +4984,13 @@ void Renderer::pasteEntsFromText(std::string /*text*/)
 	auto clipboardText = ImGui::GetClipboardText();
 	if (!clipboardText)
 		return;
-	Bsp* map = getSelectedMap();
+	Bsp *map = getSelectedMap();
 	if (!map)
 	{
 		return;
 	}
-	BspRenderer* rend = map->getBspRender();
-	std::vector<Entity*> copiedEnts{};
+	BspRenderer *rend = map->getBspRender();
+	std::vector<Entity *> copiedEnts{};
 
 	try
 	{
@@ -4947,7 +4998,6 @@ void Renderer::pasteEntsFromText(std::string /*text*/)
 	}
 	catch (...)
 	{
-
 	}
 
 	clearSelection();
@@ -4972,13 +5022,12 @@ void Renderer::pasteEntsFromText(std::string /*text*/)
 		selectEnt(map, (int)map->ents.size() - 1, true);
 	}
 
-
 	rend->pushUndoState("Paste Ents from clipboard", FL_ENTITIES);
 }
 
 void Renderer::deleteEnts()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 
 	if (map && !pickInfo.selectedEnts.empty())
 	{
@@ -5043,7 +5092,7 @@ void Renderer::deselectObject(bool onlyobject)
 	updateEntConnections();
 }
 
-void Renderer::selectFace(Bsp* map, int face, bool add)
+void Renderer::selectFace(Bsp *map, int face, bool add)
 {
 	if (!map)
 		return;
@@ -5066,7 +5115,7 @@ void Renderer::selectFace(Bsp* map, int face, bool add)
 
 void Renderer::deselectFaces()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (!map)
 		return;
 
@@ -5079,7 +5128,7 @@ void Renderer::deselectFaces()
 	pickInfo.selectedFaces.clear();
 }
 
-void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
+void Renderer::selectEnt(Bsp *map, int entIdx, bool add)
 {
 	if (!map)
 		return;
@@ -5087,7 +5136,7 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	pickMode = PICK_OBJECT;
 	pickInfo.selectedFaces.clear();
 
-	Entity* ent = NULL;
+	Entity *ent = NULL;
 	if (entIdx < (int)map->ents.size())
 	{
 		ent = map->ents[entIdx];
@@ -5135,28 +5184,29 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	}
 }
 
-float magnitude(vec3 vec) {
+float magnitude(vec3 vec)
+{
 	return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 }
 
-float Angle(vec3 from, vec3 to) {
-	//Find the scalar/dot product of the provided 2 Vectors
+float Angle(vec3 from, vec3 to)
+{
+	// Find the scalar/dot product of the provided 2 Vectors
 	float dot = dotProduct(from, to);
-	//Find the product of both magnitudes of the vectors then divide dot from it
+	// Find the product of both magnitudes of the vectors then divide dot from it
 	dot = dot / (magnitude(from) * magnitude(to));
-	//Get the arc cosin of the angle, you now have your angle in radians 
+	// Get the arc cosin of the angle, you now have your angle in radians
 	float arcAcos = acos(dot);
-	//Convert to degrees by Multiplying the arc cosin by 180/M_PI
+	// Convert to degrees by Multiplying the arc cosin by 180/M_PI
 	float angle = arcAcos * 180.0f / HL_PI;
 	return angle;
 }
 
-
-void Renderer::goToFace(Bsp* map, int faceIdx)
+void Renderer::goToFace(Bsp *map, int faceIdx)
 {
 	if (faceIdx < 0 || faceIdx >= map->faceCount)
 		return;
-	BSPFACE32& face = map->faces[faceIdx];
+	BSPFACE32 &face = map->faces[faceIdx];
 	if (face.iFirstEdge >= 0 && face.nEdges)
 	{
 		BSPPLANE plane = map->planes[face.iPlane];
@@ -5184,7 +5234,7 @@ void Renderer::goToFace(Bsp* map, int faceIdx)
 		for (int i = 0; i < face.nEdges; i++)
 		{
 			int edgeIdx = map->surfedges[face.iFirstEdge + i];
-			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
+			BSPEDGE32 &edge = map->edges[abs(edgeIdx)];
 			int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 			edgeVerts.push_back(map->verts[vertIdx]);
 		}
@@ -5205,7 +5255,7 @@ void Renderer::goToFace(Bsp* map, int faceIdx)
 		if (flip)
 			yaw *= -1.0f;
 
-		cameraAngles = { pitch, 0.0f , yaw };
+		cameraAngles = {pitch, 0.0f, yaw};
 		cameraAngles = cameraAngles.normalize_angles();
 	}
 }
@@ -5215,29 +5265,29 @@ void Renderer::goToCoords(float x, float y, float z)
 	cameraOrigin.y = y;
 	cameraOrigin.z = z;
 }
-void Renderer::goToCoords(const vec3& pos)
+void Renderer::goToCoords(const vec3 &pos)
 {
 	cameraOrigin.x = pos.x;
 	cameraOrigin.y = pos.y;
 	cameraOrigin.z = pos.z;
 }
 
-void Renderer::goToEnt(Bsp* map, int entIdx)
+void Renderer::goToEnt(Bsp *map, int entIdx)
 {
 	if (entIdx >= (int)map->ents.size())
 		return;
 
-	Entity* ent = map->ents[entIdx];
+	Entity *ent = map->ents[entIdx];
 
 	vec3 size;
 	if (ent->isBspModel())
 	{
-		BSPMODEL& model = map->models[ent->getBspModelIdx()];
+		BSPMODEL &model = map->models[ent->getBspModelIdx()];
 		size = (model.nMaxs - model.nMins) * 0.5f;
 	}
 	else
 	{
-		EntCube* cube = pointEntRenderer->getEntCube(ent);
+		EntCube *cube = pointEntRenderer->getEntCube(ent);
 		size = cube->maxs - cube->mins * 0.5f;
 	}
 
@@ -5248,7 +5298,7 @@ void Renderer::ungrabEnt()
 {
 	if (!movingEnt)
 		return;
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	auto pickEnts = pickInfo.selectedEnts;
 	if (!map || pickEnts.empty())
 	{
@@ -5258,10 +5308,9 @@ void Renderer::ungrabEnt()
 	movingEnt = false;
 }
 
-
 void Renderer::updateEnts()
 {
-	Bsp* map = SelectedMap;
+	Bsp *map = SelectedMap;
 	if (map)
 	{
 		map->getBspRender()->preRenderEnts();
@@ -5271,11 +5320,11 @@ void Renderer::updateEnts()
 	updateCullBox();
 }
 
-bool Renderer::isEntTransparent(const char* classname)
+bool Renderer::isEntTransparent(const char *classname)
 {
 	if (!classname)
 		return false;
-	for (auto const& s : g_settings.transparentEntities)
+	for (auto const &s : g_settings.transparentEntities)
 	{
 		if (strcasecmp(s.c_str(), classname) == 0)
 			return true;
@@ -5284,7 +5333,7 @@ bool Renderer::isEntTransparent(const char* classname)
 }
 
 // now it temporary used for something
-Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& wadpart)
+Texture *Renderer::giveMeTexture(const std::string &texname, const std::string &wadpart)
 {
 	if (!texname.size())
 	{
@@ -5323,17 +5372,17 @@ Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& 
 		}
 	}
 
-	for (auto& render : mapRenderers)
+	for (auto &render : mapRenderers)
 	{
-		for (auto& wad : render->wads)
+		for (auto &wad : render->wads)
 		{
 			if (wad->hasTexture(texname))
 			{
 				WADTEX wadTex = wad->readTexture(texname);
-				COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+				COLOR3 *imageData = ConvertWadTexToRGB(wadTex);
 				if (imageData)
 				{
-					Texture* tmpTex = new Texture(wadTex.nWidth, wadTex.nHeight, (unsigned char*)imageData, texname);
+					Texture *tmpTex = new Texture(wadTex.nWidth, wadTex.nHeight, (unsigned char *)imageData, texname);
 					glExteralTextures_names.emplace_back(texname);
 					glExteralTextures_wads.emplace_back(toLowerCase(wad->wadname));
 					glExteralTextures_textures.emplace_back(tmpTex);
@@ -5347,22 +5396,23 @@ Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& 
 
 void Renderer::merge(std::string fpath)
 {
-	Bsp* thismap = SelectedMap;
+	Bsp *thismap = SelectedMap;
 	if (!thismap)
 		return;
 
 	thismap->update_ent_lump();
 
-	Bsp* map2 = new Bsp(fpath);
-	Bsp* thisCopy = new Bsp(*thismap);
+	Bsp *map2 = new Bsp(fpath);
+	Bsp *thisCopy = new Bsp(*thismap);
 
-	if (!map2->bsp_valid) {
+	if (!map2->bsp_valid)
+	{
 		delete map2;
 		print_log("Merge aborted because the BSP load failed.\n");
 		return;
 	}
 
-	std::vector<Bsp*> maps;
+	std::vector<Bsp *> maps;
 
 	maps.push_back(thisCopy);
 	maps.push_back(map2);
@@ -5370,7 +5420,8 @@ void Renderer::merge(std::string fpath)
 	BspMerger merger;
 	mergeResult = merger.merge(maps, thismap->bsp_name, true, true, false, {vec3(0, 0, 0), vec3(0, 0, 512.0f)});
 
-	if (!mergeResult.map || !mergeResult.map->bsp_valid) {
+	if (!mergeResult.map || !mergeResult.map->bsp_valid)
+	{
 		delete map2;
 		delete mergeResult.map;
 
@@ -5378,7 +5429,8 @@ void Renderer::merge(std::string fpath)
 		return;
 	}
 
-	if (mergeResult.overflow) {
+	if (mergeResult.overflow)
+	{
 		return; // map deleted later in gui modal, after displaying limit overflows
 	}
 
@@ -5400,14 +5452,16 @@ bool Renderer::hasCopiedEnt()
 	}
 	return false;
 }
-void Renderer::selectBoxEntities() {
-	Bsp* map = SelectedMap;
+void Renderer::selectBoxEntities()
+{
+	Bsp *map = SelectedMap;
 	if (!map || !hasCullbox)
 		return;
 
 	vec3 mapOffset = map->getBspRender()->mapOffset;
 
-	for (size_t i = 1; i < map->ents.size(); i++) {
+	for (size_t i = 1; i < map->ents.size(); i++)
+	{
 		vec3 v = map->ents[i]->origin;
 		int modelIdx = map->ents[i]->getBspModelIdx();
 
@@ -5416,66 +5470,80 @@ void Renderer::selectBoxEntities() {
 		if (isCullEnt)
 			continue;
 
-		if (modelIdx != -1) {
+		if (modelIdx != -1)
+		{
 			vec3 mins, maxs;
 			map->get_model_vertex_bounds(modelIdx, mins, maxs);
 			mins += v + mapOffset;
 			maxs += v + mapOffset;
-			if (boxesIntersect(mins, maxs, cullMins, cullMaxs)) {
+			if (boxesIntersect(mins, maxs, cullMins, cullMaxs))
+			{
 				isInside = true;
 			}
 		}
-		else {
-			if (pointInBox(v + mapOffset, cullMins, cullMaxs)) {
+		else
+		{
+			if (pointInBox(v + mapOffset, cullMins, cullMaxs))
+			{
 				isInside = true;
 			}
 		}
 
-		if (isInside) {
-			if (!pickInfo.IsSelectedEnt((int)i)) {
+		if (isInside)
+		{
+			if (!pickInfo.IsSelectedEnt((int)i))
+			{
 				pickInfo.AddSelectedEnt((int)i);
 			}
 		}
 	}
 }
 
-void Renderer::selectBoxFaces() {
-	Bsp* map = SelectedMap;
+void Renderer::selectBoxFaces()
+{
+	Bsp *map = SelectedMap;
 	if (!map || !hasCullbox)
 		return;
 
 	pickMode = PICK_FACE;
 
 	vec3 mapOffset = map->getBspRender()->mapOffset;
-	BSPMODEL& worldmodel = map->models[0];
+	BSPMODEL &worldmodel = map->models[0];
 
-	for (int i = 0; i < worldmodel.nFaces; i++) {
+	for (int i = 0; i < worldmodel.nFaces; i++)
+	{
 		int faceIdx = worldmodel.iFirstFace + i;
-		BSPFACE32& face = map->faces[faceIdx];
+		BSPFACE32 &face = map->faces[faceIdx];
 
 		bool isInside = false;
-		for (int e = 0; e < face.nEdges; e++) {
+		for (int e = 0; e < face.nEdges; e++)
+		{
 			int edgeIdx = map->surfedges[face.iFirstEdge + e];
-			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
+			BSPEDGE32 &edge = map->edges[abs(edgeIdx)];
 			int vertIdx = edgeIdx >= 0 ? edge.iVertex[0] : edge.iVertex[1];
 
 			vec3 v = map->verts[vertIdx];
 
-			if (pointInBox(v + mapOffset, cullMins, cullMaxs)) {
+			if (pointInBox(v + mapOffset, cullMins, cullMaxs))
+			{
 				isInside = true;
 				break;
 			}
 		}
 
-		if (isInside) {
+		if (isInside)
+		{
 			bool alreadySelected = false;
-			for (int selectedFace : pickInfo.selectedFaces) {
-				if (selectedFace == faceIdx) {
+			for (int selectedFace : pickInfo.selectedFaces)
+			{
+				if (selectedFace == faceIdx)
+				{
 					alreadySelected = true;
 					break;
 				}
 			}
-			if (!alreadySelected) {
+			if (!alreadySelected)
+			{
 				selectFace(map, faceIdx, true);
 			}
 		}

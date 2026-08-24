@@ -31,8 +31,8 @@ void set_console_colors(unsigned int colors = DEFAULT_CONSOLE_COLOR);
 
 #include "MutexManager.h"
 
-template<class ...Args>
-void print_log(unsigned int colors, const std::string& format, Args ...args) 
+template <class... Args>
+void print_log(unsigned int colors, const std::string &format, Args... args)
 {
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 
@@ -47,8 +47,8 @@ void print_log(unsigned int colors, const std::string& format, Args ...args)
 
 	std::lock_guard<std::mutex> lockConsole(Sync::LogConsole);
 
-	//replaceAll(line, " ", "+");
-	auto newline = ends_with(line,'\n');
+	// replaceAll(line, " ", "+");
+	auto newline = ends_with(line, '\n');
 	auto splitstr = splitString(line, "\n");
 
 	bool ret = line[0] == '\r';
@@ -90,7 +90,7 @@ void print_log(unsigned int colors, const std::string& format, Args ...args)
 	}
 	else
 	{
-		for (auto& s : splitstr)
+		for (auto &s : splitstr)
 		{
 			if (s.size())
 			{
@@ -104,8 +104,8 @@ void print_log(unsigned int colors, const std::string& format, Args ...args)
 	}
 }
 
-template<class ...Args>
-void print_log(const std::string& format, Args ...args) 
+template <class... Args>
+void print_log(const std::string &format, Args... args)
 {
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 	print_log(DEFAULT_CONSOLE_COLOR, "{}", line);
@@ -114,4 +114,8 @@ void print_log(const std::string& format, Args ...args)
 extern double flushConsoleTime;
 void FlushConsoleLog(bool wait = false);
 
-#define print_assert(error) if(!(error)) { print_log(PRINT_RED, "Error: {}\n", __LINE__); }
+#define print_assert(error)                            \
+	if (!(error))                                      \
+	{                                                  \
+		print_log(PRINT_RED, "Error: {}\n", __LINE__); \
+	}
