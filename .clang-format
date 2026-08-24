@@ -21,6 +21,8 @@ AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 
+PointerAlignment: Left
+
 # Spaces
 SpaceAfterCStyleCast: false
 SpaceBeforeParens: ControlStatements
