@@ -909,7 +909,7 @@ void BspRenderer::deleteTextures()
 
 	if (skybox)
 	{
-		skybox->clear();
+		skybox->deleteGLTexture();
 	}
 
 	glTextures.clear();
@@ -1041,8 +1041,13 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		{
 			isTrigger = strcasecmp(tex->szName, "aaatrigger") == 0 || strcasecmp(tex->szName, "clip") == 0 || strcasecmp(tex->szName, "origin") == 0 || strcasecmp(tex->szName, "translucent") == 0 || strcasecmp(tex->szName, "skip") == 0 || strcasecmp(tex->szName, "hint") == 0 || strcasecmp(tex->szName, "null") == 0 || strcasecmp(tex->szName, "bevel") == 0 || strcasecmp(tex->szName, "noclip") == 0 || strcasecmp(tex->szName, "solidhint") == 0;
 
-			isSky = strcasecmp(tex->szName, "sky") == 0 ||
+			isSky = strncasecmp(tex->szName, "sky", 3) == 0 ||
 					strcasecmp(tex->szName, "skycull") == 0;
+		}
+
+		if (!isSky && !glTextures.empty() && texinfo.iMiptex >= 0 && texinfo.iMiptex < (int)glTextures.size() && !glTextures[texinfo.iMiptex].empty() && glTextures[texinfo.iMiptex][0] == skyTex_rgba)
+		{
+			isSky = true;
 		}
 
 		if (ent)
@@ -1206,7 +1211,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		{
 			RenderGroup newGroup = RenderGroup();
 			newGroup.transparent = isTransparent;
-			newGroup.special = isSpecial;
+			newGroup.special = isSpecial && !isSky;
 			newGroup.isSky = isSky;
 			newGroup.isTransparentByList = (tex && IsTextureTransparent(tex->szName));
 			newGroup.textures = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : std::vector<Texture*>{greyTex};

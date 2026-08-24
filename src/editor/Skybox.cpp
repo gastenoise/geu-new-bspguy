@@ -32,6 +32,19 @@ Skybox::~Skybox()
 	clear();
 }
 
+void Skybox::deleteGLTexture()
+{
+	std::lock_guard<std::mutex> lock(loadMutex);
+
+	if (cubemapTexId != 0)
+	{
+		glDeleteTextures(1, &cubemapTexId);
+		cubemapTexId = 0;
+	}
+
+	loaded = false;
+}
+
 void Skybox::clear()
 {
 	std::lock_guard<std::mutex> lock(loadMutex);

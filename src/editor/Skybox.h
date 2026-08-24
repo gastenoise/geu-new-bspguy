@@ -36,6 +36,9 @@ public:
 	// Uploads decoded pixel buffers to OpenGL cubemap on the main GL thread
 	void upload();
 
+	// Deletes OpenGL cubemap texture ID without touching CPU decoded buffers
+	void deleteGLTexture();
+
 	// Releases GPU texture and freed CPU buffers
 	void clear();
 
