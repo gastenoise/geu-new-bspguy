@@ -277,6 +277,7 @@ class BspRenderer
 	std::vector<Polygon3D> debugFaces;
 	NavMesh* debugNavMesh;
 	Skybox* skybox;
+	bool hasSky = false;
 
 	std::vector<std::vector<Texture*>> glTextures{};
 

@@ -1145,7 +1145,11 @@ void Renderer::renderLoop()
 					{
 						vec3 center = SelectedMap->ents[0]->origin * -1 + SelectedMap->getBspRender()->mapOffset;
 						float width = g_limits.maxMapBoundary * 2;
-						drawBox(center, width, COLOR4(g_settings.mapBoundaryColor, 64));
+						bool skyboxActive = (g_render_flags & RENDER_SKYBOX) && SelectedMap->getBspRender()->hasSky && SelectedMap->getBspRender()->skybox && SelectedMap->getBspRender()->skybox->isLoaded();
+						if (!skyboxActive)
+						{
+							drawBox(center, width, COLOR4(g_settings.mapBoundaryColor, 64));
+						}
 						glLineWidth(2.5f);
 						drawBoxWireframe(center - vec3(width * 0.5f, width * 0.5f, width * 0.5f), center + vec3(width * 0.5f, width * 0.5f, width * 0.5f), COLOR4(100, 100, 100, 255));
 						glLineWidth(1.3f);
@@ -1860,7 +1864,7 @@ void Renderer::drawSkybox(Skybox* skybox, Bsp* map)
 		return;
 
 	BspRenderer* rend = map->getBspRender();
-	if (!rend)
+	if (!rend || !rend->hasSky)
 		return;
 
 	vec3 center = (map->ents.size() > 0 ? map->ents[0]->origin * -1 : vec3()) + rend->mapOffset;
@@ -1928,7 +1932,7 @@ void Renderer::drawSkybox(Skybox* skybox, Bsp* map)
 
 	// Draw canvas boundary wireframe
 	glLineWidth(2.5f);
-	drawBoxWireframe(boxMins, boxMaxs, COLOR4(g_settings.mapBoundaryColor, 255));
+	drawBoxWireframe(boxMins, boxMaxs, COLOR4(100, 100, 100, 255));
 	glLineWidth(1.3f);
 }
 

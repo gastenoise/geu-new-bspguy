@@ -524,21 +524,40 @@ void BspRenderer::loadTextures()
 		print_log(get_localized_string(LANG_0271), wadTexCount);
 	if (embedCount)
 		print_log(get_localized_string(LANG_0272), embedCount);
-	if (missingCount)
-		print_log(get_localized_string(LANG_0273), missingCount);
+	hasSky = false;
+	for (int i = 0; i < map->textureCount; i++)
+	{
+		int texOffset = ((int*)map->textures)[i + 1];
+		if (texOffset >= 0)
+		{
+			BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
+			if (memcmp(tex->szName, "sky", 3) == 0 || memcmp(tex->szName, "SKY", 3) == 0 || strcasecmp(tex->szName, "skycull") == 0)
+			{
+				hasSky = true;
+				break;
+			}
+		}
+	}
 
 	if (skybox)
 	{
-		std::string skyname = "desert";
-		if (map->ents.size() > 0 && map->ents[0]->hasKey("skyname"))
+		if (hasSky)
 		{
-			std::string customSky = map->ents[0]->keyvalues["skyname"];
-			if (!customSky.empty())
+			std::string skyname = "desert";
+			if (map->ents.size() > 0 && map->ents[0]->hasKey("skyname"))
 			{
-				skyname = customSky;
+				std::string customSky = map->ents[0]->keyvalues["skyname"];
+				if (!customSky.empty())
+				{
+					skyname = customSky;
+				}
 			}
+			skybox->load(map, skyname, g_settings.skybox_dir);
 		}
-		skybox->load(map, skyname, g_settings.skybox_dir);
+		else
+		{
+			skybox->clear();
+		}
 	}
 }
 
@@ -835,6 +854,21 @@ void BspRenderer::genRenderFaces()
 			worldRenderGroups += groupCount;
 		else
 			modelRenderGroups += groupCount;
+	}
+
+	hasSky = false;
+	for (auto model : renderModels)
+	{
+		for (auto& g : model->renderGroups)
+		{
+			if (g.isSky)
+			{
+				hasSky = true;
+				break;
+			}
+		}
+		if (hasSky)
+			break;
 	}
 
 	print_log("Created {} solid render groups ({} world, {} entity)\n",
@@ -2867,7 +2901,8 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		drawPointEntities(highlightEnts, REND_PASS_MODELSHADER);
 	}
 
-	if ((g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded() && !ortho_overview && !make_screenshot)
+	bool useSkybox = (g_render_flags & RENDER_SKYBOX) && hasSky && skybox && skybox->isLoaded();
+	if (useSkybox && !ortho_overview && !make_screenshot)
 	{
 		g_app->drawSkybox(skybox, map);
 	}
@@ -2883,7 +2918,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			if (pass == REND_PASS_BSPSHADER_TRANSPARENT)
 			{
 				g_app->bspShader->bind();
-				bool useSkybox = (g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded();
 				glUniform1i(g_app->bspShaderRenderSkyboxId, useSkybox ? 1 : 0);
 			}
 
