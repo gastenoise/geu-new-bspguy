@@ -9,7 +9,7 @@ IndentWidth: 4
 ContinuationIndentWidth: 4
 
 # Line length
-ColumnLimit: 120
+ColumnLimit: 0
 
 # Braces & Alignment
 BreakBeforeBraces: Allman
@@ -32,5 +32,5 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 
 # Includes
-SortIncludes: CaseSensitive
+SortIncludes: Never
 IncludeBlocks: Preserve
