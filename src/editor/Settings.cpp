@@ -29,8 +29,8 @@ void Settings::loadDefaultSettings()
 	fontSize = 22.f;
 	gamedir = std::string();
 	workingdir = "./bspguy_work/";
-
 	lastdir = "";
+	skybox_dir = "";
 	selected_lang = "EN";
 	languages.clear();
 	languages.push_back(selected_lang);
@@ -53,7 +53,7 @@ void Settings::loadDefaultSettings()
 
 	settings_tab = 0;
 
-	render_flags = g_render_flags = (RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL | RENDER_ENTS | RENDER_SPECIAL_ENTS | RENDER_POINT_ENTS | RENDER_WIREFRAME | RENDER_ENT_CONNECTIONS | RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED | RENDER_WORLD_CLIPNODES | RENDER_ORIGIN);
+	render_flags = g_render_flags = (RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL | RENDER_ENTS | RENDER_SPECIAL_ENTS | RENDER_POINT_ENTS | RENDER_WIREFRAME | RENDER_ENT_CONNECTIONS | RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED | RENDER_WORLD_CLIPNODES | RENDER_ORIGIN | RENDER_SKYBOX);
 
 	vsync = true;
 	merge_verts = false;
@@ -1132,6 +1132,7 @@ void Settings::loadSettings()
 	g_settings.lastdir = settings_ini->Get<std::string>("PATHS", "lastdir", "");
 	g_settings.rad_path = settings_ini->Get<std::string>("PATHS", "hlrad_path", "");
 	g_settings.palette_name = settings_ini->Get<std::string>("PATHS", "palette", "");
+	g_settings.skybox_dir = settings_ini->Get<std::string>("PATHS", "skybox_dir", "");
 
 	int fgdCount = settings_ini->Get<int>("FGD", "count", 0);
 	if (fgdCount)
@@ -1487,7 +1488,8 @@ void Settings::saveSettings(std::string path)
 	iniData << "workingdir=" << g_settings.workingdir << "\n";
 	iniData << "lastdir=" << g_settings.lastdir << "\n";
 	iniData << "hlrad_path=" << g_settings.rad_path << "\n";
-	iniData << "palette=" << g_settings.palette_name << "\n\n";
+	iniData << "palette=" << g_settings.palette_name << "\n";
+	iniData << "skybox_dir=" << g_settings.skybox_dir << "\n\n";
 
 	iniData << "[FGD]\n";
 	iniData << "count=" << g_settings.fgdPaths.size() << "\n";
@@ -1651,7 +1653,7 @@ std::string convertToSection(std::string& key)
 		return "INPUT";
 	}
 	if (key == "gamedir" || key == "workingdir" || key == "lastdir" ||
-		key == "hlrad_path" || key == "palette")
+		key == "hlrad_path" || key == "palette" || key == "skybox_dir")
 	{
 		return "PATHS";
 	}

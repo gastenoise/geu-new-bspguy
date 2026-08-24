@@ -2793,6 +2793,12 @@ void Gui::drawMenu_View()
 		{
 		}
 
+		bool skyboxEnabled = (g_render_flags & RENDER_SKYBOX) != 0;
+		if (ImGui::MenuItem("Skybox", "Ctrl+Alt+S", skyboxEnabled))
+		{
+			g_render_flags ^= RENDER_SKYBOX;
+		}
+
 		ImGui::EndMenu();
 	}
 }

@@ -88,6 +88,7 @@ set(SOURCE_FILES
 	src/editor/gui/ActionRegistry.h		src/editor/gui/ActionRegistry.cpp	src/editor/gui/ActionRegistryInit.cpp
 	src/editor/gui/GuiCommandPalette.h	src/editor/gui/GuiCommandPalette.cpp
 	src/editor/BspRenderer.h		src/editor/BspRenderer.cpp
+	src/editor/Skybox.h				src/editor/Skybox.cpp
 	src/editor/PointEntRenderer.h	src/editor/PointEntRenderer.cpp
 	src/editor/Fgd.h				src/editor/Fgd.cpp
 	src/editor/Clipper.h			src/editor/Clipper.cpp

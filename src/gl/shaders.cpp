@@ -151,4 +151,31 @@ const char* g_shader_multitexture_fragment =
 	"	float gamma = 1.6;\n"
 	"	gl_FragColor = vec4(pow(color.rgb, vec3(1.0/gamma)), color.a - fcolor.a );\n"
 	"}\n";
+
+	const char* g_shader_skybox_vertex =
+		"uniform mat4 modelViewProjection;\n"
+		"uniform vec3 uCameraOrigin;\n"
+		"\n"
+		"attribute vec3 vPosition;\n"
+		"\n"
+		"varying vec3 fRayDir;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	gl_Position = modelViewProjection * vec4(vPosition, 1.0);\n"
+		"	fRayDir = vPosition - uCameraOrigin;\n"
+		"}\n";
+
+	const char* g_shader_skybox_fragment =
+		"varying vec3 fRayDir;\n"
+		"\n"
+		"uniform samplerCube sSkybox;\n"
+		"\n"
+		"void main()\n"
+		"{\n"
+		"	vec3 dir = normalize(fRayDir);\n"
+		"	vec4 color = textureCube(sSkybox, dir);\n"
+		"	float gamma = 1.6;\n"
+		"	gl_FragColor = vec4(pow(color.rgb, vec3(1.0 / gamma)), 1.0);\n"
+		"}\n";
 } // namespace Shaders

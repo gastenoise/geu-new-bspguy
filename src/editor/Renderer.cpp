@@ -356,6 +356,17 @@ Renderer::Renderer()
 	glUniform4f(colorShaderMultId, 0.0, 0.0, 0.0, 0.0);
 	colorShader->bindAttributes();
 
+	skyShader = new ShaderProgram(Shaders::g_shader_skybox_vertex, Shaders::g_shader_skybox_fragment);
+	skyShader->setMatrixes(&modelView, &modelViewProjection);
+	skyShader->setMatrixNames(NULL, "modelViewProjection");
+	skyShader->addAttribute(POS_3F, "vPosition");
+
+	skyShader->bind();
+	skyShaderCameraOriginId = glGetUniformLocation(skyShader->ID, "uCameraOrigin");
+	skyShaderSkyboxId = glGetUniformLocation(skyShader->ID, "sSkybox");
+	glUniform1i(skyShaderSkyboxId, 0);
+	skyShader->bindAttributes();
+
 	clearSelection();
 
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;

@@ -35,7 +35,8 @@ enum RenderFlags : unsigned int
 	RENDER_SELECTED_AT_TOP = 1 << 14,
 	RENDER_TEXTURES_NOFILTER = 1 << 15,
 	RENDER_MAP_BOUNDARY = 1 << 16,
-	RENDER_LIGHTMAPS_NOFILTER = 1 << 17
+	RENDER_LIGHTMAPS_NOFILTER = 1 << 17,
+	RENDER_SKYBOX = 1 << 18
 };
 
 struct PathToggleStruct
@@ -79,6 +80,7 @@ struct Settings
 	std::string gamedir;
 	std::string workingdir;
 	std::string lastdir;
+	std::string skybox_dir;
 
 	std::string selected_lang;
 	std::vector<std::string> languages;

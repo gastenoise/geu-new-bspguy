@@ -29,6 +29,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	lightmaps = NULL;
 	glTexturesSwap.clear();
 	glTextures.clear();
+	skybox = new Skybox();
 
 	leafCube = new EntCube();
 	nodeCube = new EntCube(); /*
@@ -525,6 +526,20 @@ void BspRenderer::loadTextures()
 		print_log(get_localized_string(LANG_0272), embedCount);
 	if (missingCount)
 		print_log(get_localized_string(LANG_0273), missingCount);
+
+	if (skybox)
+	{
+		std::string skyname = "desert";
+		if (map->ents.size() > 0 && map->ents[0]->hasKey("skyname"))
+		{
+			std::string customSky = map->ents[0]->keyvalues["skyname"];
+			if (!customSky.empty())
+			{
+				skyname = customSky;
+			}
+		}
+		skybox->load(map, skyname, g_settings.skybox_dir);
+	}
 }
 
 void BspRenderer::reload()
@@ -892,6 +907,11 @@ void BspRenderer::deleteTextures()
 		}
 	}
 
+	if (skybox)
+	{
+		skybox->clear();
+	}
+
 	glTextures.clear();
 }
 
@@ -1162,7 +1182,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			if (texinfo.iMiptex <= -1 || texinfo.iMiptex >= map->textureCount)
 				continue;
 			bool textureMatch = !texturesLoaded || std::find(renderGroups[k].textures.begin(), renderGroups[k].textures.end(), glTextures[texinfo.iMiptex][0]) != renderGroups[k].textures.end();
-			if (textureMatch && renderGroups[k].transparent == isTransparent)
+			if (textureMatch && renderGroups[k].transparent == isTransparent && renderGroups[k].isSky == isSky)
 			{
 				bool allMatch = true;
 				for (int s = 0; s < MAX_LIGHTMAPS; s++)
@@ -1187,6 +1207,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			RenderGroup newGroup = RenderGroup();
 			newGroup.transparent = isTransparent;
 			newGroup.special = isSpecial;
+			newGroup.isSky = isSky;
 			newGroup.isTransparentByList = (tex && IsTextureTransparent(tex->szName));
 			newGroup.textures = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : std::vector<Texture*>{greyTex};
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
@@ -2523,6 +2544,8 @@ BspRenderer::~BspRenderer()
 
 	deleteTextures();
 	deleteLightmapTextures();
+	delete skybox;
+	skybox = NULL;
 	deleteRenderFaces();
 	deleteRenderClipnodes();
 	deleteFaceMaths();
@@ -2561,6 +2584,11 @@ void BspRenderer::reuploadTextures()
 	{
 		for (auto& tex : glTextures[i])
 			tex->upload();
+	}
+
+	if (skybox)
+	{
+		skybox->upload();
 	}
 
 	texturesLoaded = true;
@@ -3201,6 +3229,30 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 		{
 			if (!edgesOnly && rgroup.buffer)
 			{
+				if (rgroup.isSky && (g_render_flags & RENDER_SKYBOX) && skybox && skybox->isLoaded())
+				{
+					if (ent && ent->isDuplicateModel)
+						rgroup.buffer->frameId--;
+
+					g_app->skyShader->pushMatrix();
+
+					if (ent)
+					{
+						g_app->matmodel = ent->modelMat4x4_calc;
+						g_app->mat_upload();
+					}
+
+					skybox->bind(0);
+
+					vec3 camOrigGl = localCameraOrigin.flip();
+					glUniform3f(g_app->skyShaderCameraOriginId, camOrigGl.x, camOrigGl.y, camOrigGl.z);
+
+					rgroup.buffer->drawFull();
+
+					g_app->skyShader->popMatrix();
+					continue;
+				}
+
 				if (ent && ent->isDuplicateModel)
 					rgroup.buffer->frameId--;
 
