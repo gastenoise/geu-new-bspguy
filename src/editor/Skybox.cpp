@@ -18,6 +18,35 @@ static const char* s_skySuffixes[SKY_NUM_FACES] = {
 	"ft", "rt", "bk", "lf", "up", "dn"
 };
 
+static void rotateImage90CW(unsigned char*& data, int& w, int& h, int channels)
+{
+	if (!data || w <= 0 || h <= 0 || channels <= 0)
+		return;
+
+	unsigned char* rotated = (unsigned char*)malloc(w * h * channels);
+	if (!rotated)
+		return;
+
+	for (int y = 0; y < h; y++)
+	{
+		for (int x = 0; x < w; x++)
+		{
+			int srcIdx = (y * w + x) * channels;
+			int dstX = h - 1 - y;
+			int dstY = x;
+			int dstIdx = (dstY * h + dstX) * channels;
+			for (int c = 0; c < channels; c++)
+			{
+				rotated[dstIdx + c] = data[srcIdx + c];
+			}
+		}
+	}
+
+	stbi_image_free(data);
+	data = rotated;
+	std::swap(w, h);
+}
+
 static void rotateImage270CW(unsigned char*& data, int& w, int& h, int channels)
 {
 	if (!data || w <= 0 || h <= 0 || channels <= 0)
@@ -231,9 +260,9 @@ bool Skybox::loadFacesForSkyname(Bsp* map, const std::string& name, const std::s
 		faces[i].filePath = paths[i];
 	}
 
-	// Rotate UP (top) and DOWN (bottom) 270 degrees CW (180 + 90 CW)
+	// Rotate UP (top) 270 degrees CW (180 + 90 CW) and DOWN (bottom) 90 degrees CW (270 + 180 = 90 CW)
 	rotateImage270CW(faces[SKY_UP].data, faces[SKY_UP].w, faces[SKY_UP].h, faces[SKY_UP].channels);
-	rotateImage270CW(faces[SKY_DOWN].data, faces[SKY_DOWN].w, faces[SKY_DOWN].h, faces[SKY_DOWN].channels);
+	rotateImage90CW(faces[SKY_DOWN].data, faces[SKY_DOWN].w, faces[SKY_DOWN].h, faces[SKY_DOWN].channels);
 
 	this->width = firstW;
 	this->height = firstH;
