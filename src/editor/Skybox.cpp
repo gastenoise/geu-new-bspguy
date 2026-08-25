@@ -6,17 +6,75 @@
 #include "stb_image.h"
 
 static const GLenum s_cubemapTargets[SKY_NUM_FACES] = {
-	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // ft
-	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, // bk
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_X, // ft (Front goes to Left)
+	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, // rt (Right goes to Front)
+	GL_TEXTURE_CUBE_MAP_POSITIVE_X, // bk (Back goes to Right)
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, // lf (Left goes to Back)
 	GL_TEXTURE_CUBE_MAP_POSITIVE_Y, // up
-	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, // dn
-	GL_TEXTURE_CUBE_MAP_POSITIVE_X, // rt
-	GL_TEXTURE_CUBE_MAP_NEGATIVE_X  // lf
+	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y  // dn
 };
 
 static const char* s_skySuffixes[SKY_NUM_FACES] = {
-	"ft", "bk", "up", "dn", "rt", "lf"
+	"ft", "rt", "bk", "lf", "up", "dn"
 };
+
+static void rotateImage90CW(unsigned char*& data, int& w, int& h, int channels)
+{
+	if (!data || w <= 0 || h <= 0)
+		return;
+
+	unsigned char* rotated = (unsigned char*)malloc(w * h * channels);
+	if (!rotated)
+		return;
+
+	for (int y = 0; y < h; y++)
+	{
+		for (int x = 0; x < w; x++)
+		{
+			int srcIdx = (y * w + x) * channels;
+			int dstX = h - 1 - y;
+			int dstY = x;
+			int dstIdx = (dstY * h + dstX) * channels;
+			for (int c = 0; c < channels; c++)
+			{
+				rotated[dstIdx + c] = data[srcIdx + c];
+			}
+		}
+	}
+
+	stbi_image_free(data);
+	data = rotated;
+	std::swap(w, h);
+}
+
+static void rotateImage90CCW(unsigned char*& data, int& w, int& h, int channels)
+{
+	if (!data || w <= 0 || h <= 0)
+		return;
+
+	unsigned char* rotated = (unsigned char*)malloc(w * h * channels);
+	if (!rotated)
+		return;
+
+	for (int y = 0; y < h; y++)
+	{
+		for (int x = 0; x < w; x++)
+		{
+			int srcIdx = (y * w + x) * channels;
+			int dstX = y;
+			int dstY = w - 1 - x;
+			int dstIdx = (dstY * w + dstX) * channels;
+			for (int c = 0; c < channels; c++)
+			{
+				rotated[dstIdx + c] = data[srcIdx + c];
+			}
+		}
+	}
+
+	stbi_image_free(data);
+	data = rotated;
+	std::swap(w, h);
+}
 
 Skybox::Skybox()
 	: skyname(""), cubemapTexId(0), loaded(false), width(0), height(0)
@@ -201,6 +259,10 @@ bool Skybox::loadFacesForSkyname(Bsp* map, const std::string& name, const std::s
 		faces[i].channels = 4;
 		faces[i].filePath = paths[i];
 	}
+
+	// Rotate UP 90 deg CW and DOWN 90 deg CCW to align with 90-degree rotated sides
+	rotateImage90CW(faces[SKY_UP].data, faces[SKY_UP].w, faces[SKY_UP].h, faces[SKY_UP].channels);
+	rotateImage90CCW(faces[SKY_DOWN].data, faces[SKY_DOWN].w, faces[SKY_DOWN].h, faces[SKY_DOWN].channels);
 
 	this->width = firstW;
 	this->height = firstH;
