@@ -2695,27 +2695,28 @@ void BspRenderer::highlightFace(int faceIdx, int highlight, bool reupload)
 		return;
 
 	float r, g, b;
-	r = g = b = 0.0f;
+	r = g = 0.0f;
+	b = rgroup->isSky ? 1.0f : 0.0f;
 
 	if (highlight == 1)
 	{
-		r = rgroup->special ? 2.0f : 0.15f;
+		r = (rgroup->special || rgroup->isSky) ? 2.0f : 0.15f;
 		g = 0.0f;
-		b = 0.0f;
+		b = rgroup->isSky ? 1.0f : 0.0f;
 	}
 
 	if (highlight == 2)
 	{
-		r = rgroup->special ? 3.0f : 0.0f;
+		r = (rgroup->special || rgroup->isSky) ? 3.0f : 0.0f;
 		g = 0.0f;
-		b = 0.15f;
+		b = rgroup->isSky ? 1.0f : 0.15f;
 	}
 
 	if (highlight == 3)
 	{
-		r = rgroup->special ? 4.0f : 0.0f;
+		r = (rgroup->special || rgroup->isSky) ? 4.0f : 0.0f;
 		g = 0.15f;
-		b = 0.15f;
+		b = rgroup->isSky ? 1.0f : 0.15f;
 	}
 
 	auto verts = ((lightmapVert*)rgroup->buffer->getData());
