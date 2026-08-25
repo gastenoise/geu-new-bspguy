@@ -23,7 +23,8 @@ static void rotateImage90CW(unsigned char*& data, int& w, int& h, int channels)
 	if (!data || w <= 0 || h <= 0 || channels <= 0)
 		return;
 
-	unsigned char* rotated = (unsigned char*)malloc(w * h * channels);
+	size_t numBytes = static_cast<size_t>(w) * static_cast<size_t>(h) * static_cast<size_t>(channels);
+	unsigned char* rotated = (unsigned char*)malloc(numBytes);
 	if (!rotated)
 		return;
 
@@ -31,10 +32,10 @@ static void rotateImage90CW(unsigned char*& data, int& w, int& h, int channels)
 	{
 		for (int x = 0; x < w; x++)
 		{
-			int srcIdx = (y * w + x) * channels;
+			size_t srcIdx = (static_cast<size_t>(y) * static_cast<size_t>(w) + static_cast<size_t>(x)) * static_cast<size_t>(channels);
 			int dstX = h - 1 - y;
 			int dstY = x;
-			int dstIdx = (dstY * h + dstX) * channels;
+			size_t dstIdx = (static_cast<size_t>(dstY) * static_cast<size_t>(h) + static_cast<size_t>(dstX)) * static_cast<size_t>(channels);
 			for (int c = 0; c < channels; c++)
 			{
 				rotated[dstIdx + c] = data[srcIdx + c];
@@ -52,7 +53,8 @@ static void rotateImage270CW(unsigned char*& data, int& w, int& h, int channels)
 	if (!data || w <= 0 || h <= 0 || channels <= 0)
 		return;
 
-	unsigned char* rotated = (unsigned char*)malloc(w * h * channels);
+	size_t numBytes = static_cast<size_t>(w) * static_cast<size_t>(h) * static_cast<size_t>(channels);
+	unsigned char* rotated = (unsigned char*)malloc(numBytes);
 	if (!rotated)
 		return;
 
@@ -60,10 +62,10 @@ static void rotateImage270CW(unsigned char*& data, int& w, int& h, int channels)
 	{
 		for (int x = 0; x < w; x++)
 		{
-			int srcIdx = (y * w + x) * channels;
+			size_t srcIdx = (static_cast<size_t>(y) * static_cast<size_t>(w) + static_cast<size_t>(x)) * static_cast<size_t>(channels);
 			int dstX = y;
 			int dstY = w - 1 - x;
-			int dstIdx = (dstY * h + dstX) * channels;
+			size_t dstIdx = (static_cast<size_t>(dstY) * static_cast<size_t>(h) + static_cast<size_t>(dstX)) * static_cast<size_t>(channels);
 			for (int c = 0; c < channels; c++)
 			{
 				rotated[dstIdx + c] = data[srcIdx + c];
@@ -137,11 +139,22 @@ bool Skybox::resolveFacePath(Bsp* map, const std::string& name, const std::strin
 		".TGA", ".PNG", ".BMP", ".JPG", ".JPEG"
 	};
 
+	std::string upperSuffix = toUpperCase(suffix);
+	std::string lowerSuffix = toLowerCase(suffix);
+	std::string upperName = toUpperCase(name);
+	std::string lowerName = toLowerCase(name);
+
 	std::vector<std::string> baseNames = {
 		name + suffix,
 		name + "_" + suffix,
-		toLowerCase(name) + suffix,
-		toLowerCase(name) + "_" + suffix
+		lowerName + lowerSuffix,
+		lowerName + "_" + lowerSuffix,
+		upperName + upperSuffix,
+		upperName + "_" + upperSuffix,
+		lowerName + upperSuffix,
+		lowerName + "_" + upperSuffix,
+		upperName + lowerSuffix,
+		upperName + "_" + lowerSuffix
 	};
 
 	for (const auto& base : baseNames)
@@ -312,12 +325,6 @@ void Skybox::upload()
 {
 	std::lock_guard<std::mutex> lock(loadMutex);
 
-	if (cubemapTexId != 0)
-	{
-		glDeleteTextures(1, &cubemapTexId);
-		cubemapTexId = 0;
-	}
-
 	bool hasAllFaces = true;
 	for (int i = 0; i < SKY_NUM_FACES; i++)
 	{
@@ -330,8 +337,17 @@ void Skybox::upload()
 
 	if (!hasAllFaces)
 	{
-		loaded = false;
+		if (cubemapTexId == 0)
+		{
+			loaded = false;
+		}
 		return;
+	}
+
+	if (cubemapTexId != 0)
+	{
+		glDeleteTextures(1, &cubemapTexId);
+		cubemapTexId = 0;
 	}
 
 	glGenTextures(1, &cubemapTexId);

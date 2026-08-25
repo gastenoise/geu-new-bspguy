@@ -367,7 +367,7 @@ void BspRenderer::loadTextures()
 			continue;
 		}
 
-		if (memcmp(tex->szName, "sky", 3) == 0 || memcmp(tex->szName, "SKY", 3) == 0)
+		if (strncasecmp(tex->szName, "sky", 3) == 0 || strcasecmp(tex->szName, "skycull") == 0)
 		{
 			glTexturesSwap[i].push_back(skyTex_rgba);
 			continue;
@@ -531,7 +531,7 @@ void BspRenderer::loadTextures()
 		if (texOffset >= 0)
 		{
 			BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
-			if (memcmp(tex->szName, "sky", 3) == 0 || memcmp(tex->szName, "SKY", 3) == 0 || strcasecmp(tex->szName, "skycull") == 0)
+			if (strncasecmp(tex->szName, "sky", 3) == 0 || strcasecmp(tex->szName, "skycull") == 0)
 			{
 				hasSky = true;
 				break;
