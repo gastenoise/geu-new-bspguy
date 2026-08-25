@@ -274,6 +274,13 @@ void RegisterAllAppActions(Gui* gui, Renderer* app)
 						[]()
 						{ return true; }});
 
+	reg.registerAction({"view.skybox_toggle", "Toggle Skybox Rendering", "View", "Ctrl+Alt+S",
+						"Toggle 3D environment skybox rendering",
+						[]()
+						{ g_render_flags ^= RENDER_SKYBOX; },
+						[]()
+						{ return true; }});
+
 	// ----------------------------------------------------
 	// TOOLS & REPAIRS
 	// ----------------------------------------------------

@@ -149,6 +149,17 @@ void Gui::drawSettings()
 			ifd::FileDialog::Instance().Close();
 		}
 
+		if (ifd::FileDialog::Instance().IsDone("SkyboxDir"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				g_settings.skybox_dir = stripFileName(res.string());
+				g_settings.lastdir = stripFileName(res.string());
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+
 		ImGui::BeginChild(get_localized_string(LANG_0712).c_str());
 		if (settingsTab == 0)
 		{
@@ -227,6 +238,27 @@ void Gui::drawSettings()
 			if (clicked_4)
 			{
 				ifd::FileDialog::Instance().Open("WorkingDir", "Select working dir", std::string(), false, g_settings.lastdir);
+			}
+
+			ImGui::Text("Skybox directory (optional, defaults to <GameDir>/gfx/env/):");
+			ImGui::SetNextItemWidth(pathWidth);
+			ImGui::InputText("##skybox_dir", &g_settings.skybox_dir);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.skybox_dir.size())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(g_settings.skybox_dir.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(delWidth);
+			ImGui::PushStyleColor(ImGuiCol_Button, COLOR_NIGHTMARE_PURPLE);
+			bool clicked_skybox_dir = ImGui::Button("Browse##skybox");
+			ImGui::PopStyleColor(1);
+			if (clicked_skybox_dir)
+			{
+				ifd::FileDialog::Instance().Open("SkyboxDir", "Select skybox directory", std::string(), false, g_settings.lastdir);
 			}
 			if (ImGui::DragFloat(get_localized_string(LANG_0719).c_str(), &fontSize, 0.1f, 8, 48, get_localized_string(LANG_0720).c_str()))
 			{
@@ -943,6 +975,12 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox("Map boundary", &renderMapBoundary))
 			{
 				g_render_flags ^= RENDER_MAP_BOUNDARY;
+			}
+
+			bool renderSkybox = (g_render_flags & RENDER_SKYBOX) != 0;
+			if (ImGui::Checkbox("Render Skybox", &renderSkybox))
+			{
+				g_render_flags ^= RENDER_SKYBOX;
 			}
 
 			ImGui::Columns(1);

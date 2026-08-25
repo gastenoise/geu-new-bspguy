@@ -12,6 +12,7 @@
 #include <future>
 #include "mdl_studio.h"
 #include "Sprite.h"
+#include "Skybox.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -95,10 +96,11 @@ struct RenderGroup
 	bool transparent;
 	bool special;
 	bool isTransparentByList;
+	bool isSky;
 	RenderGroup()
 	{
 		buffer = NULL;
-		transparent = special = isTransparentByList = false;
+		transparent = special = isTransparentByList = isSky = false;
 		textures.clear();
 		frameid = 0;
 		frametime = 0.0f;
@@ -274,6 +276,8 @@ class BspRenderer
 	int numRenderLightmapInfos;
 	std::vector<Polygon3D> debugFaces;
 	NavMesh* debugNavMesh;
+	Skybox* skybox;
+	bool hasSky = false;
 
 	std::vector<std::vector<Texture*>> glTextures{};
 

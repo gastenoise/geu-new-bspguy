@@ -29,6 +29,52 @@
 #include "quantizer.h"
 
 #include "as.h"
+#include "Skybox.h"
+
+static const float s_skyCubeVerts[] = {
+	// Front (+X)
+	 1.0f, -1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f, -1.0f,
+	// Back (-X)
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	// Top (+Y)
+	-1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+	// Bottom (-Y)
+	-1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	// Right (+Z)
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+	// Left (-Z)
+	 1.0f, -1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f,
+	 1.0f, -1.0f, -1.0f
+};
 
 Renderer* g_app = NULL;
 std::vector<BspRenderer*> mapRenderers{};
@@ -338,21 +384,42 @@ Renderer::Renderer()
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL, COLOR_4B | POS_3F);
 
 	bspShader->bind();
-	glUniform1i(glGetUniformLocation(g_app->bspShader->ID, "sTex"), 0);
+	glUniform1i(glGetUniformLocation(bspShader->ID, "sTex"), 0);
 	for (int s = 0; s < MAX_LIGHTMAPS; s++)
 	{
-		unsigned int sLightmapTexIds = glGetUniformLocation(g_app->bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
+		unsigned int sLightmapTexIds = glGetUniformLocation(bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
 		// assign lightmap texture units (skips the normal texture unit)
 		glUniform1i(sLightmapTexIds, s + 1);
 	}
+	bspShaderRenderSkyboxId = glGetUniformLocation(bspShader->ID, "uRenderSkybox");
+	glUniform1i(bspShaderRenderSkyboxId, 0);
 	bspShader->bindAttributes();
 
+	skyShader = new ShaderProgram(Shaders::g_shader_skybox_vertex, Shaders::g_shader_skybox_fragment);
+	skyShader->setMatrixes(&modelView, &modelViewProjection);
+	skyShader->setMatrixNames(NULL, "modelViewProjection");
+	skyShader->addAttribute(POS_3F, "vPosition");
+	skyShader->bind();
+	skyShaderCameraOriginId = glGetUniformLocation(skyShader->ID, "uCameraOrigin");
+	skyShaderSkyboxId = glGetUniformLocation(skyShader->ID, "sSkybox");
+	glUniform1i(skyShaderSkyboxId, 0);
+	skyShader->bindAttributes();
+
+	glGenVertexArrays(1, &skyCubeVao);
+	glBindVertexArray(skyCubeVao);
+	glGenBuffers(1, &skyCubeVbo);
+	glBindBuffer(GL_ARRAY_BUFFER, skyCubeVbo);
+	glBufferData(GL_ARRAY_BUFFER, 36 * sizeof(vec3), nullptr, GL_DYNAMIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
+	glBindVertexArray(0);
+
 	modelShader->bind();
-	glUniform1i(glGetUniformLocation(g_app->modelShader->ID, "sTex"), 0);
+	glUniform1i(glGetUniformLocation(modelShader->ID, "sTex"), 0);
 	modelShader->bindAttributes();
 
 	colorShader->bind();
-	colorShaderMultId = glGetUniformLocation(g_app->colorShader->ID, "colorMult");
+	colorShaderMultId = glGetUniformLocation(colorShader->ID, "colorMult");
 	glUniform4f(colorShaderMultId, 0.0, 0.0, 0.0, 0.0);
 	colorShader->bindAttributes();
 
@@ -380,6 +447,21 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {
 	print_log(get_localized_string(LANG_0901));
+	if (skyCubeVao)
+	{
+		glDeleteVertexArrays(1, &skyCubeVao);
+		skyCubeVao = 0;
+	}
+	if (skyCubeVbo)
+	{
+		glDeleteBuffers(1, &skyCubeVbo);
+		skyCubeVbo = 0;
+	}
+	if (skyShader)
+	{
+		delete skyShader;
+		skyShader = NULL;
+	}
 	ClearTempDirectory();
 	glfwTerminate();
 }
@@ -1063,7 +1145,11 @@ void Renderer::renderLoop()
 					{
 						vec3 center = SelectedMap->ents[0]->origin * -1 + SelectedMap->getBspRender()->mapOffset;
 						float width = g_limits.maxMapBoundary * 2;
-						drawBox(center, width, COLOR4(g_settings.mapBoundaryColor, 64));
+						bool skyboxActive = (g_render_flags & RENDER_SKYBOX) && SelectedMap->getBspRender()->hasSky && SelectedMap->getBspRender()->skybox && SelectedMap->getBspRender()->skybox->isLoaded();
+						if (!skyboxActive)
+						{
+							drawBox(center, width, COLOR4(g_settings.mapBoundaryColor, 64));
+						}
 						glLineWidth(2.5f);
 						drawBoxWireframe(center - vec3(width * 0.5f, width * 0.5f, width * 0.5f), center + vec3(width * 0.5f, width * 0.5f, width * 0.5f), COLOR4(100, 100, 100, 255));
 						glLineWidth(1.3f);
@@ -1770,6 +1856,84 @@ void Renderer::loadFgds()
 	}
 
 	swapPointEntRenderer = new PointEntRenderer(mergedFgd);
+}
+
+void Renderer::drawSkybox(Skybox* skybox, Bsp* map)
+{
+	if (!skybox || !skybox->isLoaded() || !(g_render_flags & RENDER_SKYBOX) || !map)
+		return;
+
+	BspRenderer* rend = map->getBspRender();
+	if (!rend || !rend->hasSky)
+		return;
+
+	vec3 center = (map->ents.size() > 0 ? map->ents[0]->origin * -1 : vec3()) + rend->mapOffset;
+	float limit = g_limits.maxMapBoundary;
+	vec3 boxMins = center - vec3(limit, limit, limit);
+	vec3 boxMaxs = center + vec3(limit, limit, limit);
+
+	vec3 p[8] = {
+		vec3(boxMins.x, boxMins.y, boxMins.z).flip(),
+		vec3(boxMaxs.x, boxMins.y, boxMins.z).flip(),
+		vec3(boxMaxs.x, boxMaxs.y, boxMins.z).flip(),
+		vec3(boxMins.x, boxMaxs.y, boxMins.z).flip(),
+		vec3(boxMins.x, boxMins.y, boxMaxs.z).flip(),
+		vec3(boxMaxs.x, boxMins.y, boxMaxs.z).flip(),
+		vec3(boxMaxs.x, boxMaxs.y, boxMaxs.z).flip(),
+		vec3(boxMins.x, boxMaxs.y, boxMaxs.z).flip()
+	};
+
+	static const int s_boxIndices[36] = {
+		// Bottom (-Z)
+		0, 1, 2,  0, 2, 3,
+		// Top (+Z)
+		4, 6, 5,  4, 7, 6,
+		// Front (+Y)
+		3, 2, 6,  3, 6, 7,
+		// Back (-Y)
+		0, 5, 1,  0, 4, 5,
+		// Left (-X)
+		0, 7, 3,  0, 4, 7,
+		// Right (+X)
+		1, 2, 6,  1, 6, 5
+	};
+
+	vec3 boxVerts[36];
+	for (int i = 0; i < 36; i++)
+	{
+		boxVerts[i] = p[s_boxIndices[i]];
+	}
+
+	glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+
+	skyShader->bind();
+	skyShader->pushMatrix();
+
+	matmodel.loadIdentity();
+	mat_upload();
+
+	vec3 camOrigGl = rend->localCameraOrigin.flip();
+	glUniform3f(skyShaderCameraOriginId, camOrigGl.x, camOrigGl.y, camOrigGl.z);
+
+	skybox->bind(0);
+
+	glBindVertexArray(skyCubeVao);
+	glBindBuffer(GL_ARRAY_BUFFER, skyCubeVbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(boxVerts), boxVerts);
+
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	glBindVertexArray(0);
+	skyShader->popMatrix();
+
+	glDepthMask(GL_TRUE);
+	glEnable(GL_CULL_FACE);
+
+	// Draw canvas boundary wireframe
+	glLineWidth(2.5f);
+	drawBoxWireframe(boxMins, boxMaxs, COLOR4(100, 100, 100, 255));
+	glLineWidth(1.3f);
 }
 
 void Renderer::drawModelVerts()

@@ -29,6 +29,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	lightmaps = NULL;
 	glTexturesSwap.clear();
 	glTextures.clear();
+	skybox = new Skybox();
 
 	leafCube = new EntCube();
 	nodeCube = new EntCube(); /*
@@ -366,7 +367,7 @@ void BspRenderer::loadTextures()
 			continue;
 		}
 
-		if (memcmp(tex->szName, "sky", 3) == 0 || memcmp(tex->szName, "SKY", 3) == 0)
+		if (strncasecmp(tex->szName, "sky", 3) == 0 || strcasecmp(tex->szName, "skycull") == 0)
 		{
 			glTexturesSwap[i].push_back(skyTex_rgba);
 			continue;
@@ -523,8 +524,41 @@ void BspRenderer::loadTextures()
 		print_log(get_localized_string(LANG_0271), wadTexCount);
 	if (embedCount)
 		print_log(get_localized_string(LANG_0272), embedCount);
-	if (missingCount)
-		print_log(get_localized_string(LANG_0273), missingCount);
+	hasSky = false;
+	for (int i = 0; i < map->textureCount; i++)
+	{
+		int texOffset = ((int*)map->textures)[i + 1];
+		if (texOffset >= 0)
+		{
+			BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
+			if (strncasecmp(tex->szName, "sky", 3) == 0 || strcasecmp(tex->szName, "skycull") == 0)
+			{
+				hasSky = true;
+				break;
+			}
+		}
+	}
+
+	if (skybox)
+	{
+		if (hasSky)
+		{
+			std::string skyname = "desert";
+			if (map->ents.size() > 0 && map->ents[0]->hasKey("skyname"))
+			{
+				std::string customSky = map->ents[0]->keyvalues["skyname"];
+				if (!customSky.empty())
+				{
+					skyname = customSky;
+				}
+			}
+			skybox->load(map, skyname, g_settings.skybox_dir);
+		}
+		else
+		{
+			skybox->clear();
+		}
+	}
 }
 
 void BspRenderer::reload()
@@ -822,6 +856,21 @@ void BspRenderer::genRenderFaces()
 			modelRenderGroups += groupCount;
 	}
 
+	hasSky = false;
+	for (auto model : renderModels)
+	{
+		for (auto& g : model->renderGroups)
+		{
+			if (g.isSky)
+			{
+				hasSky = true;
+				break;
+			}
+		}
+		if (hasSky)
+			break;
+	}
+
 	print_log("Created {} solid render groups ({} world, {} entity)\n",
 			  worldRenderGroups + modelRenderGroups,
 			  worldRenderGroups,
@@ -890,6 +939,11 @@ void BspRenderer::deleteTextures()
 				}
 			}
 		}
+	}
+
+	if (skybox)
+	{
+		skybox->deleteGLTexture();
 	}
 
 	glTextures.clear();
@@ -1021,8 +1075,13 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		{
 			isTrigger = strcasecmp(tex->szName, "aaatrigger") == 0 || strcasecmp(tex->szName, "clip") == 0 || strcasecmp(tex->szName, "origin") == 0 || strcasecmp(tex->szName, "translucent") == 0 || strcasecmp(tex->szName, "skip") == 0 || strcasecmp(tex->szName, "hint") == 0 || strcasecmp(tex->szName, "null") == 0 || strcasecmp(tex->szName, "bevel") == 0 || strcasecmp(tex->szName, "noclip") == 0 || strcasecmp(tex->szName, "solidhint") == 0;
 
-			isSky = strcasecmp(tex->szName, "sky") == 0 ||
+			isSky = strncasecmp(tex->szName, "sky", 3) == 0 ||
 					strcasecmp(tex->szName, "skycull") == 0;
+		}
+
+		if (!isSky && !glTextures.empty() && texinfo.iMiptex >= 0 && texinfo.iMiptex < (int)glTextures.size() && !glTextures[texinfo.iMiptex].empty() && glTextures[texinfo.iMiptex][0] == skyTex_rgba)
+		{
+			isSky = true;
 		}
 
 		if (ent)
@@ -1057,7 +1116,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			{
 				verts[e].g = 0.0f;
 			}
-			verts[e].b = 0.0f;
+			verts[e].b = isSky ? 1.0f : 0.0f;
 			verts[e].a = isSky || isTrigger || (ent && ent->rendermode > 0) ? 1.0f - opacity : 0.0f;
 
 			// texture coords
@@ -1162,7 +1221,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			if (texinfo.iMiptex <= -1 || texinfo.iMiptex >= map->textureCount)
 				continue;
 			bool textureMatch = !texturesLoaded || std::find(renderGroups[k].textures.begin(), renderGroups[k].textures.end(), glTextures[texinfo.iMiptex][0]) != renderGroups[k].textures.end();
-			if (textureMatch && renderGroups[k].transparent == isTransparent)
+			if (textureMatch && renderGroups[k].transparent == isTransparent && renderGroups[k].isSky == isSky)
 			{
 				bool allMatch = true;
 				for (int s = 0; s < MAX_LIGHTMAPS; s++)
@@ -1186,7 +1245,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		{
 			RenderGroup newGroup = RenderGroup();
 			newGroup.transparent = isTransparent;
-			newGroup.special = isSpecial;
+			newGroup.special = isSpecial && !isSky;
+			newGroup.isSky = isSky;
 			newGroup.isTransparentByList = (tex && IsTextureTransparent(tex->szName));
 			newGroup.textures = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : std::vector<Texture*>{greyTex};
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
@@ -2523,6 +2583,8 @@ BspRenderer::~BspRenderer()
 
 	deleteTextures();
 	deleteLightmapTextures();
+	delete skybox;
+	skybox = NULL;
 	deleteRenderFaces();
 	deleteRenderClipnodes();
 	deleteFaceMaths();
@@ -2561,6 +2623,11 @@ void BspRenderer::reuploadTextures()
 	{
 		for (auto& tex : glTextures[i])
 			tex->upload();
+	}
+
+	if (skybox)
+	{
+		skybox->upload();
 	}
 
 	texturesLoaded = true;
@@ -2628,27 +2695,28 @@ void BspRenderer::highlightFace(int faceIdx, int highlight, bool reupload)
 		return;
 
 	float r, g, b;
-	r = g = b = 0.0f;
+	r = g = 0.0f;
+	b = rgroup->isSky ? 1.0f : 0.0f;
 
 	if (highlight == 1)
 	{
-		r = rgroup->special ? 2.0f : 0.15f;
+		r = (rgroup->special || rgroup->isSky) ? 2.0f : 0.15f;
 		g = 0.0f;
-		b = 0.0f;
+		b = rgroup->isSky ? 1.0f : 0.0f;
 	}
 
 	if (highlight == 2)
 	{
-		r = rgroup->special ? 3.0f : 0.0f;
+		r = (rgroup->special || rgroup->isSky) ? 3.0f : 0.0f;
 		g = 0.0f;
-		b = 0.15f;
+		b = rgroup->isSky ? 1.0f : 0.15f;
 	}
 
 	if (highlight == 3)
 	{
-		r = rgroup->special ? 4.0f : 0.0f;
+		r = (rgroup->special || rgroup->isSky) ? 4.0f : 0.0f;
 		g = 0.15f;
-		b = 0.15f;
+		b = rgroup->isSky ? 1.0f : 0.15f;
 	}
 
 	auto verts = ((lightmapVert*)rgroup->buffer->getData());
@@ -2834,6 +2902,12 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		drawPointEntities(highlightEnts, REND_PASS_MODELSHADER);
 	}
 
+	bool useSkybox = (g_render_flags & RENDER_SKYBOX) && hasSky && skybox && skybox->isLoaded();
+	if (useSkybox && !ortho_overview && !make_screenshot)
+	{
+		g_app->drawSkybox(skybox, map);
+	}
+
 	size_t ent_count = std::min(map->ents.size(), renderEnts.size());
 
 	for (int pass = 0; pass <= 2; pass++)
@@ -2841,6 +2915,12 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		if (pass != REND_PASS_MODELSHADER)
 		{
 			g_app->mat_upload();
+
+			if (pass == REND_PASS_BSPSHADER_TRANSPARENT)
+			{
+				g_app->bspShader->bind();
+				glUniform1i(g_app->bspShaderRenderSkyboxId, useSkybox ? 1 : 0);
+			}
 
 			if (ent_count && map->ents.size() > 0 && !map->ents[0]->hide)
 			{
