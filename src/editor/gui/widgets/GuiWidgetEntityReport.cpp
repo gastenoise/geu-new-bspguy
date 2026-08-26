@@ -220,6 +220,22 @@ void Gui::drawEntityReport()
 							}
 						}
 
+						if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+						{
+							if (!isSelected)
+							{
+								if (ImGui::GetIO().KeyCtrl)
+								{
+									app->pickInfo.AddSelectedEnt(entIdx);
+								}
+								else
+								{
+									app->pickInfo.SetSelectedEnt(entIdx);
+								}
+							}
+							openContextMenu(1);
+						}
+
 						ImGui::TableSetColumnIndex(1);
 						ImGui::TextUnformatted(ent->hasKey("classname") ? ent->keyvalues["classname"].c_str() : "unknown");
 

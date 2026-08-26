@@ -282,20 +282,28 @@ void Gui::draw()
 
 		if (openEmptyContext != -2)
 		{
-			if (app->pickMode == PICK_OBJECT)
+			if (openEmptyContext == 0)
 			{
-				if (openEmptyContext == 0)
-				{
-					ImGui::OpenPopup("empty_context");
-				}
-				else
-				{
-					ImGui::OpenPopup("ent_context");
-				}
+				ImGui::OpenPopup("empty_context");
+			}
+			else if (openEmptyContext == 1)
+			{
+				ImGui::OpenPopup("ent_context");
+			}
+			else if (openEmptyContext == 2)
+			{
+				ImGui::OpenPopup("face_context");
 			}
 			else
 			{
-				ImGui::OpenPopup("face_context");
+				if (app->pickMode == PICK_OBJECT)
+				{
+					ImGui::OpenPopup("ent_context");
+				}
+				else
+				{
+					ImGui::OpenPopup("face_context");
+				}
 			}
 			openEmptyContext = -2;
 		}
@@ -320,6 +328,11 @@ void Gui::draw()
 		imgui_io->Fonts->Clear();
 		loadFonts();
 	}
+}
+
+void Gui::openContextMenu(int type)
+{
+	openEmptyContext = type;
 }
 
 void Gui::openContextMenu(bool empty)

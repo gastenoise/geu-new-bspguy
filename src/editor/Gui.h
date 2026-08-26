@@ -69,6 +69,7 @@ class Gui
 	void setupTheme();
 	void draw();
 
+	void openContextMenu(int type);
 	void openContextMenu(bool empty);
 	void copyTexture();
 	void pasteTexture();
