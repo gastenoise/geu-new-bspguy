@@ -9998,11 +9998,15 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 				{
 					memset(face.nStyles, 255, MAX_LIGHTMAPS);
 				}
+				lightmapAppendSz += lightmapSz * sizeof(COLOR3);
+			}
+			else
+			{
+				face.nLightmapOffset = -1;
+				memset(face.nStyles, 255, MAX_LIGHTMAPS);
 			}
 
 			newFaces.push_back(face);
-
-			lightmapAppendSz += lightmapSz * sizeof(COLOR3);
 		}
 	}
 
