@@ -227,13 +227,14 @@ void Gui::drawMenu_File()
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0478).c_str()))
 	{
-		if (ImGui::MenuItem(get_localized_string(LANG_0479).c_str(), NULL, false, map && !map->is_mdl_model && !app->isLoading))
+		if (ImGui::MenuItem(get_localized_string(LANG_0479).c_str(), "Ctrl+S", false, map && !map->is_mdl_model && !app->isLoading))
 		{
 			map->update_ent_lump();
 			map->update_lump_pointers();
 			map->validate();
 			map->write(map->bsp_path);
 		}
+		IMGUI_TOOLTIP(g, "Saves all current entity, texture, and geometry changes directly to the active .bsp file");
 		if (ImGui::BeginMenu(get_localized_string(LANG_0480).c_str(), map && !map->is_mdl_model && !app->isLoading))
 		{
 			bool old_is_bsp30ext = map->is_bsp30ext;
@@ -1094,6 +1095,8 @@ void Gui::drawMenu_File()
 				print_log(get_localized_string(LANG_0342), entFilePath);
 				map->export_entities(entFilePath);
 			}
+			IMGUI_TOOLTIP(g, "Export all entity definitions as a raw .ent text file");
+
 			if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
 			{
 				createDir(g_working_dir + "exported_wads/");
@@ -1113,6 +1116,7 @@ void Gui::drawMenu_File()
 					}
 				}
 			}
+			IMGUI_TOOLTIP(g, "Extract all internal map textures into an external WAD package and update worldspawn");
 
 			static bool splitSmd = true;
 			static bool oneRoot = false;
@@ -1123,10 +1127,13 @@ void Gui::drawMenu_File()
 				{
 					// splitSmd
 				}
+				IMGUI_TOOLTIP(g, "Split mesh into submodels compatible with GoldSrc engine limits");
+
 				if (ImGui::MenuItem("Only root bone", NULL, &oneRoot))
 				{
 					// oneRoot
 				}
+				IMGUI_TOOLTIP(g, "Attach all vertices to a single root bone without skeletal animation");
 
 				if (ImGui::MenuItem("Do Export", NULL))
 				{
@@ -1134,6 +1141,7 @@ void Gui::drawMenu_File()
 					createDir(exportPath);
 					map->ExportToSmdWIP(exportPath, splitSmd, oneRoot);
 				}
+				IMGUI_TOOLTIP(g, "Export BSP geometry to Valve SMD format in exported_geometry folder");
 				ImGui::EndMenu();
 			}
 
@@ -2494,10 +2502,13 @@ void Gui::drawMenu_Edit()
 		{
 			rend->undo();
 		}
-		else if (ImGui::MenuItem(redoTitle.c_str(), get_localized_string(LANG_0558).c_str(), false, canRedo))
+		IMGUI_TOOLTIP(g, "Revert the last geometry, entity, or texture modification");
+
+		if (ImGui::MenuItem(redoTitle.c_str(), get_localized_string(LANG_0558).c_str(), false, canRedo))
 		{
 			rend->redo();
 		}
+		IMGUI_TOOLTIP(g, "Reapply the previously undone operation");
 
 		ImGui::Separator();
 
@@ -2505,6 +2516,8 @@ void Gui::drawMenu_Edit()
 		{
 			app->cutEnt();
 		}
+		IMGUI_TOOLTIP(g, "Cut selected entity to the internal clipboard");
+
 		if (ImGui::MenuItem(get_localized_string(LANG_1083).c_str(), get_localized_string(LANG_1084).c_str(), false, app->pickInfo.selectedFaces.size() || (nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size())))
 		{
 			if (app->pickInfo.selectedEnts.size())
@@ -2512,20 +2525,28 @@ void Gui::drawMenu_Edit()
 			if (app->pickInfo.selectedFaces.size())
 				copyTexture();
 		}
+		IMGUI_TOOLTIP(g, "Copy selected entity or face texture attributes to the clipboard");
+
 		if (ImGui::BeginMenu((get_localized_string(LANG_0449) + "###BeginPaste2").c_str()))
 		{
 			if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###BEG2_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false))
 			{
 				app->pasteEnt(false);
 			}
+			IMGUI_TOOLTIP(g, "Paste entity from clipboard in front of the 3D camera");
+
 			if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###BEG2_OPASTE1").c_str(), 0, false))
 			{
 				app->pasteEnt(true);
 			}
+			IMGUI_TOOLTIP(g, "Paste clipboard entity preserving its original coordinates");
+
 			if (ImGui::MenuItem("Paste with bspmodel###BEG2_PASTE2", get_localized_string(LANG_0441).c_str(), false))
 			{
 				app->pasteEnt(false, true);
 			}
+			IMGUI_TOOLTIP(g, "Paste entity while duplicating and attaching its underlying BSP model data");
+
 			if (ImGui::MenuItem("Paste at Selected Entity Origin", 0, false, app->hasCopiedEnt() && app->pickInfo.selectedEnts.size() > 0))
 			{
 				vec3 pivot = vec3();
@@ -2536,6 +2557,7 @@ void Gui::drawMenu_Edit()
 				pivot /= (float)app->pickInfo.selectedEnts.size();
 				app->pasteEntAtOrigin(pivot);
 			}
+			IMGUI_TOOLTIP(g, "Paste clipboard entity directly at the pivot origin of current selection");
 
 			ImGui::EndMenu();
 		}
@@ -2543,6 +2565,7 @@ void Gui::drawMenu_Edit()
 		{
 			app->deleteEnts();
 		}
+		IMGUI_TOOLTIP(g, "Delete selected entity or picked face polygons from the map");
 
 		if (ImGui::BeginMenu("Select"))
 		{
@@ -2557,12 +2580,16 @@ void Gui::drawMenu_Edit()
 					}
 				}
 			}
+			IMGUI_TOOLTIP(g, "Select all non-worldspawn entities in the active map");
+
 			if (ImGui::MenuItem("Deselect All", "Esc"))
 			{
 				app->deselectFaces();
 				app->deselectObject();
 			}
-			if (ImGui::MenuItem("Faces with Same Texture", 0, false, map && app->pickInfo.selectedFaces.size() > 0))
+			IMGUI_TOOLTIP(g, "Clear all active entity and face selections");
+
+			if (ImGui::MenuItem("Faces with Same Texture", "Ctrl+Alt+A", false, map && app->pickInfo.selectedFaces.size() > 0))
 			{
 				BSPFACE32& selface = map->faces[app->pickInfo.selectedFaces[0]];
 				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
@@ -2578,6 +2605,8 @@ void Gui::drawMenu_Edit()
 					}
 				}
 			}
+			IMGUI_TOOLTIP(g, "Select all map faces sharing the active face texture");
+
 			ImGui::EndMenu();
 		}
 
@@ -2585,7 +2614,7 @@ void Gui::drawMenu_Edit()
 
 		bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
 
-		if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
+		if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), "Ctrl+D", false, !app->isLoading && allowDuplicate))
 		{
 			print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
 			for (auto& tmpentIdx : app->pickInfo.selectedEnts)
@@ -2700,11 +2729,13 @@ void Gui::drawMenu_Edit()
 			rend->pushUndoState("MERGE BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
 			rend->preRenderEnts();
 		}
+		IMGUI_TOOLTIP(g, "Merge multiple selected brush models into a single combined BSP model");
 
 		if (ImGui::MenuItem("Split Face", "F", false, !app->isLoading && app->pickMode != PICK_OBJECT))
 		{
 			app->splitModelFace();
 		}
+		IMGUI_TOOLTIP(g, "Split the selected polygon face along picked edge vertex points");
 
 		ImGui::Separator();
 
@@ -2717,17 +2748,21 @@ void Gui::drawMenu_Edit()
 				app->ungrabEnt();
 			}
 		}
+		IMGUI_TOOLTIP(g, "Toggle interactive mouse movement of selected entity in 3D space");
+
 		if (ImGui::MenuItem(get_localized_string(LANG_1089).c_str(), get_localized_string(LANG_1090).c_str(), false, entSelected))
 		{
 			showTransformWidget = !showTransformWidget;
 		}
+		IMGUI_TOOLTIP(g, "Open numeric translation, rotation, and scaling transform widget");
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem(get_localized_string(LANG_1091).c_str(), get_localized_string(LANG_1092).c_str(), false, entSelected))
+		if (ImGui::MenuItem(get_localized_string(LANG_1091).c_str(), "Ctrl+G / Alt+Enter", false, entSelected))
 		{
 			showKeyvalueWidget = !showKeyvalueWidget;
 		}
+		IMGUI_TOOLTIP(g, "Open SmartEdit Entity Keyvalues and Spawnflags inspector");
 
 		ImGui::EndMenu();
 	}
@@ -2745,20 +2780,31 @@ void Gui::drawMenu_View()
 		{
 			GuiCommandPalette::getInstance().open();
 		}
+		IMGUI_TOOLTIP(g, "Search and execute any editor command or action");
 		ImGui::Separator();
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0566).c_str(), map))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_0567).c_str(), NULL, app->clipnodeRenderHull == -1))
 				app->clipnodeRenderHull = -1;
+			IMGUI_TOOLTIP(g, "Automatically choose best collision hull display based on entity type");
+
 			if (ImGui::MenuItem(get_localized_string(LANG_0568).c_str(), NULL, app->clipnodeRenderHull == 0))
 				app->clipnodeRenderHull = 0;
+			IMGUI_TOOLTIP(g, "Display Hull 0 point/raycast collision wireframe");
+
 			if (ImGui::MenuItem(get_localized_string(LANG_0569).c_str(), NULL, app->clipnodeRenderHull == 1))
 				app->clipnodeRenderHull = 1;
+			IMGUI_TOOLTIP(g, "Display Hull 1 standard standing player collision box wireframe (32x32x72)");
+
 			if (ImGui::MenuItem(get_localized_string(LANG_0570).c_str(), NULL, app->clipnodeRenderHull == 2))
 				app->clipnodeRenderHull = 2;
+			IMGUI_TOOLTIP(g, "Display Hull 2 large monster/vehicle collision box wireframe (64x64x72)");
+
 			if (ImGui::MenuItem(get_localized_string(LANG_0571).c_str(), NULL, app->clipnodeRenderHull == 3))
 				app->clipnodeRenderHull = 3;
+			IMGUI_TOOLTIP(g, "Display Hull 3 ducking player collision box wireframe (32x32x36)");
+
 			ImGui::EndMenu();
 		}
 
@@ -2770,34 +2816,56 @@ void Gui::drawMenu_View()
 			app->updateEntConnections();
 			pickCount++;
 		}
+		IMGUI_TOOLTIP(g, "Restore visibility to all temporarily hidden entities and geometry");
 
 		ImGui::Separator();
 
 		if (ImGui::BeginMenu("Toggle Panels / Widgets"))
 		{
-			ImGui::MenuItem(get_localized_string(LANG_0596).c_str(), NULL, &showKeyvalueWidget);
-			ImGui::MenuItem(get_localized_string(LANG_1160).c_str(), NULL, &showTransformWidget);
-			ImGui::MenuItem(get_localized_string(LANG_0597).c_str(), "", &showFaceEditWidget);
-			ImGui::MenuItem(get_localized_string(LANG_0598).c_str(), "", &showTextureBrowser);
+			ImGui::MenuItem(get_localized_string(LANG_0596).c_str(), "Alt+Enter", &showKeyvalueWidget);
+			IMGUI_TOOLTIP(g, "Toggle Entity Keyvalue & SmartEdit inspector panel");
+
+			ImGui::MenuItem(get_localized_string(LANG_1160).c_str(), "Ctrl+M", &showTransformWidget);
+			IMGUI_TOOLTIP(g, "Toggle 3D coordinate transform manipulator panel");
+
+			ImGui::MenuItem(get_localized_string(LANG_0597).c_str(), "F6", &showFaceEditWidget);
+			IMGUI_TOOLTIP(g, "Toggle Face texture alignment, shift offsets, and scale panel");
+
+			ImGui::MenuItem(get_localized_string(LANG_0598).c_str(), "F4", &showTextureBrowser);
+			IMGUI_TOOLTIP(g, "Toggle visual texture browser for embedded and WAD assets");
+
 			ImGui::MenuItem(get_localized_string(LANG_0599).c_str(), "", &showLightmapEditorWidget);
-			ImGui::MenuItem(get_localized_string(LANG_0594).c_str(), "", &showLogWidget);
+			IMGUI_TOOLTIP(g, "Toggle face lightmap luminance and RGB color editor panel");
+
+			ImGui::MenuItem(get_localized_string(LANG_0594).c_str(), "F5", &showLogWidget);
+			IMGUI_TOOLTIP(g, "Toggle bspguy diagnostic output log window");
+
 			ImGui::MenuItem(get_localized_string(LANG_0595).c_str(), NULL, &showDebugWidget);
+			IMGUI_TOOLTIP(g, "Toggle low-level BSP engine debug and PVS inspection panel");
+
 			ImGui::MenuItem("Map Overview", "", &showOverviewWidget);
+			IMGUI_TOOLTIP(g, "Toggle 2D radar/overview map rendering controls");
+
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem(get_localized_string(LANG_1095).c_str(), NULL, &showGOTOWidget))
+		if (ImGui::MenuItem(get_localized_string(LANG_1095).c_str(), "Ctrl+G", &showGOTOWidget))
+		{
+			showGOTOWidget_update = true;
+		}
+		IMGUI_TOOLTIP(g, "Teleport the 3D camera to specific coordinates or jump directly to an entity index");
+
+		if (ImGui::MenuItem(get_localized_string(LANG_0563).c_str(), "F2", &showLimitsWidget))
 		{
 		}
-		if (ImGui::MenuItem(get_localized_string(LANG_0563).c_str(), NULL, &showLimitsWidget))
-		{
-		}
+		IMGUI_TOOLTIP(g, "Toggle engine lump and memory usage limit gauges");
 
 		bool skyboxEnabled = (g_render_flags & RENDER_SKYBOX) != 0;
 		if (ImGui::MenuItem("Skybox", "Ctrl+Alt+S", skyboxEnabled))
 		{
 			g_render_flags ^= RENDER_SKYBOX;
 		}
+		IMGUI_TOOLTIP(g, "Toggle 3D environment skybox cubemap background in the viewport");
 
 		ImGui::EndMenu();
 	}
@@ -2814,15 +2882,17 @@ void Gui::drawMenu_Map()
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0561).c_str(), (map && !map->is_mdl_model)))
 	{
-		if (ImGui::MenuItem(get_localized_string(LANG_0562).c_str(), NULL))
+		if (ImGui::MenuItem(get_localized_string(LANG_0562).c_str(), "F3"))
 		{
 			showEntityReport = true;
 		}
+		IMGUI_TOOLTIP(g, "Open searchable table of all map entities and classnames");
 
-		if (ImGui::MenuItem(get_localized_string(LANG_0563).c_str(), NULL))
+		if (ImGui::MenuItem(get_localized_string(LANG_0563).c_str(), "F2"))
 		{
 			showLimitsWidget = true;
 		}
+		IMGUI_TOOLTIP(g, "Open engine lump memory gauges and limit statistics");
 
 		ImGui::Separator();
 
@@ -2833,6 +2903,7 @@ void Gui::drawMenu_Map()
 			map->validate();
 			rend->pushUndoState("Clean " + map->bsp_name, EDIT_MODEL_LUMPS);
 		}
+		IMGUI_TOOLTIP(g, "Remove unused clipnodes, orphaned model structures, and empty leaves");
 
 		if (ImGui::MenuItem(get_localized_string(LANG_0565).c_str(), 0, false, !app->isLoading && map))
 		{
@@ -2856,6 +2927,7 @@ void Gui::drawMenu_Map()
 
 			rend->pushUndoState("Optimize " + map->bsp_name, EDIT_MODEL_LUMPS | FL_ENTITIES);
 		}
+		IMGUI_TOOLTIP(g, "Compact vertex tables, merge collinear edges, and sort marksurfaces");
 
 		if (ImGui::BeginMenu("MAP TRANSFORMATION [WIP]", map))
 		{
@@ -2943,6 +3015,7 @@ void Gui::drawMenu_Map()
 				rend->reload();
 				app->reloading = false;
 			}
+			IMGUI_TOOLTIP(g, "Mirror entire map geometry along selected axis and invert face normals");
 
 			if (ImGui::MenuItem("Rotate Counter Clockwise 90", NULL, false, map))
 			{
@@ -3070,6 +3143,7 @@ void Gui::drawMenu_Map()
 				rend->reload();
 				app->reloading = false;
 			}
+			IMGUI_TOOLTIP(g, "Rotate world geometry and entities 90 degrees counter-clockwise");
 
 			if (ImGui::MenuItem("Rotate Clockwise 90", NULL, false, map))
 			{
@@ -3197,6 +3271,7 @@ void Gui::drawMenu_Map()
 				rend->reload();
 				app->reloading = false;
 			}
+			IMGUI_TOOLTIP(g, "Rotate world geometry and entities 90 degrees clockwise");
 
 			if (ImGui::BeginMenu("Scale map", map))
 			{
@@ -3206,6 +3281,7 @@ void Gui::drawMenu_Map()
 				{
 					// ScaleOnlySelected = !ScaleOnlySelected;
 				}
+				IMGUI_TOOLTIP(g, "Apply scale factor only to selected entities/geometry rather than the entire map");
 
 				for (float scale_val = 0.25f; scale_val <= 2.0f; scale_val += 0.25f)
 				{
@@ -3334,6 +3410,7 @@ void Gui::drawMenu_Map()
 
 						rend->pushUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
+					IMGUI_TOOLTIP(g, "Scale world geometry, planes, and entity coordinates by specified factor");
 				}
 				ImGui::EndMenu();
 			}
@@ -3435,7 +3512,7 @@ void Gui::drawMenu_Map()
 			rend->generateNavMeshBuffer();
 			rend->generateLeafNavMeshBuffer();
 		}
-		IMGUI_TOOLTIP(g, "I don't know for what it needs :) From original bspguy repository + crash fixes. \n");
+		IMGUI_TOOLTIP(g, "Generate AI navigation mesh graph from walkable BSP floor leaves for bot pathfinding");
 
 		ImGui::EndMenu();
 	}
@@ -3480,6 +3557,7 @@ void Gui::drawMenu_Tools()
 					//}
 					checkValidHulls();
 				}
+				IMGUI_TOOLTIP(g, "Strip collision hull clipnodes for specified hull index across all models");
 			}
 			ImGui::EndMenu();
 		}
@@ -3505,6 +3583,7 @@ void Gui::drawMenu_Tools()
 							//}
 							checkValidHulls();
 						}
+						IMGUI_TOOLTIP(g, "Redirect physics collision from this hull to the target hull index");
 					}
 					ImGui::EndMenu();
 				}
@@ -3738,6 +3817,8 @@ void Gui::drawMenu_Tools()
 				rend->preRenderFaces();
 				pickCount++;
 			}
+			IMGUI_TOOLTIP(g, "Fix black outline and alpha blending artifacts on transparent masked textures");
+
 			if (ImGui::MenuItem("Missing entities classes"))
 			{
 				for (auto& ent : map->ents)
@@ -3749,6 +3830,7 @@ void Gui::drawMenu_Tools()
 					}
 				}
 			}
+			IMGUI_TOOLTIP(g, "Replace missing or unprecached entity classnames with fallback info_target point entities");
 			if (ImGui::MenuItem(get_localized_string(LANG_0573).c_str()))
 			{
 				for (int i = 0; i < map->faceCount; i++)
@@ -4106,6 +4188,7 @@ void Gui::drawMenu_Tools()
 				rend->reload();
 				print_log("Deleted {} embedded textures\n", deleted);
 			}
+			IMGUI_TOOLTIP(g, "Strip embedded MIP texture pixel data, converting textures to external WAD references");
 
 			if (ImGui::MenuItem("Deduplicate Models", 0, false, rend && !app->isLoading && app->getSelectedMap()))
 			{
@@ -4303,16 +4386,19 @@ void Gui::drawMenu_Tools()
 				{
 					generateClipnodes = 1;
 				}
+				IMGUI_TOOLTIP(g, "Generate collision clipnodes by bruteforce plane decomposition of model meshes");
 
 				if (ImGui::MenuItem("Compile clipnodes", NULL, generateClipnodes == 2, false))
 				{
 					generateClipnodes = 2;
 				}
+				IMGUI_TOOLTIP(g, "Compile collision hull clipnodes from model triangles using QBSP compiler");
 
 				if (ImGui::MenuItem("Meshes to brushes", NULL, meshToBrush))
 				{
 					meshToBrush = !meshToBrush;
 				}
+				IMGUI_TOOLTIP(g, "Convert StudioModel polygon mesh data into solid BSP convex brush solids");
 
 				ImGui::Separator();
 
@@ -4419,6 +4505,7 @@ void Gui::drawMenu_Create()
 			map->ents.push_back(newEnt);
 			rend->pushUndoState("Create Entity", FL_ENTITIES);
 		}
+		IMGUI_TOOLTIP(g, "Create a point entity (info_player_start, light, ambient_generic) at camera target");
 
 		if (ImGui::MenuItem(get_localized_string(LANG_0589).c_str(), 0, false, !app->isLoading && map))
 		{
@@ -4458,6 +4545,7 @@ void Gui::drawMenu_Create()
 			rend->refreshModel(modelIdx);
 			rend->pushUndoState(get_localized_string(LANG_0589), dupLumps);
 		}
+		IMGUI_TOOLTIP(g, "Create a non-solid brush model entity (func_illusionary) at camera target");
 
 		if (ImGui::MenuItem(get_localized_string(LANG_0591).c_str(), 0, false, !app->isLoading && map))
 		{
@@ -4496,6 +4584,7 @@ void Gui::drawMenu_Create()
 			rend->refreshModel(modelIdx);
 			rend->pushUndoState(get_localized_string(LANG_0591), dupLumps);
 		}
+		IMGUI_TOOLTIP(g, "Create a solid brush model entity (func_wall) at camera target");
 
 		if (ImGui::MenuItem(get_localized_string(LANG_0590).c_str(), 0, false, !app->isLoading && map))
 		{
@@ -4532,6 +4621,7 @@ void Gui::drawMenu_Create()
 			rend->pushUndoState(get_localized_string(LANG_0590), dupLumps);
 			rend->refreshModel(modelIdx);
 		}
+		IMGUI_TOOLTIP(g, "Create an invisible trigger volume brush entity (trigger_multiple) at camera target");
 
 		if (ImGui::MenuItem("BSP Clip model", 0, false, !app->isLoading && map))
 		{
@@ -4567,6 +4657,7 @@ void Gui::drawMenu_Create()
 			map->resize_all_lightmaps();
 			rend->pushUndoState("BSP Clip model", dupLumps);
 		}
+		IMGUI_TOOLTIP(g, "Create a player-clipping barrier solid brush entity (func_monsterclip) at camera target");
 
 		if (DebugKeyPressed)
 		{
@@ -4586,6 +4677,7 @@ void Gui::drawMenu_Create()
 
 					g_app->pickInfo.selectedEnts.clear();
 				}
+				IMGUI_TOOLTIP(g, "Distribute random info_player_deathmatch spawn entities across walkable floor surfaces");
 				ImGui::EndMenu();
 			}
 		}
@@ -4605,6 +4697,7 @@ void Gui::drawMenu_Windows()
 		{
 			showConsoleWindow(g_console_visible);
 		}
+		IMGUI_TOOLTIP(g, "Toggle embedded developer output console window");
 #endif
 		Bsp* selectedMap = app->getSelectedMap();
 		for (BspRenderer* bspRend : mapRenderers)
@@ -4622,6 +4715,7 @@ void Gui::drawMenu_Windows()
 					cameraOrigin = bspRend->renderCameraOrigin;
 					makeVectors(cameraAngles, app->cameraForward, app->cameraRight, app->cameraUp);
 				}
+				IMGUI_TOOLTIP(g, "Switch active editor view to this map tab");
 			}
 		}
 		ImGui::EndMenu();
@@ -4634,14 +4728,18 @@ void Gui::drawMenu_Help()
 
 	if (ImGui::BeginMenu(get_localized_string(LANG_0602).c_str()))
 	{
-		if (ImGui::MenuItem(get_localized_string(LANG_0603).c_str()))
+		if (ImGui::MenuItem(get_localized_string(LANG_0603).c_str(), "F1"))
 		{
 			showHelpWidget = true;
 		}
+		IMGUI_TOOLTIP(g, "Open keyboard shortcuts reference guide and documentation dialog");
+
 		if (ImGui::MenuItem(get_localized_string(LANG_0604).c_str()))
 		{
 			showAboutWidget = true;
 		}
+		IMGUI_TOOLTIP(g, "Display application version, build compiler, and developer credits");
+
 		ImGui::EndMenu();
 	}
 }
@@ -4686,6 +4784,7 @@ void Gui::drawMenu_Debug()
 				}
 			}
 		}
+		IMGUI_TOOLTIP(g, "Print all loaded texture memory addresses and dimensions to debug log");
 
 		if (ImGui::MenuItem("CREATE SKYBOX"))
 		{
@@ -4967,6 +5066,7 @@ void Gui::drawMenu_Debug()
 			rend->preRenderFaces();
 			rend->pushUndoState("CREATE SKYBOX", EDIT_MODEL_LUMPS | FL_ENTITIES);
 		}
+		IMGUI_TOOLTIP(g, "Generate a 6-sided bounding skybox solid around the entire map perimeter");
 
 		ImGui::EndMenu();
 	}

@@ -322,9 +322,7 @@ void Gui::drawBspContexMenu()
 		return;
 	}
 
-	if (app->pickMode != PICK_OBJECT)
-	{
-		if (ImGui::BeginPopup("face_context"))
+	if (ImGui::BeginPopup("face_context"))
 		{
 			if (app->pickInfo.selectedFaces.size() > 0)
 			{
@@ -340,7 +338,7 @@ void Gui::drawBspContexMenu()
 
 				if (allWorld)
 				{
-					if (ImGui::MenuItem(get_localized_string("DELETE_FACES").c_str()))
+					if (ImGui::MenuItem(get_localized_string("DELETE_FACES").c_str(), "Del"))
 					{
 						rend->pushUndoState("Delete Faces", EDIT_MODEL_LUMPS);
 						map->remove_faces(app->pickInfo.selectedFaces);
@@ -348,20 +346,23 @@ void Gui::drawBspContexMenu()
 						rend->reload();
 						pickCount++;
 					}
+					IMGUI_TOOLTIP(g, "Delete picked polygon faces from the BSP model geometry");
 					ImGui::Separator();
 				}
 			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0438).c_str()))
+			if (ImGui::MenuItem(get_localized_string(LANG_0438).c_str(), "Ctrl+C"))
 			{
 				copyTexture();
 			}
+			IMGUI_TOOLTIP(g, "Copy picked face texture name, scale, shift offsets, and alignment flags");
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), get_localized_string(LANG_0441).c_str(), false,
+			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), "Ctrl+V", false,
 								copiedMiptex >= 0 && copiedMiptex < map->textureCount))
 			{
 				pasteTexture();
 			}
+			IMGUI_TOOLTIP(g, "Apply copied texture name and mapping coordinates to selected faces");
 
 			ImGui::Separator();
 
@@ -369,11 +370,13 @@ void Gui::drawBspContexMenu()
 			{
 				copyStyle();
 			}
+			IMGUI_TOOLTIP(g, "Copy dynamic lighting style index from the picked face");
 
 			if (ImGui::MenuItem(get_localized_string("PASTE_STYLE").c_str(), "", false, copiedStyle.valid))
 			{
 				pasteStyle();
 			}
+			IMGUI_TOOLTIP(g, "Paste copied dynamic lighting style index onto selected faces");
 
 			ImGui::Separator();
 
@@ -392,6 +395,7 @@ void Gui::drawBspContexMenu()
 			{
 				pasteLightmap();
 			}
+			IMGUI_TOOLTIP(g, "Paste copied lightmap color samples onto selected face with matching dimensions");
 
 			ImGui::Separator();
 
@@ -574,11 +578,11 @@ void Gui::drawBspContexMenu()
 
 			ImGui::EndPopup();
 		}
-	}
-	else /*if (app->pickMode == PICK_OBJECT)*/
-	{
-		if (!app->originHovered && ImGui::BeginPopup("ent_context") && entIdxs.size())
+
+		if (!app->originHovered && ImGui::BeginPopup("ent_context"))
 		{
+			if (entIdxs.size())
+			{
 			Entity* ent = map->ents[entIdxs[0]];
 			int modelIdx = ent->getBspModelIdx();
 			if (modelIdx < 0 && ent->isWorldSpawn())
@@ -588,32 +592,41 @@ void Gui::drawBspContexMenu()
 			{
 				if (modelIdx != 0)
 				{
-					if (ImGui::MenuItem(get_localized_string(LANG_0446).c_str(), get_localized_string(LANG_0447).c_str(), false, app->pickInfo.selectedEnts.size()))
+					if (ImGui::MenuItem(get_localized_string(LANG_0446).c_str(), "Ctrl+X", false, app->pickInfo.selectedEnts.size()))
 					{
 						app->cutEnt();
 					}
-					if (ImGui::MenuItem(get_localized_string(LANG_0448).c_str(), get_localized_string(LANG_0439).c_str(), false, app->pickInfo.selectedEnts.size()))
+					IMGUI_TOOLTIP(g, "Cut selected entity to clipboard");
+
+					if (ImGui::MenuItem(get_localized_string(LANG_0448).c_str(), "Ctrl+C", false, app->pickInfo.selectedEnts.size()))
 					{
 						app->copyEnt();
 					}
+					IMGUI_TOOLTIP(g, "Copy selected entity to clipboard");
 				}
 
 				if (app->hasCopiedEnt())
 				{
 					if (ImGui::BeginMenu((get_localized_string(LANG_0449) + "###BeginPaste").c_str()))
 					{
-						if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###BEG_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false))
+						if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###BEG_PASTE1").c_str(), "Ctrl+V", false))
 						{
 							app->pasteEnt(false);
 						}
+						IMGUI_TOOLTIP(g, "Paste entity from clipboard in front of the 3D camera");
+
 						if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###BEG_OPASTE1").c_str(), 0, false))
 						{
 							app->pasteEnt(true);
 						}
-						if (ImGui::MenuItem("Paste with bspmodel###BEG_PASTE2", get_localized_string(LANG_0441).c_str(), false))
+						IMGUI_TOOLTIP(g, "Paste clipboard entity preserving its original coordinates");
+
+						if (ImGui::MenuItem("Paste with bspmodel###BEG_PASTE2", "Ctrl+V", false))
 						{
 							app->pasteEnt(false, true);
 						}
+						IMGUI_TOOLTIP(g, "Paste entity while duplicating and attaching its underlying BSP model data");
+
 						if (ImGui::MenuItem("Paste at this origin###BEG_PASTE_ORIGIN", 0, false))
 						{
 							vec3 pivot = vec3();
@@ -624,16 +637,19 @@ void Gui::drawBspContexMenu()
 							pivot /= (float)entIdxs.size();
 							app->pasteEntAtOrigin(pivot);
 						}
+						IMGUI_TOOLTIP(g, "Paste clipboard entity directly at the picked coordinate point");
+
 						ImGui::EndMenu();
 					}
 				}
 
 				if (modelIdx != 0)
 				{
-					if (ImGui::MenuItem(get_localized_string(LANG_0451).c_str(), get_localized_string(LANG_0452).c_str()))
+					if (ImGui::MenuItem(get_localized_string(LANG_0451).c_str(), "Del"))
 					{
 						app->deleteEnts();
 					}
+					IMGUI_TOOLTIP(g, "Delete selected entity from the map");
 				}
 			}
 			if (entIdxs[0] < (int)map->ents.size() && map->ents[entIdxs[0]]->hide)
@@ -955,10 +971,10 @@ void Gui::drawBspContexMenu()
 						rend->preRenderEnts();
 					}
 
-					if (ImGui::IsItemHovered())
+					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
 						ImGui::BeginTooltip();
-						ImGui::TextUnformatted("CAN CAUSE SOMETHING PROBLEMS WITH MAP");
+						ImGui::TextUnformatted("Merge multiple selected brush models into a single combined BSP model (experimental).");
 						ImGui::EndTooltip();
 					}
 				}
@@ -970,14 +986,20 @@ void Gui::drawBspContexMenu()
 						{
 							ExportModel(map, "", modelIdx, 0, false);
 						}
+						IMGUI_TOOLTIP(g, "Export model referencing external WAD textures");
+
 						if (ImGui::MenuItem(get_localized_string(LANG_0469).c_str(), 0, false, !app->isLoading))
 						{
 							ExportModel(map, "", modelIdx, 2, false);
 						}
+						IMGUI_TOOLTIP(g, "Export model with embedded GoldSrc 256-color paletted textures");
+
 						if (ImGui::MenuItem(get_localized_string(LANG_0470).c_str(), 0, false, !app->isLoading))
 						{
 							ExportModel(map, "", modelIdx, 1, false);
 						}
+						IMGUI_TOOLTIP(g, "Export model with embedded Quake/Xash3D textures");
+
 						ImGui::EndMenu();
 					}
 
@@ -987,14 +1009,19 @@ void Gui::drawBspContexMenu()
 						{
 							ExportModel(map, "", modelIdx, 0, true);
 						}
+						IMGUI_TOOLTIP(g, "Export model referencing external WAD textures without model origin");
+
 						if (ImGui::MenuItem(get_localized_string(LANG_1071).c_str(), 0, false, !app->isLoading))
 						{
 							ExportModel(map, "", modelIdx, 2, true);
 						}
+						IMGUI_TOOLTIP(g, "Export model with embedded GoldSrc textures without model origin");
+
 						if (ImGui::MenuItem(get_localized_string(LANG_1072).c_str(), 0, false, !app->isLoading))
 						{
 							ExportModel(map, "", modelIdx, 1, true);
 						}
+						IMGUI_TOOLTIP(g, "Export model with embedded Quake/Xash3D textures without model origin");
 						ImGui::EndMenu();
 					}
 
@@ -1008,7 +1035,7 @@ void Gui::drawBspContexMenu()
 					ImGui::EndTooltip();
 				}
 			}
-			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_0473).c_str()))
+			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "Alt+G"))
 			{
 				if (!app->movingEnt)
 					app->grabEnt();
@@ -1017,38 +1044,48 @@ void Gui::drawBspContexMenu()
 					app->ungrabEnt();
 				}
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0474).c_str(), get_localized_string(LANG_0475).c_str()))
+			IMGUI_TOOLTIP(g, "Toggle interactive mouse movement of selected entity in 3D space");
+
+			if (ImGui::MenuItem(get_localized_string(LANG_0474).c_str(), "Ctrl+M"))
 			{
 				showTransformWidget = true;
 			}
+			IMGUI_TOOLTIP(g, "Open numeric translation, rotation, and scaling transform widget");
+
 			ImGui::Separator();
-			if (ImGui::MenuItem(get_localized_string(LANG_0476).c_str(), get_localized_string(LANG_0477).c_str()))
+			if (ImGui::MenuItem(get_localized_string(LANG_0476).c_str(), "Alt+Enter"))
 			{
 				showKeyvalueWidget = true;
 			}
-
-			ImGui::EndPopup();
+			IMGUI_TOOLTIP(g, "Open SmartEdit Entity Keyvalues and Spawnflags inspector");
 		}
 
-		if (ImGui::BeginPopup("empty_context"))
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::BeginPopup("empty_context"))
+	{
+		bool enabled = app->hasCopiedEnt();
+
+		if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###CONTENT_PASTE1").c_str(), "Ctrl+V", false, enabled))
 		{
-			bool enabled = app->hasCopiedEnt();
-
-			if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###CONTENT_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false, enabled))
-			{
-				app->pasteEnt(false);
-			}
-			if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###CONTENT_OPASTE1").c_str(), 0, false, enabled))
-			{
-				app->pasteEnt(true);
-			}
-			if (ImGui::MenuItem("Paste with bspmodel###CONTENT_PASTE2", get_localized_string(LANG_0441).c_str(), false))
-			{
-				app->pasteEnt(false, true);
-			}
-
-			ImGui::EndPopup();
+			app->pasteEnt(false);
 		}
+		IMGUI_TOOLTIP(g, "Paste entity from clipboard in front of the 3D camera");
+
+		if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###CONTENT_OPASTE1").c_str(), 0, false, enabled))
+		{
+			app->pasteEnt(true);
+		}
+		IMGUI_TOOLTIP(g, "Paste clipboard entity preserving its original coordinates");
+
+		if (ImGui::MenuItem("Paste with bspmodel###CONTENT_PASTE2", "Ctrl+V", false))
+		{
+			app->pasteEnt(false, true);
+		}
+		IMGUI_TOOLTIP(g, "Paste entity while duplicating and attaching its underlying BSP model data");
+
+		ImGui::EndPopup();
 	}
 }
 
