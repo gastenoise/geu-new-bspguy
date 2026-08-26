@@ -322,9 +322,7 @@ void Gui::drawBspContexMenu()
 		return;
 	}
 
-	if (app->pickMode != PICK_OBJECT)
-	{
-		if (ImGui::BeginPopup("face_context"))
+	if (ImGui::BeginPopup("face_context"))
 		{
 			if (app->pickInfo.selectedFaces.size() > 0)
 			{
@@ -580,11 +578,11 @@ void Gui::drawBspContexMenu()
 
 			ImGui::EndPopup();
 		}
-	}
-	else /*if (app->pickMode == PICK_OBJECT)*/
-	{
-		if (!app->originHovered && ImGui::BeginPopup("ent_context") && entIdxs.size())
+
+		if (!app->originHovered && ImGui::BeginPopup("ent_context"))
 		{
+			if (entIdxs.size())
+			{
 			Entity* ent = map->ents[entIdxs[0]];
 			int modelIdx = ent->getBspModelIdx();
 			if (modelIdx < 0 && ent->isWorldSpawn())
@@ -1060,34 +1058,34 @@ void Gui::drawBspContexMenu()
 				showKeyvalueWidget = true;
 			}
 			IMGUI_TOOLTIP(g, "Open SmartEdit Entity Keyvalues and Spawnflags inspector");
-
-			ImGui::EndPopup();
 		}
 
-		if (ImGui::BeginPopup("empty_context"))
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::BeginPopup("empty_context"))
+	{
+		bool enabled = app->hasCopiedEnt();
+
+		if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###CONTENT_PASTE1").c_str(), "Ctrl+V", false, enabled))
 		{
-			bool enabled = app->hasCopiedEnt();
-
-			if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###CONTENT_PASTE1").c_str(), "Ctrl+V", false, enabled))
-			{
-				app->pasteEnt(false);
-			}
-			IMGUI_TOOLTIP(g, "Paste entity from clipboard in front of the 3D camera");
-
-			if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###CONTENT_OPASTE1").c_str(), 0, false, enabled))
-			{
-				app->pasteEnt(true);
-			}
-			IMGUI_TOOLTIP(g, "Paste clipboard entity preserving its original coordinates");
-
-			if (ImGui::MenuItem("Paste with bspmodel###CONTENT_PASTE2", "Ctrl+V", false))
-			{
-				app->pasteEnt(false, true);
-			}
-			IMGUI_TOOLTIP(g, "Paste entity while duplicating and attaching its underlying BSP model data");
-
-			ImGui::EndPopup();
+			app->pasteEnt(false);
 		}
+		IMGUI_TOOLTIP(g, "Paste entity from clipboard in front of the 3D camera");
+
+		if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###CONTENT_OPASTE1").c_str(), 0, false, enabled))
+		{
+			app->pasteEnt(true);
+		}
+		IMGUI_TOOLTIP(g, "Paste clipboard entity preserving its original coordinates");
+
+		if (ImGui::MenuItem("Paste with bspmodel###CONTENT_PASTE2", "Ctrl+V", false))
+		{
+			app->pasteEnt(false, true);
+		}
+		IMGUI_TOOLTIP(g, "Paste entity while duplicating and attaching its underlying BSP model data");
+
+		ImGui::EndPopup();
 	}
 }
 

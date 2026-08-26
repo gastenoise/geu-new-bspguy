@@ -2628,13 +2628,31 @@ void Renderer::cameraContextMenus()
 	bool wasTurning = cameraIsRotating && totalMouseDrag.length() >= 1.0f;
 	if (curRightMouse == GLFW_RELEASE && oldRightMouse == GLFW_PRESS && !wasTurning)
 	{
-		if (pickInfo.selectedEnts.size())
+		if (pickMode == PICK_OBJECT)
 		{
-			gui->openContextMenu(false);
+			if (pickInfo.selectedEnts.size())
+			{
+				gui->openContextMenu(1);
+			}
+			else
+			{
+				gui->openContextMenu(0);
+			}
 		}
 		else
 		{
-			gui->openContextMenu(true);
+			if (pickInfo.selectedFaces.size())
+			{
+				gui->openContextMenu(2);
+			}
+			else if (pickInfo.selectedEnts.size())
+			{
+				gui->openContextMenu(1);
+			}
+			else
+			{
+				gui->openContextMenu(0);
+			}
 		}
 	}
 }

@@ -337,7 +337,17 @@ void Gui::openContextMenu(int type)
 
 void Gui::openContextMenu(bool empty)
 {
-	openEmptyContext = empty ? 0 : 1;
+	if (empty)
+	{
+		openEmptyContext = 0;
+	}
+	else
+	{
+		if (app->pickMode == PICK_OBJECT)
+			openEmptyContext = 1;
+		else
+			openEmptyContext = 2;
+	}
 }
 
 void Gui::copyTexture()
