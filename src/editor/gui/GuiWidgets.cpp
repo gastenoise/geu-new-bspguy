@@ -1257,6 +1257,14 @@ void Gui::drawTextureBrowser()
 								ImGui::EndTooltip();
 							}
 
+							bool isSelected = (!lastCopiedTextureName.empty() && toLowerCase(lastCopiedTextureName) == toLowerCase(texName));
+							if (isSelected)
+							{
+								ImVec2 a = ImGui::GetItemRectMin();
+								ImVec2 b = ImGui::GetItemRectMax();
+								ImGui::GetWindowDrawList()->AddRect(a, b, IM_COL32(255, 200, 0, 255), 4.0f, 0, 3.0f);
+							}
+
 							// Texture name with entry number and scaled font
 							std::string displayName = fmt::format("{} ({})", texName, texIdx);
 							ImVec2 textPos = ImVec2(x, y + thumbSizeF + 4.0f);
@@ -4437,14 +4445,20 @@ void Gui::drawFaceEditorWidget()
 			ImGui::EndTooltip();
 		}
 
-		if (ImGui::DragFloat(get_localized_string(LANG_0873).c_str(), &scaleX, 0.001f, 0, 0, "X: %.3f") && scaleX != 0)
+		if (ImGui::DragFloat(get_localized_string(LANG_0873).c_str(), &scaleX, 0.001f, 0, 0, "X: %.3f"))
 		{
-			scaledX = true;
+			if (!std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f)
+			{
+				scaledX = true;
+			}
 		}
 		ImGui::SameLine();
-		if (ImGui::DragFloat(get_localized_string(LANG_0874).c_str(), &scaleY, 0.001f, 0, 0, "Y: %.3f") && scaleY != 0)
+		if (ImGui::DragFloat(get_localized_string(LANG_0874).c_str(), &scaleY, 0.001f, 0, 0, "Y: %.3f"))
 		{
-			scaledY = true;
+			if (!std::isnan(scaleY) && !std::isinf(scaleY) && std::abs(scaleY) > 0.00001f)
+			{
+				scaledY = true;
+			}
 		}
 
 		ImGui::Dummy(ImVec2(0, 8));
@@ -4768,8 +4782,10 @@ void Gui::drawFaceEditorWidget()
 					{
 						texinfo->vS = AxisFromTextureAngle(rotateX, true, bestplane);
 						texinfo->vT = AxisFromTextureAngle(rotateY, false, bestplane);
-						texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
-						texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
+						if (!std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f && texinfo->vS.length() > EPSILON)
+							texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
+						if (!std::isnan(scaleY) && !std::isinf(scaleY) && std::abs(scaleY) > 0.00001f && texinfo->vT.length() > EPSILON)
+							texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
 					}
 
 					if (stylesChanged)
@@ -4780,13 +4796,15 @@ void Gui::drawFaceEditorWidget()
 						}
 					}
 
-					if (scaledX)
+					if (scaledX && !std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f)
 					{
-						texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
+						if (texinfo->vS.length() > EPSILON)
+							texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
 					}
-					if (scaledY)
+					if (scaledY && !std::isnan(scaleY) && !std::isinf(scaleY) && std::abs(scaleY) > 0.00001f)
 					{
-						texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
+						if (texinfo->vT.length() > EPSILON)
+							texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
 					}
 
 					if (toggledFlags)

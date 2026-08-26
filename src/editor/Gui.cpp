@@ -498,16 +498,17 @@ void Gui::pasteLightmap()
 	for (int faceIdx : app->pickInfo.selectedFaces)
 	{
 		BSPFACE32& dstFace = map->faces[faceIdx];
-		BSPTEXTUREINFO& dstTexInfo = map->texinfos[dstFace.iTextureInfo];
+		BSPTEXTUREINFO* dstTexInfo = map->get_unique_texinfo(faceIdx);
 
-		if (dstTexInfo.nFlags & TEX_SPECIAL)
+		if (dstTexInfo && (dstTexInfo->nFlags & TEX_SPECIAL))
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, "Cannot paste lightmap to special face {}.\n", faceIdx);
-			continue;
+			dstTexInfo->nFlags &= ~TEX_SPECIAL;
 		}
 
 		int dstSize[2];
 		map->GetFaceLightmapSize(faceIdx, dstSize);
+		if (dstSize[0] <= 0) dstSize[0] = 1;
+		if (dstSize[1] <= 0) dstSize[1] = 1;
 
 		dstFace.nLightmapOffset = (int)accumulatedLighting.size() * sizeof(COLOR3);
 

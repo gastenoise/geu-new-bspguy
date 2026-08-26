@@ -9158,7 +9158,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		{
 			BSPTEXTUREINFO& info = newTexinfos[startTexinfo + i];
 			info.iMiptex = textureIdx;
-			info.nFlags = TEX_SPECIAL;
+			info.nFlags = 0;
 			info.shiftS = 0;
 			info.shiftT = 0;
 			if (inside)
@@ -9194,6 +9194,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 			face.iTextureInfo = (startTexinfo + i);
 			face.nLightmapOffset = 0;
 			memset(face.nStyles, 255, MAX_LIGHTMAPS);
+			face.nStyles[0] = 0;
 		}
 
 		replace_lump(LUMP_FACES, newFaces, (faceCount + 6) * sizeof(BSPFACE32));
