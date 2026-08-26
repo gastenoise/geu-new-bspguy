@@ -2596,17 +2596,6 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 			marksurfs[i] = remap.faces[marksurfs[i]];
 		else
 			marksurfs[i] = 0;
-
-		if (!(target & CLEAN_LEAVES))
-		{
-			for (unsigned int n = 1; n < newCounts.leaves; n++)
-			{
-				if (leaves[n].nMarkSurfaces > 0 && leaves[n].iFirstMarkSurface >= 0)
-				{
-					leaves[n].iFirstMarkSurface = remap.markSurfs[leaves[n].iFirstMarkSurface];
-				}
-			}
-		}
 	}
 
 	for (unsigned int i = 0; i < newCounts.surfEdges; i++)
@@ -6705,6 +6694,7 @@ bool Bsp::validate()
 		if (marksurfs[i] < 0 || marksurfs[i] >= faceCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0110), i, marksurfs[i], faceCount);
+			marksurfs[i] = 0;
 			isValid = false;
 		}
 	}
@@ -6775,10 +6765,31 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < leafCount; i++)
 	{
-		if (leaves[i].nMarkSurfaces < 0 || leaves[i].iFirstMarkSurface < 0 || leaves[i].iFirstMarkSurface + leaves[i].nMarkSurfaces > marksurfCount)
+		if (leaves[i].iFirstMarkSurface < 0)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Leaf {} has negative iFirstMarkSurface ({})\n", i, leaves[i].iFirstMarkSurface);
+			leaves[i].iFirstMarkSurface = 0;
+			leaves[i].nMarkSurfaces = 0;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed negative marksurface index in leaf {}\n", i);
+		}
+		if (leaves[i].nMarkSurfaces < 0)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Leaf {} has negative nMarkSurfaces ({})\n", i, leaves[i].nMarkSurfaces);
+			leaves[i].nMarkSurfaces = 0;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed negative marksurface count in leaf {}\n", i);
+		}
+		if (leaves[i].iFirstMarkSurface > marksurfCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0117), i, leaves[i].iFirstMarkSurface, marksurfCount);
-			isValid = false;
+			leaves[i].iFirstMarkSurface = 0;
+			leaves[i].nMarkSurfaces = 0;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed out-of-bounds marksurface offset in leaf {}\n", i);
+		}
+		else if (leaves[i].iFirstMarkSurface + leaves[i].nMarkSurfaces > marksurfCount)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0117), i, leaves[i].iFirstMarkSurface, marksurfCount);
+			leaves[i].nMarkSurfaces = marksurfCount - leaves[i].iFirstMarkSurface;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Clamped overflowed marksurfaces for leaf {} (new count: {})\n", i, leaves[i].nMarkSurfaces);
 		}
 		if (visDataLength > 0 &&
 			leaves[i].nVisOffset != -1 && (leaves[i].nVisOffset < 0 || leaves[i].nVisOffset >= visDataLength))
