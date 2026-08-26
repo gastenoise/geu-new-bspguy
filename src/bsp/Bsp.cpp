@@ -916,9 +916,8 @@ std::vector<ScalableTexinfo> Bsp::getScalableTexinfos(int modelIdx)
 		BSPFACE32& face = faces[model.iFirstFace + k];
 		int texinfoIdx = face.iTextureInfo;
 
-		if (!visitedTexinfos.count(texinfoIdx))
+		if (visitedTexinfos.count(texinfoIdx))
 		{
-			// texinfoIdx = face.iTextureInfo = addTextureInfo(texinfos[texinfoIdx]);
 			continue;
 		}
 		visitedTexinfos.insert(texinfoIdx);
@@ -5701,6 +5700,21 @@ void Bsp::write(const std::string& path)
 	delete[] freelighting;
 
 	replace_lumps(backupLumps);
+	if (getBspRender())
+	{
+		getBspRender()->preRenderFaces();
+		getBspRender()->preRenderEnts();
+		getBspRender()->loadLightmaps();
+		getBspRender()->undoLumpState = duplicate_lumps();
+	}
+	if (g_app)
+	{
+		g_app->modelVerts.clear();
+		g_app->modelFaceVerts.clear();
+		g_app->scaleTexinfos.clear();
+		g_app->modelEdges.clear();
+		pickCount++;
+	}
 }
 
 bool Bsp::load_lumps(const std::string& fpath)

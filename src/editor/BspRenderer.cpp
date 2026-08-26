@@ -997,7 +997,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 		BSPMIPTEX* tex = NULL;
 
-		float textureStep = map->CalcFaceTextureStep(i) * 1.0f;
+		float textureStep = map->CalcFaceTextureStep(faceIdx) * 1.0f;
 
 		int texWidth, texHeight;
 		if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
