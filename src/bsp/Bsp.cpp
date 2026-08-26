@@ -5298,6 +5298,21 @@ void Bsp::write(const std::string& path)
 		}
 	}
 
+	Entity* world = getWorldspawnEnt();
+
+	if (g_settings.save_cam)
+	{
+		if (world)
+		{
+			if (!save_cam_pos.IsZero())
+				world->setOrAddKeyvalue("camera_pos", save_cam_pos.toKeyvalueString());
+			if (!save_cam_angles.IsZero())
+				world->setOrAddKeyvalue("camera_angles", save_cam_angles.toKeyvalueString());
+		}
+	}
+
+	update_ent_lump();
+
 	auto backupLumps = duplicate_lumps();
 
 	std::ofstream file(path, std::ios::trunc | std::ios::binary);
@@ -5310,28 +5325,6 @@ void Bsp::write(const std::string& path)
 	if (!is_bsp2 || !is_bsp2_old)
 	{
 		is_bsp_pathos = false;
-	}
-
-	// if (is_bsp2_old)
-	//{
-	//	is_bsp2_old = false;
-	//	is_bsp2 = true;
-	//	bsp_header.nVersion = 30;
-	// }
-
-	Entity* world = getWorldspawnEnt();
-
-	if (g_settings.save_cam)
-	{
-		if (world)
-		{
-			if (!save_cam_pos.IsZero())
-				world->setOrAddKeyvalue("camera_pos", save_cam_pos.toKeyvalueString());
-			if (!save_cam_angles.IsZero())
-				world->setOrAddKeyvalue("camera_angles", save_cam_angles.toKeyvalueString());
-
-			update_ent_lump();
-		}
 	}
 	// convert textures
 
@@ -6517,6 +6510,10 @@ void Bsp::reload_ents()
 		delete ents[i];
 	ents = load_ents(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + lumps[LUMP_ENTITIES].size()), bsp_name);
 	update_ent_lump();
+	if (getBspRender())
+	{
+		getBspRender()->preRenderEnts();
+	}
 }
 
 void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem)
