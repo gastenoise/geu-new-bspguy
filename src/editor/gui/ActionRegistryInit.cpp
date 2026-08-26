@@ -41,7 +41,14 @@ void RegisterAllAppActions(Gui* gui, Renderer* app)
 								std::string savePath = map->bsp_path;
 								if (savePath.empty())
 									savePath = g_working_dir + map->bsp_name + ".bsp";
+								map->update_ent_lump();
+								map->update_lump_pointers();
+								map->validate();
 								map->write(savePath);
+								if (map->getBspRender())
+								{
+									map->getBspRender()->preRenderEnts();
+								}
 							}
 						},
 						hasMap});

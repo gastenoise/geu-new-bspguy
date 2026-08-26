@@ -4454,6 +4454,8 @@ void Gui::drawMenu_Create()
 			}
 
 			map->resize_all_lightmaps();
+			rend->loadLightmaps();
+			rend->refreshModel(modelIdx);
 			rend->pushUndoState(get_localized_string(LANG_0589), dupLumps);
 		}
 
@@ -4490,6 +4492,8 @@ void Gui::drawMenu_Create()
 			}
 
 			map->resize_all_lightmaps();
+			rend->loadLightmaps();
+			rend->refreshModel(modelIdx);
 			rend->pushUndoState(get_localized_string(LANG_0591), dupLumps);
 		}
 

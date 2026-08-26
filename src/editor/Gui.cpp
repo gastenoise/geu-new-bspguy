@@ -282,20 +282,28 @@ void Gui::draw()
 
 		if (openEmptyContext != -2)
 		{
-			if (app->pickMode == PICK_OBJECT)
+			if (openEmptyContext == 0)
 			{
-				if (openEmptyContext == 0)
-				{
-					ImGui::OpenPopup("empty_context");
-				}
-				else
-				{
-					ImGui::OpenPopup("ent_context");
-				}
+				ImGui::OpenPopup("empty_context");
+			}
+			else if (openEmptyContext == 1)
+			{
+				ImGui::OpenPopup("ent_context");
+			}
+			else if (openEmptyContext == 2)
+			{
+				ImGui::OpenPopup("face_context");
 			}
 			else
 			{
-				ImGui::OpenPopup("face_context");
+				if (app->pickMode == PICK_OBJECT)
+				{
+					ImGui::OpenPopup("ent_context");
+				}
+				else
+				{
+					ImGui::OpenPopup("face_context");
+				}
 			}
 			openEmptyContext = -2;
 		}
@@ -320,6 +328,11 @@ void Gui::draw()
 		imgui_io->Fonts->Clear();
 		loadFonts();
 	}
+}
+
+void Gui::openContextMenu(int type)
+{
+	openEmptyContext = type;
 }
 
 void Gui::openContextMenu(bool empty)
@@ -498,16 +511,17 @@ void Gui::pasteLightmap()
 	for (int faceIdx : app->pickInfo.selectedFaces)
 	{
 		BSPFACE32& dstFace = map->faces[faceIdx];
-		BSPTEXTUREINFO& dstTexInfo = map->texinfos[dstFace.iTextureInfo];
+		BSPTEXTUREINFO* dstTexInfo = map->get_unique_texinfo(faceIdx);
 
-		if (dstTexInfo.nFlags & TEX_SPECIAL)
+		if (dstTexInfo && (dstTexInfo->nFlags & TEX_SPECIAL))
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, "Cannot paste lightmap to special face {}.\n", faceIdx);
-			continue;
+			dstTexInfo->nFlags &= ~TEX_SPECIAL;
 		}
 
 		int dstSize[2];
 		map->GetFaceLightmapSize(faceIdx, dstSize);
+		if (dstSize[0] <= 0) dstSize[0] = 1;
+		if (dstSize[1] <= 0) dstSize[1] = 1;
 
 		dstFace.nLightmapOffset = (int)accumulatedLighting.size() * sizeof(COLOR3);
 

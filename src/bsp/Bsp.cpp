@@ -239,6 +239,7 @@ Bsp::Bsp(std::string fpath)
 	bsp_path = fpath;
 	bsp_name = stripExt(basename(fpath));
 	bsp_valid = false;
+	renderer = NULL;
 
 	if (!fileExists(fpath))
 	{
@@ -915,9 +916,8 @@ std::vector<ScalableTexinfo> Bsp::getScalableTexinfos(int modelIdx)
 		BSPFACE32& face = faces[model.iFirstFace + k];
 		int texinfoIdx = face.iTextureInfo;
 
-		if (!visitedTexinfos.count(texinfoIdx))
+		if (visitedTexinfos.count(texinfoIdx))
 		{
-			// texinfoIdx = face.iTextureInfo = addTextureInfo(texinfos[texinfoIdx]);
 			continue;
 		}
 		visitedTexinfos.insert(texinfoIdx);
@@ -2596,17 +2596,6 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 			marksurfs[i] = remap.faces[marksurfs[i]];
 		else
 			marksurfs[i] = 0;
-
-		if (!(target & CLEAN_LEAVES))
-		{
-			for (unsigned int n = 1; n < newCounts.leaves; n++)
-			{
-				if (leaves[n].nMarkSurfaces > 0 && leaves[n].iFirstMarkSurface >= 0)
-				{
-					leaves[n].iFirstMarkSurface = remap.markSurfs[leaves[n].iFirstMarkSurface];
-				}
-			}
-		}
 	}
 
 	for (unsigned int i = 0; i < newCounts.surfEdges; i++)
@@ -5298,6 +5287,21 @@ void Bsp::write(const std::string& path)
 		}
 	}
 
+	Entity* world = getWorldspawnEnt();
+
+	if (g_settings.save_cam)
+	{
+		if (world)
+		{
+			if (!save_cam_pos.IsZero())
+				world->setOrAddKeyvalue("camera_pos", save_cam_pos.toKeyvalueString());
+			if (!save_cam_angles.IsZero())
+				world->setOrAddKeyvalue("camera_angles", save_cam_angles.toKeyvalueString());
+		}
+	}
+
+	update_ent_lump();
+
 	auto backupLumps = duplicate_lumps();
 
 	std::ofstream file(path, std::ios::trunc | std::ios::binary);
@@ -5310,28 +5314,6 @@ void Bsp::write(const std::string& path)
 	if (!is_bsp2 || !is_bsp2_old)
 	{
 		is_bsp_pathos = false;
-	}
-
-	// if (is_bsp2_old)
-	//{
-	//	is_bsp2_old = false;
-	//	is_bsp2 = true;
-	//	bsp_header.nVersion = 30;
-	// }
-
-	Entity* world = getWorldspawnEnt();
-
-	if (g_settings.save_cam)
-	{
-		if (world)
-		{
-			if (!save_cam_pos.IsZero())
-				world->setOrAddKeyvalue("camera_pos", save_cam_pos.toKeyvalueString());
-			if (!save_cam_angles.IsZero())
-				world->setOrAddKeyvalue("camera_angles", save_cam_angles.toKeyvalueString());
-
-			update_ent_lump();
-		}
 	}
 	// convert textures
 
@@ -5707,6 +5689,21 @@ void Bsp::write(const std::string& path)
 	delete[] freelighting;
 
 	replace_lumps(backupLumps);
+	if (getBspRender())
+	{
+		getBspRender()->preRenderFaces();
+		getBspRender()->preRenderEnts();
+		getBspRender()->loadLightmaps();
+		getBspRender()->undoLumpState = duplicate_lumps();
+	}
+	if (g_app)
+	{
+		g_app->modelVerts.clear();
+		g_app->modelFaceVerts.clear();
+		g_app->scaleTexinfos.clear();
+		g_app->modelEdges.clear();
+		pickCount++;
+	}
 }
 
 bool Bsp::load_lumps(const std::string& fpath)
@@ -6517,6 +6514,10 @@ void Bsp::reload_ents()
 		delete ents[i];
 	ents = load_ents(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + lumps[LUMP_ENTITIES].size()), bsp_name);
 	update_ent_lump();
+	if (getBspRender())
+	{
+		getBspRender()->preRenderEnts();
+	}
 }
 
 void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem)
@@ -6693,6 +6694,7 @@ bool Bsp::validate()
 		if (marksurfs[i] < 0 || marksurfs[i] >= faceCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0110), i, marksurfs[i], faceCount);
+			marksurfs[i] = 0;
 			isValid = false;
 		}
 	}
@@ -6763,10 +6765,31 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < leafCount; i++)
 	{
-		if (leaves[i].nMarkSurfaces < 0 || leaves[i].iFirstMarkSurface < 0 || leaves[i].iFirstMarkSurface + leaves[i].nMarkSurfaces > marksurfCount)
+		if (leaves[i].iFirstMarkSurface < 0)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Leaf {} has negative iFirstMarkSurface ({})\n", i, leaves[i].iFirstMarkSurface);
+			leaves[i].iFirstMarkSurface = 0;
+			leaves[i].nMarkSurfaces = 0;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed negative marksurface index in leaf {}\n", i);
+		}
+		if (leaves[i].nMarkSurfaces < 0)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Leaf {} has negative nMarkSurfaces ({})\n", i, leaves[i].nMarkSurfaces);
+			leaves[i].nMarkSurfaces = 0;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed negative marksurface count in leaf {}\n", i);
+		}
+		if (leaves[i].iFirstMarkSurface > marksurfCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0117), i, leaves[i].iFirstMarkSurface, marksurfCount);
-			isValid = false;
+			leaves[i].iFirstMarkSurface = 0;
+			leaves[i].nMarkSurfaces = 0;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Fixed out-of-bounds marksurface offset in leaf {}\n", i);
+		}
+		else if (leaves[i].iFirstMarkSurface + leaves[i].nMarkSurfaces > marksurfCount)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0117), i, leaves[i].iFirstMarkSurface, marksurfCount);
+			leaves[i].nMarkSurfaces = marksurfCount - leaves[i].iFirstMarkSurface;
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Clamped overflowed marksurfaces for leaf {} (new count: {})\n", i, leaves[i].nMarkSurfaces);
 		}
 		if (visDataLength > 0 &&
 			leaves[i].nVisOffset != -1 && (leaves[i].nVisOffset < 0 || leaves[i].nVisOffset >= visDataLength))
@@ -9158,7 +9181,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		{
 			BSPTEXTUREINFO& info = newTexinfos[startTexinfo + i];
 			info.iMiptex = textureIdx;
-			info.nFlags = TEX_SPECIAL;
+			info.nFlags = 0;
 			info.shiftS = 0;
 			info.shiftT = 0;
 			if (inside)
@@ -9194,6 +9217,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 			face.iTextureInfo = (startTexinfo + i);
 			face.nLightmapOffset = 0;
 			memset(face.nStyles, 255, MAX_LIGHTMAPS);
+			face.nStyles[0] = 0;
 		}
 
 		replace_lump(LUMP_FACES, newFaces, (faceCount + 6) * sizeof(BSPFACE32));
@@ -15227,9 +15251,11 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 
 BspRenderer* Bsp::getBspRender()
 {
-	if (!renderer && g_app)
+	if (!g_app)
+		return NULL;
+	if (!renderer)
 		for (size_t i = 0; i < mapRenderers.size(); i++)
-			if (mapRenderers[i]->map == this)
+			if (mapRenderers[i] && mapRenderers[i]->map == this)
 				renderer = mapRenderers[i];
 	return renderer;
 }

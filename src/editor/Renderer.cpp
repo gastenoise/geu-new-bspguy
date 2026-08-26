@@ -4363,6 +4363,10 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 	for (auto it = planeVerts.begin(); it != planeVerts.end(); ++it)
 	{
 		int iPlane = it->first;
+		if (iPlane < 0 || iPlane >= map->planeCount)
+		{
+			continue;
+		}
 		std::vector<int> verts = it->second;
 		BSPPLANE& plane = map->planes[iPlane];
 		if (verts.size() < 2)
@@ -4527,7 +4531,10 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 	// Scale planes
 	for (auto& vert : modelVerts)
 	{
-		vec3 stretchFactor = (vert.startPos - scaleFromDist) / distRange;
+		vec3 stretchFactor;
+		stretchFactor.x = std::fabs(distRange.x) > EPSILON ? (vert.startPos.x - scaleFromDist.x) / distRange.x : 0.0f;
+		stretchFactor.y = std::fabs(distRange.y) > EPSILON ? (vert.startPos.y - scaleFromDist.y) / distRange.y : 0.0f;
+		stretchFactor.z = std::fabs(distRange.z) > EPSILON ? (vert.startPos.z - scaleFromDist.z) / distRange.z : 0.0f;
 		vert.pos += dir * stretchFactor;
 		if (gridSnappingEnabled)
 		{
@@ -4538,7 +4545,10 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 	// Scale visible faces
 	for (auto& faceVert : modelFaceVerts)
 	{
-		vec3 stretchFactor = (faceVert.startPos - scaleFromDist) / distRange;
+		vec3 stretchFactor;
+		stretchFactor.x = std::fabs(distRange.x) > EPSILON ? (faceVert.startPos.x - scaleFromDist.x) / distRange.x : 0.0f;
+		stretchFactor.y = std::fabs(distRange.y) > EPSILON ? (faceVert.startPos.y - scaleFromDist.y) / distRange.y : 0.0f;
+		stretchFactor.z = std::fabs(distRange.z) > EPSILON ? (faceVert.startPos.z - scaleFromDist.z) / distRange.z : 0.0f;
 		faceVert.pos += dir * stretchFactor;
 		if (gridSnappingEnabled)
 		{
@@ -4560,7 +4570,11 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 			expandBoundingBox(faceVert.pos, minDist, maxDist);
 		}
 		vec3 newDistRange = maxDist - minDist;
-		vec3 scaleFactor = distRange / newDistRange;
+		vec3 scaleFactor(
+			std::fabs(newDistRange.x) > EPSILON ? distRange.x / newDistRange.x : 1.0f,
+			std::fabs(newDistRange.y) > EPSILON ? distRange.y / newDistRange.y : 1.0f,
+			std::fabs(newDistRange.z) > EPSILON ? distRange.z / newDistRange.z : 1.0f
+		);
 
 		mat4x4 scaleMat;
 		scaleMat.loadIdentity();

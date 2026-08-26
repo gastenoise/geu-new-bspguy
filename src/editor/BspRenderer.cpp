@@ -997,7 +997,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 		BSPMIPTEX* tex = NULL;
 
-		float textureStep = map->CalcFaceTextureStep(i) * 1.0f;
+		float textureStep = map->CalcFaceTextureStep(faceIdx) * 1.0f;
 
 		int texWidth, texHeight;
 		if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
@@ -1214,7 +1214,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		}
 
 		// add face to a render group (faces that share that same textures and opacity flag)
-		bool isTransparent = opacity < 1.0f || (tex && tex->szName[0] == '{');
+		bool isTransparent = opacity < 1.0f || (tex && tex->szName[0] == '{' && ent && ent->rendermode > 0);
 		int groupIdx = -1;
 		for (size_t k = 0; k < renderGroups.size(); k++)
 		{
@@ -2752,17 +2752,48 @@ void BspRenderer::updateFaceUVs(int faceIdx, const BSPTEXTUREINFO* overrideTexIn
 
 			auto verts = ((lightmapVert*)rgroup->buffer->getData());
 
+			LightmapInfo* lmap = lightmapsGenerated && lightmaps ? &lightmaps[faceIdx] : NULL;
+			bool isSpecial = texinfo.nFlags & TEX_SPECIAL;
+			bool hasLighting = face.nStyles[0] != 255 && face.nLightmapOffset >= 0 && !isSpecial;
+			unsigned int textureStep = map->CalcFaceTextureStep(faceIdx);
+
+			float lw = 0;
+			float lh = 0;
+			if (lmap)
+			{
+				lw = (float)lmap->w / (float)MAX_LIGHTMAP_ATLAS_SIZE;
+				lh = (float)lmap->h / (float)MAX_LIGHTMAP_ATLAS_SIZE;
+			}
+
+			float tw = (tex.nWidth > 0) ? (1.0f / (float)tex.nWidth) : (1.0f / 16.0f);
+			float th = (tex.nHeight > 0) ? (1.0f / (float)tex.nHeight) : (1.0f / 16.0f);
+
 			for (int i = 0; i < rface->vertCount; i++)
 			{
 				lightmapVert& vert = verts[rface->vertOffset + i];
 				vec3 pos = vert.pos.flipUV();
 
-				float tw = 1.0f / (float)tex.nWidth;
-				float th = 1.0f / (float)tex.nHeight;
 				float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
 				float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
 				vert.u = fU * tw;
 				vert.v = fV * th;
+
+				if (hasLighting && lmap && lmap->w > 0 && lmap->h > 0 && textureStep > 0)
+				{
+					float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / textureStep;
+					float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / textureStep;
+
+					float uu = (fLightMapU / (float)lmap->w) * lw;
+					float vv = (fLightMapV / (float)lmap->h) * lh;
+
+					float pixelStep = 1.0f / (float)MAX_LIGHTMAP_ATLAS_SIZE;
+
+					for (int s = 0; s < MAX_LIGHTMAPS; s++)
+					{
+						vert.luv[s][0] = uu + lmap->x[s] * pixelStep;
+						vert.luv[s][1] = vv + lmap->y[s] * pixelStep;
+					}
+				}
 			}
 			if (reupload)
 				rgroup->buffer->reupload();

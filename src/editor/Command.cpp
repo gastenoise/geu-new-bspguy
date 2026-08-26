@@ -98,9 +98,10 @@ void EditBspCommand::execute()
 	auto faces = getDiffFaces(oldLumps, newLumps);
 	for (auto& face : faces)
 	{
-		if (std::find(mdls.begin(), mdls.end(), map->get_model_from_face(face)) == mdls.end())
+		int mdl = map->get_model_from_face(face);
+		if (mdl >= 0 && mdl < map->modelCount && std::find(mdls.begin(), mdls.end(), mdl) == mdls.end())
 		{
-			mdls.push_back(map->get_model_from_face(face));
+			mdls.push_back(mdl);
 		}
 	}
 
@@ -177,9 +178,10 @@ void EditBspCommand::undo()
 	auto faces = getDiffFaces(newLumps, oldLumps);
 	for (auto& face : faces)
 	{
-		if (std::find(mdls.begin(), mdls.end(), map->get_model_from_face(face)) == mdls.end())
+		int mdl = map->get_model_from_face(face);
+		if (mdl >= 0 && mdl < map->modelCount && std::find(mdls.begin(), mdls.end(), mdl) == mdls.end())
 		{
-			mdls.push_back(map->get_model_from_face(face));
+			mdls.push_back(mdl);
 		}
 	}
 	auto entAdded = GetEntsAdded(newLumps, oldLumps, map->bsp_name);
@@ -199,7 +201,10 @@ void EditBspCommand::undo()
 	}
 	for (auto& mdl : mdls)
 	{
-		renderer->refreshModel(mdl, false);
+		if (mdl >= 0 && mdl < map->modelCount)
+		{
+			renderer->refreshModel(mdl, false);
+		}
 	}
 	//}
 
@@ -235,6 +240,14 @@ void EditBspCommand::refresh(BspRenderer* renderer)
 		{
 			renderer->preRenderFaces();
 		}
+	}
+
+	if (g_app)
+	{
+		g_app->modelVerts.clear();
+		g_app->modelFaceVerts.clear();
+		g_app->scaleTexinfos.clear();
+		g_app->modelEdges.clear();
 	}
 
 	pickCount++;
