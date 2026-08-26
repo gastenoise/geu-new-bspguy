@@ -701,6 +701,15 @@ void BspRenderer::loadLightmaps()
 			LightmapInfo& info = lightmaps[i];
 			info.w = size[0];
 			info.h = size[1];
+			info.vS = texinfo.vS;
+			info.vT = texinfo.vT;
+			info.shiftS = texinfo.shiftS;
+			info.shiftT = texinfo.shiftT;
+			info.imins[0] = imins[0];
+			info.imins[1] = imins[1];
+			info.imaxs[0] = imaxs[0];
+			info.imaxs[1] = imaxs[1];
+
 			info.midTexU = (float)(size[0]) / 2.0f;
 			info.midTexV = (float)(size[1]) / 2.0f;
 
@@ -1146,8 +1155,11 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			// lightmap texture coords
 			if (hasLighting && lmap)
 			{
-				float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / textureStep;
-				float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / textureStep;
+				float fLightU = dotProduct(lmap->vS, vert) + (lmap->shiftS);
+				float fLightV = dotProduct(lmap->vT, vert) + (lmap->shiftT);
+
+				float fLightMapU = lmap->midTexU + (fLightU - lmap->midPolyU) / textureStep;
+				float fLightMapV = lmap->midTexV + (fLightV - lmap->midPolyV) / textureStep;
 
 				float uu = (fLightMapU / (float)lmap->w) * lw;
 				float vv = (fLightMapV / (float)lmap->h) * lh;
@@ -2780,8 +2792,11 @@ void BspRenderer::updateFaceUVs(int faceIdx, const BSPTEXTUREINFO* overrideTexIn
 
 				if (hasLighting && lmap && lmap->w > 0 && lmap->h > 0 && textureStep > 0)
 				{
-					float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / textureStep;
-					float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / textureStep;
+					float fLightU = dotProduct(lmap->vS, pos) + lmap->shiftS;
+					float fLightV = dotProduct(lmap->vT, pos) + lmap->shiftT;
+
+					float fLightMapU = lmap->midTexU + (fLightU - lmap->midPolyU) / textureStep;
+					float fLightMapV = lmap->midTexV + (fLightV - lmap->midPolyV) / textureStep;
 
 					float uu = (fLightMapU / (float)lmap->w) * lw;
 					float vv = (fLightMapV / (float)lmap->h) * lh;

@@ -35,6 +35,14 @@ struct LightmapInfo
 
 	int w, h;
 
+	// Projection basis at atlas generation time
+	vec3 vS;
+	vec3 vT;
+	float shiftS;
+	float shiftT;
+	int imins[2];
+	int imaxs[2];
+
 	float midTexU, midTexV;
 	float midPolyU, midPolyV;
 };
