@@ -944,7 +944,6 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	LumpState backupLumps = src_map->duplicate_lumps();
 
 	Bsp* bspModel = new Bsp();
-	bspModel->setBspRender(src_map->getBspRender());
 	bspModel->bsp_valid = true;
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
@@ -1102,12 +1101,12 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 						if (ExportType != 0)
 						{
 							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-							newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
+							newMiptex = bspModel->add_texture(tex.szName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
 							delete[] imageData;
 						}
 						else
 						{
-							newMiptex = src_map->add_texture(tex.szName, NULL, wadTex.nWidth, wadTex.nHeight);
+							newMiptex = bspModel->add_texture(tex.szName, NULL, wadTex.nWidth, wadTex.nHeight);
 						}
 
 						break;
@@ -1212,7 +1211,6 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 
 	bspModel->validate();
 	bspModel->write(bspModel->bsp_path);
-	bspModel->setBspRender(NULL);
 
 	delete bspModel;
 	delete[] tmpCompressed;
