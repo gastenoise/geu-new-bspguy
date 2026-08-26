@@ -342,6 +342,12 @@ void RegisterAllAppActions(Gui* gui, Renderer* app)
 						},
 						hasMap});
 
+	reg.registerAction({"map.recompile_lighting", "Recompile Lighting (RAD)...", "Map", "",
+						"Recalculate lightmaps using external RAD compiler",
+						[gui]()
+						{ if (gui) gui->recompileLighting(); },
+						hasMap});
+
 	// ----------------------------------------------------
 	// WINDOWS
 	// ----------------------------------------------------

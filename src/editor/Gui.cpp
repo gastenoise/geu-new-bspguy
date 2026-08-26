@@ -210,6 +210,11 @@ void Gui::draw()
 		drawSettings();
 	}
 
+	if (showRadErrorModal)
+	{
+		drawRadErrorModal();
+	}
+
 	Bsp* map = app->getSelectedMap();
 	if (map && map->is_mdl_model && map->map_mdl)
 	{
