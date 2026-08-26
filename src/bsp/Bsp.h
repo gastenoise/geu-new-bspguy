@@ -526,7 +526,7 @@ class Bsp
 	void remap_node_structures(int iNode, STRUCTREMAP* remap);
 	void remap_clipnode_structures(int iNode, STRUCTREMAP* remap);
 
-	BspRenderer* renderer;
+	BspRenderer* renderer = NULL;
 	unsigned int originCrc32 = 0;
 
 	bool* pvsFaces = NULL; // flags which faces are marked for rendering in the PVS

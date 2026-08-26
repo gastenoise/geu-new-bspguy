@@ -239,6 +239,7 @@ Bsp::Bsp(std::string fpath)
 	bsp_path = fpath;
 	bsp_name = stripExt(basename(fpath));
 	bsp_valid = false;
+	renderer = NULL;
 
 	if (!fileExists(fpath))
 	{
@@ -15225,9 +15226,11 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 
 BspRenderer* Bsp::getBspRender()
 {
-	if (!renderer && g_app)
+	if (!g_app)
+		return NULL;
+	if (!renderer)
 		for (size_t i = 0; i < mapRenderers.size(); i++)
-			if (mapRenderers[i]->map == this)
+			if (mapRenderers[i] && mapRenderers[i]->map == this)
 				renderer = mapRenderers[i];
 	return renderer;
 }
