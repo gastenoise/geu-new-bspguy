@@ -1561,18 +1561,19 @@ void Bsp::save_undo_lightmaps(bool logged)
 
 		undo_lightmaps[i].lightdata.clear();
 		undo_lightmaps[i].lightdata.resize(undo_lightmaps[i].layers);
-		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
+		size_t pixelCount = (size_t)size[0] * (size_t)size[1];
+		size_t lightmapSz = pixelCount * sizeof(COLOR3);
 		for (int lightId = 0; lightId < undo_lightmaps[i].layers; lightId++)
 		{
-			int offset = faces[i].nLightmapOffset + lightId * lightmapSz;
-			if (lightdata && offset >= 0 && (offset + lightmapSz) <= (int)lightDataLength && size[0] > 0 && size[1] > 0)
+			size_t offset = (size_t)faces[i].nLightmapOffset + (size_t)lightId * lightmapSz;
+			if (lightdata && faces[i].nLightmapOffset >= 0 && (offset + lightmapSz) <= (size_t)lightDataLength && pixelCount > 0)
 			{
 				COLOR3* src = (COLOR3*)(lightdata + offset);
-				undo_lightmaps[i].lightdata[lightId].assign(src, src + ((size_t)size[0] * (size_t)size[1]));
+				undo_lightmaps[i].lightdata[lightId].assign(src, src + pixelCount);
 			}
-			else if (size[0] > 0 && size[1] > 0)
+			else if (pixelCount > 0)
 			{
-				undo_lightmaps[i].lightdata[lightId].assign((size_t)size[0] * (size_t)size[1], COLOR3(255, 255, 255));
+				undo_lightmaps[i].lightdata[lightId].assign(pixelCount, COLOR3(255, 255, 255));
 			}
 		}
 
