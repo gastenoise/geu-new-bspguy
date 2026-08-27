@@ -1587,7 +1587,8 @@ bool Bsp::resample_face_lightmap_world_space(int faceId, const LIGHTMAP& oldLigh
 {
 	if (oldLightmap.width <= 0 || oldLightmap.height <= 0 || !srcData || newsize[0] <= 0 || newsize[1] <= 0)
 	{
-		outData.assign(std::max(0, newsize[0] * newsize[1]), COLOR3(255, 255, 255));
+		size_t fallbackCount = (size_t)std::max(0, newsize[0]) * (size_t)std::max(0, newsize[1]);
+		outData.assign(fallbackCount, COLOR3(255, 255, 255));
 		return false;
 	}
 
@@ -1631,7 +1632,8 @@ bool Bsp::resample_face_lightmap_world_space(int faceId, const LIGHTMAP& oldLigh
 		return false;
 	}
 
-	outData.resize(newsize[0] * newsize[1]);
+	size_t targetPixelCount = (size_t)newsize[0] * (size_t)newsize[1];
+	outData.resize(targetPixelCount);
 
 	for (int y = 0; y < newsize[1]; y++)
 	{
@@ -1761,7 +1763,8 @@ void Bsp::resize_all_lightmaps(bool logged)
 				}
 				else
 				{
-					newdata.resize(newsize[0] * newsize[1], COLOR3(255, 255, 255));
+					size_t newCount = (size_t)newsize[0] * (size_t)newsize[1];
+					newdata.resize(newCount, COLOR3(255, 255, 255));
 				}
 			}
 			newLightData.insert(newLightData.end(), newdata.begin(), newdata.end());
