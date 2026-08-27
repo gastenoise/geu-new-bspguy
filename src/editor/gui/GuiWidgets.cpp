@@ -4354,14 +4354,16 @@ void Gui::drawFaceEditorWidget()
 						BSPFACE32& face2 = map->faces[faceIdx2];
 						BSPTEXTUREINFO& texinfo2 = map->texinfos[face2.iTextureInfo];
 
-						if (scaleX != 1.0f / texinfo2.vS.length())
+						float face2ScaleX = texinfo2.vS.length() > EPSILON ? (1.0f / texinfo2.vS.length()) : 1.0f;
+						float face2ScaleY = texinfo2.vT.length() > EPSILON ? (1.0f / texinfo2.vT.length()) : 1.0f;
+						if (std::abs(scaleX - face2ScaleX) > 0.0001f)
 							scaleX = 1.0f;
-						if (scaleY != 1.0f / texinfo2.vT.length())
+						if (std::abs(scaleY - face2ScaleY) > 0.0001f)
 							scaleY = 1.0f;
 
-						if (shiftX != texinfo2.shiftS)
+						if (std::abs(shiftX - texinfo2.shiftS) > 0.0001f)
 							shiftX = 0;
-						if (shiftY != texinfo2.shiftT)
+						if (std::abs(shiftY - texinfo2.shiftT) > 0.0001f)
 							shiftY = 0;
 
 						if (isSpecial == !(texinfo2.nFlags & TEX_SPECIAL))
@@ -4876,7 +4878,7 @@ void Gui::drawFaceEditorWidget()
 				}
 			}
 
-			if (applyFaceChanges && (textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size())
+			if ((applyFaceChanges || !manualMode) && (textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size())
 			{
 				textureId = (ImTextureID)(size_t)mapRenderer->getFaceTextureId((int)app->pickInfo.selectedFaces[0]);
 
@@ -4913,6 +4915,10 @@ void Gui::drawFaceEditorWidget()
 			{
 				map->resize_all_lightmaps(true);
 				mapRenderer->reloadLightmapsSync();
+				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+				{
+					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
+				}
 			}
 
 			reloadLimits();
