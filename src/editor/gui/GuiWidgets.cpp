@@ -4445,6 +4445,8 @@ void Gui::drawFaceEditorWidget()
 			ImGui::EndTooltip();
 		}
 
+		bool itemDeactivatedAfterEdit = false;
+
 		if (ImGui::DragFloat(get_localized_string(LANG_0873).c_str(), &scaleX, 0.001f, 0, 0, "X: %.3f"))
 		{
 			if (!std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f)
@@ -4452,6 +4454,9 @@ void Gui::drawFaceEditorWidget()
 				scaledX = true;
 			}
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
+
 		ImGui::SameLine();
 		if (ImGui::DragFloat(get_localized_string(LANG_0874).c_str(), &scaleY, 0.001f, 0, 0, "Y: %.3f"))
 		{
@@ -4460,6 +4465,8 @@ void Gui::drawFaceEditorWidget()
 				scaledY = true;
 			}
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::Dummy(ImVec2(0, 8));
 
@@ -4477,11 +4484,16 @@ void Gui::drawFaceEditorWidget()
 		{
 			shiftedX = true;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
+
 		ImGui::SameLine();
 		if (ImGui::DragFloat(get_localized_string(LANG_0878).c_str(), &shiftY, 0.1f, 0, 0, "Y: %.3f"))
 		{
 			shiftedY = true;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::PopItemWidth();
 
@@ -4502,6 +4514,8 @@ void Gui::drawFaceEditorWidget()
 			if (lockRotate)
 				rotateY = rotateX - 180.0f;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::SameLine();
 
@@ -4515,6 +4529,8 @@ void Gui::drawFaceEditorWidget()
 			if (lockRotate)
 				rotateX = rotateY + 180.0f;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::SameLine();
 
@@ -4760,7 +4776,7 @@ void Gui::drawFaceEditorWidget()
 
 			std::set<int> modelRefreshes;
 			bool anyFaceChange = scaledX || scaledY || shiftedX || shiftedY || updatedTexVec || stylesChanged || textureChanged || toggledFlags || updatedFaceVec || mergeFaceVec;
-			bool isCommitting = applyFaceChanges || (!manualMode && anyFaceChange && !ImGui::IsMouseDown(ImGuiMouseButton_Left));
+			bool isCommitting = applyFaceChanges || (!manualMode && ((anyFaceChange && itemDeactivatedAfterEdit) || textureChanged || toggledFlags || stylesChanged || updatedFaceVec || mergeFaceVec));
 
 			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 			{
