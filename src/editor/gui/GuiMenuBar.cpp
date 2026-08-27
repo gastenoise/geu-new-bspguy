@@ -2867,6 +2867,13 @@ void Gui::drawMenu_View()
 		}
 		IMGUI_TOOLTIP(g, "Toggle 3D environment skybox cubemap background in the viewport");
 
+		bool decalsEnabled = (g_render_flags & RENDER_DECALS) != 0;
+		if (ImGui::MenuItem(get_localized_string(LANG_1226).c_str(), "Ctrl+Alt+D", decalsEnabled))
+		{
+			g_render_flags ^= RENDER_DECALS;
+		}
+		IMGUI_TOOLTIP(g, "Toggle GoldSrc-accurate decal rendering and selection in the 3D viewport");
+
 		ImGui::EndMenu();
 	}
 }
