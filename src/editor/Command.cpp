@@ -118,7 +118,7 @@ void EditBspCommand::execute()
 	{*/
 	if (mdls.size() && !(targetLumps & FL_LIGHTING))
 	{
-		renderer->loadLightmaps();
+		renderer->reloadLightmapsSync();
 	}
 	for (auto& mdl : mdls)
 	{
@@ -197,7 +197,7 @@ void EditBspCommand::undo()
 	{*/
 	if (mdls.size() && !(targetLumps & FL_LIGHTING))
 	{
-		renderer->loadLightmaps();
+		renderer->reloadLightmapsSync();
 	}
 	for (auto& mdl : mdls)
 	{
@@ -233,7 +233,7 @@ void EditBspCommand::refresh(BspRenderer* renderer)
 
 		if (targetLumps & FL_LIGHTING)
 		{
-			renderer->loadLightmaps();
+			renderer->reloadLightmapsSync();
 		}
 
 		if (targetLumps & FL_VERTICES || targetLumps & FL_TEXTURES)

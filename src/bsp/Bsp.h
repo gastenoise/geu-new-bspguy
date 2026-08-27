@@ -475,6 +475,9 @@ class Bsp
 	void save_undo_lightmaps(bool logged = false);
 	void resize_all_lightmaps(bool logged = false);
 	bool should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap);
+	bool resample_face_lightmap_world_space(int faceId, const LIGHTMAP& oldLightmap,
+											const COLOR3* srcData, int newsize[2],
+											const int new_imins[2], std::vector<COLOR3>& outData);
 
 	// marks all structures that this model uses
 	// TODO: don't mark faces in submodel leaves (unused)

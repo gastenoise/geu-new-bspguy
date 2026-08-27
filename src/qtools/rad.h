@@ -140,12 +140,27 @@ struct LIGHTMAP
 	int width, height;
 	int layers; // for when multiple lights hit the same face (nStyles[0-3] != 255)
 	int face;
+
+	vec3 vS;
+	vec3 vT;
+	float shiftS;
+	float shiftT;
+	int imins[2];
+	int imaxs[2];
+	std::vector<std::vector<COLOR3>> lightdata;
+
 	LIGHTMAP()
 	{
 		width = height = layers = 0;
 		face = -1;
+		shiftS = shiftT = 0.0f;
+		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 0;
 	}
 };
+
+void ApplyMatrix(const mat4x4& m, const vec3& in, vec3& out);
+bool InvertMatrix(mat4x4 m, mat4x4& m_inverse);
+void TranslateWorldToTex(Bsp* bsp, int facenum, mat4x4& m);
 
 float CalculatePointVecsProduct(const volatile float* point, const volatile float* vecs);
 bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2]);
