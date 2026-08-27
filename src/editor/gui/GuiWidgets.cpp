@@ -4759,7 +4759,8 @@ void Gui::drawFaceEditorWidget()
 			}
 
 			std::set<int> modelRefreshes;
-			bool isCommitting = applyFaceChanges || (!manualMode && !ImGui::IsMouseDown(ImGuiMouseButton_Left));
+			bool anyFaceChange = scaledX || scaledY || shiftedX || shiftedY || updatedTexVec || stylesChanged || textureChanged || toggledFlags || updatedFaceVec || mergeFaceVec;
+			bool isCommitting = applyFaceChanges || (!manualMode && anyFaceChange && !ImGui::IsMouseDown(ImGuiMouseButton_Left));
 
 			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 			{
@@ -4902,11 +4903,8 @@ void Gui::drawFaceEditorWidget()
 
 			if (isCommitting)
 			{
-				if (updatedTexVec)
-				{
-					pickCount++;
-					vertPickCount++;
-				}
+				pickCount++;
+				vertPickCount++;
 
 				mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 					textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;

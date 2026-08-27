@@ -233,7 +233,7 @@ void EditBspCommand::refresh(BspRenderer* renderer)
 
 		if (targetLumps & FL_LIGHTING)
 		{
-			renderer->loadLightmaps();
+			renderer->reloadLightmapsSync();
 		}
 
 		if (targetLumps & FL_VERTICES || targetLumps & FL_TEXTURES)
