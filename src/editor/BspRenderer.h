@@ -247,6 +247,7 @@ class BspRenderer
 
 	void reload(); // reloads all geometry, textures, and lightmaps
 	void reloadLightmaps();
+	void reloadLightmapsSync();
 	void reloadClipnodes();
 	RenderClipnodes* addClipnodeModel(int modelIdx);
 

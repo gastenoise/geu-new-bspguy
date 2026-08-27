@@ -596,6 +596,22 @@ void BspRenderer::reloadLightmaps()
 	}
 }
 
+void BspRenderer::reloadLightmapsSync()
+{
+	if (lightmapFuture.valid())
+	{
+		lightmapFuture.wait();
+	}
+	loadLightmaps();
+	for (size_t i = 0; i < glLightmapTextures.size(); i++)
+	{
+		if (glLightmapTextures[i])
+			glLightmapTextures[i]->upload(Texture::TYPE_LIGHTMAP);
+	}
+	preRenderFaces();
+	lightmapsUploaded = true;
+}
+
 void BspRenderer::reloadClipnodes()
 {
 	if (!clipnodesFuture.valid() || clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
@@ -2655,9 +2671,9 @@ void BspRenderer::delayLoadData()
 		texturesLoaded = true;
 	}
 
-	if (!lightmapsUploaded && lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	if (lightmapsGenerated && !lightmapsUploaded && (!lightmapFuture.valid() || lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
 	{
-		for (int i = 0; i < glLightmapTextures.size(); i++)
+		for (size_t i = 0; i < glLightmapTextures.size(); i++)
 		{
 			if (glLightmapTextures[i])
 				glLightmapTextures[i]->upload(Texture::TYPE_LIGHTMAP);

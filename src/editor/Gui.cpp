@@ -439,7 +439,7 @@ void Gui::pasteStyle()
 	map->resize_all_lightmaps(true);
 	if (mapRenderer)
 	{
-		mapRenderer->loadLightmaps();
+		mapRenderer->reloadLightmapsSync();
 		mapRenderer->pushUndoState("Paste Style", EDIT_MODEL_LUMPS);
 	}
 	pickCount++;

@@ -4895,7 +4895,7 @@ void Gui::drawFaceEditorWidget()
 			if (isCommitting)
 			{
 				map->resize_all_lightmaps(true);
-				mapRenderer->loadLightmaps();
+				mapRenderer->reloadLightmapsSync();
 			}
 
 			reloadLimits();
