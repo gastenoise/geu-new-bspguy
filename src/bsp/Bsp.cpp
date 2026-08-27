@@ -15869,26 +15869,12 @@ bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 
 	if (tex.nFlags & TEX_SPECIAL)
 	{
-		retval = true;
+		return true;
 	}
 
 	for (int i = 0; i < 2; i++)
 	{
-		int tmpTextureStep = CalcFaceTextureStep(facenum);
-
-		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * tmpTextureStep > (g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent))
-		{
-			if (retval)
-			{
-				print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent));
-				print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
-			}
-			retval = false;
-			mins_out[i] = 1;
-			maxs_out[i] = 1;
-		}
-
-		if (maxs_out[i] - mins_out[i] < 0)
+		if (maxs_out[i] < mins_out[i])
 		{
 			if (retval)
 			{
@@ -15896,8 +15882,8 @@ bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 				print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
 			}
 			retval = false;
-			mins_out[i] = 1;
-			maxs_out[i] = 1;
+			mins_out[i] = 0;
+			maxs_out[i] = 0;
 		}
 	}
 	return retval;
