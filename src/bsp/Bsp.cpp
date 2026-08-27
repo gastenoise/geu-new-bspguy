@@ -1535,13 +1535,47 @@ void Bsp::save_undo_lightmaps(bool logged)
 
 	for (int i = 0; i < faceCount; i++)
 	{
-		int size[2];
+		int size[2] = {0, 0};
+		int imins[2] = {0, 0};
+		int imaxs[2] = {0, 0};
 		GetFaceLightmapSize(i, size);
+		GetFaceExtents(i, imins, imaxs);
 
 		undo_lightmaps[i].layers = lightmap_count(i);
 
 		undo_lightmaps[i].width = size[0];
 		undo_lightmaps[i].height = size[1];
+		undo_lightmaps[i].imins[0] = imins[0];
+		undo_lightmaps[i].imins[1] = imins[1];
+		undo_lightmaps[i].imaxs[0] = imaxs[0];
+		undo_lightmaps[i].imaxs[1] = imaxs[1];
+
+		if (faces[i].iTextureInfo >= 0 && faces[i].iTextureInfo < texinfoCount)
+		{
+			BSPTEXTUREINFO& ti = texinfos[faces[i].iTextureInfo];
+			undo_lightmaps[i].vS = ti.vS;
+			undo_lightmaps[i].vT = ti.vT;
+			undo_lightmaps[i].shiftS = ti.shiftS;
+			undo_lightmaps[i].shiftT = ti.shiftT;
+		}
+
+		undo_lightmaps[i].lightdata.clear();
+		undo_lightmaps[i].lightdata.resize(undo_lightmaps[i].layers);
+		size_t pixelCount = (size_t)size[0] * (size_t)size[1];
+		size_t lightmapSz = pixelCount * sizeof(COLOR3);
+		for (int lightId = 0; lightId < undo_lightmaps[i].layers; lightId++)
+		{
+			size_t offset = (size_t)faces[i].nLightmapOffset + (size_t)lightId * lightmapSz;
+			if (lightdata && faces[i].nLightmapOffset >= 0 && (offset + lightmapSz) <= (size_t)lightDataLength && pixelCount > 0)
+			{
+				COLOR3* src = (COLOR3*)(lightdata + offset);
+				undo_lightmaps[i].lightdata[lightId].assign(src, src + pixelCount);
+			}
+			else if (pixelCount > 0)
+			{
+				undo_lightmaps[i].lightdata[lightId].assign(pixelCount, COLOR3(255, 255, 255));
+			}
+		}
 
 		if (logged)
 			g_progress.tick();
@@ -1563,6 +1597,113 @@ bool Bsp::should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap)
 		return true;
 	}
 	return false;
+}
+
+bool Bsp::resample_face_lightmap_world_space(int faceId, const LIGHTMAP& oldLightmap,
+											const COLOR3* srcData, int newsize[2],
+											const int new_imins[2], std::vector<COLOR3>& outData)
+{
+	if (oldLightmap.width <= 0 || oldLightmap.height <= 0 || !srcData || newsize[0] <= 0 || newsize[1] <= 0)
+	{
+		size_t fallbackCount = (size_t)std::max(0, newsize[0]) * (size_t)std::max(0, newsize[1]);
+		outData.assign(fallbackCount, COLOR3(255, 255, 255));
+		return false;
+	}
+
+	BSPFACE32& face = faces[faceId];
+	if (face.iTextureInfo < 0 || face.iTextureInfo >= texinfoCount)
+	{
+		scaleImage(srcData, outData, oldLightmap.width, oldLightmap.height, newsize[0], newsize[1]);
+		return false;
+	}
+
+	BSPTEXTUREINFO& newTi = texinfos[face.iTextureInfo];
+	if (oldLightmap.vS.length() < EPSILON || oldLightmap.vT.length() < EPSILON ||
+		newTi.vS.length() < EPSILON || newTi.vT.length() < EPSILON)
+	{
+		scaleImage(srcData, outData, oldLightmap.width, oldLightmap.height, newsize[0], newsize[1]);
+		return false;
+	}
+
+	const BSPPLANE fp = getPlaneFromFace(&face);
+	int textureStep = CalcFaceTextureStep(faceId);
+	if (textureStep <= 0)
+		textureStep = 16;
+
+	mat4x4 worldToNewTex;
+	worldToNewTex.loadIdentity();
+	for (int i = 0; i < 3; i++)
+	{
+		worldToNewTex.m[i * 4 + 0] = ((float*)&newTi.vS)[i];
+		worldToNewTex.m[i * 4 + 1] = ((float*)&newTi.vT)[i];
+		worldToNewTex.m[i * 4 + 2] = ((float*)&fp.vNormal)[i];
+	}
+	worldToNewTex.m[3 * 4 + 0] = newTi.shiftS;
+	worldToNewTex.m[3 * 4 + 1] = newTi.shiftT;
+	worldToNewTex.m[3 * 4 + 2] = -fp.fDist;
+
+	bool canInvert = true;
+	mat4x4 newTexToWorld = worldToNewTex.invert(&canInvert);
+	if (!canInvert)
+	{
+		scaleImage(srcData, outData, oldLightmap.width, oldLightmap.height, newsize[0], newsize[1]);
+		return false;
+	}
+
+	size_t targetPixelCount = (size_t)newsize[0] * (size_t)newsize[1];
+	outData.resize(targetPixelCount);
+
+	for (int y = 0; y < newsize[1]; y++)
+	{
+		float t_new = (float)(new_imins[1] + y) * (float)textureStep;
+		for (int x = 0; x < newsize[0]; x++)
+		{
+			float s_new = (float)(new_imins[0] + x) * (float)textureStep;
+
+			vec3 worldPoint;
+			ApplyMatrix(newTexToWorld, vec3(s_new, t_new, 0.0f), worldPoint);
+
+			float s_orig = dotProduct(oldLightmap.vS, worldPoint) + oldLightmap.shiftS;
+			float t_orig = dotProduct(oldLightmap.vT, worldPoint) + oldLightmap.shiftT;
+
+			float src_u = (s_orig - (float)oldLightmap.imins[0] * (float)textureStep) / (float)textureStep;
+			float src_v = (t_orig - (float)oldLightmap.imins[1] * (float)textureStep) / (float)textureStep;
+
+			int u0 = (int)floorf(src_u);
+			int v0 = (int)floorf(src_v);
+			int u1 = u0 + 1;
+			int v1 = v0 + 1;
+
+			float fracU = src_u - (float)u0;
+			float fracV = src_v - (float)v0;
+
+			u0 = std::max(0, std::min(u0, oldLightmap.width - 1));
+			u1 = std::max(0, std::min(u1, oldLightmap.width - 1));
+			v0 = std::max(0, std::min(v0, oldLightmap.height - 1));
+			v1 = std::max(0, std::min(v1, oldLightmap.height - 1));
+
+			COLOR3 c00 = srcData[v0 * oldLightmap.width + u0];
+			COLOR3 c10 = srcData[v0 * oldLightmap.width + u1];
+			COLOR3 c01 = srcData[v1 * oldLightmap.width + u0];
+			COLOR3 c11 = srcData[v1 * oldLightmap.width + u1];
+
+			float r = (1.0f - fracU) * (1.0f - fracV) * (float)c00.r + fracU * (1.0f - fracV) * (float)c10.r +
+					  (1.0f - fracU) * fracV * (float)c01.r + fracU * fracV * (float)c11.r;
+			float g = (1.0f - fracU) * (1.0f - fracV) * (float)c00.g + fracU * (1.0f - fracV) * (float)c10.g +
+					  (1.0f - fracU) * fracV * (float)c01.g + fracU * fracV * (float)c11.g;
+			float b = (1.0f - fracU) * (1.0f - fracV) * (float)c00.b + fracU * (1.0f - fracV) * (float)c10.b +
+					  (1.0f - fracU) * fracV * (float)c01.b + fracU * fracV * (float)c11.b;
+
+			COLOR3 outColor;
+			outColor.r = (unsigned char)std::max(0.0f, std::min(255.0f, roundf(r)));
+			outColor.g = (unsigned char)std::max(0.0f, std::min(255.0f, roundf(g)));
+			outColor.b = (unsigned char)std::max(0.0f, std::min(255.0f, roundf(b)));
+
+			outData[y * newsize[0] + x] = outColor;
+		}
+	}
+
+	return true;
 }
 
 void Bsp::resize_all_lightmaps(bool logged)
@@ -1594,41 +1735,47 @@ void Bsp::resize_all_lightmaps(bool logged)
 				size[0] = undo_lightmaps[faceId].width;
 				size[1] = undo_lightmaps[faceId].height;
 			}
-			int newsize[2];
+			int newsize[2] = {0, 0};
+			int new_imins[2] = {0, 0};
+			int new_imaxs[2] = {0, 0};
 			GetFaceLightmapSize(faceId, newsize);
-
-			int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
-			int offset = face.nLightmapOffset + lightId * lightmapSz;
-
-			COLOR3* data = (COLOR3*)(lightdata + offset);
+			GetFaceExtents(faceId, new_imins, new_imaxs);
 
 			std::vector<COLOR3> newdata;
-			if (newsize[0] == size[0] && newsize[1] == size[1])
+			if (faceId < (int)undo_lightmaps.size() &&
+				newsize[0] == size[0] && newsize[1] == size[1] &&
+				new_imins[0] == undo_lightmaps[faceId].imins[0] &&
+				new_imins[1] == undo_lightmaps[faceId].imins[1] &&
+				face.iTextureInfo >= 0 && face.iTextureInfo < texinfoCount &&
+				texinfos[face.iTextureInfo].vS == undo_lightmaps[faceId].vS &&
+				texinfos[face.iTextureInfo].vT == undo_lightmaps[faceId].vT &&
+				texinfos[face.iTextureInfo].shiftS == undo_lightmaps[faceId].shiftS &&
+				texinfos[face.iTextureInfo].shiftT == undo_lightmaps[faceId].shiftT)
 			{
-				size_t count = size[0] * size[1];
-				size_t byteCount = count * sizeof(COLOR3);
-
-				if (lightdata &&
-					offset >= 0 &&
-					(offset + byteCount) <= lightDataLength &&
-					lightId < undo_lightmaps[faceId].layers)
+				if (lightId < (int)undo_lightmaps[faceId].lightdata.size() &&
+					!undo_lightmaps[faceId].lightdata[lightId].empty())
 				{
-					newdata.insert(newdata.end(), data, data + count);
+					newdata = undo_lightmaps[faceId].lightdata[lightId];
 				}
 				else
 				{
+					size_t count = (size_t)size[0] * (size_t)size[1];
 					newdata.resize(count, COLOR3(255, 255, 255));
 				}
 			}
 			else
 			{
-				if (lightmapSz > 0 && lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
+				if (faceId < (int)undo_lightmaps.size() &&
+					lightId < (int)undo_lightmaps[faceId].lightdata.size() &&
+					!undo_lightmaps[faceId].lightdata[lightId].empty())
 				{
-					scaleImage(data, newdata, size[0], size[1], newsize[0], newsize[1]);
+					const COLOR3* pristineSrc = undo_lightmaps[faceId].lightdata[lightId].data();
+					resample_face_lightmap_world_space(faceId, undo_lightmaps[faceId], pristineSrc, newsize, new_imins, newdata);
 				}
 				else
 				{
-					newdata.resize(newsize[0] * newsize[1], COLOR3(255, 255, 255));
+					size_t newCount = (size_t)newsize[0] * (size_t)newsize[1];
+					newdata.resize(newCount, COLOR3(255, 255, 255));
 				}
 			}
 			newLightData.insert(newLightData.end(), newdata.begin(), newdata.end());
@@ -5691,9 +5838,8 @@ void Bsp::write(const std::string& path)
 	replace_lumps(backupLumps);
 	if (getBspRender())
 	{
-		getBspRender()->preRenderFaces();
+		getBspRender()->reloadLightmapsSync();
 		getBspRender()->preRenderEnts();
-		getBspRender()->loadLightmaps();
 		getBspRender()->undoLumpState = duplicate_lumps();
 	}
 	if (g_app)
@@ -6749,10 +6895,7 @@ bool Bsp::validate()
 
 		if (isValid && !GetFaceExtents(i, bmins, bmaxs))
 		{
-			anyInvalidFaceFixed = true;
-			print_log(PRINT_RED | PRINT_INTENSITY, "Bad face {} extents\n", i);
-			print_log(PRINT_GREEN | PRINT_INTENSITY, "Removing invalid (invisible) face...\n", i);
-			remove_face(i);
+			print_log(PRINT_RED | PRINT_INTENSITY, "Warn: Bad face {} extents\n", i);
 		}
 
 		if (isValid)
@@ -15727,26 +15870,12 @@ bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 
 	if (tex.nFlags & TEX_SPECIAL)
 	{
-		retval = true;
+		return true;
 	}
 
 	for (int i = 0; i < 2; i++)
 	{
-		int tmpTextureStep = CalcFaceTextureStep(facenum);
-
-		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * tmpTextureStep > (g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent))
-		{
-			if (retval)
-			{
-				print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent));
-				print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
-			}
-			retval = false;
-			mins_out[i] = 1;
-			maxs_out[i] = 1;
-		}
-
-		if (maxs_out[i] - mins_out[i] < 0)
+		if (maxs_out[i] < mins_out[i])
 		{
 			if (retval)
 			{
@@ -15754,8 +15883,8 @@ bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 				print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
 			}
 			retval = false;
-			mins_out[i] = 1;
-			maxs_out[i] = 1;
+			mins_out[i] = 0;
+			maxs_out[i] = 0;
 		}
 	}
 	return retval;

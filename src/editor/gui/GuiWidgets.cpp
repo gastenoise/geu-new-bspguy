@@ -4288,7 +4288,7 @@ void Gui::drawFaceEditorWidget()
 				if (faceIdx >= 0)
 				{
 					BSPFACE32& face = map->faces[faceIdx];
-					BSPPLANE& plane = map->planes[face.iPlane];
+					BSPPLANE plane = map->getPlaneFromFace(&face);
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					width = height = 0;
 
@@ -4323,8 +4323,8 @@ void Gui::drawFaceEditorWidget()
 					rotateX = AngleFromTextureAxis(texinfo.vS, true, bestplane);
 					rotateY = AngleFromTextureAxis(texinfo.vT, false, bestplane);
 
-					scaleX = 1.0f / texinfo.vS.length();
-					scaleY = 1.0f / texinfo.vT.length();
+					scaleX = texinfo.vS.length() > EPSILON ? (1.0f / texinfo.vS.length()) : 1.0f;
+					scaleY = texinfo.vT.length() > EPSILON ? (1.0f / texinfo.vT.length()) : 1.0f;
 
 					shiftX = texinfo.shiftS;
 					shiftY = texinfo.shiftT;
@@ -4354,14 +4354,16 @@ void Gui::drawFaceEditorWidget()
 						BSPFACE32& face2 = map->faces[faceIdx2];
 						BSPTEXTUREINFO& texinfo2 = map->texinfos[face2.iTextureInfo];
 
-						if (scaleX != 1.0f / texinfo2.vS.length())
+						float face2ScaleX = texinfo2.vS.length() > EPSILON ? (1.0f / texinfo2.vS.length()) : 1.0f;
+						float face2ScaleY = texinfo2.vT.length() > EPSILON ? (1.0f / texinfo2.vT.length()) : 1.0f;
+						if (std::abs(scaleX - face2ScaleX) > 0.0001f)
 							scaleX = 1.0f;
-						if (scaleY != 1.0f / texinfo2.vT.length())
+						if (std::abs(scaleY - face2ScaleY) > 0.0001f)
 							scaleY = 1.0f;
 
-						if (shiftX != texinfo2.shiftS)
+						if (std::abs(shiftX - texinfo2.shiftS) > 0.0001f)
 							shiftX = 0;
-						if (shiftY != texinfo2.shiftT)
+						if (std::abs(shiftY - texinfo2.shiftT) > 0.0001f)
 							shiftY = 0;
 
 						if (isSpecial == !(texinfo2.nFlags & TEX_SPECIAL))
@@ -4445,6 +4447,8 @@ void Gui::drawFaceEditorWidget()
 			ImGui::EndTooltip();
 		}
 
+		bool itemDeactivatedAfterEdit = false;
+
 		if (ImGui::DragFloat(get_localized_string(LANG_0873).c_str(), &scaleX, 0.001f, 0, 0, "X: %.3f"))
 		{
 			if (!std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f)
@@ -4452,6 +4456,9 @@ void Gui::drawFaceEditorWidget()
 				scaledX = true;
 			}
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
+
 		ImGui::SameLine();
 		if (ImGui::DragFloat(get_localized_string(LANG_0874).c_str(), &scaleY, 0.001f, 0, 0, "Y: %.3f"))
 		{
@@ -4460,6 +4467,8 @@ void Gui::drawFaceEditorWidget()
 				scaledY = true;
 			}
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::Dummy(ImVec2(0, 8));
 
@@ -4477,11 +4486,16 @@ void Gui::drawFaceEditorWidget()
 		{
 			shiftedX = true;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
+
 		ImGui::SameLine();
 		if (ImGui::DragFloat(get_localized_string(LANG_0878).c_str(), &shiftY, 0.1f, 0, 0, "Y: %.3f"))
 		{
 			shiftedY = true;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::PopItemWidth();
 
@@ -4502,6 +4516,8 @@ void Gui::drawFaceEditorWidget()
 			if (lockRotate)
 				rotateY = rotateX - 180.0f;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::SameLine();
 
@@ -4515,6 +4531,8 @@ void Gui::drawFaceEditorWidget()
 			if (lockRotate)
 				rotateX = rotateY + 180.0f;
 		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+			itemDeactivatedAfterEdit = true;
 
 		ImGui::SameLine();
 
@@ -4759,7 +4777,8 @@ void Gui::drawFaceEditorWidget()
 			}
 
 			std::set<int> modelRefreshes;
-			bool isCommitting = applyFaceChanges || (!manualMode && !ImGui::IsMouseDown(ImGuiMouseButton_Left));
+			bool anyFaceChange = scaledX || scaledY || shiftedX || shiftedY || updatedTexVec || stylesChanged || textureChanged || toggledFlags || updatedFaceVec || mergeFaceVec;
+			bool isCommitting = applyFaceChanges || (!manualMode && ((anyFaceChange && itemDeactivatedAfterEdit) || textureChanged || toggledFlags || stylesChanged || updatedFaceVec || mergeFaceVec));
 
 			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 			{
@@ -4859,7 +4878,7 @@ void Gui::drawFaceEditorWidget()
 				}
 			}
 
-			if (applyFaceChanges && (textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size())
+			if ((applyFaceChanges || !manualMode) && (textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size())
 			{
 				textureId = (ImTextureID)(size_t)mapRenderer->getFaceTextureId((int)app->pickInfo.selectedFaces[0]);
 
@@ -4895,18 +4914,19 @@ void Gui::drawFaceEditorWidget()
 			if (isCommitting)
 			{
 				map->resize_all_lightmaps(true);
-				mapRenderer->loadLightmaps();
+				mapRenderer->reloadLightmapsSync();
+				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+				{
+					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
+				}
 			}
 
 			reloadLimits();
 
 			if (isCommitting)
 			{
-				if (updatedTexVec)
-				{
-					pickCount++;
-					vertPickCount++;
-				}
+				pickCount++;
+				vertPickCount++;
 
 				mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 					textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
