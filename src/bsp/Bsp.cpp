@@ -6895,10 +6895,7 @@ bool Bsp::validate()
 
 		if (isValid && !GetFaceExtents(i, bmins, bmaxs))
 		{
-			anyInvalidFaceFixed = true;
-			print_log(PRINT_RED | PRINT_INTENSITY, "Bad face {} extents\n", i);
-			print_log(PRINT_GREEN | PRINT_INTENSITY, "Removing invalid (invisible) face...\n", i);
-			remove_face(i);
+			print_log(PRINT_RED | PRINT_INTENSITY, "Warn: Bad face {} extents\n", i);
 		}
 
 		if (isValid)

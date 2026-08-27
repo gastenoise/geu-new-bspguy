@@ -387,7 +387,7 @@ void Gui::copyStyle()
 
 	int faceIdx = (int)app->pickInfo.selectedFaces[0];
 	BSPFACE32& face = map->faces[faceIdx];
-	BSPPLANE& plane = map->planes[face.iPlane];
+	BSPPLANE plane = map->getPlaneFromFace(&face);
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 
 	vec3 xv, yv;
@@ -395,8 +395,8 @@ void Gui::copyStyle()
 
 	copiedStyle.rotateX = AngleFromTextureAxis(texinfo.vS, true, bestplane);
 	copiedStyle.rotateY = AngleFromTextureAxis(texinfo.vT, false, bestplane);
-	copiedStyle.scaleX = 1.0f / texinfo.vS.length();
-	copiedStyle.scaleY = 1.0f / texinfo.vT.length();
+	copiedStyle.scaleX = texinfo.vS.length() > EPSILON ? (1.0f / texinfo.vS.length()) : 1.0f;
+	copiedStyle.scaleY = texinfo.vT.length() > EPSILON ? (1.0f / texinfo.vT.length()) : 1.0f;
 	copiedStyle.shiftX = texinfo.shiftS;
 	copiedStyle.shiftY = texinfo.shiftT;
 	copiedStyle.valid = true;
@@ -417,15 +417,17 @@ void Gui::pasteStyle()
 	{
 		BSPFACE32& face = map->faces[faceIdx];
 		BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
-		BSPPLANE& plane = map->planes[face.iPlane];
+		BSPPLANE plane = map->getPlaneFromFace(&face);
 
 		vec3 xv, yv;
 		int bestplane = TextureAxisFromPlane(plane, xv, yv);
 
 		texinfo->vS = AxisFromTextureAngle(copiedStyle.rotateX, true, bestplane);
 		texinfo->vT = AxisFromTextureAngle(copiedStyle.rotateY, false, bestplane);
-		texinfo->vS = texinfo->vS.normalize(1.0f / copiedStyle.scaleX);
-		texinfo->vT = texinfo->vT.normalize(1.0f / copiedStyle.scaleY);
+		if (copiedStyle.scaleX > 0.00001f && texinfo->vS.length() > EPSILON)
+			texinfo->vS = texinfo->vS.normalize(1.0f / copiedStyle.scaleX);
+		if (copiedStyle.scaleY > 0.00001f && texinfo->vT.length() > EPSILON)
+			texinfo->vT = texinfo->vT.normalize(1.0f / copiedStyle.scaleY);
 		texinfo->shiftS = copiedStyle.shiftX;
 		texinfo->shiftT = copiedStyle.shiftY;
 
@@ -443,6 +445,7 @@ void Gui::pasteStyle()
 		mapRenderer->pushUndoState("Paste Style", EDIT_MODEL_LUMPS);
 	}
 	pickCount++;
+	vertPickCount++;
 }
 
 void Gui::pasteTexture()

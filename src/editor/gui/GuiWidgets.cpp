@@ -4288,7 +4288,7 @@ void Gui::drawFaceEditorWidget()
 				if (faceIdx >= 0)
 				{
 					BSPFACE32& face = map->faces[faceIdx];
-					BSPPLANE& plane = map->planes[face.iPlane];
+					BSPPLANE plane = map->getPlaneFromFace(&face);
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					width = height = 0;
 
@@ -4323,8 +4323,8 @@ void Gui::drawFaceEditorWidget()
 					rotateX = AngleFromTextureAxis(texinfo.vS, true, bestplane);
 					rotateY = AngleFromTextureAxis(texinfo.vT, false, bestplane);
 
-					scaleX = 1.0f / texinfo.vS.length();
-					scaleY = 1.0f / texinfo.vT.length();
+					scaleX = texinfo.vS.length() > EPSILON ? (1.0f / texinfo.vS.length()) : 1.0f;
+					scaleY = texinfo.vT.length() > EPSILON ? (1.0f / texinfo.vT.length()) : 1.0f;
 
 					shiftX = texinfo.shiftS;
 					shiftY = texinfo.shiftT;
