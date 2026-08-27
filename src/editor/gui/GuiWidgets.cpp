@@ -4248,15 +4248,8 @@ void Gui::drawFaceEditorWidget()
 		static bool scaledY = false;
 		static bool shiftedX = false;
 		static bool shiftedY = false;
-		static bool textureChanged = false;
-		static bool toggledFlags = false;
 		static bool updatedTexVec = false;
 		static bool updatedFaceVec = false;
-		static bool mergeFaceVec = false;
-
-		unsigned int targetLumps = EDIT_MODEL_LUMPS;
-
-		const char* targetEditName = "Edit face";
 
 		static float verts_merge_epsilon = 1.0f;
 
@@ -4281,7 +4274,7 @@ void Gui::drawFaceEditorWidget()
 		if (lastPickCount != pickCount && app->pickMode != PICK_OBJECT)
 		{
 			edgeVerts.clear();
-			scaledX = scaledY = shiftedX = shiftedY = textureChanged = toggledFlags = updatedTexVec = stylesChanged = updatedFaceVec = mergeFaceVec = false;
+			scaledX = scaledY = shiftedX = shiftedY = updatedTexVec = stylesChanged = updatedFaceVec = false;
 			if (app->pickInfo.selectedFaces.size())
 			{
 				int faceIdx = (int)app->pickInfo.selectedFaces[0];
@@ -4408,35 +4401,6 @@ void Gui::drawFaceEditorWidget()
 		if (app->pickInfo.selectedFaces.size() == 1)
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0422)), lightmapSizes[0][0], lightmapSizes[0][1], lightmapSizes[0][0] * lightmapSizes[0][1]).c_str());
 
-		bool pendingChanges = scaledX || scaledY || shiftedX || shiftedY || updatedTexVec || textureChanged || stylesChanged || toggledFlags || updatedFaceVec || mergeFaceVec;
-
-		ImGui::TextUnformatted("Edit Mode:");
-		ImGui::SameLine();
-		if (ImGui::Button(manualMode ? "Manual" : "Real Time", ImVec2(ImGui::GetContentRegionAvail().x * (manualMode && pendingChanges ? 0.5f : 1.0f), 0)))
-		{
-			manualMode = !manualMode;
-		}
-
-		if (manualMode)
-		{
-			if (pendingChanges)
-			{
-				ImGui::SameLine();
-				if (ImGui::Button("APPLY CHANGES", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
-				{
-					applyFaceChanges = true;
-				}
-
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.6f, 0.0f, 1.0f));
-				ImGui::TextUnformatted("UNAPPLIED CHANGES (Manual Mode)");
-				ImGui::PopStyleColor();
-			}
-			else
-			{
-				ImGui::TextDisabled("No changes pending (Manual Mode)");
-			}
-		}
-
 		ImGui::Text(get_localized_string(LANG_1169).c_str());
 		if (ImGui::IsItemHovered())
 		{
@@ -4538,6 +4502,65 @@ void Gui::drawFaceEditorWidget()
 
 		ImGui::Checkbox(get_localized_string(LANG_0883).c_str(), &lockRotate);
 
+		// Handle continuous sliders in real time
+		bool anySliderActive = scaledX || scaledY || shiftedX || shiftedY || updatedTexVec;
+		if (anySliderActive)
+		{
+			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+			{
+				int faceIdx = app->pickInfo.selectedFaces[i];
+				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo((int)faceIdx);
+
+				if (shiftedX)
+				{
+					texinfo->shiftS = shiftX;
+				}
+				if (shiftedY)
+				{
+					texinfo->shiftT = shiftY;
+				}
+
+				if (updatedTexVec)
+				{
+					texinfo->vS = AxisFromTextureAngle(rotateX, true, bestplane);
+					texinfo->vT = AxisFromTextureAngle(rotateY, false, bestplane);
+					if (!std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f && texinfo->vS.length() > EPSILON)
+						texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
+					if (!std::isnan(scaleY) && !std::isinf(scaleY) && std::abs(scaleY) > 0.00001f && texinfo->vT.length() > EPSILON)
+						texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
+				}
+
+				if (scaledX && !std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f)
+				{
+					if (texinfo->vS.length() > EPSILON)
+						texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
+				}
+				if (scaledY && !std::isnan(scaleY) && !std::isinf(scaleY) && std::abs(scaleY) > 0.00001f)
+				{
+					if (texinfo->vT.length() > EPSILON)
+						texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
+				}
+
+				mapRenderer->updateFaceUVs((int)faceIdx);
+			}
+
+			if (itemDeactivatedAfterEdit)
+			{
+				map->resize_all_lightmaps(true);
+				mapRenderer->reloadLightmapsSync();
+				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+				{
+					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
+				}
+
+				map->getBspRender()->pushUndoState("Edit face", EDIT_MODEL_LUMPS);
+
+				scaledX = scaledY = shiftedX = shiftedY = updatedTexVec = false;
+				pickCount++;
+				vertPickCount++;
+			}
+		}
+
 		if (app->pickInfo.selectedFaces.size() > 1)
 		{
 			ImGui::Separator();
@@ -4570,7 +4593,23 @@ void Gui::drawFaceEditorWidget()
 						}
 					}
 				}
-				mergeFaceVec = true;
+
+				map->remove_unused_model_structures(CLEAN_VERTICES);
+
+				app->reloading = true;
+				map->getBspRender()->reload();
+				app->reloading = false;
+
+				map->resize_all_lightmaps(true);
+				mapRenderer->reloadLightmapsSync();
+				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+				{
+					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
+				}
+
+				map->getBspRender()->pushUndoState("Merge Vertices", EDIT_MODEL_LUMPS);
+				pickCount++;
+				vertPickCount++;
 			}
 			ImGui::Separator();
 		}
@@ -4580,7 +4619,37 @@ void Gui::drawFaceEditorWidget()
 		ImGui::Text(get_localized_string(LANG_1131).c_str());
 		if (ImGui::Checkbox(get_localized_string(LANG_0890).c_str(), &isSpecial))
 		{
-			toggledFlags = true;
+			std::set<int> modelRefreshes;
+			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+			{
+				int faceIdx = app->pickInfo.selectedFaces[i];
+				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo((int)faceIdx);
+				if (!isSpecial)
+					texinfo->nFlags &= ~TEX_SPECIAL;
+				else
+					texinfo->nFlags |= TEX_SPECIAL;
+
+				int modelIdx = map->get_model_from_face((int)faceIdx);
+				if (modelIdx >= 0)
+					modelRefreshes.insert(modelIdx);
+
+				mapRenderer->updateFaceUVs((int)faceIdx);
+			}
+
+			for (int m : modelRefreshes)
+			{
+				mapRenderer->refreshModel(m);
+			}
+
+			map->resize_all_lightmaps(true);
+			mapRenderer->reloadLightmapsSync();
+			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+			{
+				mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
+			}
+			mapRenderer->pushUndoState("Toggle Special Flag", EDIT_MODEL_LUMPS);
+			pickCount++;
+			vertPickCount++;
 		}
 		if (ImGui::IsItemHovered())
 		{
@@ -4598,21 +4667,13 @@ void Gui::drawFaceEditorWidget()
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 		}
 
-		ImGui::InputText(get_localized_string(LANG_0892).c_str(), textureName2, MAXTEXTURENAME);
+		bool enterPressed = ImGui::InputText(get_localized_string(LANG_0892).c_str(), textureName2, MAXTEXTURENAME, ImGuiInputTextFlags_EnterReturnsTrue);
 		ImGui::SameLine();
 		ImGui::Text(fmt::format("#{}", miptex).c_str());
 
 		ImGui::SameLine();
 
-		if (ImGui::Button("APPLY"))
-		{
-			if (strcasecmp(textureName, textureName2) != 0)
-			{
-				textureChanged = true;
-				memcpy(textureName, textureName2, MAXTEXTURENAME);
-			}
-		}
-
+		bool applyTextureClicked = ImGui::Button("APPLY");
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
@@ -4623,6 +4684,108 @@ void Gui::drawFaceEditorWidget()
 		if (!validTexture)
 		{
 			ImGui::PopStyleColor();
+		}
+
+		if ((applyTextureClicked || enterPressed) && textureName2[0] != '\0')
+		{
+			unsigned int newMiptex = 0;
+			validTexture = false;
+
+			for (int i = 0; i < map->textureCount; i++)
+			{
+				int texOffset = ((int*)map->textures)[i + 1];
+				if (texOffset >= 0)
+				{
+					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+					if (strcasecmp(tex.szName, textureName2) == 0)
+					{
+						validTexture = true;
+						newMiptex = i;
+						break;
+					}
+				}
+			}
+			if (!validTexture)
+			{
+				for (auto& s : mapRenderer->wads)
+				{
+					if (s->hasTexture(textureName2))
+					{
+						WADTEX wadTex = s->readTexture(textureName2);
+						COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+
+						validTexture = true;
+						newMiptex = map->add_texture(textureName2, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
+						mapRenderer->reuploadTextures();
+						mapRenderer->preRenderFaces();
+
+						delete[] imageData;
+						break;
+					}
+				}
+			}
+			if (!validTexture)
+			{
+				validTexture = true;
+				COLOR3 rndColor;
+				rndColor.r = 50 + rand() % 206;
+				rndColor.g = 50 + rand() % 206;
+				rndColor.b = 50 + rand() % 206;
+
+				width = 256;
+				height = 256;
+
+				std::vector<COLOR3> img(width * height, rndColor);
+
+				newMiptex = map->add_texture(textureName2, (unsigned char*)&img[0], width, height);
+
+				mapRenderer->reuploadTextures();
+				mapRenderer->preRenderFaces();
+			}
+
+			if (validTexture)
+			{
+				std::set<int> modelRefreshes;
+				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+				{
+					int faceIdx = app->pickInfo.selectedFaces[i];
+					BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
+					texinfo->iMiptex = newMiptex;
+					int modelIdx = map->get_model_from_face(faceIdx);
+					if (modelIdx >= 0)
+						modelRefreshes.insert(modelIdx);
+					mapRenderer->updateFaceUVs(faceIdx);
+				}
+
+				for (int m : modelRefreshes)
+				{
+					mapRenderer->refreshModel(m);
+				}
+
+				memcpy(textureName, textureName2, MAXTEXTURENAME);
+				miptex = newMiptex;
+
+				map->resize_all_lightmaps(true);
+				mapRenderer->reloadLightmapsSync();
+				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+				{
+					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
+				}
+				mapRenderer->pushUndoState("Change Face Texture", EDIT_MODEL_LUMPS);
+
+				textureId = (ImTextureID)(size_t)mapRenderer->getFaceTextureId((int)app->pickInfo.selectedFaces[0]);
+
+				int texOffset = ((int*)map->textures)[miptex + 1];
+				if (texOffset >= 0)
+				{
+					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+					width = tex.nWidth;
+					height = tex.nHeight;
+				}
+
+				pickCount++;
+				vertPickCount++;
+			}
 		}
 
 		ImGui::SameLine();
@@ -4639,16 +4802,39 @@ void Gui::drawFaceEditorWidget()
 		if (app->pickInfo.selectedFaces.size() == 1)
 		{
 			ImGui::Separator();
+			bool styleEdited = false;
 			if (ImGui::DragInt("# 1:", &tmpStyles[0], 1, 0, 255))
-				stylesChanged = true;
+				styleEdited = true;
 			ImGui::SameLine();
 			if (ImGui::DragInt("# 2:", &tmpStyles[1], 1, 0, 255))
-				stylesChanged = true;
+				styleEdited = true;
 			if (ImGui::DragInt("# 3:", &tmpStyles[2], 1, 0, 255))
-				stylesChanged = true;
+				styleEdited = true;
 			ImGui::SameLine();
 			if (ImGui::DragInt("# 4:", &tmpStyles[3], 1, 0, 255))
-				stylesChanged = true;
+				styleEdited = true;
+
+			if (styleEdited || (ImGui::IsItemDeactivatedAfterEdit() && stylesChanged))
+			{
+				int faceIdx = (int)app->pickInfo.selectedFaces[0];
+				BSPFACE32& face = map->faces[faceIdx];
+				for (int n = 0; n < MAX_LIGHTMAPS; n++)
+				{
+					face.nStyles[n] = (unsigned char)tmpStyles[n];
+				}
+				if (ImGui::IsItemDeactivatedAfterEdit())
+				{
+					mapRenderer->pushUndoState("Edit Face Styles", EDIT_MODEL_LUMPS);
+					stylesChanged = false;
+					pickCount++;
+					vertPickCount++;
+				}
+				else
+				{
+					stylesChanged = true;
+				}
+			}
+
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0885).c_str());
 			ImGui::SameLine();
@@ -4691,255 +4877,61 @@ void Gui::drawFaceEditorWidget()
 				ImGui::SetClipboardText(outstr.c_str());
 			}
 
+			ImGui::SameLine();
+
+			if (ImGui::Button("APPLY VERTS"))
+			{
+				int faceIdx = (int)app->pickInfo.selectedFaces[0];
+				BSPFACE32& face = map->faces[faceIdx];
+				int vecId = 0;
+				for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges && vecId < (int)edgeVerts.size(); e++, vecId++)
+				{
+					int surfEdgeVal = map->surfedges[e];
+					BSPEDGE32 edge = map->edges[abs(surfEdgeVal)];
+					vec3& v = surfEdgeVal > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
+					v = edgeVerts[vecId];
+				}
+
+				int modelIdx = map->get_model_from_face(faceIdx);
+				if (modelIdx >= 0)
+					mapRenderer->refreshModel(modelIdx);
+
+				mapRenderer->updateFaceUVs(faceIdx);
+				map->resize_all_lightmaps(true);
+				mapRenderer->reloadLightmapsSync();
+				mapRenderer->highlightFace(faceIdx, 1);
+
+				unsigned int targetLumps = FL_PLANES | FL_TEXTURES | FL_VERTICES | FL_NODES | FL_TEXINFO | FL_FACES | FL_LIGHTING | FL_CLIPNODES | FL_LEAVES | FL_EDGES | FL_SURFEDGES | FL_MODELS;
+				map->getBspRender()->pushUndoState("Edit Face Vertices", targetLumps);
+
+				updatedFaceVec = false;
+				pickCount++;
+				vertPickCount++;
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("RESET VERTS"))
+			{
+				edgeVerts.clear();
+				int faceIdx = (int)app->pickInfo.selectedFaces[0];
+				BSPFACE32& face = map->faces[faceIdx];
+				for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+				{
+					int surfEdgeVal = map->surfedges[e];
+					BSPEDGE32 edge = map->edges[abs(surfEdgeVal)];
+					vec3 v = surfEdgeVal > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
+					edgeVerts.push_back(v);
+				}
+				updatedFaceVec = false;
+			}
+
 			ImGui::Text("Lightmap offs: %X", map->faces[app->pickInfo.selectedFaces[0]].nLightmapOffset);
 		}
 
 		ImGui::PopItemWidth();
-
-		if (applyFaceChanges || (!manualMode && (pendingChanges || pasteTextureNow)))
-		{
-			if ((applyFaceChanges || !manualMode) && pasteTextureNow)
-			{
-				textureChanged = true;
-				pasteTextureNow = false;
-				int texOffset = ((int*)map->textures)[copiedMiptex + 1];
-				if (texOffset >= 0)
-				{
-					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-					memcpy(textureName, tex.szName, MAXTEXTURENAME);
-					textureName[15] = '\0';
-				}
-				else
-				{
-					textureName[0] = '\0';
-				}
-			}
-
-			unsigned int newMiptex = 0;
-			if (applyFaceChanges || !manualMode)
-			{
-				pickCount++;
-				if (textureChanged)
-				{
-					validTexture = false;
-
-					for (int i = 0; i < map->textureCount; i++)
-					{
-						int texOffset = ((int*)map->textures)[i + 1];
-						if (texOffset >= 0)
-						{
-							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-							if (strcasecmp(tex.szName, textureName) == 0)
-							{
-								validTexture = true;
-								newMiptex = i;
-								break;
-							}
-						}
-					}
-					if (!validTexture)
-					{
-						for (auto& s : mapRenderer->wads)
-						{
-							if (s->hasTexture(textureName))
-							{
-								WADTEX wadTex = s->readTexture(textureName);
-								COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-
-								validTexture = true;
-								newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight);
-								mapRenderer->reuploadTextures();
-								mapRenderer->preRenderFaces();
-
-								delete[] imageData;
-							}
-						}
-					}
-					if (!validTexture)
-					{
-						validTexture = true;
-						COLOR3 rndColor;
-						rndColor.r = 50 + rand() % 206;
-						rndColor.g = 50 + rand() % 206;
-						rndColor.b = 50 + rand() % 206;
-
-						width = 256;
-						height = 256;
-
-						std::vector<COLOR3> img(width * height, rndColor);
-
-						newMiptex = map->add_texture(textureName, (unsigned char*)&img[0], width, height);
-
-						mapRenderer->reuploadTextures();
-						mapRenderer->preRenderFaces();
-					}
-				}
-			}
-
-			std::set<int> modelRefreshes;
-			bool anyFaceChange = scaledX || scaledY || shiftedX || shiftedY || updatedTexVec || stylesChanged || textureChanged || toggledFlags || updatedFaceVec || mergeFaceVec;
-			bool isCommitting = applyFaceChanges || (!manualMode && ((anyFaceChange && itemDeactivatedAfterEdit) || textureChanged || toggledFlags || stylesChanged || updatedFaceVec || mergeFaceVec));
-
-			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
-			{
-				int faceIdx = app->pickInfo.selectedFaces[i];
-
-				if (applyFaceChanges || !manualMode)
-				{
-					BSPFACE32& face = map->faces[faceIdx];
-					BSPTEXTUREINFO* texinfo = map->get_unique_texinfo((int)faceIdx);
-					if (shiftedX)
-					{
-						texinfo->shiftS = shiftX;
-					}
-					if (shiftedY)
-					{
-						texinfo->shiftT = shiftY;
-					}
-
-					if (updatedTexVec)
-					{
-						texinfo->vS = AxisFromTextureAngle(rotateX, true, bestplane);
-						texinfo->vT = AxisFromTextureAngle(rotateY, false, bestplane);
-						if (!std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f && texinfo->vS.length() > EPSILON)
-							texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
-						if (!std::isnan(scaleY) && !std::isinf(scaleY) && std::abs(scaleY) > 0.00001f && texinfo->vT.length() > EPSILON)
-							texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
-					}
-
-					if (stylesChanged)
-					{
-						for (int n = 0; n < MAX_LIGHTMAPS; n++)
-						{
-							face.nStyles[n] = (unsigned char)tmpStyles[n];
-						}
-					}
-
-					if (scaledX && !std::isnan(scaleX) && !std::isinf(scaleX) && std::abs(scaleX) > 0.00001f)
-					{
-						if (texinfo->vS.length() > EPSILON)
-							texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
-					}
-					if (scaledY && !std::isnan(scaleY) && !std::isinf(scaleY) && std::abs(scaleY) > 0.00001f)
-					{
-						if (texinfo->vT.length() > EPSILON)
-							texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
-					}
-
-					if (toggledFlags)
-					{
-						if (!isSpecial)
-							texinfo->nFlags &= ~TEX_SPECIAL;
-						else
-							texinfo->nFlags |= TEX_SPECIAL;
-					}
-
-					if ((textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && validTexture)
-					{
-						int modelIdx = map->get_model_from_face((int)faceIdx);
-						if (textureChanged)
-							texinfo->iMiptex = newMiptex;
-						if (modelIdx >= 0 && !modelRefreshes.count(modelIdx))
-							modelRefreshes.insert(modelIdx);
-					}
-
-					mapRenderer->updateFaceUVs((int)faceIdx);
-				}
-
-				if (applyFaceChanges && (updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || stylesChanged || textureChanged || toggledFlags || updatedTexVec || mergeFaceVec))
-				{
-					for (size_t n = 0; n < app->pickInfo.selectedFaces.size(); n++)
-					{
-						int lmSize[2];
-						map->GetFaceLightmapSize((int)app->pickInfo.selectedFaces[n], lmSize);
-						if (lmSize[0] != lightmapSizes[n][0] ||
-							lmSize[1] != lightmapSizes[n][1])
-						{
-							print_log(PRINT_GREEN | PRINT_RED | PRINT_INTENSITY, "Warning need resize lightmap face {} from {}x{} to {}x{}\n",
-									  app->pickInfo.selectedFaces[n], lightmapSizes[n][0], lightmapSizes[n][1], lmSize[0], lmSize[1]);
-						}
-					}
-				}
-			}
-
-			if (applyFaceChanges)
-			{
-				if (updatedFaceVec && app->pickInfo.selectedFaces.size() == 1)
-				{
-					int faceIdx = (int)app->pickInfo.selectedFaces[0];
-					int vecId = 0;
-					for (int e = map->faces[faceIdx].iFirstEdge; e < map->faces[faceIdx].iFirstEdge + map->faces[faceIdx].nEdges; e++, vecId++)
-					{
-						int edgeIdx = map->surfedges[e];
-						BSPEDGE32 edge = map->edges[abs(edgeIdx)];
-						vec3& v = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
-						v = edgeVerts[vecId];
-					}
-				}
-			}
-
-			if ((applyFaceChanges || !manualMode) && (textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size())
-			{
-				textureId = (ImTextureID)(size_t)mapRenderer->getFaceTextureId((int)app->pickInfo.selectedFaces[0]);
-
-				memcpy(textureName2, textureName, MAXTEXTURENAME);
-
-				for (auto it = modelRefreshes.begin(); it != modelRefreshes.end(); it++)
-				{
-					mapRenderer->refreshModel(*it);
-				}
-				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
-				{
-					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
-				}
-			}
-
-			if (mergeFaceVec)
-			{
-				map->remove_unused_model_structures(CLEAN_VERTICES);
-
-				app->reloading = true;
-				map->getBspRender()->reload();
-				app->reloading = false;
-			}
-
-			if (isCommitting)
-				checkFaceErrors();
-
-			if (updatedFaceVec)
-			{
-				targetLumps = FL_PLANES | FL_TEXTURES | FL_VERTICES | FL_NODES | FL_TEXINFO | FL_FACES | FL_LIGHTING | FL_CLIPNODES | FL_LEAVES | FL_EDGES | FL_SURFEDGES | FL_MODELS;
-			}
-
-			if (isCommitting)
-			{
-				map->resize_all_lightmaps(true);
-				mapRenderer->reloadLightmapsSync();
-				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
-				{
-					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], 1);
-				}
-			}
-
-			reloadLimits();
-
-			if (isCommitting)
-			{
-				pickCount++;
-				vertPickCount++;
-
-				mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
-					textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
-				applyFaceChanges = false;
-
-				map->getBspRender()->pushUndoState(targetEditName, targetLumps);
-			}
-
-			if (isCommitting)
-			{
-				pasteTextureNow = false;
-			}
-		}
+		reloadLimits();
+		checkFaceErrors();
 	}
 	else
 	{

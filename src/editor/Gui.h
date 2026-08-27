@@ -108,8 +108,6 @@ class Gui
 	bool openSavedTabs = false;
 	bool allowExternalTextures = false;
 
-	bool manualMode = false;
-	bool applyFaceChanges = false;
 	bool entityListChanged = true;
 	bool limitsInvalidated = true;
 
@@ -153,7 +151,6 @@ class Gui
 	TextureStyle copiedStyle;
 	LIGHTMAP copiedLightmap = LIGHTMAP();
 	std::vector<COLOR3> copiedLightmapData;
-	bool pasteTextureNow = false;
 
 	void drawBspContexMenu();
 	void drawContextMenu_Entity();
