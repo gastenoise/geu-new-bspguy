@@ -443,6 +443,10 @@ void Gui::pasteStyle()
 	{
 		mapRenderer->reloadLightmapsSync();
 		mapRenderer->pushUndoState("Paste Style", EDIT_MODEL_LUMPS);
+		for (int faceIdx : app->pickInfo.selectedFaces)
+		{
+			mapRenderer->highlightFace(faceIdx, 1);
+		}
 	}
 	pickCount++;
 	vertPickCount++;

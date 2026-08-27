@@ -1331,6 +1331,17 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 	delete renderModels[modelIdx];
 	renderModels[modelIdx] = renderModel;
 
+	if (g_app)
+	{
+		for (auto f : g_app->pickInfo.selectedFaces)
+		{
+			if (map && map->get_model_from_face(f) == modelIdx)
+			{
+				highlightFace(f, 1);
+			}
+		}
+	}
+
 	if (refreshClipnodes)
 		generateClipnodeBuffer(modelIdx);
 
