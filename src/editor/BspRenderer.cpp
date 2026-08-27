@@ -2632,6 +2632,11 @@ void BspRenderer::reuploadTextures()
 
 	texturesLoaded = true;
 	needReloadDebugTextures = true;
+
+	if (g_app && g_app->gui)
+	{
+		g_app->gui->invalidateTextureBrowserCache();
+	}
 }
 
 void BspRenderer::delayLoadData()

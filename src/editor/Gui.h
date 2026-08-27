@@ -112,6 +112,9 @@ class Gui
 	bool applyFaceChanges = false;
 	bool entityListChanged = true;
 	bool limitsInvalidated = true;
+	bool textureBrowserCacheInvalidated = true;
+
+	void invalidateTextureBrowserCache() { textureBrowserCacheInvalidated = true; }
 
   private:
 	ImGuiIO* imgui_io = NULL;
