@@ -582,18 +582,7 @@ void BspRenderer::reloadTextures()
 
 void BspRenderer::reloadLightmaps()
 {
-	if (!lightmapFuture.valid() || lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-	{
-		lightmapsGenerated = false;
-		lightmapsUploaded = false;
-		deleteLightmapTextures();
-		if (lightmaps)
-		{
-			delete[] lightmaps;
-			lightmaps = NULL;
-		}
-		lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
-	}
+	reloadLightmapsSync();
 }
 
 void BspRenderer::reloadLightmapsSync()

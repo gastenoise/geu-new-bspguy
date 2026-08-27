@@ -5837,9 +5837,8 @@ void Bsp::write(const std::string& path)
 	replace_lumps(backupLumps);
 	if (getBspRender())
 	{
-		getBspRender()->preRenderFaces();
+		getBspRender()->reloadLightmapsSync();
 		getBspRender()->preRenderEnts();
-		getBspRender()->loadLightmaps();
 		getBspRender()->undoLumpState = duplicate_lumps();
 	}
 	if (g_app)
