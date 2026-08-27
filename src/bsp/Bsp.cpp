@@ -1559,6 +1559,23 @@ void Bsp::save_undo_lightmaps(bool logged)
 			undo_lightmaps[i].shiftT = ti.shiftT;
 		}
 
+		undo_lightmaps[i].lightdata.clear();
+		undo_lightmaps[i].lightdata.resize(undo_lightmaps[i].layers);
+		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
+		for (int lightId = 0; lightId < undo_lightmaps[i].layers; lightId++)
+		{
+			int offset = faces[i].nLightmapOffset + lightId * lightmapSz;
+			if (lightdata && offset >= 0 && (offset + lightmapSz) <= (int)lightDataLength && size[0] > 0 && size[1] > 0)
+			{
+				COLOR3* src = (COLOR3*)(lightdata + offset);
+				undo_lightmaps[i].lightdata[lightId].assign(src, src + ((size_t)size[0] * (size_t)size[1]));
+			}
+			else if (size[0] > 0 && size[1] > 0)
+			{
+				undo_lightmaps[i].lightdata[lightId].assign((size_t)size[0] * (size_t)size[1], COLOR3(255, 255, 255));
+			}
+		}
+
 		if (logged)
 			g_progress.tick();
 	}
@@ -1723,11 +1740,6 @@ void Bsp::resize_all_lightmaps(bool logged)
 			GetFaceLightmapSize(faceId, newsize);
 			GetFaceExtents(faceId, new_imins, new_imaxs);
 
-			int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
-			int offset = face.nLightmapOffset + lightId * lightmapSz;
-
-			COLOR3* data = (COLOR3*)(lightdata + offset);
-
 			std::vector<COLOR3> newdata;
 			if (faceId < (int)undo_lightmaps.size() &&
 				newsize[0] == size[0] && newsize[1] == size[1] &&
@@ -1739,27 +1751,25 @@ void Bsp::resize_all_lightmaps(bool logged)
 				texinfos[face.iTextureInfo].shiftS == undo_lightmaps[faceId].shiftS &&
 				texinfos[face.iTextureInfo].shiftT == undo_lightmaps[faceId].shiftT)
 			{
-				size_t count = size[0] * size[1];
-				size_t byteCount = count * sizeof(COLOR3);
-
-				if (lightdata &&
-					offset >= 0 &&
-					(offset + byteCount) <= lightDataLength &&
-					lightId < undo_lightmaps[faceId].layers)
+				if (lightId < (int)undo_lightmaps[faceId].lightdata.size() &&
+					!undo_lightmaps[faceId].lightdata[lightId].empty())
 				{
-					newdata.insert(newdata.end(), data, data + count);
+					newdata = undo_lightmaps[faceId].lightdata[lightId];
 				}
 				else
 				{
+					size_t count = (size_t)size[0] * (size_t)size[1];
 					newdata.resize(count, COLOR3(255, 255, 255));
 				}
 			}
 			else
 			{
-				if (lightmapSz > 0 && lightdata && offset < lightDataLength &&
-					faceId < (int)undo_lightmaps.size() && lightId < undo_lightmaps[faceId].layers)
+				if (faceId < (int)undo_lightmaps.size() &&
+					lightId < (int)undo_lightmaps[faceId].lightdata.size() &&
+					!undo_lightmaps[faceId].lightdata[lightId].empty())
 				{
-					resample_face_lightmap_world_space(faceId, undo_lightmaps[faceId], data, newsize, new_imins, newdata);
+					const COLOR3* pristineSrc = undo_lightmaps[faceId].lightdata[lightId].data();
+					resample_face_lightmap_world_space(faceId, undo_lightmaps[faceId], pristineSrc, newsize, new_imins, newdata);
 				}
 				else
 				{

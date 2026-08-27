@@ -147,6 +147,7 @@ struct LIGHTMAP
 	float shiftT;
 	int imins[2];
 	int imaxs[2];
+	std::vector<std::vector<COLOR3>> lightdata;
 
 	LIGHTMAP()
 	{
