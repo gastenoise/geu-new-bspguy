@@ -14591,15 +14591,8 @@ int Bsp::getEmbeddedTexCount()
 
 	for (int i = 0; i < textureCount; i++)
 	{
-		int oldOffset = ((int*)textures)[i + 1];
-		if (oldOffset >= 0)
-		{
-			BSPMIPTEX* bspTex = (BSPMIPTEX*)(textures + oldOffset);
-			if (bspTex->nOffsets[0] <= 0)
-				continue;
-
+		if (is_texture_embedded(i))
 			count++;
-		}
 	}
 
 	return count;
@@ -15636,6 +15629,19 @@ bool Bsp::is_texture_with_pal(int textureid)
 	}
 
 	return is_texture_has_pal;
+}
+
+bool Bsp::is_texture_embedded(int textureid)
+{
+	if (textureid < 0 || textureid >= textureCount || !textures)
+		return false;
+
+	int iStartOffset = ((int*)textures)[textureid + 1];
+	if (iStartOffset < 0 || iStartOffset + (int)sizeof(BSPMIPTEX) > textureDataLength)
+		return false;
+
+	BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
+	return (tex->nOffsets[0] > 0);
 }
 
 void Bsp::fix_invalid_model_face_ranges()
