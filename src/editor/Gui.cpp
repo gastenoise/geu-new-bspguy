@@ -178,7 +178,7 @@ void Gui::init()
 	keyvaluesIconTexture->upload();
 	transformIconTexture = loadIconHelper("./pictures/transform.png", "transformIcon");
 	transformIconTexture->upload();
-	faceEditorIconTexture = loadIconHelper("./pictures/face_editor.png", "faceEditorIcon", "./pictures/face.png");
+	faceEditorIconTexture = loadIconHelper("./pictures/face-editor.png", "faceEditorIcon", "./pictures/face.png");
 	faceEditorIconTexture->upload();
 	textureBrowserIconTexture = loadIconHelper("./pictures/texture_browser.png", "textureBrowserIcon");
 	textureBrowserIconTexture->upload();
