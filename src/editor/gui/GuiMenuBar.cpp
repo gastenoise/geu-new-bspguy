@@ -2820,35 +2820,6 @@ void Gui::drawMenu_View()
 
 		ImGui::Separator();
 
-		if (ImGui::BeginMenu("Toggle Panels / Widgets"))
-		{
-			ImGui::MenuItem(get_localized_string(LANG_0596).c_str(), "Alt+Enter", &showKeyvalueWidget);
-			IMGUI_TOOLTIP(g, "Toggle Entity Keyvalue & SmartEdit inspector panel");
-
-			ImGui::MenuItem(get_localized_string(LANG_1160).c_str(), "Ctrl+M", &showTransformWidget);
-			IMGUI_TOOLTIP(g, "Toggle 3D coordinate transform manipulator panel");
-
-			ImGui::MenuItem(get_localized_string(LANG_0597).c_str(), "F6", &showFaceEditWidget);
-			IMGUI_TOOLTIP(g, "Toggle Face texture alignment, shift offsets, and scale panel");
-
-			ImGui::MenuItem(get_localized_string(LANG_0598).c_str(), "F4", &showTextureBrowser);
-			IMGUI_TOOLTIP(g, "Toggle visual texture browser for embedded and WAD assets");
-
-			ImGui::MenuItem(get_localized_string(LANG_0599).c_str(), "", &showLightmapEditorWidget);
-			IMGUI_TOOLTIP(g, "Toggle face lightmap luminance and RGB color editor panel");
-
-			ImGui::MenuItem(get_localized_string(LANG_0594).c_str(), "F5", &showLogWidget);
-			IMGUI_TOOLTIP(g, "Toggle bspguy diagnostic output log window");
-
-			ImGui::MenuItem(get_localized_string(LANG_0595).c_str(), NULL, &showDebugWidget);
-			IMGUI_TOOLTIP(g, "Toggle low-level BSP engine debug and PVS inspection panel");
-
-			ImGui::MenuItem("Map Overview", "", &showOverviewWidget);
-			IMGUI_TOOLTIP(g, "Toggle 2D radar/overview map rendering controls");
-
-			ImGui::EndMenu();
-		}
-
 		if (ImGui::MenuItem(get_localized_string(LANG_1095).c_str(), "Ctrl+G", &showGOTOWidget))
 		{
 			showGOTOWidget_update = true;
