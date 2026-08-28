@@ -288,6 +288,7 @@ class BspRenderer
 	void drawModel(RenderEnt* ent, int transparent, bool highlight, bool edgesOnly);
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
 	void drawPointEntities(std::vector<int> highlightEnts, int pass);
+	void drawDecals(int pass);
 
 	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);

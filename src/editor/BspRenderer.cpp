@@ -1013,11 +1013,16 @@ Texture* BspRenderer::getDecalTexture(const std::string& texName)
 		return it->second;
 	}
 
-	for (auto& wad : wads)
+	std::string altName = (texName[0] == '{') ? texName.substr(1) : ("{" + texName);
+
+	auto tryLoadFromWad = [&](Wad* wad) -> Texture*
 	{
-		if (wad->hasTexture(texName))
+		if (!wad)
+			return NULL;
+		std::string matchedName = wad->hasTexture(texName) ? texName : (wad->hasTexture(altName) ? altName : "");
+		if (!matchedName.empty())
 		{
-			WADTEX wadTex = wad->readTexture(texName);
+			WADTEX wadTex = wad->readTexture(matchedName);
 			COLOR4* imageData = ConvertDecalWadTexToRGBA(wadTex);
 			if (imageData)
 			{
@@ -1027,6 +1032,13 @@ Texture* BspRenderer::getDecalTexture(const std::string& texName)
 				return tmpTex;
 			}
 		}
+		return NULL;
+	};
+
+	for (auto& wad : wads)
+	{
+		Texture* t = tryLoadFromWad(wad);
+		if (t) return t;
 	}
 
 	for (auto& render : mapRenderers)
@@ -1035,16 +1047,59 @@ Texture* BspRenderer::getDecalTexture(const std::string& texName)
 			continue;
 		for (auto& wad : render->wads)
 		{
-			if (wad->hasTexture(texName))
+			Texture* t = tryLoadFromWad(wad);
+			if (t) return t;
+		}
+	}
+
+	// Try loading decals.wad if not already present
+	bool hasDecalsWad = false;
+	for (auto& wad : wads)
+	{
+		if (toLowerCase(basename(wad->filename)) == "decals.wad")
+		{
+			hasDecalsWad = true;
+			break;
+		}
+	}
+	if (!hasDecalsWad)
+	{
+		std::string decalWadPath;
+		if (FindPathInAssets(map, "decals.wad", decalWadPath))
+		{
+			Wad* wad = new Wad(decalWadPath);
+			if (wad->readInfo())
 			{
-				WADTEX wadTex = wad->readTexture(texName);
-				COLOR4* imageData = ConvertDecalWadTexToRGBA(wadTex);
-				if (imageData)
+				wads.push_back(wad);
+				Texture* t = tryLoadFromWad(wad);
+				if (t) return t;
+			}
+			else
+			{
+				delete wad;
+			}
+		}
+	}
+
+	// Check embedded map textures
+	if (map && map->textures)
+	{
+		for (int i = 0; i < map->textureCount; i++)
+		{
+			int texOffset = ((int*)map->textures)[i + 1];
+			if (texOffset >= 0)
+			{
+				BSPMIPTEX* mtex = (BSPMIPTEX*)(map->textures + texOffset);
+				if (mtex && (strcasecmp(mtex->szName, texName.c_str()) == 0 || strcasecmp(mtex->szName, altName.c_str()) == 0))
 				{
-					Texture* tmpTex = new Texture(wadTex.nWidth, wadTex.nHeight, (unsigned char*)imageData, texName, true, true);
-					tmpTex->upload(Texture::TEXTURE_TYPE::TYPE_DECAL);
-					glDecalTextures[texName] = tmpTex;
-					return tmpTex;
+					COLOR4* imageData = ConvertMipTexToRGBA(mtex);
+					if (imageData)
+					{
+						Texture* tmpTex = new Texture(mtex->nWidth, mtex->nHeight, (unsigned char*)imageData, texName, true, true);
+						tmpTex->upload(Texture::TEXTURE_TYPE::TYPE_DECAL);
+						glDecalTextures[texName] = tmpTex;
+						return tmpTex;
+					}
 				}
 			}
 		}
@@ -1080,7 +1135,7 @@ bool BspRenderer::projectDecal(int entIdx, DecalRenderData* outDecal)
 
 	// Find the best host face
 	int bestFaceIdx = -1;
-	float bestDist = 8.0f; // Max distance to face plane
+	float bestDist = 32.0f; // Max search distance to face plane
 	vec3 bestProjPoint;
 
 	for (int f = 0; f < map->faceCount && f < (int)faceMaths.size(); f++)
@@ -1144,13 +1199,14 @@ bool BspRenderer::projectDecal(int entIdx, DecalRenderData* outDecal)
 	float hw = outDecal->width * 0.5f;
 	float hh = outDecal->height * 0.5f;
 
-	// Build initial 4 quad corners in world space (CCW looking from normal)
+	// Build initial 4 quad corners in world space
 	std::vector<vec3> polyVerts = {
 		bestProjPoint - (sDir * hw) - (tDir * hh),
 		bestProjPoint + (sDir * hw) - (tDir * hh),
 		bestProjPoint + (sDir * hw) + (tDir * hh),
 		bestProjPoint - (sDir * hw) + (tDir * hh)
 	};
+	std::vector<vec3> unclippedQuad = polyVerts;
 
 	// Get host face 3D vertices
 	std::vector<vec3> faceVerts(hostFace.nEdges);
@@ -1172,6 +1228,10 @@ bool BspRenderer::projectDecal(int entIdx, DecalRenderData* outDecal)
 
 			vec3 edgeDir = (p2 - p1).normalize(1.0f);
 			vec3 edgeInNormal = crossProduct(hostMath.normal, edgeDir).normalize(1.0f);
+			if (dotProduct(hostMath.center - p1, edgeInNormal) < 0.0f)
+			{
+				edgeInNormal = edgeInNormal * -1.0f;
+			}
 
 			std::vector<vec3> inputList = polyVerts;
 			polyVerts.clear();
@@ -1210,31 +1270,33 @@ bool BspRenderer::projectDecal(int entIdx, DecalRenderData* outDecal)
 	}
 
 	if (polyVerts.size() < 3)
-		return false;
+	{
+		polyVerts = unclippedQuad;
+	}
 
 	outDecal->worldVerts = polyVerts;
 
-	vec3 normalBias = hostMath.normal * 0.05f;
+	vec3 normalBias = hostMath.normal * 0.08f;
 
 	std::vector<tVert> tVerts;
 	for (size_t i = 1; i + 1 < polyVerts.size(); i++)
 	{
-		vec3 v0 = polyVerts[0];
-		vec3 v1 = polyVerts[i];
-		vec3 v2 = polyVerts[i + 1];
+		vec3 v0 = polyVerts[0] + normalBias;
+		vec3 v1 = polyVerts[i] + normalBias;
+		vec3 v2 = polyVerts[i + 1] + normalBias;
 
-		vec3 pos0 = (v0 - origin + normalBias).flip();
-		vec3 pos1 = (v1 - origin + normalBias).flip();
-		vec3 pos2 = (v2 - origin + normalBias).flip();
+		vec3 pos0 = v0.flip();
+		vec3 pos1 = v1.flip();
+		vec3 pos2 = v2.flip();
 
-		float u0 = dotProduct(v0 - bestProjPoint, sDir) / outDecal->width + 0.5f;
-		float v0_coord = dotProduct(v0 - bestProjPoint, tDir) / outDecal->height + 0.5f;
+		float u0 = dotProduct(polyVerts[0] - bestProjPoint, sDir) / outDecal->width + 0.5f;
+		float v0_coord = dotProduct(polyVerts[0] - bestProjPoint, tDir) / outDecal->height + 0.5f;
 
-		float u1 = dotProduct(v1 - bestProjPoint, sDir) / outDecal->width + 0.5f;
-		float v1_coord = dotProduct(v1 - bestProjPoint, tDir) / outDecal->height + 0.5f;
+		float u1 = dotProduct(polyVerts[i] - bestProjPoint, sDir) / outDecal->width + 0.5f;
+		float v1_coord = dotProduct(polyVerts[i] - bestProjPoint, tDir) / outDecal->height + 0.5f;
 
-		float u2 = dotProduct(v2 - bestProjPoint, sDir) / outDecal->width + 0.5f;
-		float v2_coord = dotProduct(v2 - bestProjPoint, tDir) / outDecal->height + 0.5f;
+		float u2 = dotProduct(polyVerts[i + 1] - bestProjPoint, sDir) / outDecal->width + 0.5f;
+		float v2_coord = dotProduct(polyVerts[i + 1] - bestProjPoint, tDir) / outDecal->height + 0.5f;
 
 		tVerts.emplace_back(pos0, u0, v0_coord);
 		tVerts.emplace_back(pos1, u1, v1_coord);
@@ -1245,8 +1307,8 @@ bool BspRenderer::projectDecal(int entIdx, DecalRenderData* outDecal)
 	COLOR4 wireColor(255, 255, 0, 255);
 	for (size_t i = 0; i < polyVerts.size(); i++)
 	{
-		vec3 p1 = (polyVerts[i] - origin + normalBias * 1.5f).flip();
-		vec3 p2 = (polyVerts[(i + 1) % polyVerts.size()] - origin + normalBias * 1.5f).flip();
+		vec3 p1 = (polyVerts[i] + normalBias * 1.5f).flip();
+		vec3 p2 = (polyVerts[(i + 1) % polyVerts.size()] + normalBias * 1.5f).flip();
 		cVerts.emplace_back(p1, wireColor);
 		cVerts.emplace_back(p2, wireColor);
 	}
@@ -1256,6 +1318,87 @@ bool BspRenderer::projectDecal(int entIdx, DecalRenderData* outDecal)
 	outDecal->valid = true;
 
 	return true;
+}
+
+void BspRenderer::drawDecals(int pass)
+{
+	if (!(g_render_flags & RENDER_DECALS))
+		return;
+
+	size_t ent_count = std::min(map->ents.size(), renderEnts.size());
+
+	g_app->modelShader->pushMatrix();
+	g_app->colorShader->pushMatrix();
+
+	g_app->matmodel.loadIdentity();
+	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	g_app->mat_upload();
+
+	if (pass == REND_PASS_MODELSHADER)
+	{
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(-2.0f, -2.0f);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		glDepthMask(GL_FALSE);
+
+		for (size_t i = 1; i < ent_count; i++)
+		{
+			if (renderEnts[i].modelIdx >= 0)
+				continue;
+			if (map->ents[i]->hide)
+				continue;
+
+			DecalRenderData* decal = renderEnts[i].decal;
+			if (decal && decal->valid && decal->texture && decal->vertexBuffer)
+			{
+				decal->texture->bind(0);
+				decal->vertexBuffer->drawFull();
+			}
+		}
+
+		glDepthMask(GL_TRUE);
+		glEnable(GL_CULL_FACE);
+		glDisable(GL_POLYGON_OFFSET_FILL);
+		glDisable(GL_BLEND);
+	}
+	else if (pass == REND_PASS_COLORSHADER && !ortho_overview && !make_screenshot)
+	{
+		for (size_t i = 1; i < ent_count; i++)
+		{
+			if (renderEnts[i].modelIdx >= 0)
+				continue;
+			if (map->ents[i]->hide)
+				continue;
+
+			DecalRenderData* decal = renderEnts[i].decal;
+			if (decal && decal->valid && g_app->pickInfo.IsSelectedEnt((int)i))
+			{
+				if (g_render_flags & RENDER_SELECTED_AT_TOP)
+					glDepthFunc(GL_ALWAYS);
+
+				if (decal->wireframeBuffer)
+					decal->wireframeBuffer->drawFull();
+
+				if (renderEnts[i].pointEntCube && renderEnts[i].pointEntCube->axesBuffer)
+				{
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
+					g_app->mat_upload();
+					renderEnts[i].pointEntCube->axesBuffer->drawFull();
+					g_app->matmodel.loadIdentity();
+					g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+					g_app->mat_upload();
+				}
+
+				if (g_render_flags & RENDER_SELECTED_AT_TOP)
+					glDepthFunc(GL_LESS);
+			}
+		}
+	}
+
+	g_app->modelShader->popMatrix();
+	g_app->colorShader->popMatrix();
 }
 
 void BspRenderer::deleteFaceMaths()
@@ -2961,6 +3104,7 @@ void BspRenderer::delayLoadData()
 	{
 		reuploadTextures();
 		preRenderFaces();
+		preRenderEnts();
 		texturesLoaded = true;
 	}
 
@@ -3325,6 +3469,12 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 				}
 			}
 		}
+	}
+
+	if (g_render_flags & RENDER_DECALS)
+	{
+		drawDecals(REND_PASS_MODELSHADER);
+		drawDecals(REND_PASS_COLORSHADER);
 	}
 
 	if (clipnodesLoaded)
@@ -3765,45 +3915,6 @@ void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass
 
 		if ((g_render_flags & RENDER_DECALS) && renderEnts[i].decal && renderEnts[i].decal->valid)
 		{
-			if (pass == REND_PASS_MODELSHADER)
-			{
-				if (renderEnts[i].decal->texture && renderEnts[i].decal->vertexBuffer)
-				{
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
-					g_app->mat_upload();
-
-					glEnable(GL_POLYGON_OFFSET_FILL);
-					glPolygonOffset(-1.0f, -1.0f);
-					glEnable(GL_BLEND);
-					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-					renderEnts[i].decal->texture->bind(0);
-					renderEnts[i].decal->vertexBuffer->drawFull();
-
-					glDisable(GL_POLYGON_OFFSET_FILL);
-					glDisable(GL_BLEND);
-				}
-			}
-			else if (pass == REND_PASS_COLORSHADER && !ortho_overview && !make_screenshot)
-			{
-				if (g_app->pickInfo.IsSelectedEnt(i))
-				{
-					if (g_render_flags & RENDER_SELECTED_AT_TOP)
-						glDepthFunc(GL_ALWAYS);
-
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
-					g_app->mat_upload();
-
-					if (renderEnts[i].pointEntCube && renderEnts[i].pointEntCube->axesBuffer)
-						renderEnts[i].pointEntCube->axesBuffer->drawFull();
-
-					if (renderEnts[i].decal->wireframeBuffer)
-						renderEnts[i].decal->wireframeBuffer->drawFull();
-
-					if (g_render_flags & RENDER_SELECTED_AT_TOP)
-						glDepthFunc(GL_LESS);
-				}
-			}
 			continue;
 		}
 
@@ -3987,6 +4098,10 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 								vec3 p2 = verts[(k + 1) % verts.size()];
 								vec3 edgeDir = (p2 - p1).normalize(1.0f);
 								vec3 edgeInNormal = crossProduct(rendEntity.decal->planeNormal, edgeDir).normalize(1.0f);
+								if (dotProduct(rendEntity.decal->center - p1, edgeInNormal) < 0.0f)
+								{
+									edgeInNormal = edgeInNormal * -1.0f;
+								}
 								if (dotProduct(hitPoint - p1, edgeInNormal) < -0.1f)
 								{
 									inside = false;
