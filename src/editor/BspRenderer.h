@@ -369,6 +369,7 @@ class BspRenderer
 	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
 	void deleteRenderClipnodes();
 	void deleteRenderFaces();
+	void deleteRenderEnts();
 	void deleteTextures();
 	void deleteLightmapTextures();
 	void deleteDecalTextures();

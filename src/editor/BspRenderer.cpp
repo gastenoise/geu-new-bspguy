@@ -212,7 +212,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 		cameraAngles = renderCameraAngles;
 	}
 
-	renderEnts.clear();
+	deleteRenderEnts();
 
 	for (auto& r : renderModels)
 		delete r;
@@ -230,9 +230,9 @@ BspRenderer::BspRenderer(Bsp* _map)
 
 	reuploadTextures();
 	// loadLightmaps();
-	preRenderEnts();
 	preRenderFaces();
 	calcFaceMaths();
+	preRenderEnts();
 
 	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
@@ -936,6 +936,19 @@ void BspRenderer::deleteRenderFaces()
 			delete r;
 		renderModels.clear();
 	}
+}
+
+void BspRenderer::deleteRenderEnts()
+{
+	for (auto& rent : renderEnts)
+	{
+		if (rent.decal)
+		{
+			delete rent.decal;
+			rent.decal = NULL;
+		}
+	}
+	renderEnts.clear();
 }
 
 void BspRenderer::deleteTextures()
@@ -2295,7 +2308,7 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 
 void BspRenderer::preRenderEnts()
 {
-	renderEnts.clear();
+	deleteRenderEnts();
 	renderEnts.resize(map->ents.size(), RenderEnt());
 
 	for (int i = 0; i < (int)map->ents.size(); i++)
@@ -2880,10 +2893,7 @@ BspRenderer::~BspRenderer()
 
 	delete[] lightmaps;
 
-	if (renderEnts.size())
-	{
-		renderEnts.clear();
-	}
+	deleteRenderEnts();
 
 	delete leafCube;
 	leafCube = NULL;
@@ -3757,19 +3767,22 @@ void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass
 		{
 			if (pass == REND_PASS_MODELSHADER)
 			{
-				g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
-				g_app->mat_upload();
+				if (renderEnts[i].decal->texture && renderEnts[i].decal->vertexBuffer)
+				{
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
+					g_app->mat_upload();
 
-				glEnable(GL_POLYGON_OFFSET_FILL);
-				glPolygonOffset(-1.0f, -1.0f);
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					glEnable(GL_POLYGON_OFFSET_FILL);
+					glPolygonOffset(-1.0f, -1.0f);
+					glEnable(GL_BLEND);
+					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-				renderEnts[i].decal->texture->bind(0);
-				renderEnts[i].decal->vertexBuffer->drawFull();
+					renderEnts[i].decal->texture->bind(0);
+					renderEnts[i].decal->vertexBuffer->drawFull();
 
-				glDisable(GL_POLYGON_OFFSET_FILL);
-				glDisable(GL_BLEND);
+					glDisable(GL_POLYGON_OFFSET_FILL);
+					glDisable(GL_BLEND);
+				}
 			}
 			else if (pass == REND_PASS_COLORSHADER && !ortho_overview && !make_screenshot)
 			{
@@ -3781,8 +3794,11 @@ void BspRenderer::drawPointEntities(std::vector<int> /*highlightEnts*/, int pass
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->mat_upload();
 
-					renderEnts[i].pointEntCube->axesBuffer->drawFull();
-					renderEnts[i].decal->wireframeBuffer->drawFull();
+					if (renderEnts[i].pointEntCube && renderEnts[i].pointEntCube->axesBuffer)
+						renderEnts[i].pointEntCube->axesBuffer->drawFull();
+
+					if (renderEnts[i].decal->wireframeBuffer)
+						renderEnts[i].decal->wireframeBuffer->drawFull();
 
 					if (g_render_flags & RENDER_SELECTED_AT_TOP)
 						glDepthFunc(GL_LESS);
