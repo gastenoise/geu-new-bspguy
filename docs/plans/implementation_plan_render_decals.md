@@ -1,0 +1,75 @@
+# Implementation Plan: GoldSrc-Accurate Decal Rendering and Interaction
+
+- [ ] 1. Core Decal Texture Decoding & Palette Handling
+  - [ ] 1.1 Implement `ConvertDecalWadTexToRGBA` in `src/util/util.cpp` and `src/util/util.h`
+    - Extract `palette[255]` as base RGB color
+    - Compute alpha channel as `255 - grayscale_luminosity` (with white $255 \rightarrow \text{alpha } 0$)
+    - Return newly allocated `COLOR4[]` array
+    - _Requirements: REQ-1.2, REQ-1.3, REQ-1.4_
+  - [ ] 1.2 Implement Decal Texture Cache in `Renderer` / `BspRenderer`
+    - Cache uploaded OpenGL textures (`TYPE_DECAL` with `GL_CLAMP_TO_EDGE`) by texture name
+    - Ensure clean deallocation on map reload/shutdown
+    - _Requirements: REQ-1.5, REQ-1.6_
+
+- [ ] 2. Decal Projection Math, Polygon Clipping & Buffer Management
+  - [ ] 2.1 Define `DecalRenderData` struct in `src/editor/BspRenderer.h`
+    - Include `VertexBuffer* vertexBuffer`, `VertexBuffer* wireframeBuffer`, `Texture* texture`, plane geometry, and dimensions
+    - Add `DecalRenderData* decal` field to `struct RenderEnt`
+    - _Requirements: REQ-2.4, REQ-3.1_
+  - [ ] 2.2 Implement `BspRenderer::projectDecal(int entIdx)` in `src/editor/BspRenderer.cpp`
+    - Proximity search against candidate faces in `faceMaths` ($\le 8$ units)
+    - Calculate projected origin on face plane
+    - Compute $(\vec{S}_{\text{dir}}, \vec{T}_{\text{dir}})$ from `texinfo` or fallback `TextureAxisFromPlane`
+    - Build unscaled quad based on native texture width/height
+    - Clip quad against host face polygon edges (Sutherland-Hodgman convex polygon clipping)
+    - Build `VertexBuffer` for textured quad/fan and wireframe outline
+    - _Requirements: REQ-2.1, REQ-2.2, REQ-2.3, REQ-2.5_
+  - [ ] 2.3 Integrate `projectDecal` into `BspRenderer::refreshEnt`
+    - Call `projectDecal` whenever an `infodecal` entity's origin, angles, or keyvalues change
+    - Cleanly release existing buffers before regenerating
+    - _Requirements: REQ-6.1, REQ-6.2_
+
+- [ ] 3. 3D Viewport Decal Rendering & Configurable Lighting
+  - [ ] 3.1 Update `BspRenderer::drawPointEntities` in `src/editor/BspRenderer.cpp`
+    - Check if `g_render_flags & RENDER_DECALS` is active
+    - In `REND_PASS_MODELSHADER`: bind decal texture, enable `GL_POLYGON_OFFSET_FILL` (`glPolygonOffset(-1.0f, -1.0f)`), enable alpha blending, apply lighting mode (Fullbright vs Lightmap Modulated), draw vertex buffer
+    - In `REND_PASS_COLORSHADER`: if selected, draw selection outline (`wireframeBuffer`) and center axes
+    - Fall back to standard `pointEntCube` if decal projection is invalid or missing texture
+    - _Requirements: REQ-3.1, REQ-3.2, REQ-3.3, REQ-3.4, REQ-3.5, REQ-3.6_
+
+- [ ] 4. Raycast Picking & Selection Handling
+  - [ ] 4.1 Update `BspRenderer::pickPoly` in `src/editor/BspRenderer.cpp`
+    - When `g_render_flags & RENDER_DECALS` is enabled and entity has valid `decal`:
+      - Test ray-plane intersection against host face plane
+      - Check if hit point lies within clipped decal polygon
+      - Register selection on hit and update `tempPickInfo`
+    - Otherwise, perform standard `pickAABB` against `pointEntCube`
+    - _Requirements: REQ-4.1, REQ-4.2, REQ-4.3, REQ-4.4_
+
+- [ ] 5. UI Controls, Settings, Action Registry & Localization
+  - [ ] 5.1 Add `RENDER_DECALS = 1 << 19` and `decal_lighting_mode` in `src/editor/Settings.h`
+    - Enable by default in `Settings::loadDefaultSettings()`
+    - Save/load in `settings.ini`
+    - _Requirements: REQ-5.1, REQ-5.2_
+  - [ ] 5.2 Add UI toggles in `src/editor/gui/GuiMenuBar.cpp` and `src/editor/gui/GuiDialogs.cpp`
+    - Add `"Decals"` checkbox under `View` menu
+    - Add `"Render Decals"` and `"Decal Lighting (Fullbright / Lightmapped)"` in `Settings -> 3D View`
+    - _Requirements: REQ-5.3, REQ-5.4_
+  - [ ] 5.3 Register `"view.decals_toggle"` and `"view.decals_lighting_toggle"` in `src/editor/gui/ActionRegistryInit.cpp`
+    - Add command palette entries
+    - _Requirements: REQ-5.5_
+  - [ ] 5.4 Add localization string tokens in `src/util/lang_defs.h` and `resources/languages/*.ini`
+    - Add entries for English, Russian, and Chinese
+    - _Requirements: REQ-5.6_
+
+- [ ] 6. Verification and Regression Testing
+  - [ ] 6.1 Verify build compilation across Release and Debug configurations
+  - [ ] 6.2 Test maps with static decals (e.g. `c1a0`, `crossfire`, `de_dust2`):
+    - Verify decal texture colors match `palette[255]`
+    - Verify white areas are transparent and black areas are opaque
+    - Verify 1:1 scale on walls and floors
+    - Verify clipping against face edges
+    - Verify switching between Fullbright and Lightmapped modes
+    - Verify click-selection directly on decal selects the entity
+    - Verify moving the entity updates decal projection in real time
+    - Verify toggling `RENDER_DECALS` switches between decal and purple cube seamlessly

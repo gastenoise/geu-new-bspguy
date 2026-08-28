@@ -36,7 +36,14 @@ enum RenderFlags : unsigned int
 	RENDER_TEXTURES_NOFILTER = 1 << 15,
 	RENDER_MAP_BOUNDARY = 1 << 16,
 	RENDER_LIGHTMAPS_NOFILTER = 1 << 17,
-	RENDER_SKYBOX = 1 << 18
+	RENDER_SKYBOX = 1 << 18,
+	RENDER_DECALS = 1 << 19
+};
+
+enum DecalLightingMode : int
+{
+	DECAL_LIGHTING_FULLBRIGHT = 0,
+	DECAL_LIGHTING_MODULATED = 1
 };
 
 struct PathToggleStruct
@@ -67,6 +74,7 @@ struct Settings
 	int fpslimit;
 	int settings_tab;
 	int render_flags;
+	int decal_lighting_mode;
 	int grid_snap_level;
 
 	COLOR3 mapBoundaryColor;

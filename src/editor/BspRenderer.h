@@ -64,6 +64,60 @@ struct FaceMath
 	}
 };
 
+struct DecalRenderData
+{
+	Texture* texture;
+	VertexBuffer* vertexBuffer;
+	VertexBuffer* wireframeBuffer;
+	vec3 center;
+	vec3 planeNormal;
+	vec3 sDir;
+	vec3 tDir;
+	float width;
+	float height;
+	int hostFaceIdx;
+	std::vector<vec3> worldVerts;
+	bool valid;
+
+	DecalRenderData()
+	{
+		texture = NULL;
+		vertexBuffer = NULL;
+		wireframeBuffer = NULL;
+		center = vec3();
+		planeNormal = vec3();
+		sDir = vec3();
+		tDir = vec3();
+		width = 0.0f;
+		height = 0.0f;
+		hostFaceIdx = -1;
+		worldVerts.clear();
+		valid = false;
+	}
+
+	~DecalRenderData()
+	{
+		clean();
+	}
+
+	void clean()
+	{
+		if (vertexBuffer)
+		{
+			delete vertexBuffer;
+			vertexBuffer = NULL;
+		}
+		if (wireframeBuffer)
+		{
+			delete wireframeBuffer;
+			wireframeBuffer = NULL;
+		}
+		texture = NULL;
+		worldVerts.clear();
+		valid = false;
+	}
+};
+
 struct RenderEnt
 {
 	mat4x4 modelMat4x4;		   // model matrix for rendering
@@ -80,6 +134,7 @@ struct RenderEnt
 	Sprite* spr;
 	std::string mdlFileName;
 	bool isTransparentByList;
+	DecalRenderData* decal;
 	RenderEnt()
 		: modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
 	{
@@ -91,6 +146,7 @@ struct RenderEnt
 		mdl = NULL;
 		mdlFileName = "";
 		spr = NULL;
+		decal = NULL;
 	}
 };
 
@@ -233,6 +289,7 @@ class BspRenderer
 	void drawModel(RenderEnt* ent, int transparent, bool highlight, bool edgesOnly);
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
 	void drawPointEntities(std::vector<int> highlightEnts, int pass);
+	void drawDecals(int pass);
 
 	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
@@ -314,11 +371,17 @@ class BspRenderer
 	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
 	void deleteRenderClipnodes();
 	void deleteRenderFaces();
+	void deleteRenderEnts();
 	void deleteTextures();
 	void deleteLightmapTextures();
+	void deleteDecalTextures();
 	void deleteFaceMaths();
 	void delayLoadData();
 	int getBestClipnodeHull(int modelIdx);
+
+	std::unordered_map<std::string, Texture*> glDecalTextures{};
+	Texture* getDecalTexture(const std::string& texName);
+	bool projectDecal(int entIdx, DecalRenderData* outDecal);
 
 	size_t undoMemoryUsageZip = 0; // approximate space used by undo+redo history (compressed)
 	size_t undoMemoryUsage = 0;	   // approximate space used by undo+redo history

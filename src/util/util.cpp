@@ -3864,6 +3864,29 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
 	return imageData;
 }
 
+COLOR4* ConvertDecalWadTexToRGBA(const WADTEX& wadTex, COLOR3* palette, int colors)
+{
+	int lastMipSize = (wadTex.nWidth >> 3) * (wadTex.nHeight >> 3);
+	const unsigned char* src = wadTex.data.data();
+
+	if (palette == NULL)
+		palette = (COLOR3*)(src + wadTex.nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+
+	int sz = wadTex.nWidth * wadTex.nHeight;
+	COLOR4* imageData = new COLOR4[sz];
+
+	COLOR3 decalColor = palette[colors - 1];
+
+	for (int k = 0; k < sz; k++)
+	{
+		unsigned char val = palette[src[k]].r;
+		unsigned char alpha = (val == 255) ? 0 : (255 - val);
+		imageData[k] = COLOR4(decalColor.r, decalColor.g, decalColor.b, alpha);
+	}
+
+	return imageData;
+}
+
 COLOR3 GetMipTexAplhaColor(BSPMIPTEX* tex, COLOR3* palette, int max_colors)
 {
 	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);

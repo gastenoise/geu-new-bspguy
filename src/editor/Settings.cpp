@@ -53,7 +53,8 @@ void Settings::loadDefaultSettings()
 
 	settings_tab = 0;
 
-	render_flags = g_render_flags = (RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL | RENDER_ENTS | RENDER_SPECIAL_ENTS | RENDER_POINT_ENTS | RENDER_WIREFRAME | RENDER_ENT_CONNECTIONS | RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED | RENDER_WORLD_CLIPNODES | RENDER_ORIGIN | RENDER_SKYBOX);
+	render_flags = g_render_flags = (RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL | RENDER_ENTS | RENDER_SPECIAL_ENTS | RENDER_POINT_ENTS | RENDER_WIREFRAME | RENDER_ENT_CONNECTIONS | RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED | RENDER_WORLD_CLIPNODES | RENDER_ORIGIN | RENDER_SKYBOX | RENDER_DECALS);
+	decal_lighting_mode = DECAL_LIGHTING_FULLBRIGHT;
 
 	vsync = true;
 	merge_verts = false;
@@ -1091,6 +1092,7 @@ void Settings::loadSettings()
 	g_settings.fov = settings_ini->Get<float>("GRAPHICS", "fov", 60.0f);
 	g_settings.zfar = settings_ini->Get<float>("GRAPHICS", "zfar", 1000.0f);
 	g_settings.render_flags = settings_ini->Get<int>("GRAPHICS", "renders_flags", 0);
+	g_settings.decal_lighting_mode = settings_ini->Get<int>("GRAPHICS", "decal_lighting_mode", DECAL_LIGHTING_FULLBRIGHT);
 
 	std::string mapBoundColStr = settings_ini->Get<std::string>("GRAPHICS", "map_boundary_color", "0 255 0");
 	std::vector<std::string> mapBoundColParts = splitString(mapBoundColStr, " ");
@@ -1469,6 +1471,7 @@ void Settings::saveSettings(std::string path)
 	iniData << "fov=" << g_settings.fov << "\n";
 	iniData << "zfar=" << g_settings.zfar << "\n";
 	iniData << "renders_flags=" << g_settings.render_flags << "\n";
+	iniData << "decal_lighting_mode=" << g_settings.decal_lighting_mode << "\n";
 	iniData << "map_boundary_color=" << (int)g_settings.mapBoundaryColor.r << " " << (int)g_settings.mapBoundaryColor.g << " " << (int)g_settings.mapBoundaryColor.b << "\n";
 	iniData << "font_size=" << g_settings.fontSize << "\n";
 	iniData << "fpslimit=" << g_settings.fpslimit << "\n\n";

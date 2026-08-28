@@ -983,9 +983,23 @@ void Gui::drawSettings()
 				g_render_flags ^= RENDER_SKYBOX;
 			}
 
+			bool renderDecals = (g_render_flags & RENDER_DECALS) != 0;
+			if (ImGui::Checkbox(get_localized_string(LANG_1227).c_str(), &renderDecals))
+			{
+				g_render_flags ^= RENDER_DECALS;
+			}
+
 			ImGui::Columns(1);
 
 			ImGui::Separator();
+
+			const char* decalLightingModes[] = {"Fullbright", "Lightmapped"};
+			int currentLightingMode = g_settings.decal_lighting_mode;
+			if (ImGui::Combo(get_localized_string(LANG_1228).c_str(), &currentLightingMode, decalLightingModes, IM_ARRAYSIZE(decalLightingModes)))
+			{
+				g_settings.decal_lighting_mode = currentLightingMode;
+				g_settings_changed = true;
+			}
 
 			float mapBoundCol[3] = {g_settings.mapBoundaryColor.r / 255.0f, g_settings.mapBoundaryColor.g / 255.0f, g_settings.mapBoundaryColor.b / 255.0f};
 			if (ImGui::ColorEdit3("Map boundary color", mapBoundCol))

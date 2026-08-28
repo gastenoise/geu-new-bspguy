@@ -288,6 +288,13 @@ void RegisterAllAppActions(Gui* gui, Renderer* app)
 						[]()
 						{ return true; }});
 
+	reg.registerAction({"view.decals_toggle", "Toggle Decals Rendering", "View", "Ctrl+Alt+D",
+						"Toggle GoldSrc-accurate decal rendering and interaction",
+						[]()
+						{ g_render_flags ^= RENDER_DECALS; },
+						[]()
+						{ return true; }});
+
 	// ----------------------------------------------------
 	// TOOLS & REPAIRS
 	// ----------------------------------------------------
