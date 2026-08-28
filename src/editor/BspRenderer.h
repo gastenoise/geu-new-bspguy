@@ -112,6 +112,7 @@ struct DecalRenderData
 			delete wireframeBuffer;
 			wireframeBuffer = NULL;
 		}
+		texture = NULL;
 		worldVerts.clear();
 		valid = false;
 	}

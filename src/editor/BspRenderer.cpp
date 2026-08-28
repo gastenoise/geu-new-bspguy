@@ -992,6 +992,13 @@ void BspRenderer::deleteLightmapTextures()
 
 void BspRenderer::deleteDecalTextures()
 {
+	for (auto& rent : renderEnts)
+	{
+		if (rent.decal)
+		{
+			rent.decal->clean();
+		}
+	}
 	for (auto& pair : glDecalTextures)
 	{
 		if (pair.second && pair.second != missingTex)
@@ -1313,11 +1320,23 @@ bool BspRenderer::projectDecal(int entIdx, DecalRenderData* outDecal)
 		cVerts.emplace_back(p2, wireColor);
 	}
 
-	outDecal->vertexBuffer = new VertexBuffer(g_app->modelShader, tVerts.data(), (int)tVerts.size(), GL_TRIANGLES, true);
-	outDecal->wireframeBuffer = new VertexBuffer(g_app->colorShader, cVerts.data(), (int)cVerts.size(), GL_LINES, true);
-	outDecal->valid = true;
+	if (!tVerts.empty())
+	{
+		tVert* outTVerts = new tVert[tVerts.size()];
+		memcpy(outTVerts, tVerts.data(), sizeof(tVert) * tVerts.size());
+		outDecal->vertexBuffer = new VertexBuffer(g_app->modelShader, outTVerts, (int)tVerts.size(), GL_TRIANGLES, true);
+	}
 
-	return true;
+	if (!cVerts.empty())
+	{
+		cVert* outCVerts = new cVert[cVerts.size()];
+		memcpy(outCVerts, cVerts.data(), sizeof(cVert) * cVerts.size());
+		outDecal->wireframeBuffer = new VertexBuffer(g_app->colorShader, outCVerts, (int)cVerts.size(), GL_LINES, true);
+	}
+
+	outDecal->valid = (outDecal->vertexBuffer != NULL);
+
+	return outDecal->valid;
 }
 
 void BspRenderer::drawDecals(int pass)
@@ -1327,15 +1346,13 @@ void BspRenderer::drawDecals(int pass)
 
 	size_t ent_count = std::min(map->ents.size(), renderEnts.size());
 
-	g_app->modelShader->pushMatrix();
-	g_app->colorShader->pushMatrix();
-
-	g_app->matmodel.loadIdentity();
-	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
-	g_app->mat_upload();
-
 	if (pass == REND_PASS_MODELSHADER)
 	{
+		g_app->modelShader->pushMatrix();
+		g_app->matmodel.loadIdentity();
+		g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+		g_app->mat_upload();
+
 		glEnable(GL_POLYGON_OFFSET_FILL);
 		glPolygonOffset(-2.0f, -2.0f);
 		glEnable(GL_BLEND);
@@ -1362,9 +1379,16 @@ void BspRenderer::drawDecals(int pass)
 		glEnable(GL_CULL_FACE);
 		glDisable(GL_POLYGON_OFFSET_FILL);
 		glDisable(GL_BLEND);
+
+		g_app->modelShader->popMatrix();
 	}
 	else if (pass == REND_PASS_COLORSHADER && !ortho_overview && !make_screenshot)
 	{
+		g_app->colorShader->pushMatrix();
+		g_app->matmodel.loadIdentity();
+		g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+		g_app->mat_upload();
+
 		for (size_t i = 1; i < ent_count; i++)
 		{
 			if (renderEnts[i].modelIdx >= 0)
@@ -1395,10 +1419,9 @@ void BspRenderer::drawDecals(int pass)
 					glDepthFunc(GL_LESS);
 			}
 		}
-	}
 
-	g_app->modelShader->popMatrix();
-	g_app->colorShader->popMatrix();
+		g_app->colorShader->popMatrix();
+	}
 }
 
 void BspRenderer::deleteFaceMaths()
