@@ -133,6 +133,15 @@ class Gui
 	Texture* faceIconTexture;
 	Texture* leafIconTexture;
 
+	Texture* keyvaluesIconTexture = nullptr;
+	Texture* transformIconTexture = nullptr;
+	Texture* faceEditorIconTexture = nullptr;
+	Texture* textureBrowserIconTexture = nullptr;
+	Texture* lightmapIconTexture = nullptr;
+	Texture* logIconTexture = nullptr;
+	Texture* debugIconTexture = nullptr;
+	Texture* overviewIconTexture = nullptr;
+
 	bool badSurfaceExtents = false;
 	bool lightmapTooLarge = false;
 
@@ -174,6 +183,7 @@ class Gui
 	void drawMenu_Help();
 	void drawMenu_Debug();
 	void drawToolbar();
+	void drawPanelsToolbar();
 	void drawFpsOverlay();
 	void drawStatusMessage();
 	void drawStatusBar();
