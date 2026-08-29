@@ -482,7 +482,63 @@ void Gui::pasteStyle()
 
 void Gui::pasteTexture()
 {
-	pasteTextureNow = true;
+	Bsp* map = app->getSelectedMap();
+	if (!map)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0313));
+		return;
+	}
+	if (app->pickInfo.selectedFaces.empty())
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0314));
+		return;
+	}
+	if (copiedMiptex < 0 || copiedMiptex >= map->textureCount)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "No valid texture copied to paste.\n");
+		return;
+	}
+
+	BspRenderer* mapRenderer = map->getBspRender();
+	std::set<int> modelRefreshes;
+
+	for (int faceIdx : app->pickInfo.selectedFaces)
+	{
+		if (faceIdx < 0 || faceIdx >= map->faceCount)
+			continue;
+		BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
+		texinfo->iMiptex = copiedMiptex;
+
+		int modelIdx = map->get_model_from_face(faceIdx);
+		if (modelIdx >= 0)
+			modelRefreshes.insert(modelIdx);
+
+		if (mapRenderer)
+		{
+			mapRenderer->updateFaceUVs(faceIdx);
+		}
+	}
+
+	if (mapRenderer)
+	{
+		for (int m : modelRefreshes)
+		{
+			mapRenderer->refreshModel(m);
+		}
+	}
+
+	map->resize_all_lightmaps(true);
+	if (mapRenderer)
+	{
+		mapRenderer->reloadLightmapsSync();
+		mapRenderer->pushUndoState("Paste Texture", EDIT_MODEL_LUMPS);
+		for (int faceIdx : app->pickInfo.selectedFaces)
+		{
+			mapRenderer->highlightFace(faceIdx, 1);
+		}
+	}
+	pickCount++;
+	vertPickCount++;
 }
 
 void Gui::copyLightmap()
