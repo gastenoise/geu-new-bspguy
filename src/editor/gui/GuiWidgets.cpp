@@ -793,7 +793,7 @@ void Gui::drawTextureBrowser()
 	static size_t lastAllTexturesCount = 0;
 	{
 		std::lock_guard<std::mutex> lock(Sync::TexturesList);
-		if (previewCache.empty() || g_all_Textures.size() != lastAllTexturesCount)
+		if (previewCache.empty() || g_all_Textures.size() != lastAllTexturesCount || textureBrowserCacheInvalidated)
 		{
 			previewCache.clear();
 			for (auto t : g_all_Textures)
@@ -803,6 +803,7 @@ void Gui::drawTextureBrowser()
 				previewCache[toLowerCase(t->texName)] = t;
 			}
 			lastAllTexturesCount = g_all_Textures.size();
+			textureBrowserCacheInvalidated = false;
 		}
 	}
 
@@ -890,6 +891,20 @@ void Gui::drawTextureBrowser()
 		{
 			ImGui::SameLine();
 			ImGui::TextColored(ImVec4(0.2f, 0.9f, 0.2f, 1.0f), "(in map index %d)", idx);
+			if (map)
+			{
+				bool isEmb = map->is_texture_embedded(idx);
+				ImGui::SameLine();
+				if (isEmb)
+				{
+					int sz = map->getBspTextureSize(idx);
+					ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.2f, 1.0f), "[Embedded: %.1f KB]", sz / 1024.0f);
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(0.4f, 0.85f, 0.5f, 1.0f), "[External WAD]");
+				}
+			}
 		}
 		else
 		{
@@ -905,6 +920,20 @@ void Gui::drawTextureBrowser()
 		{
 			ImGui::SameLine();
 			ImGui::TextColored(ImVec4(0.2f, 0.9f, 0.2f, 1.0f), "(in map index %d)", idx);
+			if (map)
+			{
+				bool isEmb = map->is_texture_embedded(idx);
+				ImGui::SameLine();
+				if (isEmb)
+				{
+					int sz = map->getBspTextureSize(idx);
+					ImGui::TextColored(ImVec4(1.0f, 0.75f, 0.2f, 1.0f), "[Embedded: %.1f KB]", sz / 1024.0f);
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(0.4f, 0.85f, 0.5f, 1.0f), "[External WAD]");
+				}
+			}
 		}
 		else
 		{
@@ -999,11 +1028,19 @@ void Gui::drawTextureBrowser()
 								lastCopiedTextureName = texName;
 							}
 
+							bool isEmbedded = map && map->is_texture_embedded(texIdx);
+
 							if (ImGui::IsItemHovered())
 							{
 								ImGui::BeginTooltip();
 								ImGui::Text("Index: %d", texIdx);
 								ImGui::Text("Name: %s", texName.c_str());
+								ImGui::Text("Storage: %s", isEmbedded ? "Embedded in BSP" : "External WAD reference");
+								if (isEmbedded)
+								{
+									int sz = map->getBspTextureSize(texIdx);
+									ImGui::Text("Size: %.1f KB", sz / 1024.0f);
+								}
 								ImGui::EndTooltip();
 							}
 
@@ -1014,6 +1051,15 @@ void Gui::drawTextureBrowser()
 								ImVec2 b = ImGui::GetItemRectMax();
 								ImGui::GetWindowDrawList()->AddRect(a, b, IM_COL32(255, 200, 0, 255), 4.0f, 0, 3.0f);
 							}
+
+							// Storage badge on top-left of thumbnail
+							ImVec2 btnMin = ImGui::GetItemRectMin();
+							const char* badgeText = isEmbedded ? "BSP" : "WAD";
+							ImU32 badgeBg = isEmbedded ? IM_COL32(180, 110, 10, 220) : IM_COL32(30, 120, 50, 220);
+							ImVec2 badgePos = ImVec2(btnMin.x + 3.0f, btnMin.y + 3.0f);
+							ImVec2 badgeSize = ImGui::CalcTextSize(badgeText);
+							ImGui::GetWindowDrawList()->AddRectFilled(badgePos, ImVec2(badgePos.x + badgeSize.x + 4.0f, badgePos.y + badgeSize.y + 2.0f), badgeBg, 2.0f);
+							ImGui::GetWindowDrawList()->AddText(ImVec2(badgePos.x + 2.0f, badgePos.y + 1.0f), IM_COL32(255, 255, 255, 255), badgeText);
 
 							// Texture name with scaled font
 							std::string displayName = texName;
@@ -1125,6 +1171,22 @@ void Gui::drawTextureBrowser()
 								lastCopiedTextureName = texName;
 							}
 
+							bool isEmbedded = map && map->is_texture_embedded(texIdx);
+
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::BeginTooltip();
+								ImGui::Text("Index: %d", texIdx);
+								ImGui::Text("Name: %s", texName.c_str());
+								ImGui::Text("Storage: %s", isEmbedded ? "Embedded in BSP" : "External WAD reference");
+								if (isEmbedded)
+								{
+									int sz = map->getBspTextureSize(texIdx);
+									ImGui::Text("Size: %.1f KB", sz / 1024.0f);
+								}
+								ImGui::EndTooltip();
+							}
+
 							bool isSelected = (!lastCopiedTextureName.empty() && toLowerCase(lastCopiedTextureName) == toLowerCase(texName)) || (copiedMiptex == texIdx);
 							if (isSelected)
 							{
@@ -1132,6 +1194,15 @@ void Gui::drawTextureBrowser()
 								ImVec2 b = ImGui::GetItemRectMax();
 								ImGui::GetWindowDrawList()->AddRect(a, b, IM_COL32(255, 200, 0, 255), 4.0f, 0, 3.0f);
 							}
+
+							// Storage badge on top-left of thumbnail
+							ImVec2 btnMin = ImGui::GetItemRectMin();
+							const char* badgeText = isEmbedded ? "BSP" : "WAD";
+							ImU32 badgeBg = isEmbedded ? IM_COL32(180, 110, 10, 220) : IM_COL32(30, 120, 50, 220);
+							ImVec2 badgePos = ImVec2(btnMin.x + 3.0f, btnMin.y + 3.0f);
+							ImVec2 badgeSize = ImGui::CalcTextSize(badgeText);
+							ImGui::GetWindowDrawList()->AddRectFilled(badgePos, ImVec2(badgePos.x + badgeSize.x + 4.0f, badgePos.y + badgeSize.y + 2.0f), badgeBg, 2.0f);
+							ImGui::GetWindowDrawList()->AddText(ImVec2(badgePos.x + 2.0f, badgePos.y + 1.0f), IM_COL32(255, 255, 255, 255), badgeText);
 
 							// Texture name with scaled font
 							std::string displayName = texName;
@@ -1305,37 +1376,47 @@ void Gui::drawTextureBrowser()
 		ImGui::Text("(BSP index: %d)", copiedMiptex);
 	ImGui::EndGroup();
 
-	bool showDeleteButton = (copiedMiptex >= 0 && map);
-	float footerBtnWidth = showDeleteButton ? (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2.0f : -1.0f;
+	bool showUnembedButton = (copiedMiptex >= 0 && map);
+	float footerBtnWidth = showUnembedButton ? (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2.0f : -1.0f;
 
-	if (showDeleteButton)
+	if (showUnembedButton)
 	{
-		if (ImGui::Button(get_localized_string(LANG_0451).c_str(), ImVec2(footerBtnWidth, 30)))
+		bool isEmbedded = map->is_texture_embedded(copiedMiptex);
+		if (isEmbedded)
 		{
-			ImGui::OpenPopup("##delete_confirm");
-		}
-
-		if (ImGui::BeginPopup("##delete_confirm"))
-		{
-			ImGui::Text(get_localized_string(LANG_0940).c_str());
-			if (ImGui::Button(get_localized_string(LANG_0451).c_str()))
+			if (ImGui::Button("Unembed Texture", ImVec2(footerBtnWidth, 30)))
 			{
-				mapRender->pushUndoState("Unembed Texture", FL_TEXTURES);
-				if (map->unembed_textures({copiedMiptex}))
+				if (mapRender)
 				{
-					mapRender->reloadTextures();
-					mapRender->reload();
-					copiedMiptex = -1;
-					lastCopiedTextureName = "";
+					mapRender->pushUndoState("Unembed Texture", FL_TEXTURES);
+					int removed = map->unembed_textures({copiedMiptex});
+					if (removed > 0)
+					{
+						print_log("Unembedded texture '%s' (BSP index %d)\n", lastCopiedTextureName.c_str(), copiedMiptex);
+						invalidateTextureBrowserCache();
+						mapRender->reloadTextures();
+						mapRender->reload();
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, "Failed to unembed texture '%s'\n", lastCopiedTextureName.c_str());
+					}
 				}
-				ImGui::CloseCurrentPopup();
 			}
-			ImGui::SameLine();
-			if (ImGui::Button(get_localized_string(LANG_0945).c_str())) // Cancel
+			if (ImGui::IsItemHovered())
 			{
-				ImGui::CloseCurrentPopup();
+				ImGui::SetTooltip("Strip embedded miptex pixel data from BSP, converting this texture into an external WAD reference.");
 			}
-			ImGui::EndPopup();
+		}
+		else
+		{
+			ImGui::BeginDisabled(true);
+			ImGui::Button("Already External (WAD)", ImVec2(footerBtnWidth, 30));
+			ImGui::EndDisabled();
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+			{
+				ImGui::SetTooltip("This texture is already referencing an external WAD and has no embedded pixel data in the BSP.");
+			}
 		}
 		ImGui::SameLine();
 	}

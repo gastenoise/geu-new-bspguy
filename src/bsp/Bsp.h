@@ -465,6 +465,7 @@ class Bsp
 	int getFaceFromVec(const vec3& pos, int modelIdx, int& content);
 	std::vector<int> getFacesFromPlane(int iPlane);
 	bool is_texture_with_pal(int textureid);
+	bool is_texture_embedded(int textureid);
 	int getBspTextureSize(int textureid);
 	int getEmbeddedTexCount();
 
