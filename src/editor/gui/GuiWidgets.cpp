@@ -4735,7 +4735,7 @@ void Gui::drawFaceEditorWidget()
 				width = 256;
 				height = 256;
 
-				std::vector<COLOR3> img(width * height, rndColor);
+				std::vector<COLOR3> img((size_t)width * (size_t)height, rndColor);
 
 				newMiptex = map->add_texture(textureName2, (unsigned char*)&img[0], width, height);
 
