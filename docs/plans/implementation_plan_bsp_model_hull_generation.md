@@ -1,0 +1,63 @@
+# Implementation Plan: Universal BSP Model Collision Hull Generation
+
+- [x] 1. UI Context Menu & Cull Actions Overhaul
+  - [x] 1.1 Unblock "Create Hull" in Entity Context Menu
+    - Remove the coupling with `invalidSolid` and `isTransformableSolid` in `src/editor/gui/GuiContextMenu.cpp`.
+    - Enable "Create Hull" menu whenever `!app->isLoading && (modelIdx > 0 || map->is_bsp_model)`.
+    - _Requirements: REQ-1.1, REQ-1.2, REQ-1.3_
+  - [x] 1.2 Fix "Simplify Hull" Enablement and Hull Parameter Bug
+    - Remove the restriction requiring `isHullValid` before opening "Simplify Hull" in `src/editor/gui/GuiContextMenu.cpp`.
+    - Fix the hardcoded parameter bug in `simplify_model_collision(modelIdx, 1)` to pass `i` (the selected hull index).
+    - _Requirements: REQ-1.4, REQ-1.5, REQ-4.3_
+  - [x] 1.3 Add Cull Box Solid Entity Generator
+    - Add "Create Solid Brush Entity (`func_wall`)" and "Create Monsterclip Entity" in `src/editor/gui/GuiMenuBar.cpp` under Cull Actions.
+    - Compute bounding box center, extent, and construct a new `func_wall` with full collision across all hulls.
+    - _Requirements: REQ-5.1, REQ-5.2_
+  - [x] 1.4 Add Informative Progress & Warning Logs in Cull Hull Functions
+    - Add descriptive logs to `Bsp::delete_hull_in_box` in `src/bsp/Bsp.cpp`.
+    - _Requirements: REQ-5.3, REQ-6.2_
+
+- [x] 2. Universal BSP Collision Hull Engine
+  - [x] 2.1 Implement Universal Visual Node-to-Clipnode Tree Converter
+    - Add `Bsp::convert_nodes_to_clipnodes_recursive` in `src/bsp/Bsp.cpp` and declare in `src/bsp/Bsp.h`.
+    - Support plane distance expansion with normal offset for each hull extent (`default_hull_extents[hullIdx]`).
+    - Traverse both branches recursively without discarding axial subtrees.
+    - Map visual contents (`CONTENTS_SOLID`, `CONTENTS_EMPTY`, water/lava/slime) correctly.
+    - _Requirements: REQ-2.1, REQ-2.2, REQ-2.3, REQ-2.4, REQ-2.5_
+  - [x] 2.2 Implement Face-Ladder Collision Hull Generator (Direct Polygon Fallback)
+    - Add `Bsp::generate_clipnodes_from_model_faces` in `src/bsp/Bsp.cpp` and declare in `src/bsp/Bsp.h`.
+    - Construct expanded face planes from `BSPFACE32` geometry for models lacking hierarchical visual trees.
+    - _Requirements: REQ-3.1, REQ-3.2, REQ-3.3, REQ-3.4_
+  - [x] 2.3 Implement Master Universal Model Collision Function
+    - Add `Bsp::regenerate_model_clipnodes_universal(int modelIdx, int hullIdx)` in `src/bsp/Bsp.cpp`.
+    - Automatically select the best generation strategy (Node-to-Clipnode -> Face-Ladder -> Bounding Box).
+    - Encapsulate with model bounding box clipnodes to guarantee finite collision bounds.
+    - _Requirements: REQ-1.3, REQ-2.1, REQ-3.1, REQ-4.1_
+  - [x] 2.4 Fix Bounding Box Collision Simplifier
+    - Enhance `Bsp::simplify_model_collision` in `src/bsp/Bsp.cpp` to correctly handle models with `iHeadnodes[i] < 0`.
+    - Clean up orphaned clipnodes with `remove_unused_model_structures(CLEAN_CLIPNODES | CLEAN_PLANES)`.
+    - _Requirements: REQ-4.1, REQ-4.2, REQ-4.3, REQ-4.4_
+
+- [x] 3. Viewport Integration, Synchronization & Undo Support
+  - [x] 3.1 Synchronize Viewport OpenGL Buffers and Models
+    - Ensure `BspRenderer::refreshModelClipnodes(modelIdx)` and `BspRenderer::generateClipnodeBuffer(modelIdx)` are triggered upon generation.
+    - Invalidate and refresh wireframe and solid clipnode display in `src/editor/BspRenderer.cpp`.
+    - _Requirements: REQ-6.1_
+  - [x] 3.2 Add Structured Logging and Undo Safety
+    - Add comprehensive console logging for all hull operations (`[Collision] Model {ID}: Generated Hull {HullID}...`).
+    - Push appropriate undo states with `EDIT_MODEL_LUMPS | FL_CLIPNODES | FL_PLANES | FL_MODELS`.
+    - _Requirements: REQ-6.2, REQ-6.3, REQ-6.4_
+
+- [x] 4. Compilation, Testing & Validation
+  - [x] 4.1 Compile Project with MSBuild / CMake
+    - Verify clean build without warnings or errors.
+  - [x] 4.2 Validate Simple and Multi-Faceted Submodels
+    - Test generating hulls on 6-sided, 12-sided, and 24-sided brush models.
+    - Verify viewport collision visualization for Hulls 1, 2, and 3.
+  - [x] 4.3 Validate Complex / Concave / Branching Geometry
+    - Test generating hulls on stairs, arches, and non-convex shapes.
+    - Verify no missing branches or clipped solid areas.
+  - [x] 4.4 Validate Zero-Collision Recovery
+    - Verify "Simplify Hull" and "Create Hull" work on models with prior `iHeadnodes == -1`.
+  - [x] 4.5 Validate Cull Box Solid Entity Creation
+    - Test creating a `func_wall` entity using 2 cull entities and verify full collision in viewport.
