@@ -20,6 +20,10 @@
 #include <filesystem>
 #include <algorithm>
 #include <cmath>
+#ifdef WIN32
+#include <Windows.h>
+#include <shellapi.h>
+#endif
 
 extern float g_tooltip_delay;
 
@@ -409,6 +413,44 @@ void Gui::drawSettings()
 			ImGui::Text("RAD options:");
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::InputText("##hlrad_options", &g_settings.rad_options);
+
+			ImGui::TextUnformatted("Presets:");
+			ImGui::SameLine();
+			if (ImGui::Button("Fast##rad_preset_fast"))
+			{
+				g_settings.rad_options = "-fast -nomip \"{map_path}\"";
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::SetTooltip("Quick low-quality compilation for fast testing (-fast -nomip)");
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Standard##rad_preset_std"))
+			{
+				g_settings.rad_options = "-chart -estimate \"{map_path}\"";
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::SetTooltip("Standard quality compilation with progress estimates (-chart -estimate)");
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Extra##rad_preset_extra"))
+			{
+				g_settings.rad_options = "-extra -bounce 4 -chop 64 \"{map_path}\"";
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::SetTooltip("High quality compilation with extra bounces (-extra -bounce 4 -chop 64)");
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Default##rad_preset_def"))
+			{
+				g_settings.rad_options = "\"{map_path}\"";
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::SetTooltip("Default arguments: only map path");
+			}
 
 			ImGui::Separator();
 
@@ -1563,3 +1605,55 @@ void Gui::drawImportMapWidget()
 	}
 	ImGui::End();
 }
+
+void Gui::drawRadErrorModal()
+{
+	if (!showRadErrorModal)
+		return;
+
+	ImGui::OpenPopup("RAD Compilation Result");
+
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+	if (ImGui::BeginPopupModal("RAD Compilation Result", &showRadErrorModal, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "RAD Compilation Error");
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 32.0f);
+		ImGui::TextUnformatted(radErrorMessage.c_str());
+		ImGui::PopTextWrapPos();
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (!radLogFilePath.empty() && fileExists(radLogFilePath))
+		{
+			if (ImGui::Button("Open Compiler Log", ImVec2(150, 0)))
+			{
+#ifdef WIN32
+				ShellExecuteA(NULL, "open", radLogFilePath.c_str(), NULL, NULL, SW_SHOW);
+#endif
+			}
+			ImGui::SameLine();
+		}
+
+		if (ImGui::Button("Open Settings", ImVec2(120, 0)))
+		{
+			showSettingsWidget = true;
+			showRadErrorModal = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Close", ImVec2(100, 0)))
+		{
+			showRadErrorModal = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+

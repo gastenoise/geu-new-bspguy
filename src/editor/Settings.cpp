@@ -1131,6 +1131,7 @@ void Settings::loadSettings()
 	g_settings.workingdir = settings_ini->Get<std::string>("PATHS", "workingdir", "");
 	g_settings.lastdir = settings_ini->Get<std::string>("PATHS", "lastdir", "");
 	g_settings.rad_path = settings_ini->Get<std::string>("PATHS", "hlrad_path", "");
+	g_settings.rad_options = settings_ini->Get<std::string>("PATHS", "hlrad_options", "\"{map_path}\"");
 	g_settings.palette_name = settings_ini->Get<std::string>("PATHS", "palette", "");
 	g_settings.skybox_dir = settings_ini->Get<std::string>("PATHS", "skybox_dir", "");
 
@@ -1488,6 +1489,7 @@ void Settings::saveSettings(std::string path)
 	iniData << "workingdir=" << g_settings.workingdir << "\n";
 	iniData << "lastdir=" << g_settings.lastdir << "\n";
 	iniData << "hlrad_path=" << g_settings.rad_path << "\n";
+	iniData << "hlrad_options=" << g_settings.rad_options << "\n";
 	iniData << "palette=" << g_settings.palette_name << "\n";
 	iniData << "skybox_dir=" << g_settings.skybox_dir << "\n\n";
 
@@ -1653,7 +1655,7 @@ std::string convertToSection(std::string& key)
 		return "INPUT";
 	}
 	if (key == "gamedir" || key == "workingdir" || key == "lastdir" ||
-		key == "hlrad_path" || key == "palette" || key == "skybox_dir")
+		key == "hlrad_path" || key == "hlrad_options" || key == "palette" || key == "skybox_dir")
 	{
 		return "PATHS";
 	}

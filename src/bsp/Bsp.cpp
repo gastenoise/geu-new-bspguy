@@ -14478,7 +14478,7 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 
 	for (int i = 0; i < tmpBsp->faceCount; i++)
 	{
-		faces[i].nLightmapOffset = -1;
+		tmpBsp->faces[i].nLightmapOffset = -1;
 	}
 
 	tmpBsp->update_lump_pointers();
